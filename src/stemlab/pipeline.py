@@ -1,0 +1,231 @@
+from __future__ import annotations
+
+import datetime as dt
+import json
+import shutil
+import traceback
+from dataclasses import asdict
+from pathlib import Path
+from typing import Callable
+
+from .audio import audio_info
+from .beats import BeatNetBackend, BeatThisBackend, BeatTransformerBackend
+from .manifest import write_manifest
+from .models import MODEL_REGISTRY
+from .separators import make_backend
+from .sonic import build_session
+from .speech import isolate_and_transcribe
+from .spectrogram import generate_spectrogram
+from .types import BeatResult, PipelineConfig, SeparationResult, StemArtifact
+from .util import sha256_file, slugify, write_json
+
+ProgressFn = Callable[[str], None]
+
+
+def _vocal_candidate(stems: list[StemArtifact]) -> Path | None:
+    priority = ["bs_roformer_sw", "scnet_xl_ihf", "htdemucs_ft", "openunmix_umxhq", "mvsep_mega53"]
+    for model in priority:
+        for s in stems:
+            if s.model == model and s.stem.lower() in {"vocals", "vocal", "lead_vocals"}:
+                return s.path
+    for s in stems:
+        if "vocal" in s.stem.lower() or "voice" in s.stem.lower():
+            return s.path
+    return None
+
+
+def _error_record(stage: str, exc: Exception) -> dict:
+    return {
+        "stage": stage,
+        "type": type(exc).__name__,
+        "message": str(exc),
+        "traceback": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+    }
+
+
+def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> dict:
+    progress = progress or (lambda _msg: None)
+    src = config.input_wav.expanduser().resolve()
+    if not src.is_file():
+        raise FileNotFoundError(src)
+    out = config.output_dir.expanduser().resolve()
+    out.mkdir(parents=True, exist_ok=True)
+
+    input_dir = out / "input"
+    stems_dir = out / "stems"
+    spec_dir = out / "spectrograms"
+    beats_dir = out / "beats"
+    speech_dir = out / "speech"
+    sonic_dir = out / "sonic_visualiser"
+    for d in (input_dir, stems_dir, spec_dir, beats_dir, speech_dir, sonic_dir):
+        d.mkdir(parents=True, exist_ok=True)
+
+    master = input_dir / src.name
+    if master.resolve() != src:
+        shutil.copy2(src, master)
+    started = dt.datetime.now(dt.timezone.utc)
+    analysis: dict = {
+        "stemlab_version": __import__("stemlab").__version__,
+        "started_at": started.isoformat(),
+        "source": {
+            "original_path": str(src),
+            "copied_path": str(master.relative_to(out)),
+            "sha256": sha256_file(master),
+            "audio": audio_info(master),
+        },
+        "config": {
+            **asdict(config),
+            "input_wav": str(config.input_wav),
+            "output_dir": str(config.output_dir),
+            "models": list(config.models),
+        },
+        "models": [],
+        "spectrograms": [],
+        "beats": [],
+        "speech": None,
+        "errors": [],
+    }
+
+    if config.make_spectrograms:
+        progress("spectrogram: master")
+        try:
+            rec = generate_spectrogram(master, spec_dir / "master.png", spec_dir / "master.npz")
+            analysis["spectrograms"].append(rec)
+        except Exception as exc:
+            analysis["errors"].append(_error_record("spectrogram:master", exc))
+            if not config.continue_on_error:
+                raise
+
+    all_stems: list[StemArtifact] = []
+    for model_slug in config.models:
+        if model_slug not in MODEL_REGISTRY:
+            exc = ValueError(f"Unknown model: {model_slug}")
+            analysis["errors"].append(_error_record(f"separation:{model_slug}", exc))
+            if not config.continue_on_error:
+                raise exc
+            continue
+        spec = MODEL_REGISTRY[model_slug]
+        progress(f"separation: {spec.display_name}")
+        backend = make_backend(spec.backend, bootstrap_external=config.bootstrap_external)
+        result: SeparationResult = backend.separate(master, stems_dir / model_slug, model_slug, config.device)
+        model_record = {
+            "spec": spec.to_dict(),
+            "elapsed_seconds": result.elapsed_seconds,
+            "error": result.error,
+            "metadata": result.metadata,
+            "stems": [s.to_dict(out) for s in result.stems],
+        }
+        analysis["models"].append(model_record)
+        if result.error:
+            analysis["errors"].append({"stage": f"separation:{model_slug}", "message": result.error})
+            if not config.continue_on_error:
+                raise RuntimeError(result.error)
+            continue
+        all_stems.extend(result.stems)
+        if config.make_spectrograms:
+            for stem in result.stems:
+                progress(f"spectrogram: {model_slug}/{stem.stem}")
+                try:
+                    base = spec_dir / model_slug / slugify(stem.stem)
+                    rec = generate_spectrogram(stem.path, base.with_suffix(".png"), base.with_suffix(".npz"))
+                    rec["model"] = model_slug
+                    rec["stem"] = stem.stem
+                    analysis["spectrograms"].append(rec)
+                except Exception as exc:
+                    analysis["errors"].append(_error_record(f"spectrogram:{model_slug}:{stem.stem}", exc))
+                    if not config.continue_on_error:
+                        raise
+
+    whisper_result = None
+    if config.run_whisper:
+        vocal = _vocal_candidate(all_stems)
+        if vocal is None:
+            exc = RuntimeError("No vocal stem was produced; spoken-word isolation/Whisper cannot run")
+            analysis["errors"].append(_error_record("speech", exc))
+            if not config.continue_on_error:
+                raise exc
+        else:
+            progress(f"speech + Whisper: {vocal.name}")
+            try:
+                whisper_result = isolate_and_transcribe(
+                    vocal,
+                    speech_dir,
+                    whisper_model=config.whisper_model,
+                    device=config.device,
+                )
+                # Store paths relative to output in the top-level report where practical.
+                analysis["speech"] = {
+                    "source_vocals": str(Path(whisper_result["source_vocals"]).relative_to(out)),
+                    "spoken_word_wav": str(Path(whisper_result["spoken_word_wav"]).relative_to(out)),
+                    "model": whisper_result["model"],
+                    "language": whisper_result["language"],
+                    "language_probability": whisper_result["language_probability"],
+                    "regions": len(whisper_result["regions"]),
+                    "segments": len(whisper_result["segments"]),
+                    "words": len(whisper_result["words"]),
+                }
+                spoken = Path(whisper_result["spoken_word_wav"])
+                # Treat the VAD-gated speech waveform as another generated stem so the
+                # Sonic Visualiser session contains it on the same timeline as the music stems.
+                all_stems.append(StemArtifact("speech", "spoken_word", spoken, 16000, 1))
+                if config.make_spectrograms:
+                    rec = generate_spectrogram(spoken, spec_dir / "speech" / "spoken_word.png", spec_dir / "speech" / "spoken_word.npz")
+                    rec["model"] = "speech"
+                    rec["stem"] = "spoken_word"
+                    analysis["spectrograms"].append(rec)
+            except Exception as exc:
+                analysis["errors"].append(_error_record("speech", exc))
+                if not config.continue_on_error:
+                    raise
+
+    beat_results: list[BeatResult] = []
+    if config.run_beats:
+        beat_backends = [
+            BeatNetBackend(),
+            BeatThisBackend(),
+            BeatTransformerBackend(bootstrap_external=config.bootstrap_external, ensemble=config.beat_transformer_ensemble),
+        ]
+        for backend in beat_backends:
+            name = backend.__class__.__name__
+            progress(f"beat analysis: {name}")
+            try:
+                br = backend.analyze(master, beats_dir, all_stems)
+                beat_results.append(br)
+                analysis["beats"].append({
+                    "model": br.model,
+                    "beats": len(br.beats),
+                    "downbeats": len(br.downbeats),
+                    "tempo_bpm": br.tempo_bpm,
+                    "metadata": br.metadata,
+                })
+            except Exception as exc:
+                analysis["errors"].append(_error_record(f"beats:{name}", exc))
+                if not config.continue_on_error:
+                    raise
+
+    progress("Sonic Visualiser session")
+    try:
+        sv, xml = build_session(sonic_dir, master, all_stems, beat_results, whisper_result)
+        analysis["sonic_visualiser"] = {
+            "session": str(sv.relative_to(out)),
+            "xml": str(xml.relative_to(out)),
+            "windows_launcher": str((sonic_dir / "open_sonic_visualiser.bat").relative_to(out)),
+            "unix_launcher": str((sonic_dir / "open_sonic_visualiser.sh").relative_to(out)),
+        }
+    except Exception as exc:
+        analysis["errors"].append(_error_record("sonic_visualiser", exc))
+        if not config.continue_on_error:
+            raise
+
+    analysis["completed_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    write_json(out / "analysis.json", analysis)
+    progress("manifest")
+    write_manifest(
+        out,
+        extra={
+            "source_sha256": analysis["source"]["sha256"],
+            "models_requested": list(config.models),
+            "error_count": len(analysis["errors"]),
+        },
+    )
+    return analysis

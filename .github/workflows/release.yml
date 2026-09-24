@@ -1,0 +1,80 @@
+name: Release assets
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux-release:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Native build requirements
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential patchelf libsndfile1 ffmpeg
+
+      - name: Install Python build/runtime dependencies
+        run: |
+          python -m pip install -U pip wheel setuptools
+          # madmom/BeatNet remain legacy-sensitive; preinstall Cython before resolving extras.
+          python -m pip install 'Cython<3' 'numpy<2'
+          python -m pip install -e '.[all,binary,dev]'
+
+      - name: Test package before release build
+        run: |
+          python -m compileall -q src
+          pytest
+
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install build
+          python -m build
+
+      - name: Build self-contained one-file CLI
+        run: |
+          python -m nuitka \
+            --onefile \
+            --assume-yes-for-downloads \
+            --output-dir=build/nuitka \
+            --output-filename=stemlab-linux-x86_64 \
+            --include-package=stemlab \
+            --include-package=demucs \
+            --include-package=openunmix \
+            --include-package=bs_roformer \
+            --include-package=faster_whisper \
+            --include-package=beat_this \
+            --include-package=BeatNet \
+            --include-package-data=bs_roformer \
+            --include-package-data=faster_whisper \
+            src/stemlab/__main__.py
+
+      - name: Assemble release directory and manifest
+        run: |
+          mkdir -p dist-release
+          cp dist/* dist-release/
+          cp build/nuitka/stemlab-linux-x86_64 dist-release/
+          chmod +x dist-release/stemlab-linux-x86_64
+          python scripts/release_manifest.py dist-release
+          cat dist-release/SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stemlab-release-assets
+          path: dist-release/*
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" dist-release/* --clobber
