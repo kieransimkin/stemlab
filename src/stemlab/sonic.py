@@ -142,6 +142,192 @@ def _add_text_model(
     })
 
 
+def _add_timevalues_model(
+    data,
+    *,
+    model_id: int,
+    dataset_id: int,
+    name: str,
+    sample_rate: int,
+    points: list[tuple[float, float, str]],
+    units: str = "",
+) -> bool:
+    finite = [(t, v, label) for t, v, label in points if np.isfinite(v)]
+    if not finite:
+        return False
+    values = [value for _time, value, _label in finite]
+    ET.SubElement(data, "model", {
+        "id": str(model_id),
+        "name": name,
+        "sampleRate": str(sample_rate),
+        "type": "sparse",
+        "dimensions": "2",
+        "resolution": "1",
+        "notifyOnAdd": "true",
+        "dataset": str(dataset_id),
+        "minimum": str(float(min(values))),
+        "maximum": str(float(max(values))),
+        "units": units,
+    })
+    ds = ET.SubElement(data, "dataset", {"id": str(dataset_id), "dimensions": "2"})
+    for time_s, value, label in finite:
+        ET.SubElement(ds, "point", {
+            "frame": str(int(round(float(time_s) * sample_rate))),
+            "value": str(float(value)),
+            "label": str(label),
+        })
+    return True
+
+
+def _event_end(events: list[dict], index: int, default_duration: float = 0.5) -> float:
+    event = events[index]
+    start = float(event.get("start", 0.0))
+    end = event.get("end")
+    if end is not None and np.isfinite(float(end)) and float(end) > start:
+        return float(end)
+    if index + 1 < len(events):
+        next_start = float(events[index + 1].get("start", start))
+        if next_start > start:
+            return next_start
+    return start + default_duration
+
+
+def _add_regions_model(
+    data,
+    *,
+    model_id: int,
+    dataset_id: int,
+    name: str,
+    sample_rate: int,
+    events: list[dict],
+    units: str,
+) -> bool:
+    if not events:
+        return False
+    labels: dict[str, int] = {}
+    region_values: list[float] = []
+    for event in events:
+        values = event.get("values") or []
+        label = str(event.get("label") or "").strip()
+        if values:
+            value = float(values[0])
+        else:
+            if label not in labels:
+                labels[label] = len(labels) + 1
+            value = float(labels[label])
+        region_values.append(value)
+    ET.SubElement(data, "model", {
+        "id": str(model_id),
+        "name": name,
+        "sampleRate": str(sample_rate),
+        "type": "sparse",
+        "dimensions": "3",
+        "resolution": "1",
+        "notifyOnAdd": "true",
+        "dataset": str(dataset_id),
+        "subtype": "region",
+        "valueQuantization": "0",
+        "minimum": str(float(min(region_values))),
+        "maximum": str(float(max(region_values))),
+        "units": units,
+    })
+    ds = ET.SubElement(data, "dataset", {"id": str(dataset_id), "dimensions": "3"})
+    for index, event in enumerate(events):
+        start = float(event.get("start", 0.0))
+        end = _event_end(events, index)
+        label = str(event.get("label") or "").strip()
+        if not label and event.get("values"):
+            label = str(event["values"][0])
+        ET.SubElement(ds, "point", {
+            "frame": str(int(round(start * sample_rate))),
+            "value": str(region_values[index]),
+            "duration": str(max(1, int(round((end - start) * sample_rate)))),
+            "label": label,
+        })
+    return True
+
+
+def _note_name(frequency: float) -> str:
+    if not np.isfinite(frequency) or frequency <= 0:
+        return ""
+    midi = int(round(69.0 + 12.0 * np.log2(float(frequency) / 440.0)))
+    names = ("C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B")
+    return f"{names[midi % 12]}{midi // 12 - 1}"
+
+
+def _add_notes_model(
+    data,
+    *,
+    model_id: int,
+    dataset_id: int,
+    name: str,
+    sample_rate: int,
+    events: list[dict],
+) -> bool:
+    usable = [
+        event
+        for event in events
+        if event.get("values")
+        and np.isfinite(float(event["values"][0]))
+        and float(event["values"][0]) > 0
+    ]
+    if not usable:
+        return False
+    frequencies = [float(event["values"][0]) for event in usable]
+    ET.SubElement(data, "model", {
+        "id": str(model_id),
+        "name": name,
+        "sampleRate": str(sample_rate),
+        "type": "sparse",
+        "dimensions": "3",
+        "resolution": "1",
+        "notifyOnAdd": "true",
+        "dataset": str(dataset_id),
+        "subtype": "note",
+        "valueQuantization": "0",
+        "minimum": str(min(frequencies)),
+        "maximum": str(max(frequencies)),
+        "units": "Hz",
+    })
+    ds = ET.SubElement(data, "dataset", {"id": str(dataset_id), "dimensions": "3"})
+    for index, event in enumerate(usable):
+        start = float(event.get("start", 0.0))
+        end = event.get("end")
+        if end is None or not np.isfinite(float(end)) or float(end) <= start:
+            end = start + 0.1
+        frequency = float(event["values"][0])
+        velocity = float(event["values"][1]) if len(event["values"]) > 1 else 100.0
+        level = min(1.0, max(0.0, velocity / 127.0))
+        label = str(event.get("label") or "").strip() or _note_name(frequency)
+        ET.SubElement(ds, "point", {
+            "frame": str(int(round(start * sample_rate))),
+            "value": str(frequency),
+            "duration": str(max(1, int(round((float(end) - start) * sample_rate)))),
+            "level": str(level),
+            "label": label,
+        })
+    return True
+
+
+def _qm_key_label(events: list[dict]) -> str | None:
+    if not events:
+        return None
+    event = events[0]
+    label = str(event.get("label") or "").strip()
+    if label:
+        return label
+    values = event.get("values") or []
+    if not values:
+        return None
+    value = int(round(float(values[0])))
+    pitch_classes = ("C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B")
+    if 1 <= value <= 12:
+        return f"{pitch_classes[value - 1]} major"
+    if 13 <= value <= 24:
+        return f"{pitch_classes[value - 13]} minor"
+    return str(value)
+
+
 def _beat_position_labels(beats: list[float], downbeats: list[float], tolerance: float = 0.09) -> list[str]:
     if not beats:
         return []
@@ -188,6 +374,8 @@ def build_session(
     stems: list[StemArtifact],
     beats: list[BeatResult],
     whisper: dict | None = None,
+    *,
+    vamp: dict | None = None,
 ) -> tuple[Path, Path]:
     """Create a strongly-labelled Sonic Visualiser analysis workspace.
 
@@ -548,6 +736,310 @@ def build_session(
             colour="#00a060",
         )
         next_layer += 1
+
+    # Vamp Plugin Pack feature layers. The raw CSV, JSON, NPZ and plot files
+    # are also kept under output/vamp; these panes expose the most useful
+    # musical interpretations directly in the synchronized SV workspace.
+    vamp_analyses = {
+        str(item.get("slug")): item
+        for item in (vamp or {}).get("analyses", [])
+        if item.get("slug")
+    }
+
+    harmony_slugs = {"chords", "harmonic_change", "key", "tuning", "tonal_changes"}
+    if harmony_slugs.intersection(vamp_analyses):
+        pane = ET.SubElement(display, "view", {
+            "centre": "0", "zoom": "1024", "followPan": "1", "followZoom": "1",
+            "tracking": "page", "type": "pane",
+            "name": "HARMONY • Vamp Chordino / key / tonal change",
+        })
+        _layer(
+            pane, id=next_layer, type="waveform",
+            name=f"REFERENCE • Master waveform for harmony • {master.name}",
+            model=0, channel=-1, gain=0.55, pan=0,
+        )
+        next_layer += 1
+
+        summary: list[str] = []
+        key_analysis = vamp_analyses.get("key")
+        if key_analysis:
+            key_label = _qm_key_label(key_analysis.get("events", []))
+            if key_label:
+                summary.append(f"Estimated key: {key_label}")
+        tuning_analysis = vamp_analyses.get("tuning")
+        if tuning_analysis and tuning_analysis.get("events"):
+            event = tuning_analysis["events"][0]
+            if event.get("values"):
+                summary.append(f"Concert pitch: {float(event['values'][0]):.2f} Hz")
+            elif event.get("label"):
+                summary.append(f"Tuning: {event['label']}")
+        if summary:
+            model_id, ds_id = dataset_id, dataset_id + 1
+            dataset_id += 2
+            _add_text_model(
+                data, model_id=model_id, dataset_id=ds_id,
+                name="HARMONY • key and tuning summary", sample_rate=master_sr,
+                text=" • ".join(summary),
+            )
+            _layer(
+                pane, id=next_layer, type="text",
+                name="HARMONY • KEY / TUNING SUMMARY", model=model_id,
+                colourName="Purple", colour="#a050ff", darkBackground="false",
+            )
+            next_layer += 1
+
+        chord_analysis = vamp_analyses.get("chords")
+        if chord_analysis:
+            model_id, ds_id = dataset_id, dataset_id + 1
+            dataset_id += 2
+            if _add_regions_model(
+                data, model_id=model_id, dataset_id=ds_id,
+                name="HARMONY • Chordino chord transcription",
+                sample_rate=master_sr, events=chord_analysis.get("events", []),
+                units="chord",
+            ):
+                _layer(
+                    pane, id=next_layer, type="regions",
+                    name="HARMONY • CHORDS • Chordino", model=model_id,
+                    verticalScale=1, plotStyle=1, fillColourMap="Magma",
+                    colourMap=0, colourName="Orange", colour="#ff9632",
+                    darkBackground="false",
+                )
+                next_layer += 1
+
+        harmonic_analysis = vamp_analyses.get("harmonic_change")
+        if harmonic_analysis:
+            points = [
+                (
+                    float(event.get("start", 0.0)),
+                    float(event["values"][0]),
+                    "",
+                )
+                for event in harmonic_analysis.get("events", [])
+                if event.get("values")
+            ]
+            model_id, ds_id = dataset_id, dataset_id + 1
+            dataset_id += 2
+            if _add_timevalues_model(
+                data, model_id=model_id, dataset_id=ds_id,
+                name="HARMONY • harmonic-change likelihood",
+                sample_rate=master_sr, points=points,
+            ):
+                _layer(
+                    pane, id=next_layer, type="timevalues",
+                    name="HARMONY • HARMONIC CHANGE FUNCTION", model=model_id,
+                    plotStyle=2, verticalScale=0, scaleMinimum=0, scaleMaximum=1,
+                    drawDivisions="true", fillSegments="false",
+                    colourName="Blue", colour="#2080ff", darkBackground="false",
+                )
+                next_layer += 1
+
+        tonal_analysis = vamp_analyses.get("tonal_changes")
+        if tonal_analysis:
+            times = [float(event.get("start", 0.0)) for event in tonal_analysis.get("events", [])]
+            if times:
+                model_id, ds_id = dataset_id, dataset_id + 1
+                dataset_id += 2
+                _add_timeinstants_model(
+                    data, model_id=model_id, dataset_id=ds_id,
+                    name="HARMONY • tonal change positions",
+                    sample_rate=master_sr, times=times,
+                    labels=["TONAL CHANGE"] * len(times),
+                )
+                _layer(
+                    pane, id=next_layer, type="timeinstants",
+                    name="HARMONY • TONAL CHANGE POSITIONS", model=model_id,
+                    plotStyle=0, colourName="Red", colour="#ff3050",
+                )
+                next_layer += 1
+
+    chroma_analysis = vamp_analyses.get("nnls_chroma")
+    if chroma_analysis and chroma_analysis.get("events"):
+        chroma_events = chroma_analysis["events"]
+        if any(len(event.get("values") or []) >= 12 for event in chroma_events):
+            pane = ET.SubElement(display, "view", {
+                "centre": "0", "zoom": "1024", "followPan": "1", "followZoom": "1",
+                "tracking": "page", "type": "pane",
+                "name": "HARMONY • NNLS chroma pitch-class strengths",
+            })
+            pitch_classes = ("A", "Bb", "B", "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab")
+            colours = (
+                ("Red", "#ff3050"), ("Orange", "#ff9632"), ("Green", "#00a060"),
+                ("Blue", "#2080ff"), ("Purple", "#a050ff"), ("Black", "#202020"),
+            )
+            for pitch_index, pitch_class in enumerate(pitch_classes):
+                points = [
+                    (
+                        float(event.get("start", 0.0)),
+                        float(event["values"][pitch_index]),
+                        pitch_class,
+                    )
+                    for event in chroma_events
+                    if len(event.get("values") or []) > pitch_index
+                ]
+                model_id, ds_id = dataset_id, dataset_id + 1
+                dataset_id += 2
+                if _add_timevalues_model(
+                    data, model_id=model_id, dataset_id=ds_id,
+                    name=f"HARMONY • NNLS chroma • {pitch_class}",
+                    sample_rate=master_sr, points=points, units="strength",
+                ):
+                    colour_name, colour = colours[pitch_index % len(colours)]
+                    _layer(
+                        pane, id=next_layer, type="timevalues",
+                        name=f"CHROMA • {pitch_class}", model=model_id,
+                        plotStyle=2, verticalScale=0,
+                        drawDivisions="false", fillSegments="false",
+                        colourName=colour_name, colour=colour, darkBackground="false",
+                    )
+                    next_layer += 1
+
+    melody_pitch = vamp_analyses.get("melody_pitch")
+    melody_notes = vamp_analyses.get("melody_notes")
+    if melody_pitch or melody_notes:
+        melody_model_id = next(
+            (
+                mid for mid, slug, stem, _path, _label in audio_models
+                if slug != "speech" and "vocal" in stem.lower()
+            ),
+            0,
+        )
+        pane = ET.SubElement(display, "view", {
+            "centre": "0", "zoom": "1024", "followPan": "1", "followZoom": "1",
+            "tracking": "page", "type": "pane",
+            "name": "MELODY • pYIN pitch contour and note transcription",
+        })
+        _layer(
+            pane, id=next_layer, type="waveform",
+            name="REFERENCE • separated vocal stem for pYIN melody",
+            model=melody_model_id, channel=-1, gain=0.65, pan=0,
+        )
+        next_layer += 1
+
+        if melody_pitch:
+            points = [
+                (
+                    float(event.get("start", 0.0)),
+                    float(event["values"][0]),
+                    _note_name(float(event["values"][0])),
+                )
+                for event in melody_pitch.get("events", [])
+                if event.get("values") and float(event["values"][0]) > 0
+            ]
+            model_id, ds_id = dataset_id, dataset_id + 1
+            dataset_id += 2
+            if _add_timevalues_model(
+                data, model_id=model_id, dataset_id=ds_id,
+                name="MELODY • pYIN smoothed F0",
+                sample_rate=master_sr, points=points, units="Hz",
+            ):
+                _layer(
+                    pane, id=next_layer, type="timevalues",
+                    name="MELODY • pYIN F0 / PITCH TRACK", model=model_id,
+                    plotStyle=2, verticalScale=1,
+                    drawDivisions="true", fillSegments="false",
+                    colourName="Orange", colour="#ff9632", darkBackground="false",
+                )
+                next_layer += 1
+
+        if melody_notes:
+            model_id, ds_id = dataset_id, dataset_id + 1
+            dataset_id += 2
+            if _add_notes_model(
+                data, model_id=model_id, dataset_id=ds_id,
+                name="MELODY • pYIN note transcription",
+                sample_rate=master_sr, events=melody_notes.get("events", []),
+            ):
+                _layer(
+                    pane, id=next_layer, type="notes",
+                    name="MELODY • pYIN NOTES", model=model_id,
+                    verticalScale=1, scaleMinimum=0, scaleMaximum=0,
+                    colourName="Blue", colour="#000080", darkBackground="false",
+                )
+                next_layer += 1
+
+    polyphonic_notes = vamp_analyses.get("polyphonic_notes")
+    if polyphonic_notes and polyphonic_notes.get("events"):
+        pane = ET.SubElement(display, "view", {
+            "centre": "0", "zoom": "1024", "followPan": "1", "followZoom": "1",
+            "tracking": "page", "type": "pane",
+            "name": "NOTES • Silvet polyphonic transcription",
+        })
+        _layer(
+            pane, id=next_layer, type="waveform",
+            name=f"REFERENCE • Master waveform for Silvet • {master.name}",
+            model=0, channel=-1, gain=0.45, pan=0,
+        )
+        next_layer += 1
+        model_id, ds_id = dataset_id, dataset_id + 1
+        dataset_id += 2
+        if _add_notes_model(
+            data, model_id=model_id, dataset_id=ds_id,
+            name="NOTES • Silvet polyphonic transcription",
+            sample_rate=master_sr, events=polyphonic_notes["events"],
+        ):
+            _layer(
+                pane, id=next_layer, type="notes",
+                name="NOTES • SILVET POLYPHONIC NOTES", model=model_id,
+                verticalScale=1, scaleMinimum=0, scaleMaximum=0,
+                colourName="Purple", colour="#8030c0", darkBackground="false",
+            )
+            next_layer += 1
+
+    structure = vamp_analyses.get("structure")
+    if structure and structure.get("events"):
+        pane = ET.SubElement(display, "view", {
+            "centre": "0", "zoom": "1024", "followPan": "1", "followZoom": "1",
+            "tracking": "page", "type": "pane",
+            "name": "STRUCTURE • Segmentino song sections",
+        })
+        model_id, ds_id = dataset_id, dataset_id + 1
+        dataset_id += 2
+        if _add_regions_model(
+            data, model_id=model_id, dataset_id=ds_id,
+            name="STRUCTURE • Segmentino sections",
+            sample_rate=master_sr, events=structure["events"],
+            units="segment-type",
+        ):
+            _layer(
+                pane, id=next_layer, type="regions",
+                name="STRUCTURE • SEGMENTINO", model=model_id,
+                verticalScale=1, plotStyle=1, fillColourMap="Magma",
+                colourMap=0, colourName="Green", colour="#008000",
+                darkBackground="false",
+            )
+            next_layer += 1
+
+    vamp_beats = vamp_analyses.get("vamp_beats")
+    vamp_bars = vamp_analyses.get("vamp_bars")
+    if vamp_beats or vamp_bars:
+        pane = ET.SubElement(display, "view", {
+            "centre": "0", "zoom": "1024", "followPan": "1", "followZoom": "1",
+            "tracking": "page", "type": "pane",
+            "name": "RHYTHM • Queen Mary Vamp beat/bar tracker",
+        })
+        for analysis_item, label, colour_name, colour in (
+            (vamp_beats, "VAMP BEAT", "Orange", "#ff9632"),
+            (vamp_bars, "VAMP BAR", "Purple", "#a050ff"),
+        ):
+            if not analysis_item:
+                continue
+            times = [float(event.get("start", 0.0)) for event in analysis_item.get("events", [])]
+            if not times:
+                continue
+            model_id, ds_id = dataset_id, dataset_id + 1
+            dataset_id += 2
+            _add_timeinstants_model(
+                data, model_id=model_id, dataset_id=ds_id,
+                name=f"RHYTHM • {label.lower()} positions",
+                sample_rate=master_sr, times=times, labels=[label] * len(times),
+            )
+            _layer(
+                pane, id=next_layer, type="timeinstants",
+                name=f"RHYTHM • {label} POSITIONS", model=model_id,
+                plotStyle=0, colourName=colour_name, colour=colour,
+            )
+            next_layer += 1
 
     # Every separated WAV gets its own synchronized waveform + spectrogram pane,
     # with redundant explicit labels in both the pane and each layer.

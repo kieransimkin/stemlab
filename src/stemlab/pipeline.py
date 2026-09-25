@@ -18,6 +18,7 @@ from .sonic import build_session
 from .speech import isolate_and_transcribe
 from .spectrogram import generate_spectrogram
 from .types import BeatResult, PipelineConfig, SeparationResult, StemArtifact
+from .vamp import run_vamp_analysis
 from .util import sha256_file, slugify, write_json
 
 ProgressFn = Callable[[str], None]
@@ -57,8 +58,9 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
     spec_dir = out / "spectrograms"
     beats_dir = out / "beats"
     speech_dir = out / "speech"
+    vamp_dir = out / "vamp"
     sonic_dir = out / "sonic_visualiser"
-    for d in (input_dir, stems_dir, spec_dir, beats_dir, speech_dir, sonic_dir):
+    for d in (input_dir, stems_dir, spec_dir, beats_dir, speech_dir, vamp_dir, sonic_dir):
         d.mkdir(parents=True, exist_ok=True)
 
     master = input_dir / src.name
@@ -84,6 +86,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
         "spectrograms": [],
         "beats": [],
         "speech": None,
+        "vamp": None,
         "errors": [],
     }
 
@@ -201,6 +204,54 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 if not config.continue_on_error:
                     raise
 
+    vamp_result = None
+    if config.run_vamp:
+        melody_source = _vocal_candidate(all_stems)
+        progress("Vamp Plugin Pack: melody, harmony, tonality, notes and structure")
+        try:
+            vamp_result = run_vamp_analysis(
+                master,
+                melody_source,
+                vamp_dir,
+                bootstrap_external=config.bootstrap_external,
+            )
+            analysis["vamp"] = {
+                "sonic_annotator": vamp_result.get("sonic_annotator"),
+                "report": str((vamp_dir / "report.json").relative_to(out)),
+                "melody_source": (
+                    str(Path(vamp_result["melody_source"]).relative_to(out))
+                    if vamp_result.get("melody_source")
+                    else None
+                ),
+                "missing_outputs": vamp_result.get("missing_outputs", []),
+                "skipped": vamp_result.get("skipped", []),
+                "errors": vamp_result.get("errors", []),
+                "analyses": [
+                    {
+                        "slug": item.get("slug"),
+                        "title": item.get("title"),
+                        "transform": item.get("transform"),
+                        "target": item.get("target"),
+                        "kind": item.get("kind"),
+                        "units": item.get("units"),
+                        "event_count": item.get("event_count"),
+                        "files": {
+                            key: (
+                                str(Path(value).relative_to(out))
+                                if value is not None
+                                else None
+                            )
+                            for key, value in item.get("files", {}).items()
+                        },
+                    }
+                    for item in vamp_result.get("analyses", [])
+                ],
+            }
+        except Exception as exc:
+            analysis["errors"].append(_error_record("vamp", exc))
+            if not config.continue_on_error:
+                raise
+
     beat_results: list[BeatResult] = []
     if config.run_beats:
         beat_backends = [
@@ -243,7 +294,14 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
 
     progress("Sonic Visualiser session")
     try:
-        sv, xml = build_session(sonic_dir, master, all_stems, beat_results, whisper_result)
+        sv, xml = build_session(
+            sonic_dir,
+            master,
+            all_stems,
+            beat_results,
+            whisper_result,
+            vamp=vamp_result,
+        )
         analysis["sonic_visualiser"] = {
             "session": str(sv.relative_to(out)),
             "xml": str(xml.relative_to(out)),

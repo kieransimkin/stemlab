@@ -33,9 +33,10 @@ def analyze(
     no_spectrograms: Annotated[bool, typer.Option("--no-spectrograms")] = False,
     no_whisper: Annotated[bool, typer.Option("--no-whisper")] = False,
     no_beats: Annotated[bool, typer.Option("--no-beats")] = False,
+    no_vamp: Annotated[bool, typer.Option("--no-vamp", help="Skip Vamp Plugin Pack melody/harmony analysis")] = False,
     beat_transformer_single_fold: Annotated[bool, typer.Option("--beat-transformer-single-fold", help="Use one released fold instead of all eight")]=False,
 ):
-    """Run separation, speech/Whisper, spectrograms, three beat trackers and SV export."""
+    """Run separation, speech, Vamp melody/harmony analysis, beat tracking and SV export."""
     models = tuple(model) if model else resolve_profile(profile)
     invalid = [m for m in models if m not in MODEL_REGISTRY]
     if invalid:
@@ -51,6 +52,7 @@ def analyze(
         make_spectrograms=not no_spectrograms,
         run_whisper=not no_whisper,
         run_beats=not no_beats,
+        run_vamp=not no_vamp,
         beat_transformer_ensemble=not beat_transformer_single_fold,
     )
     console.print(f"[bold]StemLab[/bold] device={device_string(device)} models={', '.join(models)}")
@@ -75,9 +77,9 @@ def list_models():
 
 @app.command()
 def bootstrap(
-    target: Annotated[str, typer.Argument(help="scnet, beat-transformer, or all")] = "all",
+    target: Annotated[str, typer.Argument(help="scnet, beat-transformer, vamp, or all")] = "all",
 ):
-    """Install/cache external research runtimes that do not have stable pip APIs."""
+    """Install/cache external runtimes, including Sonic Annotator + the Vamp Plugin Pack."""
     result = do_bootstrap(target)
     console.print_json(json.dumps(result))
 
@@ -91,6 +93,20 @@ def doctor():
         table.add_row(p, "installed" if importlib.util.find_spec(p) else "missing")
     table.add_row("git", shutil.which("git") or "missing")
     table.add_row("sonic-visualiser", shutil.which("sonic-visualiser") or shutil.which("sonic-visualiser.exe") or "not on PATH")
+    try:
+        from .vamp_runtime import probe_vamp_runtime
+
+        vamp = probe_vamp_runtime()
+        table.add_row("sonic-annotator", vamp.get("annotator") or "missing")
+        if vamp.get("ready"):
+            vamp_status = "ready"
+        else:
+            missing = vamp.get("missing", [])
+            vamp_status = f"missing {len(missing)} requested output(s)"
+        table.add_row("Vamp Plugin Pack", vamp_status)
+    except Exception as exc:
+        table.add_row("sonic-annotator", "unavailable")
+        table.add_row("Vamp Plugin Pack", f"probe failed: {exc}")
     table.add_row("auto device", device_string("auto"))
     console.print(table)
 

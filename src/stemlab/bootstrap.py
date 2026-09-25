@@ -119,6 +119,16 @@ def bootstrap(name: str) -> dict:
     if name in {"beat-transformer", "beat_transformer"}:
         repo = ensure_beat_transformer_repo(True)
         return {"repo": str(repo)}
+    if name in {"vamp", "vamp-pack", "vamp_plugin_pack"}:
+        # Import lazily so the Vamp runtime can reuse CACHE_ROOT/_download from
+        # this module without creating a module-import cycle.
+        from .vamp_runtime import bootstrap_vamp
+
+        return bootstrap_vamp()
     if name == "all":
-        return {"scnet": bootstrap("scnet"), "beat_transformer": bootstrap("beat-transformer")}
+        return {
+            "scnet": bootstrap("scnet"),
+            "beat_transformer": bootstrap("beat-transformer"),
+            "vamp": bootstrap("vamp"),
+        }
     raise ValueError(f"Unknown bootstrap target: {name}")

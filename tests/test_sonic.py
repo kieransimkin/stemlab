@@ -97,3 +97,55 @@ def test_empty_beat_results_produce_visible_diagnostic_layer(tmp_path, monkeypat
         for point in dataset.findall("point")
     ]
     assert any("NO BEAT EVENTS" in label for label in labels)
+
+
+def test_vamp_melody_and_harmony_layers_are_embedded(tmp_path, monkeypatch):
+    master = tmp_path / "master.wav"
+    master.write_bytes(b"fake")
+    monkeypatch.setattr("stemlab.sonic.audio_info", lambda p: {"sample_rate": 44100})
+
+    vamp = {
+        "analyses": [
+            {
+                "slug": "chords",
+                "events": [
+                    {"start": 0.0, "end": 1.0, "values": [], "label": "C"},
+                    {"start": 1.0, "end": 2.0, "values": [], "label": "G7"},
+                ],
+            },
+            {
+                "slug": "key",
+                "events": [
+                    {"start": 0.0, "end": 2.0, "values": [1.0], "label": ""},
+                ],
+            },
+            {
+                "slug": "melody_pitch",
+                "events": [
+                    {"start": 0.0, "end": 0.1, "values": [440.0], "label": ""},
+                    {"start": 0.1, "end": 0.2, "values": [493.883], "label": ""},
+                ],
+            },
+            {
+                "slug": "melody_notes",
+                "events": [
+                    {"start": 0.0, "end": 0.5, "values": [440.0], "label": ""},
+                ],
+            },
+        ]
+    }
+
+    _sv, xml = build_session(tmp_path / "sv", master, [], [], vamp=vamp)
+    root = ET.fromstring(xml.read_bytes())
+    data = root.find("data")
+    display = root.find("display")
+    assert data is not None
+    assert display is not None
+
+    layer_types = {layer.attrib.get("type") for layer in data.findall("layer")}
+    assert "regions" in layer_types
+    assert "timevalues" in layer_types
+    assert "notes" in layer_types
+    pane_names = [view.attrib.get("name", "") for view in display.findall("view")]
+    assert any(name.startswith("HARMONY") for name in pane_names)
+    assert any(name.startswith("MELODY") for name in pane_names)

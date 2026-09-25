@@ -55,4 +55,5 @@ class PipelineConfig:
     make_spectrograms: bool = True
     run_whisper: bool = True
     run_beats: bool = True
+    run_vamp: bool = True
     beat_transformer_ensemble: bool = True

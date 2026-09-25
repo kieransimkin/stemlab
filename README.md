@@ -37,6 +37,16 @@ Beat analysis runs:
 
 Beat outputs are stored as JSON, TSV, and (for Beat Transformer) activation NPZ data.
 
+StemLab also supports the official **Vamp Plugin Pack**, executed through
+**Sonic Annotator**. The curated Vamp pass focuses on musically useful outputs:
+Chordino chord transcription and harmonic-change likelihood; NNLS chroma and
+bass chroma; Queen Mary key and tonal-change detection; concert-pitch tuning;
+pYIN melody/F0 and monophonic note transcription on the preferred separated
+vocal stem; Silvet polyphonic note transcription; Segmentino song-structure
+segmentation; and the Queen Mary Vamp beat/bar tracker. Raw CSV, pinned
+transform files, JSON, NPZ and plots are retained under `vamp/`, with the most
+useful melody/harmony layers also embedded in the Sonic Visualiser session.
+
 ## Install
 
 Python 3.10 or 3.11 is recommended because the legacy BeatNet/madmom ecosystem is less predictable on newer Python versions.
@@ -48,11 +58,21 @@ python -m pip install -U pip
 pip install -e ".[all]"
 ```
 
-SCNet and Beat Transformer are research repositories rather than stable pip inference APIs. They are isolated/downloaded on demand. To prepare them in advance:
+SCNet and Beat Transformer are research repositories rather than stable pip inference APIs. They are isolated/downloaded on demand. To prepare everything in advance:
 
 ```bash
 stemlab bootstrap all
 ```
+
+For only the Vamp analysis stack:
+
+```bash
+stemlab bootstrap vamp
+```
+
+`bootstrap vamp` downloads the pinned Sonic Annotator runtime and launches the
+official Vamp Plugin Pack installer. Complete the installer once, then rerun the
+command if needed to verify that the requested plugin outputs are visible.
 
 ## CLI
 
@@ -74,6 +94,9 @@ stemlab analyze master.wav -o ./analysis-master \
 
 # Fail immediately rather than recording a backend failure and continuing
 stemlab analyze master.wav -o ./analysis-master --strict
+
+# Skip Vamp if the plugin pack is intentionally not installed
+stemlab analyze master.wav -o ./analysis-master --no-vamp
 
 stemlab models
 stemlab doctor
@@ -111,6 +134,13 @@ analysis-master/
     beat_this.json / beat_this.tsv
     beat_transformer.json / beat_transformer.tsv
     beat_transformer_activations.npz
+  vamp/
+    report.json
+    transforms/*.n3
+    raw/*.csv
+    data/*.json
+    data/*.npz
+    plots/*.png
   sonic_visualiser/
     session.sv
     session.xml
