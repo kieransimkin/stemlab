@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StemLab Timeline</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">STEMLAB</div>
+        <h1>Audio analysis timeline</h1>
+      </div>
+      <div id="connectionBadge" class="badge muted">offline</div>
+    </header>
+
+    <main>
+      <section id="uploadView" class="upload-view">
+        <div id="dropZone" class="drop-zone" tabindex="0">
+          <div class="drop-icon">↥</div>
+          <h2>Drop an audio file here</h2>
+          <p>or choose a file to upload and analyse</p>
+          <button id="chooseButton" class="primary">Choose audio</button>
+          <input id="fileInput" type="file" accept="audio/*,.wav,.flac,.mp3,.ogg,.opus,.m4a,.aif,.aiff" hidden>
+          <div id="uploadProgressWrap" class="progress-wrap hidden">
+            <div class="progress-track"><div id="uploadProgress" class="progress-fill"></div></div>
+            <div id="uploadLabel" class="small"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="timelineView" class="timeline-view hidden">
+        <div class="session-bar">
+          <div class="session-ident">
+            <strong id="songName">Audio</strong>
+            <code id="songHash"></code>
+          </div>
+          <div class="transport">
+            <button id="playButton" class="icon-button" title="Play / pause">▶</button>
+            <span id="timeDisplay" class="time-display">00:00.000 / 00:00.000</span>
+            <button id="fitButton" class="button">Fit</button>
+            <label class="zoom-control">
+              <span>Zoom</span>
+              <input id="zoomSlider" type="range" min="0" max="100" value="20">
+            </label>
+            <label class="follow-control">
+              <input id="followPlayhead" type="checkbox" checked>
+              <span>Follow</span>
+            </label>
+          </div>
+          <div class="status-cluster">
+            <span id="jobState" class="badge">submitted</span>
+            <span id="laneCount" class="small">0 lanes</span>
+          </div>
+        </div>
+
+        <audio id="audioPlayer" preload="metadata"></audio>
+
+        <div class="workspace">
+          <div id="timelineScroller" class="timeline-scroller">
+            <div id="timelineInner" class="timeline-inner">
+              <div id="rulerRow" class="ruler-row">
+                <div class="lane-label ruler-label">TIME</div>
+                <div id="rulerTrack" class="ruler-track"></div>
+              </div>
+              <div id="lanes"></div>
+              <div id="playhead" class="playhead"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-dock">
+          <details open>
+            <summary>Analysis log</summary>
+            <div id="log" class="log"></div>
+          </details>
+          <div class="window-readout">
+            <span id="windowDisplay">00:00.000 — 00:00.000</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

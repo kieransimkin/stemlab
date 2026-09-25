@@ -1,0 +1,1405 @@
+diff --git a/src/stemlab/server.py b/src/stemlab/server.py
+--- a/src/stemlab/server.py
++++ b/src/stemlab/server.py
+@@ -830,14 +830,8 @@
+ @http_app.get("/")
+-async def service_index() -> dict[str, Any]:
+-    return {
+-        "service": "stemlab",
+-        "upload": "PUT /upload/{filename}",
+-        "socket_io_path": "/socket.io",
+-        "subscribe_event": "subscribe",
+-        "results": "GET /{sha256}",
+-        "status": "GET /jobs/{sha256}",
+-        "results_root": str(settings.results_dir),
+-    }
++async def service_index():
++    from .webui import index_response
++
++    return index_response()
+ 
+ 
+ @http_app.get("/healthz")
+@@ -993,4 +993,13 @@
+     return root, target
+ 
+ 
++from .webui import install_routes as _install_web_routes
++
++_install_web_routes(
++    http_app,
++    results_dir_provider=lambda: settings.results_dir,
++    scheduler_provider=_scheduler_from_app,
++)
++
++
+ def _directory_listing(song_hash: str, root: Path, directory: Path) -> HTMLResponse:
+diff --git a/pyproject.toml b/pyproject.toml
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -51,4 +51,7 @@
+ [tool.setuptools.packages.find]
+ where = ["src"]
+ 
++[tool.setuptools.package-data]
++stemlab = ["web/*.html", "web/*.css", "web/*.js"]
++
+ [tool.ruff]
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -170,4 +170,27 @@
+ stemlab serve --results ./results --host 0.0.0.0 --port 8000   --scheduler-jobs 1 --profile full --device auto
+ ```
+ 
++Opening `http://localhost:8000/` serves a modern upload/timeline workspace.
++After an HTTP PUT completes and returns its SHA-256, the browser immediately
++switches into a Sonic-Visualiser-style sequence view. Every generated analysis
++artifact is represented by a lane on one shared horizontal song timeline.
++Waveforms, spectrograms, beats/downbeats, Whisper words, Vamp curves,
++notes/segments and generic artifacts all share the same playhead, seek
++position, horizontal pan and zoom.
++
++The browser listens to the existing Socket.IO room for the uploaded hash.
++`new_file` events add lanes while analysis is still running, while
++`process_output`, `process_history` and `job_status` update the live log and
++status display. A lightweight inventory poll means refreshing or reconnecting
++to an existing hash reconstructs lanes already present on disk.
++
++Additional timeline endpoints are exposed under `/api`:
++
++```text
++GET /api/<hash>/timeline
++GET /api/<hash>/source
++GET /api/<hash>/waveform?path=...
++GET /api/<hash>/spectrogram?path=spectrograms/...npz
++```
++
+ Upload arbitrary audio bytes with HTTP PUT. The filename is retained only as
+diff --git a/src/stemlab/webui.py b/src/stemlab/webui.py
+new file mode 100644
+--- /dev/null
++++ b/src/stemlab/webui.py
+@@ -0,0 +1,300 @@
++from __future__ import annotations
++
++import asyncio
++import io
++import re
++from pathlib import Path
++from typing import Any, Callable
++from urllib.parse import quote
++
++try:
++    from fastapi import FastAPI, HTTPException
++    from fastapi.responses import FileResponse, JSONResponse, Response
++except ImportError as exc:  # pragma: no cover - server extra controls this path
++    raise RuntimeError(
++        "StemLab's web UI requires the server dependencies. "
++        'Install them with `pip install -e ".[server]"` or `pip install -e ".[all]"`.'
++    ) from exc
++
++
++_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
++_WEB_ROOT = Path(__file__).with_name("web")
++
++
++def _normalise_hash(value: str) -> str:
++    value = str(value).strip().lower()
++    if not _HASH_RE.fullmatch(value):
++        raise ValueError("song hash must be a 64-character SHA-256 hex digest")
++    return value
++
++
++def index_response() -> FileResponse:
++    index = _WEB_ROOT / "index.html"
++    if not index.is_file():
++        raise HTTPException(status_code=500, detail="StemLab web assets are missing")
++    return FileResponse(index, media_type="text/html")
++
++
++def _source_audio_path(results_dir: Path, song_hash: str) -> Path:
++    song_hash = _normalise_hash(song_hash)
++    source_dir = (results_dir / song_hash / ".source").resolve()
++    candidates = sorted(source_dir.glob("upload.*")) if source_dir.is_dir() else []
++    if not candidates:
++        raise FileNotFoundError(f"uploaded source for {song_hash} is not available")
++    return candidates[0]
++
++
++def _public_result_path(results_dir: Path, song_hash: str, rel_path: str) -> tuple[Path, Path]:
++    song_hash = _normalise_hash(song_hash)
++    root = (results_dir / song_hash).resolve()
++    if not root.is_dir():
++        raise FileNotFoundError(song_hash)
++
++    rel = Path(rel_path)
++    if rel.is_absolute() or any(part in {"", ".", ".."} or part.startswith(".") for part in rel.parts):
++        raise ValueError("invalid public result path")
++
++    target = (root / rel).resolve()
++    try:
++        target.relative_to(root)
++    except ValueError as exc:
++        raise ValueError("invalid public result path") from exc
++    return root, target
++
++
++def _visible_files(workdir: Path) -> dict[str, tuple[int, int]]:
++    found: dict[str, tuple[int, int]] = {}
++    if not workdir.exists():
++        return found
++    for path in workdir.rglob("*"):
++        if not path.is_file():
++            continue
++        try:
++            rel = path.relative_to(workdir)
++        except ValueError:
++            continue
++        if any(part.startswith(".") for part in rel.parts):
++            continue
++        try:
++            stat = path.stat()
++        except OSError:
++            continue
++        found[rel.as_posix()] = (int(stat.st_size), int(stat.st_mtime_ns))
++    return found
++
++
++def _waveform_envelope(audio_path: Path, points: int = 12000) -> dict[str, Any]:
++    """Return a compact min/max waveform envelope on the source song timeline."""
++    import numpy as np
++    import soundfile as sf
++
++    points = max(128, min(20000, int(points)))
++    data, sample_rate = sf.read(str(audio_path), dtype="float32", always_2d=True)
++    if data.size == 0:
++        return {
++            "sample_rate": int(sample_rate),
++            "duration_seconds": 0.0,
++            "frames": 0,
++            "points": 0,
++            "min": [],
++            "max": [],
++        }
++
++    mono = data.mean(axis=1, dtype=np.float32)
++    frames = int(mono.shape[0])
++    bucket = max(1, int(np.ceil(frames / points)))
++    buckets = int(np.ceil(frames / bucket))
++    padded = buckets * bucket
++    if padded != frames:
++        mono = np.pad(mono, (0, padded - frames), mode="constant", constant_values=np.nan)
++    shaped = mono.reshape(buckets, bucket)
++    mins = np.nanmin(shaped, axis=1)
++    maxs = np.nanmax(shaped, axis=1)
++    mins = np.nan_to_num(mins, nan=0.0)
++    maxs = np.nan_to_num(maxs, nan=0.0)
++    return {
++        "sample_rate": int(sample_rate),
++        "duration_seconds": float(frames / sample_rate) if sample_rate else 0.0,
++        "frames": frames,
++        "points": buckets,
++        "min": mins.astype(float).tolist(),
++        "max": maxs.astype(float).tolist(),
++    }
++
++
++def _spectrogram_strip_png(
++    data_path: Path,
++    *,
++    max_width: int = 8192,
++    max_height: int = 768,
++) -> bytes:
++    """Render a margin-free spectrogram strip suitable for exact time alignment."""
++    import matplotlib
++
++    matplotlib.use("Agg")
++    import matplotlib.image as mpimg
++    import numpy as np
++
++    max_width = max(256, min(16384, int(max_width)))
++    max_height = max(64, min(2048, int(max_height)))
++
++    with np.load(data_path, allow_pickle=False) as payload:
++        matrix = np.asarray(payload["magnitude_db"], dtype=np.float32)
++
++    if matrix.ndim != 2 or not matrix.size:
++        raise ValueError("spectrogram dataset is empty or has an unexpected shape")
++
++    freq_stride = max(1, int(np.ceil(matrix.shape[0] / max_height)))
++    time_stride = max(1, int(np.ceil(matrix.shape[1] / max_width)))
++    matrix = matrix[::freq_stride, ::time_stride]
++
++    buffer = io.BytesIO()
++    mpimg.imsave(
++        buffer,
++        matrix,
++        format="png",
++        origin="lower",
++        cmap="magma",
++        vmin=-100.0,
++        vmax=0.0,
++    )
++    return buffer.getvalue()
++
++
++def install_routes(
++    app: FastAPI,
++    *,
++    results_dir_provider: Callable[[], Path],
++    scheduler_provider: Callable[[], Any],
++) -> None:
++    """Register UI/API routes before StemLab's generic result-tree catch-alls."""
++
++    @app.get("/assets/{name}")
++    async def web_asset(name: str):
++        if "/" in name or "\\" in name or name.startswith("."):
++            raise HTTPException(status_code=404, detail="asset not found")
++        target = (_WEB_ROOT / name).resolve()
++        try:
++            target.relative_to(_WEB_ROOT.resolve())
++        except ValueError as exc:
++            raise HTTPException(status_code=404, detail="asset not found") from exc
++        if not target.is_file():
++            raise HTTPException(status_code=404, detail="asset not found")
++        return FileResponse(target)
++
++    @app.get("/api")
++    async def service_api_index() -> dict[str, Any]:
++        return {
++            "service": "stemlab",
++            "upload": "PUT /upload/{filename}",
++            "socket_io_path": "/socket.io",
++            "subscribe_event": "subscribe",
++            "results": "GET /{sha256}",
++            "status": "GET /jobs/{sha256}",
++            "timeline": "GET /api/{sha256}/timeline",
++            "source_audio": "GET /api/{sha256}/source",
++            "waveform": "GET /api/{sha256}/waveform?path=...",
++            "spectrogram": "GET /api/{sha256}/spectrogram?path=...",
++            "results_root": str(results_dir_provider()),
++        }
++
++    @app.get("/api/{song_hash}/timeline")
++    async def timeline_state(song_hash: str) -> dict[str, Any]:
++        try:
++            song_hash = _normalise_hash(song_hash)
++        except ValueError as exc:
++            raise HTTPException(status_code=400, detail=str(exc)) from exc
++
++        results_dir = results_dir_provider()
++        root = (results_dir / song_hash).resolve()
++        if not root.is_dir():
++            raise HTTPException(status_code=404, detail="result hash not found")
++
++        files = [
++            {
++                "path": path,
++                "bytes": size,
++                "mtime_ns": mtime_ns,
++                "url": f"/{song_hash}/{quote(path)}",
++            }
++            for path, (size, mtime_ns) in sorted(_visible_files(root).items())
++        ]
++
++        duration_seconds = None
++        try:
++            import soundfile as sf
++
++            info = sf.info(str(_source_audio_path(results_dir, song_hash)))
++            duration_seconds = float(info.frames / info.samplerate) if info.samplerate else None
++        except Exception:
++            pass
++
++        return {
++            "hash": song_hash,
++            "status": scheduler_provider().status(song_hash),
++            "duration_seconds": duration_seconds,
++            "source_url": f"/api/{song_hash}/source",
++            "files": files,
++        }
++
++    @app.get("/api/{song_hash}/source")
++    async def source_audio(song_hash: str):
++        try:
++            source = _source_audio_path(results_dir_provider(), song_hash)
++        except (ValueError, FileNotFoundError) as exc:
++            raise HTTPException(status_code=404, detail="source audio not found") from exc
++        return FileResponse(source)
++
++    @app.get("/api/{song_hash}/waveform")
++    async def timeline_waveform(
++        song_hash: str,
++        path: str = "__source__",
++        points: int = 12000,
++    ) -> JSONResponse:
++        try:
++            song_hash = _normalise_hash(song_hash)
++            results_dir = results_dir_provider()
++            if path == "__source__":
++                audio_path = _source_audio_path(results_dir, song_hash)
++            else:
++                _root, audio_path = _public_result_path(results_dir, song_hash, path)
++                if not audio_path.is_file():
++                    raise FileNotFoundError(audio_path)
++            envelope = await asyncio.to_thread(_waveform_envelope, audio_path, points)
++        except ValueError as exc:
++            raise HTTPException(status_code=400, detail=str(exc)) from exc
++        except (FileNotFoundError, OSError, RuntimeError) as exc:
++            raise HTTPException(status_code=404, detail="audio waveform source not found") from exc
++        return JSONResponse(envelope)
++
++    @app.get("/api/{song_hash}/spectrogram")
++    async def timeline_spectrogram(
++        song_hash: str,
++        path: str,
++        max_width: int = 8192,
++        max_height: int = 768,
++    ) -> Response:
++        try:
++            song_hash = _normalise_hash(song_hash)
++            results_dir = results_dir_provider()
++            root, data_path = _public_result_path(results_dir, song_hash, path)
++            rel = data_path.relative_to(root)
++            if not rel.parts or rel.parts[0] != "spectrograms" or data_path.suffix.lower() != ".npz":
++                raise ValueError("path is not a StemLab spectrogram dataset")
++            if not data_path.is_file():
++                raise FileNotFoundError(data_path)
++            png = await asyncio.to_thread(
++                _spectrogram_strip_png,
++                data_path,
++                max_width=max_width,
++                max_height=max_height,
++            )
++        except ValueError as exc:
++            raise HTTPException(status_code=400, detail=str(exc)) from exc
++        except (FileNotFoundError, OSError) as exc:
++            raise HTTPException(status_code=404, detail="spectrogram dataset not found") from exc
++        except Exception as exc:
++            # The scheduler may observe a just-created NPZ before its ZIP
++            # central directory is fully flushed. The browser retries 409s.
++            raise HTTPException(status_code=409, detail=f"spectrogram not ready: {exc}") from exc
++        return Response(content=png, media_type="image/png")
+diff --git a/src/stemlab/web/index.html b/src/stemlab/web/index.html
+new file mode 100644
+--- /dev/null
++++ b/src/stemlab/web/index.html
+@@ -0,0 +1,90 @@
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>StemLab Timeline</title>
++  <link rel="stylesheet" href="/assets/style.css">
++</head>
++<body>
++  <div class="app-shell">
++    <header class="topbar">
++      <div>
++        <div class="eyebrow">STEMLAB</div>
++        <h1>Audio analysis timeline</h1>
++      </div>
++      <div id="connectionBadge" class="badge muted">offline</div>
++    </header>
++
++    <main>
++      <section id="uploadView" class="upload-view">
++        <div id="dropZone" class="drop-zone" tabindex="0">
++          <div class="drop-icon">↥</div>
++          <h2>Drop an audio file here</h2>
++          <p>or choose a file to upload and analyse</p>
++          <button id="chooseButton" class="primary">Choose audio</button>
++          <input id="fileInput" type="file" accept="audio/*,.wav,.flac,.mp3,.ogg,.opus,.m4a,.aif,.aiff" hidden>
++          <div id="uploadProgressWrap" class="progress-wrap hidden">
++            <div class="progress-track"><div id="uploadProgress" class="progress-fill"></div></div>
++            <div id="uploadLabel" class="small"></div>
++          </div>
++        </div>
++      </section>
++
++      <section id="timelineView" class="timeline-view hidden">
++        <div class="session-bar">
++          <div class="session-ident">
++            <strong id="songName">Audio</strong>
++            <code id="songHash"></code>
++          </div>
++          <div class="transport">
++            <button id="playButton" class="icon-button" title="Play / pause">▶</button>
++            <span id="timeDisplay" class="time-display">00:00.000 / 00:00.000</span>
++            <button id="fitButton" class="button">Fit</button>
++            <label class="zoom-control">
++              <span>Zoom</span>
++              <input id="zoomSlider" type="range" min="0" max="100" value="20">
++            </label>
++            <label class="follow-control">
++              <input id="followPlayhead" type="checkbox" checked>
++              <span>Follow</span>
++            </label>
++          </div>
++          <div class="status-cluster">
++            <span id="jobState" class="badge">submitted</span>
++            <span id="laneCount" class="small">0 lanes</span>
++          </div>
++        </div>
++
++        <audio id="audioPlayer" preload="metadata"></audio>
++
++        <div class="workspace">
++          <div id="timelineScroller" class="timeline-scroller">
++            <div id="timelineInner" class="timeline-inner">
++              <div id="rulerRow" class="ruler-row">
++                <div class="lane-label ruler-label">TIME</div>
++                <div id="rulerTrack" class="ruler-track"></div>
++              </div>
++              <div id="lanes"></div>
++              <div id="playhead" class="playhead"></div>
++            </div>
++          </div>
++        </div>
++
++        <div class="bottom-dock">
++          <details open>
++            <summary>Analysis log</summary>
++            <div id="log" class="log"></div>
++          </details>
++          <div class="window-readout">
++            <span id="windowDisplay">00:00.000 — 00:00.000</span>
++          </div>
++        </div>
++      </section>
++    </main>
++  </div>
++
++  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
++  <script type="module" src="/assets/app.js"></script>
++</body>
++</html>
+diff --git a/src/stemlab/web/style.css b/src/stemlab/web/style.css
+new file mode 100644
+--- /dev/null
++++ b/src/stemlab/web/style.css
+@@ -0,0 +1,157 @@
++:root {
++  color-scheme: dark;
++  --bg: #0b0d12;
++  --panel: #121620;
++  --panel-2: #181e2b;
++  --line: #2c3446;
++  --line-soft: #202636;
++  --text: #e8edf8;
++  --muted: #8e9ab2;
++  --accent: #7ee787;
++  --accent-2: #79c0ff;
++  --danger: #ff7b72;
++  --warning: #d2a8ff;
++  --label-width: 230px;
++  --track-width: 1200px;
++  --lane-height: 92px;
++  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
++}
++
++* { box-sizing: border-box; }
++html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
++body { overflow: hidden; }
++button, input { font: inherit; }
++
++.app-shell { height: 100vh; display: grid; grid-template-rows: auto 1fr; }
++.topbar {
++  min-height: 74px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
++  border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #121722, #0f131c);
++}
++.topbar h1 { margin: 1px 0 0; font-size: 20px; font-weight: 650; }
++.eyebrow { color: var(--accent); letter-spacing: .18em; font-weight: 800; font-size: 11px; }
++.hidden { display: none !important; }
++.small { color: var(--muted); font-size: 12px; }
++
++.badge {
++  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line);
++  background: #171d29; border-radius: 999px; padding: 5px 9px; font-size: 12px; text-transform: lowercase;
++}
++.badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
++.badge.muted::before { background: var(--muted); }
++.badge.failed::before, .badge.timed_out::before { background: var(--danger); }
++.badge.running::before { background: var(--accent-2); box-shadow: 0 0 10px rgba(121,192,255,.7); }
++.badge.queued::before, .badge.submitted::before { background: #e3b341; }
++.badge.completed::before { background: var(--accent); }
++
++main { min-height: 0; }
++.upload-view { height: 100%; display: grid; place-items: center; padding: 24px; }
++.drop-zone {
++  width: min(720px, 92vw); min-height: 390px; display: grid; place-items: center; align-content: center; gap: 10px;
++  border: 1px dashed #43506b; background: radial-gradient(circle at 50% 0%, #1d2638 0, #111620 55%);
++  border-radius: 22px; transition: border-color .15s, transform .15s, background .15s;
++  outline: none;
++}
++.drop-zone.dragging { border-color: var(--accent-2); transform: scale(1.01); background: #131b29; }
++.drop-zone h2 { margin: 0; font-size: 28px; }
++.drop-zone p { margin: 0 0 14px; color: var(--muted); }
++.drop-icon { width: 66px; height: 66px; border-radius: 18px; display: grid; place-items: center; font-size: 34px;
++  border: 1px solid #34405a; background: #161d2a; color: var(--accent-2); }
++
++.primary, .button, .icon-button {
++  border: 1px solid #3b465e; background: #1a2230; color: var(--text); border-radius: 9px; cursor: pointer;
++}
++.primary { padding: 10px 18px; background: #238636; border-color: #2ea043; font-weight: 700; }
++.button { padding: 6px 10px; }
++.icon-button { width: 38px; height: 34px; display: grid; place-items: center; }
++.primary:hover, .button:hover, .icon-button:hover { filter: brightness(1.12); }
++
++.progress-wrap { width: min(480px, 80%); margin-top: 18px; }
++.progress-track { height: 7px; border-radius: 7px; background: #252c3a; overflow: hidden; }
++.progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width .12s; }
++
++.timeline-view { height: 100%; min-height: 0; display: grid; grid-template-rows: auto 1fr auto; }
++.session-bar {
++  min-height: 58px; display: grid; grid-template-columns: minmax(260px, 1fr) auto minmax(180px, auto);
++  align-items: center; gap: 18px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel);
++}
++.session-ident { min-width: 0; display: grid; gap: 3px; }
++.session-ident strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
++.session-ident code { color: var(--muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; }
++.transport { display: flex; align-items: center; gap: 9px; }
++.time-display { font-variant-numeric: tabular-nums; min-width: 164px; color: #dbe7ff; font-size: 12px; }
++.zoom-control, .follow-control { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
++.zoom-control input { width: 130px; }
++.status-cluster { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
++
++.workspace { min-height: 0; position: relative; }
++.timeline-scroller { position: absolute; inset: 0; overflow: auto; background: #0d1017; }
++.timeline-inner { min-height: 100%; width: calc(var(--label-width) + var(--track-width)); position: relative; }
++.ruler-row, .lane {
++  width: calc(var(--label-width) + var(--track-width));
++  display: grid; grid-template-columns: var(--label-width) var(--track-width);
++}
++.ruler-row { height: 34px; position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--line); background: #111620; }
++.lane { min-height: var(--lane-height); border-bottom: 1px solid var(--line-soft); position: relative; background: #0f131b; }
++.lane:nth-child(even) { background: #10151e; }
++.lane-label {
++  position: sticky; left: 0; z-index: 25; padding: 10px 12px; border-right: 1px solid var(--line);
++  background: linear-gradient(90deg, #151b26 0, #151b26 92%, rgba(21,27,38,.92) 100%);
++  overflow: hidden;
++}
++.lane-label .title { font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
++.lane-label .meta { color: var(--muted); font-size: 10px; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
++.ruler-label { display: flex; align-items: center; font-size: 10px; color: var(--muted); letter-spacing: .1em; }
++
++.lane-track, .ruler-track { width: var(--track-width); position: relative; overflow: hidden; }
++.lane-track { min-height: var(--lane-height); cursor: crosshair; background-image: linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size: 100px 100%; }
++.ruler-track { height: 34px; }
++.tick { position: absolute; bottom: 0; width: 1px; background: #536078; height: 10px; }
++.tick.major { height: 16px; background: #76849d; }
++.tick-label { position: absolute; top: 3px; transform: translateX(4px); color: #9da9bf; font-size: 10px; font-variant-numeric: tabular-nums; }
++
++.playhead {
++  position: absolute; top: 0; bottom: 0; width: 1px; z-index: 35; background: #ff6b6b;
++  pointer-events: none; box-shadow: 0 0 8px rgba(255,107,107,.6);
++}
++.playhead::before { content: ""; position: absolute; top: 0; left: -4px; width: 9px; height: 9px; background: #ff6b6b; clip-path: polygon(0 0,100% 0,50% 100%); }
++
++.waveform-canvas, .matrix-canvas, .spectrogram-image, .preview-image, .curve-svg {
++  width: 100%; height: 100%; display: block; position: absolute; inset: 0;
++}
++.waveform-canvas { opacity: .95; }
++.spectrogram-image, .preview-image { object-fit: fill; image-rendering: auto; }
++.preview-image { opacity: .8; }
++
++.marker { position: absolute; top: 0; bottom: 0; width: 1px; background: #f2cc60; opacity: .9; }
++.marker.downbeat { width: 2px; background: #ff7b72; }
++.marker-label { position: absolute; top: 4px; transform: translateX(3px); font-size: 9px; color: #f5d98b; white-space: nowrap; }
++
++.event-block {
++  position: absolute; top: 18px; height: 48px; min-width: 2px; border: 1px solid rgba(255,255,255,.18);
++  border-radius: 5px; background: rgba(121,192,255,.22); overflow: hidden; color: #dbeafe;
++  font-size: 10px; padding: 4px 6px; white-space: nowrap; text-overflow: ellipsis;
++}
++.event-block:nth-child(3n+1) { background: rgba(126,231,135,.2); }
++.event-block:nth-child(3n+2) { background: rgba(210,168,255,.2); }
++.note-block { position: absolute; height: 7px; border-radius: 4px; background: #79c0ff; min-width: 2px; opacity: .9; }
++
++.artifact-band {
++  position: absolute; left: 6px; right: 6px; top: 22px; height: 46px; border: 1px dashed #43506b;
++  border-radius: 7px; display: flex; align-items: center; gap: 10px; padding: 0 12px; color: var(--muted);
++  background: rgba(42,49,67,.35); font-size: 11px;
++}
++.artifact-band a { color: var(--accent-2); }
++
++.bottom-dock { min-height: 90px; max-height: 210px; display: grid; grid-template-columns: 1fr auto; border-top: 1px solid var(--line); background: var(--panel); }
++.bottom-dock details { min-height: 0; overflow: hidden; }
++.bottom-dock summary { cursor: pointer; padding: 8px 12px; color: var(--muted); font-size: 12px; }
++.log { height: 140px; overflow: auto; padding: 0 12px 10px; font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; color: #b9c5da; }
++.log .stderr { color: #ffb4ab; }
++.window-readout { padding: 10px 14px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; align-self: end; }
++
++@media (max-width: 900px) {
++  :root { --label-width: 170px; }
++  .session-bar { grid-template-columns: 1fr; gap: 8px; }
++  .transport { flex-wrap: wrap; }
++  .status-cluster { justify-content: flex-start; }
++}
+diff --git a/src/stemlab/web/app.js b/src/stemlab/web/app.js
+new file mode 100644
+--- /dev/null
++++ b/src/stemlab/web/app.js
+@@ -0,0 +1,710 @@
++const $ = (selector) => document.querySelector(selector);
++
++const uploadView = $("#uploadView");
++const timelineView = $("#timelineView");
++const dropZone = $("#dropZone");
++const fileInput = $("#fileInput");
++const chooseButton = $("#chooseButton");
++const uploadProgressWrap = $("#uploadProgressWrap");
++const uploadProgress = $("#uploadProgress");
++const uploadLabel = $("#uploadLabel");
++
++const audio = $("#audioPlayer");
++const playButton = $("#playButton");
++const fitButton = $("#fitButton");
++const zoomSlider = $("#zoomSlider");
++const followPlayhead = $("#followPlayhead");
++const timelineScroller = $("#timelineScroller");
++const timelineInner = $("#timelineInner");
++const lanesNode = $("#lanes");
++const rulerTrack = $("#rulerTrack");
++const playhead = $("#playhead");
++const timeDisplay = $("#timeDisplay");
++const windowDisplay = $("#windowDisplay");
++const songName = $("#songName");
++const songHash = $("#songHash");
++const jobState = $("#jobState");
++const laneCount = $("#laneCount");
++const logNode = $("#log");
++const connectionBadge = $("#connectionBadge");
++
++const LABEL_WIDTH = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--label-width")) || 230;
++const AUDIO_EXTENSIONS = new Set(["wav", "flac", "mp3", "ogg", "opus", "m4a", "aif", "aiff"]);
++
++function escapeHtml(value) {
++  return String(value ?? "").replace(/[&<>"']/g, ch => ({
++    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
++  })[ch]);
++}
++
++function fmtTime(seconds) {
++  seconds = Math.max(0, Number(seconds) || 0);
++  const minutes = Math.floor(seconds / 60);
++  const secs = Math.floor(seconds % 60);
++  const millis = Math.floor((seconds - Math.floor(seconds)) * 1000);
++  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
++}
++
++function fileExt(path) {
++  const base = String(path).split("/").pop() || "";
++  const pos = base.lastIndexOf(".");
++  return pos >= 0 ? base.slice(pos + 1).toLowerCase() : "";
++}
++
++function basename(path) {
++  return String(path).split("/").pop() || String(path);
++}
++
++function prettyPath(path) {
++  return String(path)
++    .replace(/^stems\//, "")
++    .replace(/^spectrograms\//, "")
++    .replace(/^vamp\/data\//, "Vamp · ")
++    .replace(/^beats\//, "Beats · ")
++    .replace(/^speech\//, "Speech · ")
++    .replace(/[_-]+/g, " ");
++}
++
++function uploadFile(file) {
++  return new Promise((resolve, reject) => {
++    const xhr = new XMLHttpRequest();
++    xhr.open("PUT", `/upload/${encodeURIComponent(file.name)}`);
++    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
++    xhr.upload.onprogress = event => {
++      uploadProgressWrap.classList.remove("hidden");
++      const ratio = event.lengthComputable ? event.loaded / event.total : 0;
++      uploadProgress.style.width = `${Math.round(ratio * 100)}%`;
++      uploadLabel.textContent = event.lengthComputable
++        ? `${Math.round(ratio * 100)}% · ${(event.loaded / 1048576).toFixed(1)} / ${(event.total / 1048576).toFixed(1)} MiB`
++        : `${(event.loaded / 1048576).toFixed(1)} MiB uploaded`;
++    };
++    xhr.onerror = () => reject(new Error("Upload failed"));
++    xhr.onload = () => {
++      let payload = {};
++      try { payload = JSON.parse(xhr.responseText); } catch {}
++      if (xhr.status < 200 || xhr.status >= 300) {
++        reject(new Error(payload.detail || `Upload failed (${xhr.status})`));
++        return;
++      }
++      resolve(payload);
++    };
++    xhr.send(file);
++  });
++}
++
++class Timeline {
++  constructor() {
++    this.hash = null;
++    this.filename = null;
++    this.duration = 0;
++    this.fitPps = 4;
++    this.pps = 8;
++    this.zoomValue = 20;
++    this.lanes = new Map();
++    this.files = new Map();
++    this.socket = null;
++    this.raf = null;
++    this.refreshTimer = null;
++    this.autoScrollLock = false;
++    this.bindUI();
++  }
++
++  bindUI() {
++    playButton.addEventListener("click", () => {
++      if (!this.duration) return;
++      if (audio.paused) audio.play().catch(error => this.appendLog("stderr", error.message));
++      else audio.pause();
++    });
++    audio.addEventListener("play", () => {
++      playButton.textContent = "❚❚";
++      this.startAnimation();
++    });
++    audio.addEventListener("pause", () => {
++      playButton.textContent = "▶";
++      this.drawPlayhead();
++    });
++    audio.addEventListener("ended", () => {
++      playButton.textContent = "▶";
++      this.drawPlayhead();
++    });
++    audio.addEventListener("loadedmetadata", () => {
++      this.duration = Number(audio.duration) || this.duration || 0;
++      this.recomputeFit();
++      this.setZoom(this.zoomValue, false);
++      this.drawRuler();
++      this.drawPlayhead();
++      this.refreshWindowReadout();
++      this.ensureSourceLane();
++    });
++    fitButton.addEventListener("click", () => this.fit());
++    zoomSlider.addEventListener("input", event => this.setZoom(Number(event.target.value), true));
++    timelineScroller.addEventListener("scroll", () => this.refreshWindowReadout());
++    timelineScroller.addEventListener("click", event => this.seekFromPointer(event));
++    window.addEventListener("resize", () => {
++      const oldFit = this.fitPps;
++      this.recomputeFit();
++      if (this.zoomValue <= 1 || Math.abs(this.pps - oldFit) < 0.05) this.fit();
++      this.refreshWindowReadout();
++    });
++  }
++
++  async open(hash, filename) {
++    this.hash = hash;
++    this.filename = filename || "uploaded audio";
++    songName.textContent = this.filename;
++    songHash.textContent = hash;
++    uploadView.classList.add("hidden");
++    timelineView.classList.remove("hidden");
++
++    audio.src = `/api/${hash}/source`;
++    audio.load();
++
++    this.connectSocket();
++    await this.refreshTimeline();
++
++    clearInterval(this.refreshTimer);
++    this.refreshTimer = setInterval(() => this.refreshTimeline().catch(() => {}), 2500);
++  }
++
++  connectSocket() {
++    if (this.socket) this.socket.disconnect();
++    if (typeof window.io !== "function") {
++      connectionBadge.textContent = "polling";
++      connectionBadge.classList.add("muted");
++      this.appendLog("stderr", "Socket.IO browser client unavailable; timeline inventory polling remains active.");
++      return;
++    }
++    this.socket = window.io({ path: "/socket.io" });
++    this.socket.on("connect", () => {
++      connectionBadge.textContent = "live";
++      connectionBadge.classList.remove("muted");
++      this.socket.emit("subscribe", { hash: this.hash });
++    });
++    this.socket.on("disconnect", () => {
++      connectionBadge.textContent = "reconnecting";
++      connectionBadge.classList.add("muted");
++    });
++    this.socket.on("process_output", event => {
++      this.appendLog(event.stream || "stdout", event.line || "");
++    });
++    this.socket.on("process_history", event => {
++      for (const line of event.stdout || []) this.appendLog("stdout", line);
++      for (const line of event.stderr || []) this.appendLog("stderr", line);
++    });
++    this.socket.on("new_file", event => {
++      if (!event.path) return;
++      this.addFile({ path: event.path, bytes: event.bytes, mtime_ns: event.mtime_ns });
++    });
++    this.socket.on("job_status", event => {
++      this.setJobStatus(event.status || {});
++      this.refreshTimeline().catch(() => {});
++    });
++    this.socket.on("job_timeout", event => {
++      this.appendLog("stderr", `Job timeout: ${event.message || "analysis exceeded timeout"}`);
++    });
++  }
++
++  async refreshTimeline() {
++    if (!this.hash) return;
++    const response = await fetch(`/api/${this.hash}/timeline`, { cache: "no-store" });
++    if (!response.ok) return;
++    const state = await response.json();
++    this.setJobStatus(state.status || {});
++    if (!this.duration && state.duration_seconds) {
++      this.duration = Number(state.duration_seconds);
++      this.recomputeFit();
++      this.setZoom(this.zoomValue, false);
++    }
++    for (const file of state.files || []) this.addFile(file);
++  }
++
++  setJobStatus(status) {
++    const state = status.state || "submitted";
++    jobState.textContent = state;
++    jobState.className = `badge ${state}`;
++  }
++
++  recomputeFit() {
++    if (!this.duration) return;
++    const available = Math.max(320, timelineScroller.clientWidth - LABEL_WIDTH() - 16);
++    this.fitPps = Math.max(0.4, available / this.duration);
++  }
++
++  fit() {
++    this.recomputeFit();
++    this.zoomValue = 0;
++    zoomSlider.value = "0";
++    this.setPps(this.fitPps, 0);
++  }
++
++  setZoom(value, preserveCenter = true) {
++    this.zoomValue = value;
++    const multiplier = Math.pow(2, value / 18);
++    const next = Math.max(this.fitPps || 0.4, (this.fitPps || 0.4) * multiplier);
++    let centerTime = 0;
++    if (preserveCenter && this.pps > 0) {
++      centerTime = Math.max(0, (timelineScroller.scrollLeft + timelineScroller.clientWidth / 2 - LABEL_WIDTH()) / this.pps);
++    }
++    this.setPps(next, preserveCenter ? centerTime : null);
++  }
++
++  setPps(pps, centerTime = null) {
++    this.pps = Math.max(0.2, pps);
++    const trackWidth = Math.max(1, this.duration * this.pps);
++    document.documentElement.style.setProperty("--track-width", `${trackWidth}px`);
++    this.drawRuler();
++    this.drawPlayhead();
++    if (centerTime !== null) {
++      requestAnimationFrame(() => {
++        timelineScroller.scrollLeft = Math.max(0, LABEL_WIDTH() + centerTime * this.pps - timelineScroller.clientWidth / 2);
++        this.refreshWindowReadout();
++      });
++    }
++  }
++
++  drawRuler() {
++    rulerTrack.innerHTML = "";
++    if (!this.duration || !this.pps) return;
++    const candidateSteps = [0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600];
++    const step = candidateSteps.find(value => value * this.pps >= 70) || candidateSteps.at(-1);
++    const minor = step / 5;
++    const fragment = document.createDocumentFragment();
++
++    for (let t = 0; t <= this.duration + 1e-6; t += minor) {
++      const major = Math.abs((t / step) - Math.round(t / step)) < 1e-5;
++      const tick = document.createElement("div");
++      tick.className = `tick ${major ? "major" : ""}`;
++      tick.style.left = `${t * this.pps}px`;
++      fragment.appendChild(tick);
++      if (major) {
++        const label = document.createElement("div");
++        label.className = "tick-label";
++        label.style.left = `${t * this.pps}px`;
++        label.textContent = fmtTime(t).slice(0, -4);
++        fragment.appendChild(label);
++      }
++    }
++    rulerTrack.appendChild(fragment);
++  }
++
++  seekFromPointer(event) {
++    if (!this.duration || event.target.closest(".lane-label")) return;
++    const rect = timelineScroller.getBoundingClientRect();
++    const contentX = event.clientX - rect.left + timelineScroller.scrollLeft - LABEL_WIDTH();
++    if (contentX < 0) return;
++    const time = Math.max(0, Math.min(this.duration, contentX / this.pps));
++    audio.currentTime = time;
++    this.drawPlayhead();
++  }
++
++  startAnimation() {
++    cancelAnimationFrame(this.raf);
++    const step = () => {
++      this.drawPlayhead();
++      if (!audio.paused && !audio.ended) this.raf = requestAnimationFrame(step);
++    };
++    this.raf = requestAnimationFrame(step);
++  }
++
++  drawPlayhead() {
++    const time = Number(audio.currentTime) || 0;
++    playhead.style.left = `${LABEL_WIDTH() + time * this.pps}px`;
++    timeDisplay.textContent = `${fmtTime(time)} / ${fmtTime(this.duration)}`;
++
++    if (!audio.paused && followPlayhead.checked && !this.autoScrollLock) {
++      const x = LABEL_WIDTH() + time * this.pps;
++      const left = timelineScroller.scrollLeft;
++      const right = left + timelineScroller.clientWidth;
++      const margin = Math.min(180, timelineScroller.clientWidth * 0.2);
++      if (x > right - margin) {
++        this.autoScrollLock = true;
++        timelineScroller.scrollLeft = Math.max(0, x - timelineScroller.clientWidth + margin);
++        this.autoScrollLock = false;
++      }
++    }
++    this.refreshWindowReadout();
++  }
++
++  refreshWindowReadout() {
++    if (!this.duration || !this.pps) return;
++    const leftPixels = Math.max(0, timelineScroller.scrollLeft - LABEL_WIDTH());
++    const rightPixels = Math.max(0, timelineScroller.scrollLeft + timelineScroller.clientWidth - LABEL_WIDTH());
++    const start = Math.max(0, Math.min(this.duration, leftPixels / this.pps));
++    const end = Math.max(start, Math.min(this.duration, rightPixels / this.pps));
++    windowDisplay.textContent = `${fmtTime(start)} — ${fmtTime(end)}`;
++  }
++
++  appendLog(stream, line) {
++    if (!line) return;
++    const row = document.createElement("div");
++    row.className = stream === "stderr" ? "stderr" : "stdout";
++    row.textContent = `[${stream}] ${line}`;
++    logNode.appendChild(row);
++    while (logNode.children.length > 800) logNode.firstChild.remove();
++    logNode.scrollTop = logNode.scrollHeight;
++  }
++
++  createLane(key, title, meta, kind) {
++    if (this.lanes.has(key)) return this.lanes.get(key);
++    const lane = document.createElement("div");
++    lane.className = `lane lane-${kind}`;
++    lane.dataset.key = key;
++
++    const label = document.createElement("div");
++    label.className = "lane-label";
++    label.innerHTML = `<div class="title">${escapeHtml(title)}</div><div class="meta">${escapeHtml(meta || kind)}</div>`;
++
++    const track = document.createElement("div");
++    track.className = "lane-track";
++    lane.append(label, track);
++    lanesNode.appendChild(lane);
++
++    const item = { lane, label, track, kind, rendered: false };
++    this.lanes.set(key, item);
++    laneCount.textContent = `${this.lanes.size} lane${this.lanes.size === 1 ? "" : "s"}`;
++    return item;
++  }
++
++  ensureSourceLane() {
++    if (!this.hash || !this.duration) return;
++    const key = "__source__";
++    const lane = this.createLane(key, "MASTER · uploaded source", this.filename, "waveform");
++    if (lane.rendered) return;
++    lane.rendered = true;
++    this.renderWaveform(lane.track, "__source__");
++  }
++
++  addFile(file) {
++    if (!file?.path || this.files.has(file.path)) return;
++    this.files.set(file.path, file);
++    const path = file.path;
++    const ext = fileExt(path);
++    const key = `file:${path}`;
++
++    if (AUDIO_EXTENSIONS.has(ext)) {
++      const lane = this.createLane(key, prettyPath(path), "audio waveform", "waveform");
++      lane.rendered = true;
++      this.renderWaveform(lane.track, path);
++      return;
++    }
++
++    if (path.startsWith("spectrograms/") && ext === "npz") {
++      const lane = this.createLane(key, prettyPath(path), "spectrogram data · exact song timeline", "spectrogram");
++      lane.rendered = true;
++      this.renderSpectrogram(lane.track, path);
++      return;
++    }
++
++    if (path.startsWith("spectrograms/") && ext === "png") {
++      const lane = this.createLane(key, prettyPath(path), "rendered spectrogram PNG", "image");
++      lane.rendered = true;
++      const image = new Image();
++      image.className = "preview-image";
++      image.src = `/${this.hash}/${path.split("/").map(encodeURIComponent).join("/")}`;
++      lane.track.appendChild(image);
++      return;
++    }
++
++    if (path.startsWith("beats/") && ext === "json") {
++      const lane = this.createLane(key, prettyPath(path), "beat / downbeat events", "events");
++      lane.rendered = true;
++      this.fetchJson(path).then(data => this.renderBeats(lane.track, data)).catch(error => this.renderArtifact(lane.track, path, error.message));
++      return;
++    }
++
++    if (path.startsWith("vamp/data/") && ext === "json") {
++      const lane = this.createLane(key, prettyPath(path), "Vamp feature analysis", "feature");
++      lane.rendered = true;
++      this.fetchJson(path).then(data => this.renderVamp(lane.track, data)).catch(error => this.renderArtifact(lane.track, path, error.message));
++      return;
++    }
++
++    if (path === "speech/whisper.json") {
++      const lane = this.createLane(key, "Speech · Whisper words", "word-aligned transcript", "words");
++      lane.rendered = true;
++      this.fetchJson(path).then(data => this.renderWords(lane.track, data.words || [])).catch(error => this.renderArtifact(lane.track, path, error.message));
++      return;
++    }
++
++    const lane = this.createLane(key, prettyPath(path), `${ext || "file"} · ${Number(file.bytes || 0).toLocaleString()} bytes`, "artifact");
++    lane.rendered = true;
++    this.renderArtifact(lane.track, path);
++  }
++
++  async fetchJson(path) {
++    const response = await fetch(`/${this.hash}/${path.split("/").map(encodeURIComponent).join("/")}`, { cache: "no-store" });
++    if (!response.ok) throw new Error(`HTTP ${response.status}`);
++    return response.json();
++  }
++
++  async renderWaveform(track, path) {
++    const params = new URLSearchParams({ path, points: "12000" });
++    const response = await fetch(`/api/${this.hash}/waveform?${params}`);
++    if (!response.ok) {
++      this.renderArtifact(track, path, `waveform unavailable (${response.status})`);
++      return;
++    }
++    const data = await response.json();
++    if (!this.duration && data.duration_seconds) {
++      this.duration = data.duration_seconds;
++      this.recomputeFit();
++      this.setZoom(this.zoomValue, false);
++    }
++
++    const canvas = document.createElement("canvas");
++    canvas.className = "waveform-canvas";
++    const width = Math.max(1, data.min.length);
++    canvas.width = width;
++    canvas.height = 180;
++    const ctx = canvas.getContext("2d");
++    ctx.clearRect(0, 0, canvas.width, canvas.height);
++    ctx.strokeStyle = "#79c0ff";
++    ctx.lineWidth = 1;
++    ctx.beginPath();
++    const mid = canvas.height / 2;
++    const scale = canvas.height * 0.46;
++    for (let i = 0; i < width; i++) {
++      const x = i + 0.5;
++      ctx.moveTo(x, mid - (Number(data.max[i]) || 0) * scale);
++      ctx.lineTo(x, mid - (Number(data.min[i]) || 0) * scale);
++    }
++    ctx.stroke();
++    track.appendChild(canvas);
++  }
++
++  async renderSpectrogram(track, path, attempt = 0) {
++    const params = new URLSearchParams({ path, max_width: "8192", max_height: "768" });
++    const response = await fetch(`/api/${this.hash}/spectrogram?${params}`, { cache: "no-store" });
++    if (!response.ok) {
++      if (attempt < 5 && [409, 423, 500].includes(response.status)) {
++        setTimeout(() => this.renderSpectrogram(track, path, attempt + 1), 1500 * (attempt + 1));
++        return;
++      }
++      this.renderArtifact(track, path, `spectrogram unavailable (${response.status})`);
++      return;
++    }
++    const blob = await response.blob();
++    const image = new Image();
++    image.className = "spectrogram-image";
++    image.src = URL.createObjectURL(blob);
++    image.onload = () => URL.revokeObjectURL(image.src);
++    track.appendChild(image);
++  }
++
++  renderBeats(track, data) {
++    const beats = Array.isArray(data.beats) ? data.beats : [];
++    const downbeats = new Set((data.downbeats || []).map(value => Number(value).toFixed(3)));
++    for (const value of beats) {
++      const time = Number(value);
++      if (!Number.isFinite(time) || !this.duration) continue;
++      const marker = document.createElement("div");
++      marker.className = `marker ${downbeats.has(time.toFixed(3)) ? "downbeat" : ""}`;
++      marker.style.left = `${(time / this.duration) * 100}%`;
++      track.appendChild(marker);
++    }
++  }
++
++  renderWords(track, words) {
++    for (const word of words) {
++      const start = Number(word.start);
++      const end = Number(word.end);
++      if (!Number.isFinite(start) || !this.duration) continue;
++      const block = document.createElement("div");
++      block.className = "event-block";
++      block.style.left = `${(start / this.duration) * 100}%`;
++      block.style.width = `${Math.max(0.08, ((Math.max(start + 0.03, end) - start) / this.duration) * 100)}%`;
++      block.textContent = String(word.word || "").trim();
++      block.title = `${block.textContent} · ${fmtTime(start)}`;
++      track.appendChild(block);
++    }
++  }
++
++  renderVamp(track, data) {
++    const events = Array.isArray(data.events) ? data.events : [];
++    const kind = String(data.kind || "");
++
++    if (kind === "curve") {
++      this.renderCurve(track, events);
++      return;
++    }
++    if (kind === "matrix") {
++      this.renderMatrix(track, events);
++      return;
++    }
++    if (kind === "notes") {
++      this.renderNotes(track, events);
++      return;
++    }
++    if (kind === "segments") {
++      this.renderSegments(track, events);
++      return;
++    }
++    if (kind === "events") {
++      for (const event of events) {
++        const start = Number(event.start);
++        if (!Number.isFinite(start) || !this.duration) continue;
++        const marker = document.createElement("div");
++        marker.className = "marker";
++        marker.style.left = `${(start / this.duration) * 100}%`;
++        track.appendChild(marker);
++      }
++      return;
++    }
++
++    const label = events[0]?.label || events[0]?.values?.join(", ") || data.title || "analysis";
++    const band = document.createElement("div");
++    band.className = "artifact-band";
++    band.textContent = label;
++    track.appendChild(band);
++  }
++
++  renderSegments(track, events) {
++    for (const event of events) {
++      const start = Number(event.start);
++      let end = Number(event.end);
++      if (!Number.isFinite(start) || !this.duration) continue;
++      if (!Number.isFinite(end) || end <= start) end = Math.min(this.duration, start + 0.5);
++      const block = document.createElement("div");
++      block.className = "event-block";
++      block.style.left = `${(start / this.duration) * 100}%`;
++      block.style.width = `${Math.max(0.08, ((end - start) / this.duration) * 100)}%`;
++      block.textContent = event.label || event.values?.[0] || "";
++      block.title = `${block.textContent} · ${fmtTime(start)} — ${fmtTime(end)}`;
++      track.appendChild(block);
++    }
++  }
++
++  renderNotes(track, events) {
++    const notes = events
++      .map(event => ({ event, freq: Number(event.values?.[0]) }))
++      .filter(item => Number.isFinite(item.freq) && item.freq > 0);
++    if (!notes.length) return;
++    const minLog = Math.log2(Math.max(20, Math.min(...notes.map(item => item.freq))));
++    const maxLog = Math.log2(Math.max(...notes.map(item => item.freq), 100));
++    for (const { event, freq } of notes) {
++      const start = Number(event.start) || 0;
++      let end = Number(event.end);
++      if (!Number.isFinite(end) || end <= start) end = start + 0.12;
++      const norm = (Math.log2(freq) - minLog) / Math.max(0.01, maxLog - minLog);
++      const block = document.createElement("div");
++      block.className = "note-block";
++      block.style.left = `${(start / this.duration) * 100}%`;
++      block.style.width = `${Math.max(0.04, ((end - start) / this.duration) * 100)}%`;
++      block.style.top = `${8 + (1 - norm) * 72}px`;
++      block.title = `${event.label || freq.toFixed(1) + " Hz"} · ${fmtTime(start)}`;
++      track.appendChild(block);
++    }
++  }
++
++  renderCurve(track, events) {
++    const points = events
++      .map(event => [Number(event.start), Number(event.values?.[0])])
++      .filter(([time, value]) => Number.isFinite(time) && Number.isFinite(value) && value > 0);
++    if (!points.length || !this.duration) return;
++    const values = points.map(point => point[1]);
++    const min = Math.min(...values);
++    const max = Math.max(...values);
++    const width = 2000;
++    const height = 180;
++    const coords = points.map(([time, value]) => {
++      const x = (time / this.duration) * width;
++      const y = height - ((value - min) / Math.max(1e-9, max - min)) * (height - 12) - 6;
++      return `${x.toFixed(2)},${y.toFixed(2)}`;
++    }).join(" ");
++    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
++    svg.classList.add("curve-svg");
++    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
++    svg.setAttribute("preserveAspectRatio", "none");
++    svg.innerHTML = `<polyline fill="none" stroke="#7ee787" stroke-width="2" vector-effect="non-scaling-stroke" points="${coords}"/>`;
++    track.appendChild(svg);
++  }
++
++  renderMatrix(track, events) {
++    const rows = events.map(event => event.values || []).filter(values => values.length);
++    if (!rows.length) return;
++    const bins = Math.max(...rows.map(values => values.length));
++    const canvas = document.createElement("canvas");
++    canvas.className = "matrix-canvas";
++    canvas.width = Math.min(4096, rows.length);
++    canvas.height = Math.min(256, bins);
++    const ctx = canvas.getContext("2d");
++    const image = ctx.createImageData(canvas.width, canvas.height);
++
++    for (let x = 0; x < canvas.width; x++) {
++      const sourceX = Math.min(rows.length - 1, Math.floor(x * rows.length / canvas.width));
++      const values = rows[sourceX];
++      const localMax = Math.max(1e-9, ...values.map(value => Number(value) || 0));
++      for (let y = 0; y < canvas.height; y++) {
++        const bin = Math.min(values.length - 1, Math.floor((canvas.height - 1 - y) * values.length / canvas.height));
++        const v = Math.max(0, Math.min(1, (Number(values[bin]) || 0) / localMax));
++        const idx = (y * canvas.width + x) * 4;
++        image.data[idx] = Math.round(40 + 180 * v);
++        image.data[idx + 1] = Math.round(35 + 110 * v);
++        image.data[idx + 2] = Math.round(80 + 170 * v);
++        image.data[idx + 3] = 255;
++      }
++    }
++    ctx.putImageData(image, 0, 0);
++    track.appendChild(canvas);
++  }
++
++  renderArtifact(track, path, note = "") {
++    if (track.querySelector(".artifact-band")) return;
++    const band = document.createElement("div");
++    band.className = "artifact-band";
++    const href = path && path !== "__source__"
++      ? `/${this.hash}/${path.split("/").map(encodeURIComponent).join("/")}`
++      : `/api/${this.hash}/source`;
++    band.innerHTML = `<span>${escapeHtml(note || "Generated analysis artifact")}</span><a href="${href}" target="_blank" rel="noopener">open</a>`;
++    track.appendChild(band);
++  }
++}
++
++const timeline = new Timeline();
++
++async function startUpload(file) {
++  if (!file) return;
++  uploadProgress.style.width = "0%";
++  uploadLabel.textContent = `Uploading ${file.name}`;
++  uploadProgressWrap.classList.remove("hidden");
++  try {
++    const response = await uploadFile(file);
++    uploadProgress.style.width = "100%";
++    uploadLabel.textContent = "Upload complete · attaching to analysis";
++    await timeline.open(response.hash, response.filename || file.name);
++  } catch (error) {
++    uploadLabel.textContent = error.message;
++    uploadProgress.style.width = "0%";
++  }
++}
++
++chooseButton.addEventListener("click", event => {
++  event.stopPropagation();
++  fileInput.click();
++});
++fileInput.addEventListener("change", () => startUpload(fileInput.files?.[0]));
++dropZone.addEventListener("click", event => {
++  if (event.target === chooseButton) return;
++  fileInput.click();
++});
++dropZone.addEventListener("keydown", event => {
++  if (event.key === "Enter" || event.key === " ") fileInput.click();
++});
++for (const name of ["dragenter", "dragover"]) {
++  dropZone.addEventListener(name, event => {
++    event.preventDefault();
++    dropZone.classList.add("dragging");
++  });
++}
++for (const name of ["dragleave", "drop"]) {
++  dropZone.addEventListener(name, event => {
++    event.preventDefault();
++    dropZone.classList.remove("dragging");
++  });
++}
++dropZone.addEventListener("drop", event => startUpload(event.dataTransfer?.files?.[0]));
++
++const hashFromLocation = new URLSearchParams(location.search).get("hash");
++if (hashFromLocation && /^[0-9a-f]{64}$/i.test(hashFromLocation)) {
++  timeline.open(hashFromLocation.toLowerCase(), "Existing analysis").catch(console.error);
++}
+diff --git a/tests/test_web_frontend.py b/tests/test_web_frontend.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_web_frontend.py
+@@ -0,0 +1,45 @@
++from pathlib import Path
++
++import numpy as np
++import pytest
++
++pytest.importorskip("fastapi")
++
++from stemlab.webui import _spectrogram_strip_png, _waveform_envelope
++
++
++def test_waveform_envelope_is_compact_and_time_aligned(tmp_path):
++    sf = pytest.importorskip("soundfile")
++    sample_rate = 8000
++    duration = 2.0
++    t = np.arange(int(sample_rate * duration), dtype=np.float32) / sample_rate
++    audio = (0.5 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
++    path = tmp_path / "tone.wav"
++    sf.write(path, audio, sample_rate, subtype="FLOAT")
++
++    result = _waveform_envelope(path, points=512)
++
++    assert result["duration_seconds"] == pytest.approx(duration, rel=1e-5)
++    assert 1 <= len(result["min"]) <= 512
++    assert len(result["min"]) == len(result["max"])
++    assert min(result["min"]) < 0
++    assert max(result["max"]) > 0
++
++
++def test_spectrogram_strip_is_margin_free_png(tmp_path):
++    path = tmp_path / "spec.npz"
++    matrix = np.linspace(-100.0, 0.0, 64 * 128, dtype=np.float32).reshape(64, 128)
++    np.savez_compressed(path, magnitude_db=matrix.astype(np.float16))
++
++    png = _spectrogram_strip_png(path, max_width=64, max_height=32)
++
++    assert png.startswith(b"\x89PNG\r\n\x1a\n")
++
++
++def test_frontend_assets_are_present():
++    import stemlab.webui as webui
++
++    web = Path(webui.__file__).with_name("web")
++    assert (web / "index.html").is_file()
++    assert (web / "style.css").is_file()
++    assert (web / "app.js").is_file()

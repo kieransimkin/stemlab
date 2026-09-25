@@ -828,16 +828,10 @@ def _scheduler_from_app() -> AnalysisScheduler:
 
 
 @http_app.get("/")
-async def service_index() -> dict[str, Any]:
-    return {
-        "service": "stemlab",
-        "upload": "PUT /upload/{filename}",
-        "socket_io_path": "/socket.io",
-        "subscribe_event": "subscribe",
-        "results": "GET /{sha256}",
-        "status": "GET /jobs/{sha256}",
-        "results_root": str(settings.results_dir),
-    }
+async def service_index():
+    from .webui import index_response
+
+    return index_response()
 
 
 @http_app.get("/healthz")
@@ -991,6 +985,15 @@ def _resolve_result_path(song_hash: str, rel_path: str = "") -> tuple[Path, Path
     if any(part.startswith(".") for part in Path(rel_path).parts):
         raise HTTPException(status_code=404, detail="not found")
     return root, target
+
+
+from .webui import install_routes as _install_web_routes
+
+_install_web_routes(
+    http_app,
+    results_dir_provider=lambda: settings.results_dir,
+    scheduler_provider=_scheduler_from_app,
+)
 
 
 def _directory_listing(song_hash: str, root: Path, directory: Path) -> HTMLResponse:

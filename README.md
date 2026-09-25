@@ -170,6 +170,29 @@ analysis concurrency:
 stemlab serve --results ./results --host 0.0.0.0 --port 8000   --scheduler-jobs 1 --profile full --device auto
 ```
 
+Opening `http://localhost:8000/` serves a modern upload/timeline workspace.
+After an HTTP PUT completes and returns its SHA-256, the browser immediately
+switches into a Sonic-Visualiser-style sequence view. Every generated analysis
+artifact is represented by a lane on one shared horizontal song timeline.
+Waveforms, spectrograms, beats/downbeats, Whisper words, Vamp curves,
+notes/segments and generic artifacts all share the same playhead, seek
+position, horizontal pan and zoom.
+
+The browser listens to the existing Socket.IO room for the uploaded hash.
+`new_file` events add lanes while analysis is still running, while
+`process_output`, `process_history` and `job_status` update the live log and
+status display. A lightweight inventory poll means refreshing or reconnecting
+to an existing hash reconstructs lanes already present on disk.
+
+Additional timeline endpoints are exposed under `/api`:
+
+```text
+GET /api/<hash>/timeline
+GET /api/<hash>/source
+GET /api/<hash>/waveform?path=...
+GET /api/<hash>/spectrogram?path=spectrograms/...npz
+```
+
 Upload arbitrary audio bytes with HTTP PUT. The filename is retained only as
 human-readable metadata; the content SHA-256 is the job identity:
 
