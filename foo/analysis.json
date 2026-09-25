@@ -1,6 +1,6 @@
 {
   "beats": [],
-  "completed_at": "2026-09-25T02:11:24.283663+00:00",
+  "completed_at": "2026-09-25T02:25:58.762073+00:00",
   "config": {
     "beat_transformer_ensemble": true,
     "bootstrap_external": true,
@@ -54,7 +54,7 @@
   ],
   "models": [
     {
-      "elapsed_seconds": 0.0025149999419227242,
+      "elapsed_seconds": 0.0033435000805184245,
       "error": "ModuleNotFoundError: No module named 'bs_roformer'",
       "metadata": {},
       "normalization": [],
@@ -79,7 +79,7 @@
       "stems": []
     },
     {
-      "elapsed_seconds": 0.0014992000069469213,
+      "elapsed_seconds": 0.001168800052255392,
       "error": "ModuleNotFoundError: No module named 'bs_roformer'",
       "metadata": {},
       "normalization": [],
@@ -97,7 +97,7 @@
       "stems": []
     },
     {
-      "elapsed_seconds": 3.125421699951403,
+      "elapsed_seconds": 3.077949000056833,
       "error": "CalledProcessError: Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\venv\\\\Scripts\\\\python.exe', '-m', 'pip', 'install', '-r', 'C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\repo\\\\requirements.txt']' returned non-zero exit status 1.",
       "metadata": {},
       "normalization": [],
@@ -120,51 +120,51 @@
       "stems": []
     },
     {
-      "elapsed_seconds": 232.00811269995756,
+      "elapsed_seconds": 235.69900060002692,
       "error": null,
       "metadata": {},
       "normalization": [
         {
-          "gain_db": -0.854703466312921,
+          "gain_db": -0.9017302861694372,
           "normalized": true,
           "path": "stems\\htdemucs_ft\\drums.wav",
-          "peak_after": 0.8912509083747864,
-          "peak_after_dbfs": -1.0000002900227403,
-          "peak_before": 0.9834112524986267,
-          "peak_before_dbfs": -0.14529653368707884,
+          "peak_after": 0.8912509679794312,
+          "peak_after_dbfs": -0.9999997091320568,
+          "peak_before": 0.9887500405311584,
+          "peak_before_dbfs": -0.09826971383056243,
           "stem": "drums",
           "target_peak_dbfs": -1.0
         },
         {
-          "gain_db": 2.484319587334862,
+          "gain_db": 2.4689489512585965,
           "normalized": true,
           "path": "stems\\htdemucs_ft\\bass.wav",
-          "peak_after": 0.8912509083747864,
-          "peak_after_dbfs": -1.0000002900227403,
-          "peak_before": 0.6695515513420105,
-          "peak_before_dbfs": -3.4843195873348614,
+          "peak_after": 0.8912509679794312,
+          "peak_after_dbfs": -0.9999997091320568,
+          "peak_before": 0.6707374453544617,
+          "peak_before_dbfs": -3.4689489512585956,
           "stem": "bass",
           "target_peak_dbfs": -1.0
         },
         {
-          "gain_db": 1.5066248331827994,
+          "gain_db": 1.5721053100084872,
           "normalized": true,
           "path": "stems\\htdemucs_ft\\other.wav",
           "peak_after": 0.8912509083747864,
           "peak_after_dbfs": -1.0000002900227403,
-          "peak_before": 0.7493224740028381,
-          "peak_before_dbfs": -2.5066248331827987,
+          "peak_before": 0.7436947822570801,
+          "peak_before_dbfs": -2.572105310008486,
           "stem": "other",
           "target_peak_dbfs": -1.0
         },
         {
-          "gain_db": -1.4194938657676417,
+          "gain_db": -1.3866246792544044,
           "normalized": true,
           "path": "stems\\htdemucs_ft\\vocals.wav",
-          "peak_after": 0.8912509083747864,
-          "peak_after_dbfs": -1.0000002900227403,
-          "peak_before": 1.0494812726974487,
-          "peak_before_dbfs": 0.4194938657676417,
+          "peak_after": 0.8912509679794312,
+          "peak_after_dbfs": -0.9999997091320568,
+          "peak_before": 1.0455173254013062,
+          "peak_before_dbfs": 0.38662467925440425,
           "stem": "vocals",
           "target_peak_dbfs": -1.0
         }
@@ -217,7 +217,7 @@
       ]
     },
     {
-      "elapsed_seconds": 11.044341899920255,
+      "elapsed_seconds": 11.220017899991944,
       "error": null,
       "metadata": {
         "niter": 0,
@@ -447,6 +447,6 @@
     }
   ],
   "speech": null,
-  "started_at": "2026-09-25T02:05:52.112622+00:00",
+  "started_at": "2026-09-25T02:20:27.814174+00:00",
   "stemlab_version": "0.1.0"
 }

@@ -20,6 +20,55 @@ def _layer(parent, **attrs):
     return ET.SubElement(parent, "layer", {k: str(v) for k, v in attrs.items()})
 
 
+def _canonicalise_session_layers(data, display) -> None:
+    """Convert inline layer definitions to Sonic Visualiser session layout.
+
+    Sonic Visualiser session files define each layer once inside ``<data>`` and
+    then reference that layer by id from one or more ``<view>`` elements.  SV's
+    reader can create a layer on the fly when it encounters an undefined layer
+    inside a view, but that is a compatibility fallback rather than the format
+    written by Sonic Visualiser itself.  Sparse annotation layers such as beat
+    instants and regions are more reliable when written canonically.
+    """
+    definitions: list[dict[str, str]] = []
+    seen_ids: set[str] = set()
+
+    for view in display.findall("view"):
+        # Required by SVFileReader::readView.
+        view.set("centreLineVisible", view.get("centreLineVisible", "1"))
+
+        for layer in view.findall("layer"):
+            attrs = dict(layer.attrib)
+            layer_id = attrs.get("id")
+            if not layer_id:
+                continue
+
+            if layer_id not in seen_ids:
+                definition = dict(attrs)
+                definition.pop("visible", None)
+                if definition.get("name") and not definition.get("presentationName"):
+                    definition["presentationName"] = definition["name"]
+                definitions.append(definition)
+                seen_ids.add(layer_id)
+
+            # A view contains a lightweight reference to an already-defined
+            # layer.  Keep the identifying fields for readability.
+            reference = {
+                key: attrs[key]
+                for key in ("id", "type", "name", "model")
+                if key in attrs
+            }
+            reference["visible"] = "true"
+            layer.attrib.clear()
+            layer.attrib.update(reference)
+
+    # SVFileReader requires all models to appear before the first layer.
+    # Appending definitions here guarantees that all model/dataset elements
+    # emitted during construction precede the layer definitions.
+    for attrs in definitions:
+        ET.SubElement(data, "layer", attrs)
+
+
 def _pretty_model(model: str) -> str:
     if model == "speech":
         return "Speech / Whisper"
@@ -54,7 +103,6 @@ def _add_timeinstants_model(
         "resolution": "1",
         "notifyOnAdd": "true",
         "dataset": str(dataset_id),
-        "subtype": "timeinstants",
     })
     ds = ET.SubElement(data, "dataset", {"id": str(dataset_id), "dimensions": "1"})
     labels = labels or [""] * len(times)
@@ -63,6 +111,35 @@ def _add_timeinstants_model(
             "frame": str(int(round(float(t) * sample_rate))),
             "label": str(label),
         })
+
+
+def _add_text_model(
+    data,
+    *,
+    model_id: int,
+    dataset_id: int,
+    name: str,
+    sample_rate: int,
+    text: str,
+) -> None:
+    """Add a Sonic Visualiser TextModel for prominent diagnostics."""
+    ET.SubElement(data, "model", {
+        "id": str(model_id),
+        "name": name,
+        "sampleRate": str(sample_rate),
+        "type": "sparse",
+        "dimensions": "2",
+        "resolution": "1",
+        "notifyOnAdd": "true",
+        "dataset": str(dataset_id),
+        "subtype": "text",
+    })
+    ds = ET.SubElement(data, "dataset", {"id": str(dataset_id), "dimensions": "2"})
+    ET.SubElement(ds, "point", {
+        "frame": "0",
+        "height": "0.5",
+        "label": text,
+    })
 
 
 def _beat_position_labels(beats: list[float], downbeats: list[float], tolerance: float = 0.09) -> list[str]:
@@ -196,6 +273,48 @@ def build_session(
 
     detector_results = [br for br in beats if br.model != "consensus"]
     consensus = next((br for br in beats if br.model == "consensus"), None)
+
+    # Do not let a detector failure look like a rendering failure.  If no beat
+    # events reached the session, make that fact visible inside Sonic Visualiser.
+    have_beat_events = any(br.beats for br in detector_results)
+    if consensus is not None and consensus.beats:
+        have_beat_events = True
+
+    if not have_beat_events:
+        diagnostic_model_id = dataset_id
+        diagnostic_ds_id = dataset_id + 1
+        dataset_id += 2
+        _add_text_model(
+            data,
+            model_id=diagnostic_model_id,
+            dataset_id=diagnostic_ds_id,
+            name="BEAT DIAGNOSTIC • no beat events available",
+            sample_rate=master_sr,
+            text=(
+                "NO BEAT EVENTS WERE PASSED TO SONIC VISUALISER — "
+                "check beats/*.json and analysis.json for detector errors"
+            ),
+        )
+        diagnostic_pane = ET.SubElement(display, "view", {
+            "centre": "0",
+            "zoom": "1024",
+            "followPan": "1",
+            "followZoom": "1",
+            "tracking": "page",
+            "type": "pane",
+            "name": "BEATS • DIAGNOSTIC • no events produced",
+        })
+        _layer(
+            diagnostic_pane,
+            id=next_layer,
+            type="text",
+            name="⚠ BEATS • NO EVENTS • see analysis.json",
+            model=diagnostic_model_id,
+            colourName="Red",
+            colour="#ff3050",
+            darkBackground="false",
+        )
+        next_layer += 1
 
     # Keep raw detector hypotheses in their own comparison pane.
     if detector_results:
@@ -478,6 +597,11 @@ def build_session(
 
     # Empty element is intentionally retained for normal SV session shape.
     selections.text = None
+
+    # Canonical Sonic Visualiser session structure: full layer definitions in
+    # <data>, followed by visible references from each pane.
+    _canonicalise_session_layers(data, display)
+
     tree = ET.ElementTree(root)
     try:
         ET.indent(tree, space="  ")
