@@ -85,6 +85,32 @@ def bootstrap(
 
 
 @app.command()
+def serve(
+    host: Annotated[str, typer.Option(help="HTTP listen address")] = "0.0.0.0",
+    port: Annotated[int, typer.Option(help="HTTP listen port")] = 8000,
+    results: Annotated[Path, typer.Option("--results", help="Content-addressed results root")] = Path("results"),
+    scheduler_jobs: Annotated[int, typer.Option("--scheduler-jobs", help="Maximum concurrent CLI analyses")] = 1,
+    profile: Annotated[str, typer.Option(help="Analysis profile for uploaded audio")] = "full",
+    device: Annotated[str, typer.Option(help="Device passed to StemLab analyses")] = "auto",
+):
+    """Expose StemLab as an HTTP PUT + Socket.IO analysis microservice."""
+    try:
+        from .server import run_server
+    except RuntimeError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+
+    run_server(
+        host=host,
+        port=port,
+        results_dir=results,
+        max_jobs=scheduler_jobs,
+        profile=profile,
+        device=device,
+    )
+
+
+@app.command()
 def doctor():
     """Check local dependencies and accelerators."""
     packages = ["torch", "torchaudio", "demucs", "openunmix", "bs_roformer", "faster_whisper", "beat_this", "BeatNet"]

@@ -152,6 +152,70 @@ analysis-master/
 
 `session.sv` is genuine Sonic Visualiser bzip2-compressed session XML. It contains a master pane with beat/downbeat/Whisper time-instant layers and one synchronized waveform + Sonic Visualiser spectrogram pane for every separated stem. The uncompressed `session.xml` is retained for inspection/debugging. The Windows `.bat` looks on `PATH` and in the usual Program Files locations.
 
+## HTTP / Socket.IO microservice
+
+Install the server dependencies through the full environment or the dedicated
+extra:
+
+```bash
+pip install -e ".[server]"
+# or
+pip install -e ".[all]"
+```
+
+Start the service with one ASGI process and let StemLab's own scheduler control
+analysis concurrency:
+
+```bash
+stemlab serve --results ./results --host 0.0.0.0 --port 8000   --scheduler-jobs 1 --profile full --device auto
+```
+
+Upload arbitrary audio bytes with HTTP PUT. The filename is retained only as
+human-readable metadata; the content SHA-256 is the job identity:
+
+```bash
+curl -T song.flac http://localhost:8000/upload/song.flac
+```
+
+The response contains the 64-character content hash. A result tree is created
+at `results/<hash>/`, and is browsable while analysis is running:
+
+```text
+GET /<hash>
+GET /<hash>/analysis.json
+GET /<hash>/manifest.json
+GET /<hash>/stems/...
+```
+
+Socket.IO clients connect to the normal `/socket.io` endpoint and emit:
+
+```json
+{"event": "subscribe", "data": {"hash": "<sha256>"}}
+```
+
+Subscribers to the same hash share the same running analysis and may connect
+from multiple clients. The service emits `job_status`, `process_output`,
+`process_history`, `new_file`, and `job_timeout` events. `process_output`
+contains the originating `stdout` or `stderr` stream. `new_file` contains the
+relative path and HTTP URL as soon as the scheduler sees a new generated file.
+
+Only one active analysis is permitted for a given SHA-256. Re-uploading
+identical bytes attaches to the existing job instead of starting another one.
+Completed hashes are served from cache. A stale job may be restarted only after
+a timeout calculated as at least ten times the average successful analysis
+duration, with a conservative 24-hour floor by default.
+
+The service intentionally uses one Uvicorn worker; use
+`--scheduler-jobs` to change the number of concurrent StemLab CLI processes.
+Multiple Uvicorn workers would create independent schedulers and defeat the
+one-job-per-hash guarantee.
+
+Useful environment variables include `STEMLAB_RESULTS_DIR`,
+`STEMLAB_SERVICE_MAX_JOBS`, `STEMLAB_SERVICE_PROFILE`,
+`STEMLAB_SERVICE_DEVICE`, `STEMLAB_SERVICE_CLI_ARGS`,
+`STEMLAB_SERVICE_MIN_TIMEOUT_SECONDS`, `STEMLAB_SERVICE_TIMEOUT_MULTIPLIER`,
+`STEMLAB_SERVICE_MAX_UPLOAD_BYTES`, and `STEMLAB_SERVICE_HISTORY_LINES`.
+
 ## Python API
 
 ```python

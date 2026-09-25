@@ -27,6 +27,11 @@ separation = [
 ]
 speech = ["faster-whisper"]
 beats = ["beat-this>=1.1.0", "BeatNet"]
+server = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "python-socketio>=5.12,<6",
+]
 dev = ["pytest>=8.0", "ruff>=0.6", "build>=1.2"]
 binary = ["nuitka>=2.7", "ordered-set>=4.1", "zstandard>=0.23"]
 all = [
@@ -35,6 +40,9 @@ all = [
   "faster-whisper",
   "beat-this>=1.1.0",
   "BeatNet",
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "python-socketio>=5.12,<6",
 ]
 
 [project.scripts]
