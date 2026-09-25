@@ -52,6 +52,7 @@ Contact = "https://kieransimkin.co.uk/contact/"
 separation = [
   "demucs>=4.0.1",
   "openunmix>=1.3.0",
+  "bs-roformer-infer>=0.1.5",
 ]
 speech = ["faster-whisper"]
 beats = ["beat-this>=1.1.0", "BeatNet"]
@@ -77,6 +78,7 @@ binary = ["nuitka>=2.7", "ordered-set>=4.1", "zstandard>=0.23"]
 all = [
   "demucs>=4.0.1",
   "openunmix>=1.3.0",
+  "bs-roformer-infer>=0.1.5",
   "faster-whisper",
   "beat-this>=1.1.0",
   "BeatNet",
