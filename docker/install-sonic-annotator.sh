@@ -20,5 +20,30 @@ if [[ -z "$binary" ]]; then
     echo "Sonic Annotator executable not found after extraction" >&2
     exit 1
 fi
-ln -sf "$binary" /usr/local/bin/sonic-annotator
+
+# The Linux "static" distribution is an AppImage. BuildKit containers do not
+# expose /dev/fuse, so running the AppImage directly fails even when libfuse2
+# is installed. Extract the AppImage once and invoke its AppRun entry point
+# from the extracted AppDir instead.
+appimage_root="$root/appimage"
+rm -rf "$appimage_root"
+mkdir -p "$appimage_root"
+
+if ! (cd "$appimage_root" && "$binary" --appimage-extract >/dev/null); then
+    echo "Failed to extract Sonic Annotator AppImage" >&2
+    exit 1
+fi
+
+app_run="$appimage_root/squashfs-root/AppRun"
+if [[ ! -x "$app_run" ]]; then
+    echo "Sonic Annotator AppImage AppRun not found after extraction" >&2
+    exit 1
+fi
+
+cat >/usr/local/bin/sonic-annotator <<EOF
+#!/usr/bin/env bash
+exec "$app_run" "\$@"
+EOF
+chmod +x /usr/local/bin/sonic-annotator
+
 sonic-annotator --version

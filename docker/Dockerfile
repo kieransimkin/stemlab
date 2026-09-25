@@ -27,7 +27,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libasound2 \
     libfftw3-double3 \
     libfftw3-dev \
-    libfuse2 \
     libgl1 \
     libglib2.0-0 \
     libgomp1 \
