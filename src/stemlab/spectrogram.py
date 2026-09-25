@@ -14,7 +14,7 @@ def generate_spectrogram(
     *,
     n_fft: int = 2094,
     hop_length: int = 126,
-    max_plot_frames: int = 5000,
+    max_plot_frames: int = 50000000,
 ) -> dict:
     import matplotlib
     matplotlib.use("Agg")

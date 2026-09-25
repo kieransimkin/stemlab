@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sv>
+  <data>
+    <model id="0" name="MASTER • Original mix • Chips and Ketchup.wav" sampleRate="44100" type="wavefile" file="../input/Chips and Ketchup.wav" mainModel="true" />
+    <model id="1" name="STEM • HTDemucs fine-tuned • drums" sampleRate="44100" type="wavefile" file="../stems/htdemucs_ft/drums.wav" mainModel="false" />
+    <model id="2" name="STEM • HTDemucs fine-tuned • bass" sampleRate="44100" type="wavefile" file="../stems/htdemucs_ft/bass.wav" mainModel="false" />
+    <model id="3" name="STEM • HTDemucs fine-tuned • other" sampleRate="44100" type="wavefile" file="../stems/htdemucs_ft/other.wav" mainModel="false" />
+    <model id="4" name="STEM • HTDemucs fine-tuned • vocals" sampleRate="44100" type="wavefile" file="../stems/htdemucs_ft/vocals.wav" mainModel="false" />
+    <model id="5" name="STEM • Open-Unmix UMxHQ • vocals" sampleRate="44100" type="wavefile" file="../stems/openunmix_umxhq/vocals.wav" mainModel="false" />
+    <model id="6" name="STEM • Open-Unmix UMxHQ • drums" sampleRate="44100" type="wavefile" file="../stems/openunmix_umxhq/drums.wav" mainModel="false" />
+    <model id="7" name="STEM • Open-Unmix UMxHQ • bass" sampleRate="44100" type="wavefile" file="../stems/openunmix_umxhq/bass.wav" mainModel="false" />
+    <model id="8" name="STEM • Open-Unmix UMxHQ • other" sampleRate="44100" type="wavefile" file="../stems/openunmix_umxhq/other.wav" mainModel="false" />
+  </data>
+  <display>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="MASTER • Original mix overview">
+      <layer id="1000" type="waveform" name="MASTER • Waveform • Chips and Ketchup.wav" model="0" channel="-1" gain="1" pan="0" />
+      <layer id="1001" type="spectrogram" name="MASTER • Spectrogram • Chips and Ketchup.wav" model="0" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="STEM • HTDemucs fine-tuned • drums">
+      <layer id="1002" type="waveform" name="Waveform • HTDemucs fine-tuned • drums" model="1" channel="-1" gain="1" pan="0" />
+      <layer id="1003" type="spectrogram" name="Spectrogram • HTDemucs fine-tuned • drums" model="1" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="STEM • HTDemucs fine-tuned • bass">
+      <layer id="1004" type="waveform" name="Waveform • HTDemucs fine-tuned • bass" model="2" channel="-1" gain="1" pan="0" />
+      <layer id="1005" type="spectrogram" name="Spectrogram • HTDemucs fine-tuned • bass" model="2" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="STEM • HTDemucs fine-tuned • other">
+      <layer id="1006" type="waveform" name="Waveform • HTDemucs fine-tuned • other" model="3" channel="-1" gain="1" pan="0" />
+      <layer id="1007" type="spectrogram" name="Spectrogram • HTDemucs fine-tuned • other" model="3" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="STEM • HTDemucs fine-tuned • vocals">
+      <layer id="1008" type="waveform" name="Waveform • HTDemucs fine-tuned • vocals" model="4" channel="-1" gain="1" pan="0" />
+      <layer id="1009" type="spectrogram" name="Spectrogram • HTDemucs fine-tuned • vocals" model="4" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="STEM • Open-Unmix UMxHQ • vocals">
+      <layer id="1010" type="waveform" name="Waveform • Open-Unmix UMxHQ • vocals" model="5" channel="-1" gain="1" pan="0" />
+      <layer id="1011" type="spectrogram" name="Spectrogram • Open-Unmix UMxHQ • vocals" model="5" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="STEM • Open-Unmix UMxHQ • drums">
+      <layer id="1012" type="waveform" name="Waveform • Open-Unmix UMxHQ • drums" model="6" channel="-1" gain="1" pan="0" />
+      <layer id="1013" type="spectrogram" name="Spectrogram • Open-Unmix UMxHQ • drums" model="6" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="STEM • Open-Unmix UMxHQ • bass">
+      <layer id="1014" type="waveform" name="Waveform • Open-Unmix UMxHQ • bass" model="7" channel="-1" gain="1" pan="0" />
+      <layer id="1015" type="spectrogram" name="Spectrogram • Open-Unmix UMxHQ • bass" model="7" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+    <view centre="0" zoom="1024" followPan="1" followZoom="1" tracking="page" type="pane" name="STEM • Open-Unmix UMxHQ • other">
+      <layer id="1016" type="waveform" name="Waveform • Open-Unmix UMxHQ • other" model="8" channel="-1" gain="1" pan="0" />
+      <layer id="1017" type="spectrogram" name="Spectrogram • Open-Unmix UMxHQ • other" model="8" channel="-1" windowSize="2048" windowHopLevel="2" gain="1" threshold="0" minFrequency="0" maxFrequency="0" colourScale="0" colourMap="0" colourRotation="0" frequencyScale="0" binScale="0" />
+    </view>
+  </display>
+  <selections />
+</sv>

@@ -1,0 +1,452 @@
+{
+  "beats": [],
+  "completed_at": "2026-09-25T01:24:46.122258+00:00",
+  "config": {
+    "beat_transformer_ensemble": true,
+    "bootstrap_external": true,
+    "continue_on_error": true,
+    "device": "auto",
+    "input_wav": "Z:\\My Songs\\Releases\\Chips and Ketchup\\Chips and Ketchup.wav",
+    "make_spectrograms": true,
+    "models": [
+      "bs_roformer_sw",
+      "mvsep_mega53",
+      "scnet_xl_ihf",
+      "htdemucs_ft",
+      "openunmix_umxhq"
+    ],
+    "output_dir": "foo",
+    "run_beats": true,
+    "run_whisper": false,
+    "whisper_model": "large-v3"
+  },
+  "errors": [
+    {
+      "message": "ModuleNotFoundError: No module named 'bs_roformer'",
+      "stage": "separation:bs_roformer_sw"
+    },
+    {
+      "message": "ModuleNotFoundError: No module named 'bs_roformer'",
+      "stage": "separation:mvsep_mega53"
+    },
+    {
+      "message": "CalledProcessError: Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\venv\\\\Scripts\\\\python.exe', '-m', 'pip', 'install', '-r', 'C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\repo\\\\requirements.txt']' returned non-zero exit status 1.",
+      "stage": "separation:scnet_xl_ihf"
+    },
+    {
+      "message": "No module named 'madmom'",
+      "stage": "beats:BeatNetBackend",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\pipeline.py\", line 215, in run_pipeline\n    br = backend.analyze(master, beats_dir, all_stems)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\beats\\beatnet.py\", line 14, in analyze\n    from BeatNet.BeatNet import BeatNet\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\BeatNet\\BeatNet.py\", line 8, in <module>\n    from madmom.features import DBNDownBeatTrackingProcessor\nModuleNotFoundError: No module named 'madmom'\n",
+      "type": "ModuleNotFoundError"
+    },
+    {
+      "message": "('Could not load the checkpoint given the provided name', 'final0')",
+      "stage": "beats:BeatThisBackend",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\inference.py\", line 30, in load_checkpoint\n    return torch.load(checkpoint_path, map_location=device, **weights_only)\n           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torch\\serialization.py\", line 1565, in load\n    with _open_file_like(f, \"rb\") as opened_file:\n         ~~~~~~~~~~~~~~~^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torch\\serialization.py\", line 795, in _open_file_like\n    return _open_file(name_or_buffer, mode)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torch\\serialization.py\", line 776, in __init__\n    super().__init__(open(name, mode))  # noqa: SIM115\n                     ~~~~^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'final0'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\urllib\\request.py\", line 1321, in do_open\n    h.request(req.get_method(), req.selector, req.data, headers,\n    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n              encode_chunked=req.has_header('Transfer-encoding'))\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\http\\client.py\", line 1367, in request\n    self._send_request(method, url, body, headers, encode_chunked)\n    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\http\\client.py\", line 1413, in _send_request\n    self.endheaders(body, encode_chunked=encode_chunked)\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\http\\client.py\", line 1362, in endheaders\n    self._send_output(message_body, encode_chunked=encode_chunked)\n    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\http\\client.py\", line 1122, in _send_output\n    self.send(msg)\n    ~~~~~~~~~^^^^^\n  File \"C:\\Python314\\Lib\\http\\client.py\", line 1066, in send\n    self.connect()\n    ~~~~~~~~~~~~^^\n  File \"C:\\Python314\\Lib\\http\\client.py\", line 1508, in connect\n    self.sock = self._context.wrap_socket(self.sock,\n                ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^\n                                          server_hostname=server_hostname)\n                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\ssl.py\", line 455, in wrap_socket\n    return self.sslsocket_class._create(\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^\n        sock=sock,\n        ^^^^^^^^^^\n    ...<5 lines>...\n        session=session\n        ^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Python314\\Lib\\ssl.py\", line 1076, in _create\n    self.do_handshake()\n    ~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Python314\\Lib\\ssl.py\", line 1372, in do_handshake\n    self._sslobj.do_handshake()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~^^\nssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1082)\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\inference.py\", line 44, in load_checkpoint\n    return torch.hub.load_state_dict_from_url(\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^\n        checkpoint_url,\n        ^^^^^^^^^^^^^^^\n        file_name=file_name,\n        ^^^^^^^^^^^^^^^^^^^^\n        map_location=device,\n        ^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torch\\hub.py\", line 894, in load_state_dict_from_url\n    download_url_to_file(url, cached_file, hash_prefix, progress=progress)\n    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torch\\hub.py\", line 749, in download_url_to_file\n    with urlopen(req) as u:\n         ~~~~~~~^^^^^\n  File \"C:\\Python314\\Lib\\urllib\\request.py\", line 187, in urlopen\n    return opener.open(url, data, timeout)\n           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\urllib\\request.py\", line 487, in open\n    response = self._open(req, data)\n  File \"C:\\Python314\\Lib\\urllib\\request.py\", line 504, in _open\n    result = self._call_chain(self.handle_open, protocol, protocol +\n                              '_open', req)\n  File \"C:\\Python314\\Lib\\urllib\\request.py\", line 464, in _call_chain\n    result = func(*args)\n  File \"C:\\Python314\\Lib\\urllib\\request.py\", line 1369, in https_open\n    return self.do_open(http.client.HTTPSConnection, req,\n           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                        context=self._context)\n                        ^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\urllib\\request.py\", line 1324, in do_open\n    raise URLError(err)\nurllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1082)>\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\pipeline.py\", line 215, in run_pipeline\n    br = backend.analyze(master, beats_dir, all_stems)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\beats\\beatthis.py\", line 18, in analyze\n    engine = File2Beats(checkpoint_path=\"final0\", device=dev, dbn=False)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\inference.py\", line 298, in __init__\n    super().__init__(checkpoint_path, device, float16)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\inference.py\", line 266, in __init__\n    super().__init__(checkpoint_path, device, float16)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\inference.py\", line 242, in __init__\n    self.model = load_model(checkpoint_path, self.device)\n                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\inference.py\", line 70, in load_model\n    checkpoint = load_checkpoint(checkpoint_path, device)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\inference.py\", line 50, in load_checkpoint\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: ('Could not load the checkpoint given the provided name', 'final0')\n",
+      "type": "ValueError"
+    },
+    {
+      "message": "Beat Transformer needs five compatible demixed inputs. Missing: piano. Run BS-RoFormer-SW first.",
+      "stage": "beats:BeatTransformerBackend",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\pipeline.py\", line 215, in run_pipeline\n    br = backend.analyze(master, beats_dir, all_stems)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\beats\\beattransformer.py\", line 117, in analyze\n    x = self._five_channel_mel(audio_path, stems)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\beats\\beattransformer.py\", line 44, in _five_channel_mel\n    raise RuntimeError(\n    ...<2 lines>...\n    )\nRuntimeError: Beat Transformer needs five compatible demixed inputs. Missing: piano. Run BS-RoFormer-SW first.\n",
+      "type": "RuntimeError"
+    }
+  ],
+  "models": [
+    {
+      "elapsed_seconds": 0.002698600059375167,
+      "error": "ModuleNotFoundError: No module named 'bs_roformer'",
+      "metadata": {},
+      "normalization": [],
+      "spec": {
+        "backend": "bs_roformer",
+        "description": "Recommended modern six-stem BS-RoFormer checkpoint.",
+        "display_name": "BS-RoFormer-SW",
+        "family": "Band-Split RoFormer",
+        "notes": "Registry id: roformer-model-bs-roformer-sw-by-jarredou",
+        "slug": "bs_roformer_sw",
+        "stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "guitar",
+          "piano",
+          "other"
+        ],
+        "tier": "high",
+        "upstream": "https://github.com/openmirlab/bs-roformer-infer"
+      },
+      "stems": []
+    },
+    {
+      "elapsed_seconds": 0.0013138999929651618,
+      "error": "ModuleNotFoundError: No module named 'bs_roformer'",
+      "metadata": {},
+      "normalization": [],
+      "spec": {
+        "backend": "bs_roformer",
+        "description": "Very large broad-discovery separator exposing 53 raw stem targets.",
+        "display_name": "MVSep Mega 53",
+        "family": "Band-Split RoFormer",
+        "notes": "Requires substantial VRAM; upstream recommends >=16 GB.",
+        "slug": "mvsep_mega53",
+        "stems": null,
+        "tier": "high",
+        "upstream": "https://github.com/openmirlab/bs-roformer-infer"
+      },
+      "stems": []
+    },
+    {
+      "elapsed_seconds": 3.016244300059043,
+      "error": "CalledProcessError: Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\venv\\\\Scripts\\\\python.exe', '-m', 'pip', 'install', '-r', 'C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\repo\\\\requirements.txt']' returned non-zero exit status 1.",
+      "metadata": {},
+      "normalization": [],
+      "spec": {
+        "backend": "scnet",
+        "description": "Large four-stem SCNet checkpoint from Music-Source-Separation-Training.",
+        "display_name": "SCNet XL IHF",
+        "family": "SCNet",
+        "notes": "Fixed v1.0.15 config/checkpoint URLs are used by bootstrap.",
+        "slug": "scnet_xl_ihf",
+        "stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "tier": "high",
+        "upstream": "https://github.com/ZFTurbo/Music-Source-Separation-Training"
+      },
+      "stems": []
+    },
+    {
+      "elapsed_seconds": 229.06303700001445,
+      "error": null,
+      "metadata": {},
+      "normalization": [
+        {
+          "gain_db": -0.8857213524697367,
+          "normalized": true,
+          "path": "stems\\htdemucs_ft\\drums.wav",
+          "peak_after": 0.8912509083747864,
+          "peak_after_dbfs": -1.0000002900227403,
+          "peak_before": 0.9869293570518494,
+          "peak_before_dbfs": -0.11427864753026329,
+          "stem": "drums",
+          "target_peak_dbfs": -1.0
+        },
+        {
+          "gain_db": 2.440799895177684,
+          "normalized": true,
+          "path": "stems\\htdemucs_ft\\bass.wav",
+          "peak_after": 0.8912509083747864,
+          "peak_after_dbfs": -1.0000002900227403,
+          "peak_before": 0.6729146838188171,
+          "peak_before_dbfs": -3.440799895177684,
+          "stem": "bass",
+          "target_peak_dbfs": -1.0
+        },
+        {
+          "gain_db": 1.4897193651746918,
+          "normalized": true,
+          "path": "stems\\htdemucs_ft\\other.wav",
+          "peak_after": 0.8912509679794312,
+          "peak_after_dbfs": -0.9999997091320568,
+          "peak_before": 0.750782310962677,
+          "peak_before_dbfs": -2.4897193651746905,
+          "stem": "other",
+          "target_peak_dbfs": -1.0
+        },
+        {
+          "gain_db": -1.4279352258628615,
+          "normalized": true,
+          "path": "stems\\htdemucs_ft\\vocals.wav",
+          "peak_after": 0.8912509679794312,
+          "peak_after_dbfs": -0.9999997091320568,
+          "peak_before": 1.0505017042160034,
+          "peak_before_dbfs": 0.42793522586286226,
+          "stem": "vocals",
+          "target_peak_dbfs": -1.0
+        }
+      ],
+      "spec": {
+        "backend": "demucs",
+        "description": "Fine-tuned four-stem Demucs model bag; strong established baseline.",
+        "display_name": "HTDemucs fine-tuned",
+        "family": "Hybrid Transformer Demucs",
+        "notes": "This is a bag of fine-tuned HTDemucs models rather than a single tiny network.",
+        "slug": "htdemucs_ft",
+        "stems": [
+          "drums",
+          "bass",
+          "other",
+          "vocals"
+        ],
+        "tier": "high",
+        "upstream": "https://github.com/adefossez/demucs"
+      },
+      "stems": [
+        {
+          "channels": 2,
+          "model": "htdemucs_ft",
+          "path": "stems\\htdemucs_ft\\drums.wav",
+          "sample_rate": 44100,
+          "stem": "drums"
+        },
+        {
+          "channels": 2,
+          "model": "htdemucs_ft",
+          "path": "stems\\htdemucs_ft\\bass.wav",
+          "sample_rate": 44100,
+          "stem": "bass"
+        },
+        {
+          "channels": 2,
+          "model": "htdemucs_ft",
+          "path": "stems\\htdemucs_ft\\other.wav",
+          "sample_rate": 44100,
+          "stem": "other"
+        },
+        {
+          "channels": 2,
+          "model": "htdemucs_ft",
+          "path": "stems\\htdemucs_ft\\vocals.wav",
+          "sample_rate": 44100,
+          "stem": "vocals"
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 11.00063639995642,
+      "error": null,
+      "metadata": {
+        "niter": 0,
+        "realtime_candidate": true
+      },
+      "normalization": [
+        {
+          "gain_db": -0.3765892583913361,
+          "normalized": true,
+          "path": "stems\\openunmix_umxhq\\vocals.wav",
+          "peak_after": 0.8912509679794312,
+          "peak_after_dbfs": -0.9999997091320568,
+          "peak_before": 0.9307423233985901,
+          "peak_before_dbfs": -0.6234107416086637,
+          "stem": "vocals",
+          "target_peak_dbfs": -1.0
+        },
+        {
+          "gain_db": 0.6140968071528964,
+          "normalized": true,
+          "path": "stems\\openunmix_umxhq\\drums.wav",
+          "peak_after": 0.8912509083747864,
+          "peak_after_dbfs": -1.0000002900227403,
+          "peak_before": 0.8304149508476257,
+          "peak_before_dbfs": -1.6140968071528956,
+          "stem": "drums",
+          "target_peak_dbfs": -1.0
+        },
+        {
+          "gain_db": 2.829731763212209,
+          "normalized": true,
+          "path": "stems\\openunmix_umxhq\\bass.wav",
+          "peak_after": 0.8912509679794312,
+          "peak_after_dbfs": -0.9999997091320568,
+          "peak_before": 0.6434479355812073,
+          "peak_before_dbfs": -3.829731763212209,
+          "stem": "bass",
+          "target_peak_dbfs": -1.0
+        },
+        {
+          "gain_db": 1.717934952091769,
+          "normalized": true,
+          "path": "stems\\openunmix_umxhq\\other.wav",
+          "peak_after": 0.8912509083747864,
+          "peak_after_dbfs": -1.0000002900227403,
+          "peak_before": 0.7313129305839539,
+          "peak_before_dbfs": -2.7179349520917686,
+          "stem": "other",
+          "target_peak_dbfs": -1.0
+        }
+      ],
+      "spec": {
+        "backend": "openunmix",
+        "description": "Compact PyTorch baseline selected as the low-latency/realtime candidate.",
+        "display_name": "Open-Unmix UMxHQ",
+        "family": "Open-Unmix",
+        "notes": "Potential realtime candidate depends on hardware/buffering; benchmark locally.",
+        "slug": "openunmix_umxhq",
+        "stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "tier": "fast",
+        "upstream": "https://github.com/sigsep/open-unmix-pytorch"
+      },
+      "stems": [
+        {
+          "channels": 2,
+          "model": "openunmix_umxhq",
+          "path": "stems\\openunmix_umxhq\\vocals.wav",
+          "sample_rate": 44100,
+          "stem": "vocals"
+        },
+        {
+          "channels": 2,
+          "model": "openunmix_umxhq",
+          "path": "stems\\openunmix_umxhq\\drums.wav",
+          "sample_rate": 44100,
+          "stem": "drums"
+        },
+        {
+          "channels": 2,
+          "model": "openunmix_umxhq",
+          "path": "stems\\openunmix_umxhq\\bass.wav",
+          "sample_rate": 44100,
+          "stem": "bass"
+        },
+        {
+          "channels": 2,
+          "model": "openunmix_umxhq",
+          "path": "stems\\openunmix_umxhq\\other.wav",
+          "sample_rate": 44100,
+          "stem": "other"
+        }
+      ]
+    }
+  ],
+  "sonic_visualiser": {
+    "session": "sonic_visualiser\\session.sv",
+    "unix_launcher": "sonic_visualiser\\open_sonic_visualiser.sh",
+    "windows_launcher": "sonic_visualiser\\open_sonic_visualiser.bat",
+    "xml": "sonic_visualiser\\session.xml"
+  },
+  "source": {
+    "audio": {
+      "bits_per_sample": 16,
+      "duration_seconds": 168.00337868480725,
+      "encoding": "PCM_16",
+      "format": "WAV",
+      "num_channels": 2,
+      "num_frames": 7408949,
+      "sample_rate": 44100,
+      "subtype": "PCM_16"
+    },
+    "copied_path": "input\\Chips and Ketchup.wav",
+    "original_path": "Z:\\My Songs\\Releases\\Chips and Ketchup\\Chips and Ketchup.wav",
+    "sha256": "0fed034ebd62e2b334399017e4398b73d109a9916c82801633ab48b9ee3aa32e"
+  },
+  "spectrograms": [
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\input\\Chips and Ketchup.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\master.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\master.png",
+      "sample_rate": 44100
+    },
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\htdemucs_ft\\drums.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\htdemucs_ft\\drums.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "model": "htdemucs_ft",
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\htdemucs_ft\\drums.png",
+      "sample_rate": 44100,
+      "stem": "drums"
+    },
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\htdemucs_ft\\bass.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\htdemucs_ft\\bass.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "model": "htdemucs_ft",
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\htdemucs_ft\\bass.png",
+      "sample_rate": 44100,
+      "stem": "bass"
+    },
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\htdemucs_ft\\other.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\htdemucs_ft\\other.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "model": "htdemucs_ft",
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\htdemucs_ft\\other.png",
+      "sample_rate": 44100,
+      "stem": "other"
+    },
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\htdemucs_ft\\vocals.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\htdemucs_ft\\vocals.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "model": "htdemucs_ft",
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\htdemucs_ft\\vocals.png",
+      "sample_rate": 44100,
+      "stem": "vocals"
+    },
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\openunmix_umxhq\\vocals.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\openunmix_umxhq\\vocals.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "model": "openunmix_umxhq",
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\openunmix_umxhq\\vocals.png",
+      "sample_rate": 44100,
+      "stem": "vocals"
+    },
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\openunmix_umxhq\\drums.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\openunmix_umxhq\\drums.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "model": "openunmix_umxhq",
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\openunmix_umxhq\\drums.png",
+      "sample_rate": 44100,
+      "stem": "drums"
+    },
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\openunmix_umxhq\\bass.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\openunmix_umxhq\\bass.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "model": "openunmix_umxhq",
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\openunmix_umxhq\\bass.png",
+      "sample_rate": 44100,
+      "stem": "bass"
+    },
+    {
+      "audio": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\openunmix_umxhq\\other.wav",
+      "bins": 1048,
+      "data": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\openunmix_umxhq\\other.npz",
+      "frames": 58802,
+      "hop_length": 126,
+      "model": "openunmix_umxhq",
+      "n_fft": 2094,
+      "png": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\spectrograms\\openunmix_umxhq\\other.png",
+      "sample_rate": 44100,
+      "stem": "other"
+    }
+  ],
+  "speech": null,
+  "started_at": "2026-09-25T01:19:23.562512+00:00",
+  "stemlab_version": "0.1.0"
+}
