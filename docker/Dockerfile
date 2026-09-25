@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfftw3-dev \
     libegl1 \
     libgl1 \
+    libopengl0 \
     libglib2.0-0 \
     libgomp1 \
     libjack-jackd2-0 \
