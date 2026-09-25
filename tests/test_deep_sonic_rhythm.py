@@ -1,7 +1,7 @@
 import numpy as np
 import soundfile as sf
 
-from stemlab.analysis.audio_features import analyze_sonic_features
+from stemlab.analysis.sonic import analyze_sonic_features
 from stemlab.analysis.rhythm import analyze_rhythm
 from stemlab.types import BeatResult
 

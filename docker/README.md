@@ -3,11 +3,7 @@
 > **Kieran Simkin** · https://kieransimkin.co.uk/ · My Songs: https://kieransimkin.co.uk/my-songs/ · Arcadians: https://kieransimkin.co.uk/arcadians/ · Source: https://github.com/kieransimkin/stemlab
 
 
-This environment is designed from the supplied known-working Windows snapshot.
-It uses Python 3.13, PyTorch 2.14, the same pinned top-level Python package
-versions where they are portable, Sonic Annotator 1.7, and Vamp Plugin Pack
-2.0. The image is built from the current repository checkout, so local Docker
-builds test the same source tree you are about to commit.
+The container is a deterministic StemLab runtime for the DanceFlow audio-analysis component. It uses Python 3.13, pinned runtime dependencies, Sonic Annotator and the Vamp Plugin Pack. The image is built from the current repository checkout, so local Docker builds test the exact source tree you are about to commit.
 
 ## Validate the CI container locally
 
@@ -61,7 +57,7 @@ STEMLAB_AUDIO_FILE=my-song.wav docker compose run --rm stemlab
 Check out the desired tag or commit first, then build normally:
 
 ```bash
-git checkout v0.2.0
+git checkout v1.0.0
 docker compose build --no-cache stemlab
 ```
 

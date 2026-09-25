@@ -4,13 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "danceflow-stemlab"
-version = "0.2.0"
-description = "Multi-model music stem separation, structural, harmonic, rhythmic, sonic and semantic analysis pipeline"
+dynamic = ["version"]
+description = "StemLab audio analysis for DanceFlow BPM and motion-response workflows, including WordPress DanceMoves"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Kieran Simkin"}]
 maintainers = [{name = "Kieran Simkin"}]
-keywords = ["music", "audio", "source separation", "MIR", "music information retrieval", "spectrogram", "lyrics", "rhythm", "harmony"]
+license = "MIT"
+keywords = ["music", "audio", "MIR", "source separation", "BPM", "rhythm", "harmony", "DanceFlow", "DanceMoves", "motion response", "WordPress"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Multimedia :: Sound/Audio :: Analysis",
+]
 dependencies = [
   "numpy",
   "scipy",
@@ -33,6 +44,8 @@ Homepage = "https://kieransimkin.co.uk/"
 "Arcadians showcase" = "https://kieransimkin.co.uk/arcadians/"
 Repository = "https://github.com/kieransimkin/stemlab"
 Issues = "https://github.com/kieransimkin/stemlab/issues"
+Documentation = "https://github.com/kieransimkin/stemlab/tree/main/docs"
+Changelog = "https://github.com/kieransimkin/stemlab/blob/main/CHANGELOG.md"
 "About Kieran" = "https://kieransimkin.co.uk/about-me/"
 Contact = "https://kieransimkin.co.uk/contact/"
 
@@ -77,6 +90,9 @@ all = [
 
 [project.scripts]
 stemlab = "stemlab.cli:app"
+
+[tool.setuptools.dynamic]
+version = {attr = "stemlab.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

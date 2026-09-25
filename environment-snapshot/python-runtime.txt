@@ -1,4 +1,0 @@
-python=3.13.14 (main, Jul 23 2026, 14:44:10) [MSC v.1944 64 bit (AMD64)]
-executable=C:\Users\Kieran\OneDrive\Documents\GitHub\stemlab\.venv\Scripts\python.exe
-platform=Windows-10-10.0.19045-SP0
-machine=AMD64

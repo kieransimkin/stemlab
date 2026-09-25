@@ -1,5 +1,4 @@
-# Versions captured from Kieran's known-working StemLab environment on
-# 2026-09-25, with deterministic high-level analysis additions.
+# Pinned top-level runtime dependencies for the StemLab container.
 # torch/torchaudio are installed separately in Docker so a CUDA or CPU wheel
 # index can be selected while preserving the captured version numbers.
 beat-this==1.1.0

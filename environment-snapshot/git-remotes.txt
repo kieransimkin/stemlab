@@ -1,2 +1,0 @@
-origin	https://github.com/kieransimkin/stemlab.git (fetch)
-origin	https://github.com/kieransimkin/stemlab.git (push)

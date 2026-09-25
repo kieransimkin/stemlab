@@ -1,8 +1,15 @@
-"""Canonical StemLab author, project and showcase links.
+"""Canonical StemLab project identity, author attribution and public links."""
 
-Keep public-facing URLs centralised here so package metadata, the web UI,
-release notes and generated reports all agree about authorship and provenance.
-"""
+PROJECT_NAME = "StemLab"
+DISTRIBUTION_NAME = "danceflow-stemlab"
+PARENT_PROJECT_NAME = "DanceFlow"
+RELATED_PLUGIN_NAME = "DanceMoves"
+RELATED_PLUGIN_PLATFORM = "WordPress"
+WORKFLOW_NAME = "DanceFlow BPM and motion-response workflow"
+PROJECT_DESCRIPTION = (
+    "StemLab is the audio-analysis engine in DanceFlow's BPM and motion-response "
+    "workflow, including downstream use by the WordPress DanceMoves plugin."
+)
 
 AUTHOR_NAME = "Kieran Simkin"
 AUTHOR_SITE = "https://kieransimkin.co.uk/"
@@ -25,12 +32,24 @@ PUBLIC_LINKS = {
 
 
 def attribution() -> dict[str, object]:
-    """Machine-readable attribution embedded in generated analysis reports."""
+    """Machine-readable identity embedded in generated analysis/release metadata."""
     return {
+        "project": PROJECT_NAME,
+        "distribution": DISTRIBUTION_NAME,
+        "parent_project": PARENT_PROJECT_NAME,
+        "workflow": WORKFLOW_NAME,
+        "description": PROJECT_DESCRIPTION,
         "author": AUTHOR_NAME,
         "website": AUTHOR_SITE,
         "my_songs": MY_SONGS_URL,
         "repository": REPOSITORY_URL,
+        "related_components": [
+            {
+                "name": RELATED_PLUGIN_NAME,
+                "platform": RELATED_PLUGIN_PLATFORM,
+                "role": "motion-response / WordPress integration",
+            }
+        ],
         "showcase": {
             "title": "Arcadians",
             "url": ARCADIANS_EPK_URL,

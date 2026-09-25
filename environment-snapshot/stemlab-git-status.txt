@@ -1,9 +1,0 @@
- D environment-snapshot/git-remotes.txt
- M environment-snapshot/nvidia-smi.txt
- D environment-snapshot/relevant-environment.txt
- M environment-snapshot/stemlab-commit.txt
- D environment-snapshot/stemlab-git-status.txt
- D environment-snapshot/windows.txt
- M stemlab-working-environment.zip
-?? environment-snapshot/python-runtime.txt
-?? snapshot-stemlab-environment.ps1

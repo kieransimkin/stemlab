@@ -14,3 +14,14 @@ dist/
 *.onnx
 analysis-*/
 results/
+.coverage
+htmlcov/
+.mypy_cache/
+.DS_Store
+uv.lock
+*.patch
+*-patch-kit.zip
+*-kit.zip
+environment-snapshot/
+docker-output/
+music/

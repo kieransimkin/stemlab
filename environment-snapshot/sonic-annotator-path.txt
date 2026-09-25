@@ -1,1 +1,0 @@
-sonic-annotator=C:\Users\Kieran\AppData\Local\stemlab\stemlab\Cache\vamp\sonic-annotator-1.7\sonic-annotator-win64\sonic-annotator.exe

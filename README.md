@@ -4,9 +4,19 @@
 
 > **Packaging identity:** the canonical project name is **StemLab**. StemLab is part of the **Dance Flow** project. The PyPI distribution is named `danceflow-stemlab` solely because Python package-registry names are globally unique. The Python import, CLI, GitHub repository and container image remain `stemlab`.
 
-StemLab is an assessment-oriented Python/PyTorch audio pipeline. Given one master WAV and a named output directory it runs a deliberately diverse set of high-capacity source-separation models, a smaller low-latency comparison model, speech/VAD + Whisper analysis, spectrogram generation, three independent beat/downbeat systems, and a Sonic Visualiser session that ties the results together on one timeline.
+StemLab is the audio-analysis engine in Kieran Simkin's **DanceFlow** BPM and motion-response workflow. It separates and interprets a master track into synchronised stem, BPM/beat, structure, harmony, timbre, speech/lyric and semantic data. Those outputs can drive downstream motion-aware experiences, including the WordPress **DanceMoves** plugin, while StemLab remains usable as a standalone CLI, Python library, web service and container.
 
 > **Model weights are not redistributed by this project.** They are fetched from their upstream registries/releases on first use. This avoids silently republishing checkpoints whose licensing may differ from the source code license, and lets upstream integrity metadata be used where available.
+
+## DanceFlow and DanceMoves
+
+DanceFlow is the wider BPM and motion-response workflow. **StemLab** is its
+music-understanding layer; the WordPress **DanceMoves** plugin is a related
+downstream motion-response component. StemLab has no WordPress dependency and
+communicates through normal analysis artifacts and service APIs, so it remains
+independently useful and reproducible.
+
+See [docs/danceflow.md](docs/danceflow.md) for the component boundary.
 
 ## Curated default model set (September 2026)
 
@@ -51,10 +61,9 @@ segmentation; and the Queen Mary Vamp beat/bar tracker. Raw CSV, pinned
 transform files, JSON, NPZ and plots are retained under `vamp/`, with the most
 useful melody/harmony layers also embedded in the Sonic Visualiser session.
 
-
 ## Comprehensive sonic, harmonic, rhythmic and semantic analysis
 
-StemLab 0.2 adds a higher-level evidence-fusion pass without discarding any of the
+StemLab 1.0 consolidates a higher-level evidence-fusion pass without discarding any of the
 existing low-level outputs. The default deep pass now includes:
 
 | Action | Evidence / model | Main output |
@@ -88,7 +97,6 @@ The derived artifacts live under `deep/` (`sonic/`, `rhythm/`, `harmony/`, `stru
 ## Install
 
 Python 3.10 or 3.11 is recommended because the legacy BeatNet/madmom ecosystem is less predictable on newer Python versions.
-
 
 From PyPI, install the released StemLab distribution with:
 
@@ -188,6 +196,15 @@ analysis-master/
     data/*.json
     data/*.npz
     plots/*.png
+  deep/
+    sonic/
+    rhythm/
+    harmony/
+    structure/
+    lyrics/
+    semantic_text/
+    song_map/
+    summary.json
   sonic_visualiser/
     session.sv
     session.xml
@@ -199,117 +216,19 @@ analysis-master/
 
 `session.sv` is genuine Sonic Visualiser bzip2-compressed session XML. It contains a master pane with beat/downbeat/Whisper time-instant layers and one synchronized waveform + Sonic Visualiser spectrogram pane for every separated stem. The uncompressed `session.xml` is retained for inspection/debugging. The Windows `.bat` looks on `PATH` and in the usual Program Files locations.
 
-## HTTP / Socket.IO microservice
+## Web service
 
-Install the server dependencies through the full environment or the dedicated
-extra:
+StemLab includes an upload/timeline web UI plus HTTP and Socket.IO APIs for
+content-addressed analysis jobs. See [docs/web.md](docs/web.md) for launchers,
+endpoints, events and the Arcadians reference workflow.
 
-```bash
-pip install -e ".[server]"
-# or
-pip install -e ".[all]"
-```
+## Documentation
 
-Start the service with one ASGI process and let StemLab's own scheduler control
-analysis concurrency:
-
-```bash
-stemlab serve --results ./results --host 0.0.0.0 --port 8000   --scheduler-jobs 1 --profile full --device auto
-```
-
-Opening `http://localhost:8000/` serves a modern upload/timeline workspace.
-After an HTTP PUT completes and returns its SHA-256, the browser immediately
-switches into a Sonic-Visualiser-style sequence view. Every generated analysis
-artifact is represented by a lane on one shared horizontal song timeline.
-Waveforms, spectrograms, beats/downbeats, Whisper words, Vamp curves,
-notes/segments and generic artifacts all share the same playhead, seek
-position, horizontal pan and zoom.
-
-The browser listens to the existing Socket.IO room for the uploaded hash.
-`new_file` events add lanes while analysis is still running, while
-`process_output`, `process_history` and `job_status` update the live log and
-status display. A lightweight inventory poll means refreshing or reconnecting
-to an existing hash reconstructs lanes already present on disk.
-
-Additional timeline endpoints are exposed under `/api`:
-
-```text
-GET /api/<hash>/timeline
-GET /api/<hash>/source
-GET /api/<hash>/waveform?path=...
-GET /api/<hash>/spectrogram?path=spectrograms/...npz
-```
-
-Optional known reference information can be supplied before upload: canonical
-BPM, canonical lyrics, and canonical lyric timing. Lyric timing accepts LRC or
-JSON events. The values are stored as `results/<hash>/canonical.json` and appear
-as synchronized reference lanes in every browser attached to that hash.
-
-When canonical BPM is present, StemLab draws a fixed beat grid at exactly
-`60 / BPM` seconds per beat. The grid is phase-aligned to the first detected
-beat, preferring the detector consensus as soon as it exists. This makes the
-known tempo directly comparable with the independent beat trackers.
-
-`examples/arcadians/` contains the bundled reference song **Arcadians** by
-Kieran Simkin: a 320 kbps analysis MP3, the canonical 145 BPM, definitive
-lyrics, the exact manually timed LRC, cover art, asset evidence, and metadata
-identifying the canonical lossless master. The upload page's **Load Arcadians
-example** button fills all three known-information fields from the same
-reference data.
-
-The bundled **Arcadians** reference is intentionally a dual showcase: it demonstrates
-StemLab against artist-supplied ground truth while also presenting the release itself.
-See the official [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) and
-[Kieran Simkin's full My Songs catalogue](https://kieransimkin.co.uk/my-songs/).
-The web demo carries canonical release metadata and artist-edited structural waypoints,
-so learned section boundaries can be compared against the authoritative song map.
-
-
-Upload arbitrary audio bytes with HTTP PUT. The filename is retained only as
-human-readable metadata; the content SHA-256 is the job identity:
-
-```bash
-curl -T song.flac http://localhost:8000/upload/song.flac
-```
-
-The response contains the 64-character content hash. A result tree is created
-at `results/<hash>/`, and is browsable while analysis is running:
-
-```text
-GET /<hash>
-GET /<hash>/analysis.json
-GET /<hash>/manifest.json
-GET /<hash>/stems/...
-```
-
-Socket.IO clients connect to the normal `/socket.io` endpoint and emit:
-
-```json
-{"event": "subscribe", "data": {"hash": "<sha256>"}}
-```
-
-Subscribers to the same hash share the same running analysis and may connect
-from multiple clients. The service emits `job_status`, `process_output`,
-`process_history`, `new_file`, and `job_timeout` events. `process_output`
-contains the originating `stdout` or `stderr` stream. `new_file` contains the
-relative path and HTTP URL as soon as the scheduler sees a new generated file.
-
-Only one active analysis is permitted for a given SHA-256. Re-uploading
-identical bytes attaches to the existing job instead of starting another one.
-Completed hashes are served from cache. A stale job may be restarted only after
-a timeout calculated as at least ten times the average successful analysis
-duration, with a conservative 24-hour floor by default.
-
-The service intentionally uses one Uvicorn worker; use
-`--scheduler-jobs` to change the number of concurrent StemLab CLI processes.
-Multiple Uvicorn workers would create independent schedulers and defeat the
-one-job-per-hash guarantee.
-
-Useful environment variables include `STEMLAB_RESULTS_DIR`,
-`STEMLAB_SERVICE_MAX_JOBS`, `STEMLAB_SERVICE_PROFILE`,
-`STEMLAB_SERVICE_DEVICE`, `STEMLAB_SERVICE_CLI_ARGS`,
-`STEMLAB_SERVICE_MIN_TIMEOUT_SECONDS`, `STEMLAB_SERVICE_TIMEOUT_MULTIPLIER`,
-`STEMLAB_SERVICE_MAX_UPLOAD_BYTES`, and `STEMLAB_SERVICE_HISTORY_LINES`.
+- [DanceFlow workflow and DanceMoves relationship](docs/danceflow.md)
+- [Web service](docs/web.md)
+- [Containers](docs/containers.md)
+- [Publishing and releases](docs/publishing.md)
+- [Changelog](CHANGELOG.md)
 
 ## Python API
 
@@ -331,15 +250,14 @@ result = run_pipeline(PipelineConfig(
 
 The BS-RoFormer adapter uses `bs-roformer-infer`, which manages its own checkpoint registry and SHA-256 verification. SCNet is pinned to the v1.0.15 `SCNet XL IHF` release asset URLs; StemLab records computed hashes after download. Beat Transformer is cloned from its original upstream and consumes the released fold checkpoints from that repository. Set `STEMLAB_CACHE=/some/path` to relocate StemLab's external cache.
 
-The full run is intentionally expensive. Mega-53 is the dominant VRAM/storage pass and dozens of stems mean dozens of additional spectrogram files and Sonic Visualiser panes. Use `--profile practical` while iterating and `--profile full` for the assessment capture.
+The full run is intentionally expensive. Mega-53 is the dominant VRAM/storage pass and dozens of stems mean dozens of additional spectrogram files and Sonic Visualiser panes. Use `--profile practical` while iterating and `--profile full` for exhaustive analysis.
 
-## Binary/release CI
+## Releases
 
-`.github/workflows/release.yml` is tag-driven. A `v*` tag builds and validates StemLab, creates/updates the **StemLab** GitHub Release, publishes the Python distribution to PyPI as `danceflow-stemlab` using Trusted Publishing/OIDC, and attaches the wheel, sdist, Linux x86-64 **Nuitka one-file executable**, `SHA256SUMS`, `release-assets.json`, and attribution material. The PyPI distribution identifier does not rename the StemLab project.
-
-A terminology caveat matters here: upstream PyTorch, torchaudio, CUDA and audio-codec wheels contain native shared libraries. A genuinely fully-static executable containing that stack is not realistically produced from the stock wheels. The workflow therefore requests a static Python runtime from Nuitka where available and packages the remaining native runtime into the one-file executable. It is self-contained for distribution, but it is **not an ELF with zero dynamic dependencies**. Producing the latter would require custom static builds of PyTorch/libtorch and its native dependency tree for one fixed platform, and would make CUDA support especially problematic.
-
-Model weights remain lazy downloads and are intentionally not embedded in release binaries.
+Version tags publish StemLab to GitHub Releases, PyPI (`danceflow-stemlab`),
+GHCR and Docker Hub after validation. See
+[docs/publishing.md](docs/publishing.md) for the release contract and Trusted
+Publishing setup.
 
 ## Reproducibility and licensing
 

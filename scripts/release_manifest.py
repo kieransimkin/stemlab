@@ -5,30 +5,40 @@ import json
 import sys
 from pathlib import Path
 
-PROJECT = {
-    "name": "StemLab",
-    "author": "Kieran Simkin",
-    "website": "https://kieransimkin.co.uk/",
-    "my_songs": "https://kieransimkin.co.uk/my-songs/",
-    "arcadians_showcase": "https://kieransimkin.co.uk/arcadians/",
-    "repository": "https://github.com/kieransimkin/stemlab",
-}
+# Make the source checkout importable when this helper is run before installation.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-root = Path(sys.argv[1] if len(sys.argv) > 1 else "dist-release")
-records = []
-for path in sorted(root.iterdir()):
-    if not path.is_file() or path.name in {"SHA256SUMS", "release-assets.json"}:
-        continue
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for block in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(block)
-    records.append({"name": path.name, "bytes": path.stat().st_size, "sha256": h.hexdigest()})
-(root / "release-assets.json").write_text(
-    json.dumps({"project": PROJECT, "assets": records}, indent=2) + "\n",
-    encoding="utf-8",
-)
-(root / "SHA256SUMS").write_text(
-    "".join(f"{r['sha256']}  {r['name']}\n" for r in records),
-    encoding="utf-8",
-)
+from stemlab.branding import attribution
+
+
+def main() -> int:
+    root = Path(sys.argv[1] if len(sys.argv) > 1 else "dist-release")
+    records = []
+    for path in sorted(root.iterdir()):
+        if not path.is_file() or path.name in {"SHA256SUMS", "release-assets.json"}:
+            continue
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(block)
+        records.append(
+            {
+                "name": path.name,
+                "bytes": path.stat().st_size,
+                "sha256": digest.hexdigest(),
+            }
+        )
+
+    (root / "release-assets.json").write_text(
+        json.dumps({"project": attribution(), "assets": records}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (root / "SHA256SUMS").write_text(
+        "".join(f"{record['sha256']}  {record['name']}\n" for record in records),
+        encoding="utf-8",
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -9,7 +9,7 @@ from stemlab.branding import attribution
 from stemlab.types import BeatResult, StemArtifact
 from stemlab.util import write_json
 
-from .audio_features import analyze_sonic_features
+from .sonic import analyze_sonic_features
 from .harmony import analyze_harmony
 from .lyrics import analyze_lyrics, transcript_to_lyrics
 from .rhythm import analyze_rhythm

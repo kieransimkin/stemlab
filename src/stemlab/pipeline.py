@@ -16,7 +16,7 @@ from .branding import attribution
 from .manifest import write_manifest
 from .models import MODEL_REGISTRY
 from .separators import make_backend
-from .sonic import build_session
+from .sonic_visualiser import build_session
 from .speech import isolate_and_transcribe
 from .spectrogram import generate_spectrogram
 from .types import BeatResult, PipelineConfig, SeparationResult, StemArtifact

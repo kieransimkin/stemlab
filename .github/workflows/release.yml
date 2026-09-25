@@ -92,24 +92,7 @@ jobs:
           cp dist/* dist-release/
           cp build/nuitka/stemlab-linux-x86_64 dist-release/
           chmod +x dist-release/stemlab-linux-x86_64
-          cat > dist-release/STEMLAB-ABOUT.txt <<'EOF'
-          StemLab
-          =======
-          Part of the Dance Flow project.
-
-          Author: Kieran Simkin
-          Website: https://kieransimkin.co.uk/
-          My Songs: https://kieransimkin.co.uk/my-songs/
-          Arcadians showcase: https://kieransimkin.co.uk/arcadians/
-          Source: https://github.com/kieransimkin/stemlab
-          PyPI distribution: danceflow-stemlab
-
-          StemLab performs multi-model music source separation plus sonic,
-          harmonic, rhythmic, structural, lyrical and semantic analysis.
-
-          "danceflow-stemlab" is the package-registry identifier only.
-          The canonical project name is StemLab.
-          EOF
+          python scripts/release_about.py dist-release/STEMLAB-ABOUT.txt
           python scripts/release_manifest.py dist-release
           cat dist-release/SHA256SUMS
 
@@ -162,7 +145,9 @@ jobs:
             cat >> /tmp/release-body.md <<'EOF'
 
           ---
-          **StemLab by Kieran Simkin** — part of Dance Flow
+          **StemLab by Kieran Simkin** — part of DanceFlow
+
+          Related plugin: DanceMoves (WordPress)
 
           Website: https://kieransimkin.co.uk/
           Music catalogue: https://kieransimkin.co.uk/my-songs/
