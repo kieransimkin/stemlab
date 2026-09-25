@@ -51,6 +51,7 @@ COPY docker/install-vamp-pack.sh /opt/stemlab-docker/install-vamp-pack.sh
 COPY docker/install-stemlab.sh /opt/stemlab-docker/install-stemlab.sh
 COPY docker/verify-environment.sh /opt/stemlab-docker/verify-environment.sh
 COPY docker/entrypoint.sh /opt/stemlab-docker/entrypoint.sh
+COPY docker/start-web-service.sh /opt/stemlab-docker/start-web-service.sh
 
 RUN chmod +x /opt/stemlab-docker/*.sh
 

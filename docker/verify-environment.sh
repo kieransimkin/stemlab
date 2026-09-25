@@ -11,6 +11,7 @@ mods = [
     'torch', 'torchaudio', 'numpy', 'scipy', 'soundfile', 'matplotlib',
     'demucs', 'openunmix', 'faster_whisper', 'beat_this', 'BeatNet',
     'bs_roformer', 'madmom', 'typer', 'rich',
+    'fastapi', 'uvicorn', 'socketio',
 ]
 for name in mods:
     module = importlib.import_module(name)

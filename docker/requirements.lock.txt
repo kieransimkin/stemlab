@@ -18,3 +18,8 @@ rich==15.0.0
 scipy==1.17.1
 soundfile==0.14.0
 typer==0.27.2
+# Web-service dependencies were added after the captured desktop snapshot.
+# Keep them within the same compatibility ranges as StemLab's `server` extra.
+fastapi>=0.115,<1
+uvicorn[standard]>=0.34,<1
+python-socketio>=5.12,<6
