@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     jq \
     libasound2 \
-    libfftw3-3 \
+    libfftw3-double3 \
     libfftw3-dev \
     libgl1 \
     libglib2.0-0 \
