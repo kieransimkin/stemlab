@@ -7,9 +7,12 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Callable
 
+from .analysis.runner import run_comprehensive_analysis
+from .analysis.structure import analyze_structure
 from .audio import audio_info, normalize_audio_file
 from .beats import BeatNetBackend, BeatThisBackend, BeatTransformerBackend
 from .beats.common import consensus_result, save_result
+from .branding import attribution
 from .manifest import write_manifest
 from .models import MODEL_REGISTRY
 from .separators import make_backend
@@ -17,8 +20,8 @@ from .sonic import build_session
 from .speech import isolate_and_transcribe
 from .spectrogram import generate_spectrogram
 from .types import BeatResult, PipelineConfig, SeparationResult, StemArtifact
-from .vamp import run_vamp_analysis
 from .util import sha256_file, slugify, write_json
+from .vamp import run_vamp_analysis
 
 ProgressFn = Callable[[str], None]
 
@@ -58,8 +61,9 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
     beats_dir = out / "beats"
     speech_dir = out / "speech"
     vamp_dir = out / "vamp"
+    deep_dir = out / "deep"
     sonic_dir = out / "sonic_visualiser"
-    for d in (input_dir, stems_dir, spec_dir, beats_dir, speech_dir, vamp_dir, sonic_dir):
+    for d in (input_dir, stems_dir, spec_dir, beats_dir, speech_dir, vamp_dir, deep_dir, sonic_dir):
         d.mkdir(parents=True, exist_ok=True)
 
     master = input_dir / src.name
@@ -68,6 +72,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
     started = dt.datetime.now(dt.timezone.utc)
     analysis: dict = {
         "stemlab_version": __import__("stemlab").__version__,
+        "attribution": attribution(),
         "started_at": started.isoformat(),
         "source": {
             "original_path": str(src),
@@ -86,6 +91,8 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
         "beats": [],
         "speech": None,
         "vamp": None,
+        "structure": None,
+        "deep_analysis": None,
         "errors": [],
     }
 
@@ -177,7 +184,6 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     whisper_model=config.whisper_model,
                     device=config.device,
                 )
-                # Store paths relative to output in the top-level report where practical.
                 analysis["speech"] = {
                     "source_vocals": str(Path(whisper_result["source_vocals"]).relative_to(out)),
                     "spoken_word_wav": str(Path(whisper_result["spoken_word_wav"]).relative_to(out)),
@@ -190,11 +196,13 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     "normalization": whisper_result.get("normalization"),
                 }
                 spoken = Path(whisper_result["spoken_word_wav"])
-                # Treat the VAD-gated speech waveform as another generated stem so the
-                # Sonic Visualiser session contains it on the same timeline as the music stems.
                 all_stems.append(StemArtifact("speech", "spoken_word", spoken, 16000, 1))
                 if config.make_spectrograms:
-                    rec = generate_spectrogram(spoken, spec_dir / "speech" / "spoken_word.png", spec_dir / "speech" / "spoken_word.npz")
+                    rec = generate_spectrogram(
+                        spoken,
+                        spec_dir / "speech" / "spoken_word.png",
+                        spec_dir / "speech" / "spoken_word.npz",
+                    )
                     rec["model"] = "speech"
                     rec["stem"] = "spoken_word"
                     analysis["spectrograms"].append(rec)
@@ -252,11 +260,44 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 raise
 
     beat_results: list[BeatResult] = []
+    structure_result = None
+    if config.run_structure:
+        progress("functional structure: All-In-One-Infer")
+        try:
+            structure_result, structure_beats = analyze_structure(
+                master,
+                deep_dir / "structure",
+                device=config.device,
+                include_embeddings=config.all_in_one_embeddings,
+            )
+            beat_results.append(structure_beats)
+            analysis["structure"] = {
+                "model": structure_result.get("model"),
+                "bpm": structure_result.get("bpm"),
+                "segments": len(structure_result.get("segments", [])),
+                "path": str((deep_dir / "structure" / "structure.json").relative_to(out)),
+            }
+            analysis["beats"].append({
+                "model": structure_beats.model,
+                "beats": len(structure_beats.beats),
+                "downbeats": len(structure_beats.downbeats),
+                "tempo_bpm": structure_beats.tempo_bpm,
+                "metadata": structure_beats.metadata,
+            })
+            save_result(structure_beats, beats_dir)
+        except Exception as exc:
+            analysis["errors"].append(_error_record("structure:all_in_one", exc))
+            if not config.continue_on_error:
+                raise
+
     if config.run_beats:
         beat_backends = [
             BeatNetBackend(),
             BeatThisBackend(),
-            BeatTransformerBackend(bootstrap_external=config.bootstrap_external, ensemble=config.beat_transformer_ensemble),
+            BeatTransformerBackend(
+                bootstrap_external=config.bootstrap_external,
+                ensemble=config.beat_transformer_ensemble,
+            ),
         ]
         for backend in beat_backends:
             name = backend.__class__.__name__
@@ -276,9 +317,9 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 if not config.continue_on_error:
                     raise
 
-        # Produce one clearly identified "best shared guess" rather than asking
-        # the user to visually infer agreement between three nearly-overlaid
-        # detector tracks.  The individual detector outputs remain untouched.
+    # Produce one clearly identified shared guess across every successful beat
+    # detector, including All-In-One when that route is available.
+    if len(beat_results) >= 2:
         consensus = consensus_result(beat_results)
         if consensus is not None and consensus.beats:
             save_result(consensus, beats_dir)
@@ -290,6 +331,36 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 "tempo_bpm": consensus.tempo_bpm,
                 "metadata": consensus.metadata,
             })
+
+    if config.run_deep_analysis:
+        try:
+            deep_report = run_comprehensive_analysis(
+                master,
+                out,
+                beat_results=beat_results,
+                vamp_result=vamp_result,
+                whisper_result=whisper_result,
+                stems=all_stems,
+                structure_result=structure_result,
+                progress=progress,
+                continue_on_error=config.continue_on_error,
+                run_text_semantics=config.run_text_semantics,
+                text_semantic_model=config.text_semantic_model,
+                run_audio_semantics=config.run_audio_semantics,
+                audio_semantic_model=config.audio_semantic_model,
+                run_basic_pitch=config.run_basic_pitch,
+                device=config.device,
+            )
+            analysis["deep_analysis"] = {
+                "schema": deep_report.get("schema"),
+                "report": str((deep_dir / "summary.json").relative_to(out)),
+                "analyses": deep_report.get("analyses", {}),
+                "errors": deep_report.get("errors", []),
+            }
+        except Exception as exc:
+            analysis["errors"].append(_error_record("deep_analysis", exc))
+            if not config.continue_on_error:
+                raise
 
     progress("Sonic Visualiser session")
     try:
@@ -321,6 +392,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
             "source_sha256": analysis["source"]["sha256"],
             "models_requested": list(config.models),
             "error_count": len(analysis["errors"]),
+            "attribution": attribution(),
         },
     )
     return analysis

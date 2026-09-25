@@ -3,57 +3,86 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StemLab Timeline</title>
+  <meta name="author" content="Kieran Simkin">
+  <meta name="description" content="StemLab by Kieran Simkin — deep music stem separation and sonic, harmonic, rhythmic and semantic analysis.">
+  <title>StemLab · Kieran Simkin</title>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div>
-        <div class="eyebrow">STEMLAB</div>
+        <div class="eyebrow">STEMLAB · KIERAN SIMKIN</div>
         <h1>Audio analysis timeline</h1>
       </div>
-      <div id="connectionBadge" class="badge muted">offline</div>
+      <nav class="brand-links" aria-label="Kieran Simkin links">
+        <a href="https://kieransimkin.co.uk/" target="_blank" rel="noopener">Website</a>
+        <a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">My Songs</a>
+        <a href="https://github.com/kieransimkin/stemlab" target="_blank" rel="noopener">Source</a>
+        <div id="connectionBadge" class="badge muted">offline</div>
+      </nav>
     </header>
 
     <main>
       <section id="uploadView" class="upload-view">
-        <div id="dropZone" class="drop-zone" tabindex="0">
-          <div class="drop-icon">↥</div>
-          <h2>Drop an audio file here</h2>
-          <p>or choose a file to upload and analyse</p>
-          <button id="chooseButton" class="primary">Choose audio</button>
-          <input id="fileInput" type="file" accept="audio/*,.wav,.flac,.mp3,.ogg,.opus,.m4a,.aif,.aiff" hidden>
-
-          <details class="known-info">
-            <summary>Known reference information <span class="small">(optional)</span></summary>
-            <div class="known-info-grid">
-              <label>
-                <span>Canonical BPM</span>
-                <input id="canonicalBpm" type="number" min="1" max="400" step="0.001" placeholder="e.g. 145">
-              </label>
-              <div class="known-info-actions">
-                <button id="loadArcadiansReference" type="button" class="button">Load Arcadians example</button>
-                <span id="knownInfoStatus" class="small"></span>
+        <div class="welcome-grid">
+          <article class="arcadians-showcase">
+            <div class="showcase-cover" role="img" aria-label="Arcadians cover artwork"></div>
+            <div class="showcase-copy">
+              <div class="showcase-kicker">Kieran Simkin · featured analysis demo</div>
+              <h2>Arcadians</h2>
+              <p class="showcase-lede">From old highlands to future sky: use the artist-authored 145 BPM reference, timed lyrics and release metadata to see how StemLab compares machine analysis with known musical ground truth.</p>
+              <div class="showcase-facts" aria-label="Arcadians release facts">
+                <span><strong>145</strong> BPM</span>
+                <span><strong>4:33</strong> full track</span>
+                <span><strong>25 Sep 2026</strong> release</span>
               </div>
-              <label class="wide">
-                <span>Canonical lyrics</span>
-                <textarea id="canonicalLyrics" rows="7" placeholder="Paste the definitive lyrics here"></textarea>
-              </label>
-              <label class="wide">
-                <span>Canonical lyric timing</span>
-                <textarea id="canonicalTiming" rows="7" placeholder="LRC timestamps or JSON events: [{&quot;start&quot;: 2.89, &quot;end&quot;: 5.12, &quot;text&quot;: &quot;...&quot;}]"></textarea>
-              </label>
-              <p class="known-info-help wide">
-                These values are stored against the uploaded file's SHA-256. BPM creates a fixed beat grid
-                anchored to the first detected beat; lyrics and timed lyrics appear as reference lanes.
-              </p>
+              <div class="showcase-actions">
+                <button id="loadArcadiansHero" type="button" class="primary">Load Arcadians reference</button>
+                <a class="button link-button" href="https://kieransimkin.co.uk/arcadians/" target="_blank" rel="noopener">Open EPK ↗</a>
+                <a class="button link-button" href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">More songs ↗</a>
+              </div>
+              <p class="showcase-note">Official artwork, canonical lyrics and structure remain credited to Kieran Simkin. The demo is deliberately as much an Arcadians showcase as a StemLab showcase.</p>
             </div>
-          </details>
+          </article>
 
-          <div id="uploadProgressWrap" class="progress-wrap hidden">
-            <div class="progress-track"><div id="uploadProgress" class="progress-fill"></div></div>
-            <div id="uploadLabel" class="small"></div>
+          <div id="dropZone" class="drop-zone" tabindex="0">
+            <div class="drop-icon">↥</div>
+            <h2>Drop an audio file here</h2>
+            <p>or choose a file to upload and analyse</p>
+            <button id="chooseButton" class="primary">Choose audio</button>
+            <input id="fileInput" type="file" accept="audio/*,.wav,.flac,.mp3,.ogg,.opus,.m4a,.aif,.aiff" hidden>
+
+            <details class="known-info">
+              <summary>Known reference information <span class="small">(optional)</span></summary>
+              <div class="known-info-grid">
+                <label>
+                  <span>Canonical BPM</span>
+                  <input id="canonicalBpm" type="number" min="1" max="400" step="0.001" placeholder="e.g. 145">
+                </label>
+                <div class="known-info-actions">
+                  <button id="loadArcadiansReference" type="button" class="button">Load Arcadians example</button>
+                  <span id="knownInfoStatus" class="small"></span>
+                </div>
+                <label class="wide">
+                  <span>Canonical lyrics</span>
+                  <textarea id="canonicalLyrics" rows="7" placeholder="Paste the definitive lyrics here"></textarea>
+                </label>
+                <label class="wide">
+                  <span>Canonical lyric timing</span>
+                  <textarea id="canonicalTiming" rows="7" placeholder="LRC timestamps or JSON events: [{&quot;start&quot;: 2.89, &quot;end&quot;: 5.12, &quot;text&quot;: &quot;...&quot;}]"></textarea>
+                </label>
+                <p class="known-info-help wide">
+                  These values are stored against the uploaded file's SHA-256. BPM creates a fixed beat grid
+                  anchored to the first detected beat; lyrics and timed lyrics appear as reference lanes.
+                </p>
+              </div>
+            </details>
+
+            <div id="uploadProgressWrap" class="progress-wrap hidden">
+              <div class="progress-track"><div id="uploadProgress" class="progress-fill"></div></div>
+              <div id="uploadLabel" class="small"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -105,6 +134,7 @@
           </details>
           <div class="window-readout">
             <span id="windowDisplay">00:00.000 — 00:00.000</span>
+            <span class="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span>
           </div>
         </div>
       </section>

@@ -54,6 +54,11 @@ jobs:
             --include-package=faster_whisper \
             --include-package=beat_this \
             --include-package=BeatNet \
+            --include-package=librosa \
+            --include-package=pyloudnorm \
+            --include-package=cmudict \
+            --include-package=sentence_transformers \
+            --include-package=allin1_infer \
             --include-package-data=bs_roformer \
             --include-package-data=faster_whisper \
             src/stemlab/__main__.py
@@ -64,6 +69,18 @@ jobs:
           cp dist/* dist-release/
           cp build/nuitka/stemlab-linux-x86_64 dist-release/
           chmod +x dist-release/stemlab-linux-x86_64
+          cat > dist-release/STEMLAB-ABOUT.txt <<'EOF'
+          StemLab
+          =======
+          Author: Kieran Simkin
+          Website: https://kieransimkin.co.uk/
+          My Songs: https://kieransimkin.co.uk/my-songs/
+          Arcadians showcase: https://kieransimkin.co.uk/arcadians/
+          Source: https://github.com/kieransimkin/stemlab
+
+          StemLab performs multi-model music source separation plus sonic,
+          harmonic, rhythmic, structural, lyrical and semantic analysis.
+          EOF
           python scripts/release_manifest.py dist-release
           cat dist-release/SHA256SUMS
 
@@ -71,6 +88,26 @@ jobs:
         with:
           name: stemlab-release-assets
           path: dist-release/*
+
+      - name: Add StemLab attribution to release notes
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release view "$TAG" --json body -q .body > /tmp/release-body.md
+          if ! grep -q 'kieransimkin.co.uk/my-songs/' /tmp/release-body.md; then
+            cat >> /tmp/release-body.md <<'EOF'
+
+          ---
+          **StemLab by Kieran Simkin**
+          Website: https://kieransimkin.co.uk/
+          Music catalogue: https://kieransimkin.co.uk/my-songs/
+          Arcadians showcase: https://kieransimkin.co.uk/arcadians/
+          Source: https://github.com/kieransimkin/stemlab
+          EOF
+            gh release edit "$TAG" --notes-file /tmp/release-body.md
+          fi
 
       - name: Upload to GitHub Release
         if: github.event_name == 'release'

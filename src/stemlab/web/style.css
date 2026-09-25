@@ -197,3 +197,76 @@ main { min-height: 0; }
   .transport { flex-wrap: wrap; }
   .status-cluster { justify-content: flex-start; }
 }
+/* --- StemLab / Kieran Simkin showcase additions (v0.2) --- */
+.brand-links { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.brand-links a, .dock-links a { color: #b8c6da; text-decoration: none; font-size: 12px; }
+.brand-links a:hover, .dock-links a:hover { color: var(--accent); }
+
+.welcome-grid {
+  width: min(1420px, 96vw); margin: 0 auto; display: grid;
+  grid-template-columns: minmax(360px, .9fr) minmax(520px, 1.1fr); gap: 26px; align-items: stretch;
+}
+.arcadians-showcase {
+  position: relative; min-height: 620px; border: 1px solid rgba(126,231,135,.32); border-radius: 24px;
+  overflow: hidden; background: #0d1714; box-shadow: 0 24px 80px rgba(0,0,0,.28);
+}
+.showcase-cover {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(180deg, rgba(5,12,10,.03) 0%, rgba(5,12,10,.28) 42%, rgba(5,12,10,.96) 78%),
+    url("/assets/arcadians-cover.jpg");
+  background-size: cover; background-position: center 32%; filter: saturate(1.08) contrast(1.04);
+}
+.showcase-cover::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle at 65% 58%, rgba(24,255,150,.14), transparent 28%);
+  mix-blend-mode: screen; pointer-events: none;
+}
+.showcase-copy {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 30px 30px 28px;
+  background: linear-gradient(180deg, transparent, rgba(5,10,9,.96) 22%);
+}
+.showcase-kicker { color: #9cf6b1; text-transform: uppercase; letter-spacing: .16em; font-size: 10px; font-weight: 800; }
+.showcase-copy h2 { margin: 8px 0 10px; font-size: clamp(38px, 6vw, 72px); line-height: .94; letter-spacing: -.035em; }
+.showcase-lede { margin: 0; max-width: 62ch; color: #d6e7dd; line-height: 1.55; font-size: 14px; }
+.showcase-facts { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+.showcase-facts span {
+  border: 1px solid rgba(126,231,135,.3); border-radius: 999px; background: rgba(5,20,15,.74);
+  padding: 7px 10px; color: #b9cfc2; font-size: 11px; backdrop-filter: blur(6px);
+}
+.showcase-facts strong { color: #f0fff4; }
+.showcase-actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+.link-button { display: inline-flex; align-items: center; text-decoration: none; }
+.showcase-note { margin: 14px 0 0; color: #8ba194; font-size: 10px; line-height: 1.45; }
+
+.welcome-grid .drop-zone { width: 100%; min-height: 620px; margin: 0; }
+
+.lane-deep-structure .event-block { background: rgba(126,231,135,.25); border-color: rgba(126,231,135,.52); color: #eaffee; }
+.lane-deep-harmony .event-block { background: rgba(242,204,96,.22); border-color: rgba(242,204,96,.5); color: #fff4bf; }
+.lane-deep-lyrics .event-block { background: rgba(210,168,255,.22); border-color: rgba(210,168,255,.5); color: #f2e9ff; }
+.deep-summary-band {
+  position: absolute; inset: 12px 8px; display: flex; gap: 8px; flex-wrap: wrap; align-content: center;
+  padding: 8px; border: 1px solid #34405a; border-radius: 8px; background: rgba(18,24,35,.72); overflow: hidden;
+}
+.deep-summary-chip {
+  max-width: 300px; padding: 6px 8px; border-radius: 999px; border: 1px solid #3a465c;
+  background: rgba(30,38,53,.85); color: #dce7f5; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.deep-summary-chip strong { color: var(--accent); }
+.window-readout { display: grid; gap: 5px; }
+
+@media (max-width: 1120px) {
+  .welcome-grid { grid-template-columns: 1fr; }
+  .arcadians-showcase { min-height: 560px; }
+  .welcome-grid .drop-zone { min-height: 460px; }
+}
+
+@media (max-width: 700px) {
+  .brand-links a { display: none; }
+  .upload-view { padding: 14px 12px 60px; }
+  .welcome-grid { width: 100%; gap: 14px; }
+  .arcadians-showcase { min-height: 500px; border-radius: 18px; }
+  .showcase-copy { padding: 24px 20px 20px; }
+  .showcase-actions { align-items: stretch; }
+  .showcase-actions > * { flex: 1 1 100%; justify-content: center; text-align: center; }
+}

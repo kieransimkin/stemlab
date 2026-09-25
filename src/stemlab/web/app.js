@@ -62,6 +62,7 @@ function prettyPath(path) {
     .replace(/^vamp\/data\//, "Vamp · ")
     .replace(/^beats\//, "Beats · ")
     .replace(/^speech\//, "Speech · ")
+    .replace(/^deep\//, "Deep · ")
     .replace(/[_-]+/g, " ");
 }
 
@@ -430,6 +431,109 @@ class Timeline {
       return;
     }
 
+
+    if (path === "deep/structure/structure.json") {
+      const lane = this.createLane(key, "Deep · functional structure", "All-In-One · functional song sections", "deep-structure");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => this.renderSegments(lane.track, data.segments || [])).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
+    if (path === "deep/song_map/song_map.json") {
+      const lane = this.createLane(key, "Deep · song map", "section-level sonic / rhythm / harmony / lyric fusion", "deep-structure");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => this.renderSegments(lane.track, data.sections || [])).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
+    if (path === "deep/harmony/harmony.json") {
+      const lane = this.createLane(key, "Deep · harmony", "collapsed chord progression + key evidence", "deep-harmony");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => {
+        const chords = data.chords?.collapsed_progression || [];
+        if (chords.length) this.renderSegments(lane.track, chords);
+        else this.renderDeepSummary(lane.track, [
+          ["key", data.vamp_key || data.independent_key_candidates_from_nnls_chroma?.[0]?.key || "—"],
+          ["tuning", data.tuning_hz ? `${Number(data.tuning_hz).toFixed(1)} Hz` : "—"],
+        ]);
+      }).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
+    if (path === "deep/lyrics/lyrics.json") {
+      const lane = this.createLane(key, "Deep · rhyme & prosody", "phonetic rhyme, repetition and delivery", "deep-lyrics");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => {
+        const timed = (data.lines || []).filter(item => Number.isFinite(Number(item.start)) && Number.isFinite(Number(item.end)));
+        if (timed.length) this.renderSegments(lane.track, timed.map(item => ({...item, label: item.text})));
+        else this.renderDeepSummary(lane.track, [
+          ["rhyme scheme", data.rhyme?.scheme || "—"],
+          ["lines", data.line_count ?? "—"],
+          ["words", data.word_count ?? "—"],
+        ]);
+      }).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
+    if (path === "deep/sonic/sonic.json") {
+      const lane = this.createLane(key, "Deep · sonic profile", "loudness · dynamics · timbre · stereo", "feature");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => this.renderDeepSummary(lane.track, [
+        ["LUFS", this.deepNumber(data.loudness?.integrated_lufs_bs1770, 1)],
+        ["crest", this.deepNumber(data.loudness?.crest_factor_db, 1, " dB")],
+        ["RMS range", this.deepNumber(data.loudness?.short_term_rms_range_db_p95_p10, 1, " dB")],
+        ["centroid", this.deepNumber(data.timbre?.spectral_centroid_hz_mean, 0, " Hz")],
+        ["stereo corr", this.deepNumber(data.stereo?.left_right_correlation, 2)],
+      ])).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
+    if (path === "deep/rhythm/rhythm.json") {
+      const lane = this.createLane(key, "Deep · groove", "meter · stability · swing · syncopation evidence", "feature");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => this.renderDeepSummary(lane.track, [
+        ["tempo", this.deepNumber(data.tempo?.median_bpm, 2, " BPM")],
+        ["meter", data.meter?.estimated_beats_per_bar ? `${data.meter.estimated_beats_per_bar}/4-ish` : "—"],
+        ["swing", this.deepNumber(data.groove?.swing_ratio_long_to_short, 2, ":1")],
+        ["offbeat energy", this.deepNumber(data.groove?.offbeat_onset_energy_ratio, 3)],
+        ["onsets/s", this.deepNumber(data.groove?.onset_density_per_second, 2)],
+      ])).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
+    if (path === "deep/semantic_text/semantic_text.json") {
+      const lane = this.createLane(key, "Deep · lyric semantics", "sentence embedding theme similarities · not probabilities", "feature");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => this.renderDeepSummary(
+        lane.track,
+        (data.theme_similarity || []).slice(0, 7).map(item => [item.theme, this.deepNumber(item.similarity, 3)])
+      )).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
+    if (path === "deep/semantic_audio/semantic_audio.json") {
+      const lane = this.createLane(key, "Deep · audio semantics", "MuQ-MuLan zero-shot similarities · CC-BY-NC weights", "feature");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => {
+        const items = Object.entries(data.prompt_sets || {}).flatMap(([category, values]) =>
+          (values || []).slice(0, 2).map(item => [`${category}: ${item.prompt}`, this.deepNumber(item.similarity, 3)])
+        );
+        this.renderDeepSummary(lane.track, items);
+      }).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
+    if (path === "deep/summary.json") {
+      const lane = this.createLane(key, "Deep · analysis summary", "cross-domain action inventory", "feature");
+      lane.rendered = true;
+      this.fetchJson(path).then(data => {
+        const items = Object.entries(data.analyses || {}).map(([name, rec]) => [name, rec.available ? "ready" : "unavailable"]);
+        if ((data.errors || []).length) items.push(["errors", data.errors.length]);
+        this.renderDeepSummary(lane.track, items);
+      }).catch(error => this.renderArtifact(lane.track, path, error.message));
+      return;
+    }
+
     const lane = this.createLane(key, prettyPath(path), `${ext || "file"} · ${Number(file.bytes || 0).toLocaleString()} bytes`, "artifact");
     lane.rendered = true;
     this.renderArtifact(lane.track, path);
@@ -650,6 +754,32 @@ class Timeline {
     }
     ctx.putImageData(image, 0, 0);
     track.appendChild(canvas);
+  }
+
+  deepNumber(value, digits = 2, suffix = "") {
+    const number = Number(value);
+    return Number.isFinite(number) ? `${number.toFixed(digits)}${suffix}` : "—";
+  }
+
+  renderDeepSummary(track, items) {
+    const band = document.createElement("div");
+    band.className = "deep-summary-band";
+    for (const [label, value] of items || []) {
+      if (value === undefined || value === null || value === "") continue;
+      const chip = document.createElement("div");
+      chip.className = "deep-summary-chip";
+      const strong = document.createElement("strong");
+      strong.textContent = `${label}: `;
+      chip.append(strong, document.createTextNode(String(value)));
+      band.appendChild(chip);
+    }
+    if (!band.children.length) {
+      const chip = document.createElement("div");
+      chip.className = "deep-summary-chip";
+      chip.textContent = "analysis available";
+      band.appendChild(chip);
+    }
+    track.appendChild(band);
   }
 
   renderArtifact(track, path, note = "") {

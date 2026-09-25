@@ -57,3 +57,15 @@ class PipelineConfig:
     run_beats: bool = True
     run_vamp: bool = True
     beat_transformer_ensemble: bool = True
+
+    # High-level analysis added in v0.2. These are separated from the existing
+    # low-level detectors so heavyweight/non-commercial model routes remain
+    # explicit and auditable.
+    run_deep_analysis: bool = True
+    run_structure: bool = True
+    all_in_one_embeddings: bool = False
+    run_text_semantics: bool = True
+    text_semantic_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    run_audio_semantics: bool = False
+    audio_semantic_model: str = "OpenMuQ/MuQ-MuLan-large"
+    run_basic_pitch: bool = False

@@ -3,6 +3,7 @@ const canonicalLyricsInput = document.querySelector("#canonicalLyrics");
 const canonicalTimingInput = document.querySelector("#canonicalTiming");
 const knownInfoStatus = document.querySelector("#knownInfoStatus");
 const loadArcadiansReference = document.querySelector("#loadArcadiansReference");
+const loadArcadiansHero = document.querySelector("#loadArcadiansHero");
 const canonicalHashNode = document.querySelector("#songHash");
 const canonicalLanesNode = document.querySelector("#lanes");
 const canonicalTimelineInner = document.querySelector("#timelineInner");
@@ -15,6 +16,7 @@ let canonicalSocket = null;
 let canonicalPoll = null;
 let canonicalBeatAnchor = null;
 let canonicalBeatSource = null;
+let canonicalReferenceMetadata = {};
 
 function canonicalEscape(value) {
   return String(value ?? "").replace(/[&<>"']/g, ch => ({
@@ -27,6 +29,7 @@ function canonicalPayloadFromForm() {
   const lyrics = canonicalLyricsInput?.value || "";
   const timing = canonicalTimingInput?.value || "";
   return {
+    ...canonicalReferenceMetadata,
     bpm: bpmRaw ? Number(bpmRaw) : null,
     lyrics: lyrics.trim() || null,
     lyric_timing: timing.trim() || [],
@@ -379,13 +382,23 @@ if (/^[0-9a-f]{64}$/i.test(initialHash)) {
 }
 
 
-loadArcadiansReference?.addEventListener("click", async event => {
-  event.preventDefault();
-  event.stopPropagation();
+async function loadArcadiansFixture(event) {
+  event?.preventDefault();
+  event?.stopPropagation();
   try {
     const response = await fetch("/assets/arcadians-reference.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`Could not load Arcadians reference (${response.status})`);
     const reference = await response.json();
+
+    canonicalReferenceMetadata = {};
+    for (const field of [
+      "title", "artist", "release_date", "isrc", "upc", "website", "my_songs_url",
+      "epk_url", "cover_art_url", "source_url", "sections"
+    ]) {
+      if (reference[field] !== undefined && reference[field] !== null) {
+        canonicalReferenceMetadata[field] = reference[field];
+      }
+    }
 
     if (canonicalBpmInput) canonicalBpmInput.value = reference.bpm ?? "";
     if (canonicalLyricsInput) canonicalLyricsInput.value = reference.lyrics ?? "";
@@ -394,12 +407,17 @@ loadArcadiansReference?.addEventListener("click", async event => {
         ? JSON.stringify(reference.lyric_timing, null, 2)
         : "";
     }
+    const details = document.querySelector(".known-info");
+    if (details) details.open = true;
     if (knownInfoStatus) {
       knownInfoStatus.textContent = reference.lyric_timing?.length
-        ? "Loaded Arcadians canonical BPM, lyrics and timing."
-        : "Loaded Arcadians canonical BPM and lyrics; exact canonical LRC is identified in the example metadata.";
+        ? `Loaded ${reference.title || "Arcadians"}: canonical release metadata, sections, ${reference.bpm} BPM, lyrics and timing.`
+        : `Loaded ${reference.title || "Arcadians"} canonical reference metadata.`;
     }
   } catch (error) {
     if (knownInfoStatus) knownInfoStatus.textContent = error.message;
   }
-});
+}
+
+loadArcadiansReference?.addEventListener("click", loadArcadiansFixture);
+loadArcadiansHero?.addEventListener("click", loadArcadiansFixture);

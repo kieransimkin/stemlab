@@ -275,5 +275,64 @@
     "clear_end_line_count": 48,
     "first_cue_seconds": 2.89,
     "last_tag_seconds": 246.59
-  }
+  },
+  "release_date": "2026-09-25",
+  "upc": "882557810017",
+  "website": "https://kieransimkin.co.uk/",
+  "my_songs_url": "https://kieransimkin.co.uk/my-songs/",
+  "epk_url": "https://kieransimkin.co.uk/arcadians/",
+  "cover_art_url": "/assets/arcadians-cover.jpg",
+  "source_url": "https://github.com/kieransimkin/stemlab",
+  "sections": [
+    {
+      "start": 0.0,
+      "end": 57.46,
+      "label": "Intro"
+    },
+    {
+      "start": 57.46,
+      "end": 70.82,
+      "label": "Verse 1"
+    },
+    {
+      "start": 70.82,
+      "end": 85.0,
+      "label": "Pre-Chorus"
+    },
+    {
+      "start": 85.0,
+      "end": 104.01,
+      "label": "Build 1"
+    },
+    {
+      "start": 104.01,
+      "end": 133.94,
+      "label": "Drop 1"
+    },
+    {
+      "start": 133.94,
+      "end": 154.44,
+      "label": "Post-Drop"
+    },
+    {
+      "start": 154.44,
+      "end": 167.75,
+      "label": "Verse 2"
+    },
+    {
+      "start": 167.75,
+      "end": 187.54,
+      "label": "Build 2"
+    },
+    {
+      "start": 187.54,
+      "end": 222.1,
+      "label": "Final Drop"
+    },
+    {
+      "start": 222.1,
+      "end": 273.604558,
+      "label": "Outro"
+    }
+  ]
 }

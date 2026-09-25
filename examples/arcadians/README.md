@@ -33,3 +33,18 @@ stemlab analyze "examples/arcadians/Arcadians - 320kbps.mp3" \
 In the web UI, click **Load Arcadians example** before selecting/uploading the
 example MP3. The BPM, canonical lyrics and canonical timing are then stored
 against the uploaded audio hash and appear as synchronized reference layers.
+
+## Official Arcadians release links
+
+- EPK / song page: https://kieransimkin.co.uk/arcadians/
+- Kieran Simkin: https://kieransimkin.co.uk/
+- Full catalogue: https://kieransimkin.co.uk/my-songs/
+- Release date: **25 September 2026**
+- BPM: **145**
+- ISRC: **QT6EB2639508**
+- UPC: **882557810017**
+
+The reference fixture also includes the artist's canonical section map: Intro → Verse 1 →
+Pre-Chorus → Build 1 → Drop 1 → Post-Drop → Verse 2 → Build 2 → Final Drop → Outro.
+StemLab's All-In-One output is retained separately so machine boundaries can be compared
+with—not substituted for—the artist-authored structure.

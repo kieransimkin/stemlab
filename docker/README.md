@@ -1,5 +1,8 @@
 # StemLab Docker Compose environment
 
+> **Kieran Simkin** · https://kieransimkin.co.uk/ · My Songs: https://kieransimkin.co.uk/my-songs/ · Arcadians: https://kieransimkin.co.uk/arcadians/ · Source: https://github.com/kieransimkin/stemlab
+
+
 This environment is designed from the supplied known-working Windows snapshot.
 It uses Python 3.13, PyTorch 2.14, the same pinned top-level Python package
 versions where they are portable, Sonic Annotator 1.7, and Vamp Plugin Pack

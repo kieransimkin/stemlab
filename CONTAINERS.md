@@ -1,5 +1,8 @@
 # StemLab container publishing
 
+> **Kieran Simkin** · https://kieransimkin.co.uk/ · My Songs: https://kieransimkin.co.uk/my-songs/ · Arcadians: https://kieransimkin.co.uk/arcadians/ · Source: https://github.com/kieransimkin/stemlab
+
+
 CI publishes the tested Linux AMD64 image after both Python matrix jobs pass.
 
 ## GitHub Container Registry

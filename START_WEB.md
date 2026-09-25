@@ -1,5 +1,8 @@
 # Starting the StemLab web service
 
+> **Kieran Simkin** · https://kieransimkin.co.uk/ · My Songs: https://kieransimkin.co.uk/my-songs/ · Arcadians: https://kieransimkin.co.uk/arcadians/ · Source: https://github.com/kieransimkin/stemlab
+
+
 ## Windows
 
 Double-click `start-web.cmd`, or run:

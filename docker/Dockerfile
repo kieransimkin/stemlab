@@ -6,6 +6,15 @@ ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu130
 ARG TORCH_VERSION=2.14.0
 ARG TORCHAUDIO_VERSION=2.11.0
 
+LABEL org.opencontainers.image.title="StemLab" \
+      org.opencontainers.image.description="Multi-model music stem separation plus sonic, harmonic, rhythmic, structural and semantic analysis" \
+      org.opencontainers.image.authors="Kieran Simkin" \
+      org.opencontainers.image.url="https://kieransimkin.co.uk/" \
+      org.opencontainers.image.documentation="https://github.com/kieransimkin/stemlab#readme" \
+      org.opencontainers.image.source="https://github.com/kieransimkin/stemlab" \
+      uk.co.kieransimkin.my-songs="https://kieransimkin.co.uk/my-songs/" \
+      uk.co.kieransimkin.arcadians="https://kieransimkin.co.uk/arcadians/"
+
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     PYTHONUNBUFFERED=1 \
@@ -63,8 +72,9 @@ RUN python -m pip install --upgrade pip setuptools wheel \
         "torchaudio==${TORCHAUDIO_VERSION}"
 
 # The exact top-level versions below are taken from the supplied working
-# Windows environment snapshot. madmom-prebuilt has a CPython 3.13 manylinux
-# wheel, avoiding the fragile source/Cython build of historical madmom.
+# Windows environment snapshot plus StemLab's deterministic deep-analysis stack.
+# madmom-prebuilt has a CPython 3.13 manylinux wheel, avoiding the fragile
+# source/Cython build of historical madmom.
 RUN python -m pip install -r /opt/stemlab-docker/requirements.lock.txt
 
 # Install the external binary analysis stack before copying project source so

@@ -1,5 +1,7 @@
 # StemLab
 
+> **StemLab by [Kieran Simkin](https://kieransimkin.co.uk/)** · [My Songs](https://kieransimkin.co.uk/my-songs/) · [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) · [Source](https://github.com/kieransimkin/stemlab)
+
 StemLab is an assessment-oriented Python/PyTorch audio pipeline. Given one master WAV and a named output directory it runs a deliberately diverse set of high-capacity source-separation models, a smaller low-latency comparison model, speech/VAD + Whisper analysis, spectrogram generation, three independent beat/downbeat systems, and a Sonic Visualiser session that ties the results together on one timeline.
 
 > **Model weights are not redistributed by this project.** They are fetched from their upstream registries/releases on first use. This avoids silently republishing checkpoints whose licensing may differ from the source code license, and lets upstream integrity metadata be used where available.
@@ -46,6 +48,40 @@ vocal stem; Silvet polyphonic note transcription; Segmentino song-structure
 segmentation; and the Queen Mary Vamp beat/bar tracker. Raw CSV, pinned
 transform files, JSON, NPZ and plots are retained under `vamp/`, with the most
 useful melody/harmony layers also embedded in the Sonic Visualiser session.
+
+
+## Comprehensive sonic, harmonic, rhythmic and semantic analysis
+
+StemLab 0.2 adds a higher-level evidence-fusion pass without discarding any of the
+existing low-level outputs. The default deep pass now includes:
+
+| Action | Evidence / model | Main output |
+|---|---|---|
+| Sonic profile | `pyloudnorm` BS.1770 + librosa DSP | LUFS, dynamics, true-peak estimate, timbre and stereo |
+| Groove / meter | all successful beat grids + onset analysis | tempo stability, meter, swing, offbeat energy and quantisation error |
+| Harmony | Chordino + NNLS chroma + QM key/tuning | chord progression, harmonic rhythm, key evidence and tonal changes |
+| Functional structure | All-In-One-Infer 3.1 | BPM, beats/downbeats and intro/verse/chorus/bridge/outro-style sections |
+| Rhyme / prosody | CMU Pronouncing Dictionary + timing | rhyme scheme, internal rhyme, syllables, repetitions and delivery rate |
+| Lyric semantics | SentenceTransformers | theme similarity, continuity and unsupervised line clusters |
+| Song map | StemLab evidence fusion | section-level sonic/rhythm/chord/lyric summaries on one timeline |
+
+Optional actions include **Basic Pitch** polyphonic MIDI/note transcription on isolated
+instrument stems and **MuQ-MuLan** zero-shot audio/text semantics. MuQ-MuLan's released
+weights are CC-BY-NC 4.0, so that route is deliberately opt-in and its licence is embedded
+in every result. Embedding similarities are labelled as similarities, never probabilities.
+
+Inspect the routes and their dependencies with:
+
+```bash
+stemlab analysis-actions
+```
+
+Useful switches include `--no-structure`, `--no-text-semantics`, `--audio-semantics`,
+`--basic-pitch`, and `--all-in-one-embeddings`.
+
+The derived artifacts live under `deep/` (`sonic/`, `rhythm/`, `harmony/`, `structure/`,
+`lyrics/`, `semantic_text/`, optional `semantic_audio/` and `basic_pitch/`, plus
+`song_map/song_map.json` and `summary.json`).
 
 ## Install
 
@@ -209,6 +245,14 @@ lyrics, the exact manually timed LRC, cover art, asset evidence, and metadata
 identifying the canonical lossless master. The upload page's **Load Arcadians
 example** button fills all three known-information fields from the same
 reference data.
+
+The bundled **Arcadians** reference is intentionally a dual showcase: it demonstrates
+StemLab against artist-supplied ground truth while also presenting the release itself.
+See the official [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) and
+[Kieran Simkin's full My Songs catalogue](https://kieransimkin.co.uk/my-songs/).
+The web demo carries canonical release metadata and artist-edited structural waypoints,
+so learned section boundaries can be compared against the authoritative song map.
+
 
 Upload arbitrary audio bytes with HTTP PUT. The filename is retained only as
 human-readable metadata; the content SHA-256 is the job identity:
