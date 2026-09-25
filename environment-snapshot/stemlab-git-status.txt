@@ -1,0 +1,11 @@
+ M src/stemlab/vamp_runtime.py
+?? bar/analysis.json
+?? bar/manifest.json
+?? bar/sonic_visualiser/
+?? bar/spectrograms/htdemucs_ft/
+?? bar/spectrograms/openunmix_umxhq/
+?? bar/vamp/
+?? barr/
+?? environment-snapshot/
+?? stemlab-vamp-windows-uac-fix.patch
+?? tests/test_vamp_runtime.py

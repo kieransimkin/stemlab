@@ -1,0 +1,4 @@
+Checked 134 packages in 7ms
+Found 2 incompatibilities
+The package `scnet` requires `torch==2.6.0`, but `2.14.0` is installed
+The package `scnet` requires `numpy==1.26.4`, but `2.5.3` is installed

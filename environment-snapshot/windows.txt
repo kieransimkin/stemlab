@@ -1,0 +1,10 @@
+
+
+WindowsProductName : Windows 10 Pro
+WindowsVersion     : 2009
+OsBuildNumber      : 19045
+OsArchitecture     : 64-bit
+
+
+
+

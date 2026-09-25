@@ -179,7 +179,21 @@ def download_vamp_plugin_pack() -> Path:
 def _launch_plugin_pack_installer(installer: Path) -> str:
     key = _platform_key()
     if key == "windows":
-        subprocess.run([str(installer)], check=True)
+        # The official Plugin Pack installer carries a requireAdministrator
+        # manifest. Launching it directly with subprocess therefore raises
+        # WinError 740 from a normal (non-elevated) StemLab shell. Ask Windows
+        # to elevate it through the Shell "runas" verb instead, wait for the
+        # installer to finish, and make cancellation/failure visible to the
+        # caller through PowerShell's exit status.
+        escaped = str(installer).replace("'", "''")
+        script = (
+            "$ErrorActionPreference='Stop'; "
+            f"Start-Process -FilePath '{escaped}' -Verb RunAs -Wait"
+        )
+        subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+            check=True,
+        )
         return "completed"
     if key == "linux":
         installer.chmod(installer.stat().st_mode | 0o111)

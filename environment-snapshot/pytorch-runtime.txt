@@ -1,0 +1,5 @@
+torch=2.14.0+cpu
+cuda_build=None
+cuda_available=False
+cudnn=None
+device_count=0

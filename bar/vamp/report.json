@@ -1,0 +1,88 @@
+{
+  "analyses": [],
+  "available_output_count": 276,
+  "errors": [
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\chords.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "chords",
+      "transform": "vamp:nnls-chroma:chordino:simplechord",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\harmonic_change.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "harmonic_change",
+      "transform": "vamp:nnls-chroma:chordino:harmonicchange",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\nnls_chroma.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "nnls_chroma",
+      "transform": "vamp:nnls-chroma:nnls-chroma:chroma",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\nnls_bass_chroma.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "nnls_bass_chroma",
+      "transform": "vamp:nnls-chroma:nnls-chroma:basschroma",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\tuning.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "tuning",
+      "transform": "vamp:nnls-chroma:tuning:tuning",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\key.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "key",
+      "transform": "vamp:qm-vamp-plugins:qm-keydetector:key",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\tonal_changes.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "tonal_changes",
+      "transform": "vamp:qm-vamp-plugins:qm-tonalchange:changepositions",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\melody_pitch.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\stems\\\\htdemucs_ft\\\\vocals.wav']' returned non-zero exit status 2.",
+      "slug": "melody_pitch",
+      "transform": "vamp:pyin:pyin:smoothedpitchtrack",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\melody_notes.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\stems\\\\htdemucs_ft\\\\vocals.wav']' returned non-zero exit status 2.",
+      "slug": "melody_notes",
+      "transform": "vamp:pyin:pyin:notes",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\polyphonic_notes.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "polyphonic_notes",
+      "transform": "vamp:silvet:silvet:notes",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\structure.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "structure",
+      "transform": "vamp:segmentino:segmentino:segmentation",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\vamp_beats.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "vamp_beats",
+      "transform": "vamp:qm-vamp-plugins:qm-barbeattracker:beats",
+      "type": "CalledProcessError"
+    },
+    {
+      "message": "Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\vamp\\\\sonic-annotator-1.7\\\\sonic-annotator-win64\\\\sonic-annotator.exe', '-t', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\vamp\\\\transforms\\\\vamp_bars.n3', '-w', 'csv', '--csv-stdout', '--csv-omit-filenames', '--csv-end-times', '--csv-fill-ends', 'C:\\\\Users\\\\Kieran\\\\OneDrive\\\\Documents\\\\GitHub\\\\stemlab\\\\bar\\\\input\\\\Chips and Ketchup.wav']' returned non-zero exit status 2.",
+      "slug": "vamp_bars",
+      "transform": "vamp:qm-vamp-plugins:qm-barbeattracker:bars",
+      "type": "CalledProcessError"
+    }
+  ],
+  "melody_source": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\bar\\stems\\htdemucs_ft\\vocals.wav",
+  "missing_outputs": [],
+  "skipped": [],
+  "sonic_annotator": "C:\\Users\\Kieran\\AppData\\Local\\stemlab\\stemlab\\Cache\\vamp\\sonic-annotator-1.7\\sonic-annotator-win64\\sonic-annotator.exe"
+}
