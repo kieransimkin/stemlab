@@ -8,8 +8,9 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Callable
 
-from .audio import audio_info
+from .audio import audio_info, normalize_audio_file
 from .beats import BeatNetBackend, BeatThisBackend, BeatTransformerBackend
+from .beats.common import consensus_result, save_result
 from .manifest import write_manifest
 from .models import MODEL_REGISTRY
 from .separators import make_backend
@@ -108,11 +109,32 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
         progress(f"separation: {spec.display_name}")
         backend = make_backend(spec.backend, bootstrap_external=config.bootstrap_external)
         result: SeparationResult = backend.separate(master, stems_dir / model_slug, model_slug, config.device)
+
+        # Normalize immediately after the separator has materialised each stem.
+        # This gives downstream PNG/Sonic Visualiser spectrograms a consistent
+        # usable level while leaving the copied master untouched.
+        normalization: list[dict] = []
+        if not result.error:
+            for stem in result.stems:
+                progress(f"normalize: {model_slug}/{stem.stem}")
+                try:
+                    norm = normalize_audio_file(stem.path)
+                    normalization.append({
+                        "stem": stem.stem,
+                        "path": str(stem.path.relative_to(out)),
+                        **norm,
+                    })
+                except Exception as exc:
+                    analysis["errors"].append(_error_record(f"normalize:{model_slug}:{stem.stem}", exc))
+                    if not config.continue_on_error:
+                        raise
+
         model_record = {
             "spec": spec.to_dict(),
             "elapsed_seconds": result.elapsed_seconds,
             "error": result.error,
             "metadata": result.metadata,
+            "normalization": normalization,
             "stems": [s.to_dict(out) for s in result.stems],
         }
         analysis["models"].append(model_record)
@@ -163,6 +185,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     "regions": len(whisper_result["regions"]),
                     "segments": len(whisper_result["segments"]),
                     "words": len(whisper_result["words"]),
+                    "normalization": whisper_result.get("normalization"),
                 }
                 spoken = Path(whisper_result["spoken_word_wav"])
                 # Treat the VAD-gated speech waveform as another generated stem so the
@@ -202,6 +225,21 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 analysis["errors"].append(_error_record(f"beats:{name}", exc))
                 if not config.continue_on_error:
                     raise
+
+        # Produce one clearly identified "best shared guess" rather than asking
+        # the user to visually infer agreement between three nearly-overlaid
+        # detector tracks.  The individual detector outputs remain untouched.
+        consensus = consensus_result(beat_results)
+        if consensus is not None and consensus.beats:
+            save_result(consensus, beats_dir)
+            beat_results.append(consensus)
+            analysis["beats"].append({
+                "model": consensus.model,
+                "beats": len(consensus.beats),
+                "downbeats": len(consensus.downbeats),
+                "tempo_bpm": consensus.tempo_bpm,
+                "metadata": consensus.metadata,
+            })
 
     progress("Sonic Visualiser session")
     try:

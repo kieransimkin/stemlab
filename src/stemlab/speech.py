@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from .audio import load_audio, save_audio
+from .audio import load_audio, normalize_audio_file, save_audio
 from .util import write_json
 
 
@@ -57,6 +57,7 @@ def isolate_and_transcribe(
     import torch
     spoken_path = output_dir / "spoken_word.wav"
     save_audio(spoken_path, torch.from_numpy(spoken).unsqueeze(0), 16000)
+    normalization = normalize_audio_file(spoken_path)
 
     if device == "auto":
         try:
@@ -85,6 +86,7 @@ def isolate_and_transcribe(
     result = {
         "source_vocals": str(vocal_path),
         "spoken_word_wav": str(spoken_path),
+        "normalization": normalization,
         "model": whisper_model,
         "language": info.language,
         "language_probability": float(info.language_probability),

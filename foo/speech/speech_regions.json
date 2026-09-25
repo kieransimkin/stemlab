@@ -18,14 +18,14 @@
     "start_sample": 58496
   },
   {
-    "end": 8.152,
-    "end_sample": 130432,
+    "end": 8.056,
+    "end_sample": 128896,
     "start": 5.608,
     "start_sample": 89728
   },
   {
-    "end": 29.08,
-    "end_sample": 465280,
+    "end": 28.952,
+    "end_sample": 463232,
     "start": 8.52,
     "start_sample": 136320
   },
@@ -36,16 +36,10 @@
     "start_sample": 475776
   },
   {
-    "end": 62.84,
-    "end_sample": 1005440,
-    "start": 48.68,
-    "start_sample": 778880
-  },
-  {
     "end": 70.072,
     "end_sample": 1121152,
-    "start": 62.952,
-    "start_sample": 1007232
+    "start": 48.68,
+    "start_sample": 778880
   },
   {
     "end": 105.752,
@@ -66,8 +60,8 @@
     "start_sample": 1811072
   },
   {
-    "end": 134.264,
-    "end_sample": 2148224,
+    "end": 134.232,
+    "end_sample": 2147712,
     "start": 115.688,
     "start_sample": 1851008
   },
@@ -78,21 +72,21 @@
     "start_sample": 2150528
   },
   {
-    "end": 141.336,
-    "end_sample": 2261376,
+    "end": 141.304,
+    "end_sample": 2260864,
     "start": 137.96,
     "start_sample": 2207360
   },
   {
-    "end": 156.408,
-    "end_sample": 2502528,
-    "start": 141.512,
-    "start_sample": 2264192
+    "end": 156.376,
+    "end_sample": 2502016,
+    "start": 141.544,
+    "start_sample": 2264704
   },
   {
-    "end": 159.864,
-    "end_sample": 2557824,
-    "start": 156.584,
-    "start_sample": 2505344
+    "end": 159.832,
+    "end_sample": 2557312,
+    "start": 156.552,
+    "start_sample": 2504832
   }
 ]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -92,3 +93,69 @@ def save_audio(path: Path, wav, sample_rate: int) -> None:
     audio = wav.detach().cpu().float().numpy().T
     subtype = "FLOAT" if path.suffix.lower() in {".wav", ".wave"} else None
     sf.write(str(path), audio, int(sample_rate), subtype=subtype)
+
+
+def normalize_audio_file(path: Path, *, target_peak_dbfs: float = -1.0) -> dict[str, Any]:
+    """Peak-normalize an already-written stem in place.
+
+    Stem separators use different output gain conventions.  That makes direct
+    visual comparison in Sonic Visualiser awkward because a perfectly useful
+    low-level stem can render almost black.  StemLab therefore normalizes every
+    generated stem immediately after it appears on disk, before spectrogram or
+    transcription analysis is run.
+
+    The operation is deliberately simple and deterministic: the largest
+    absolute sample is moved to ``target_peak_dbfs`` (default -1 dBFS).  Silent
+    files are left untouched.  WAV files are rewritten as float32 so the
+    normalization step cannot introduce integer clipping or an extra quantize
+    cycle.
+    """
+    import numpy as np
+    import soundfile as sf
+
+    path = Path(path)
+    info = sf.info(str(path))
+    audio, sample_rate = sf.read(str(path), dtype="float32", always_2d=True)
+    if audio.size == 0:
+        return {
+            "normalized": False,
+            "reason": "empty",
+            "target_peak_dbfs": float(target_peak_dbfs),
+            "gain_db": 0.0,
+            "peak_before": 0.0,
+            "peak_after": 0.0,
+        }
+
+    peak_before = float(np.max(np.abs(audio)))
+    if not math.isfinite(peak_before):
+        raise ValueError(f"Non-finite sample peak in {path}")
+    if peak_before == 0.0:
+        return {
+            "normalized": False,
+            "reason": "silent",
+            "target_peak_dbfs": float(target_peak_dbfs),
+            "gain_db": 0.0,
+            "peak_before": 0.0,
+            "peak_after": 0.0,
+        }
+
+    target_peak = float(10.0 ** (float(target_peak_dbfs) / 20.0))
+    gain = target_peak / peak_before
+    audio *= np.float32(gain)
+
+    # Preserve the original container where possible.  Float WAV is preferred
+    # for generated analysis material because it avoids another PCM quantize
+    # cycle after gain adjustment.
+    subtype = "FLOAT" if path.suffix.lower() in {".wav", ".wave"} else info.subtype
+    sf.write(str(path), audio, int(sample_rate), subtype=subtype)
+
+    peak_after = float(np.max(np.abs(audio)))
+    return {
+        "normalized": True,
+        "target_peak_dbfs": float(target_peak_dbfs),
+        "gain_db": float(20.0 * math.log10(gain)),
+        "peak_before": peak_before,
+        "peak_after": peak_after,
+        "peak_before_dbfs": float(20.0 * math.log10(peak_before)),
+        "peak_after_dbfs": float(20.0 * math.log10(peak_after)),
+    }

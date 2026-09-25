@@ -12,8 +12,8 @@ def generate_spectrogram(
     png_path: Path,
     data_path: Path,
     *,
-    n_fft: int = 4096,
-    hop_length: int = 1024,
+    n_fft: int = 2094,
+    hop_length: int = 126,
     max_plot_frames: int = 5000,
 ) -> dict:
     import matplotlib
