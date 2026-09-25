@@ -1,0 +1,244 @@
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -3,17 +3,24 @@
+ on:
+   push:
+     branches: [main]
++    tags: ["v*"]
+   pull_request:
++  workflow_dispatch:
++
++permissions:
++  contents: read
++  packages: write
+ 
+ jobs:
+   test:
+     runs-on: ubuntu-latest
+     strategy:
++      fail-fast: false
+       matrix:
+         python: ["3.10", "3.11"]
+     steps:
+-      - uses: actions/checkout@v4
+-      - uses: actions/setup-python@v5
++      - uses: actions/checkout@v7
++      - uses: actions/setup-python@v7
+         with:
+           python-version: ${{ matrix.python }}
+           cache: pip
+@@ -22,3 +29,91 @@
+       - run: python -m compileall -q src tests
+       - run: pytest
+       - run: ruff check src tests scripts
++
++  container:
++    name: Build and publish container
++    needs: test
++    if: github.event_name != 'pull_request'
++    runs-on: ubuntu-24.04
++    env:
++      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
++      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
++
++    steps:
++      - uses: actions/checkout@v7
++
++      - name: Set up Docker Buildx
++        uses: docker/setup-buildx-action@v4
++
++      - name: Log in to GitHub Container Registry
++        uses: docker/login-action@v4
++        with:
++          registry: ghcr.io
++          username: ${{ github.actor }}
++          password: ${{ secrets.GITHUB_TOKEN }}
++
++      - name: Log in to Docker Hub
++        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
++        uses: docker/login-action@v4
++        with:
++          username: ${{ env.DOCKERHUB_USERNAME }}
++          password: ${{ env.DOCKERHUB_TOKEN }}
++
++      - name: Generate GHCR image metadata
++        id: meta-ghcr
++        uses: docker/metadata-action@v6
++        with:
++          images: ghcr.io/${{ github.repository }}
++          tags: |
++            type=ref,event=branch
++            type=ref,event=tag
++            type=semver,pattern={{version}}
++            type=semver,pattern={{major}}.{{minor}}
++            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
++            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
++            type=sha,prefix=sha-
++
++      - name: Generate Docker Hub image metadata
++        id: meta-dockerhub
++        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
++        uses: docker/metadata-action@v6
++        with:
++          images: ${{ env.DOCKERHUB_USERNAME }}/stemlab
++          tags: |
++            type=ref,event=branch
++            type=ref,event=tag
++            type=semver,pattern={{version}}
++            type=semver,pattern={{major}}.{{minor}}
++            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
++            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
++            type=sha,prefix=sha-
++
++      - name: Build and publish StemLab image
++        uses: docker/build-push-action@v7
++        with:
++          context: .
++          file: docker/Dockerfile
++          platforms: linux/amd64
++          push: true
++          build-args: |
++            STEMLAB_REPO=https://github.com/${{ github.repository }}.git
++            STEMLAB_REF=${{ github.sha }}
++          tags: |
++            ${{ steps.meta-ghcr.outputs.tags }}
++            ${{ steps.meta-dockerhub.outputs.tags }}
++          labels: ${{ steps.meta-ghcr.outputs.labels }}
++          cache-from: type=gha
++          cache-to: type=gha,mode=max
++          provenance: mode=max
++          sbom: true
++
++      - name: Published image summary
++        run: |
++          echo "### Published container images" >> "$GITHUB_STEP_SUMMARY"
++          echo "" >> "$GITHUB_STEP_SUMMARY"
++          echo '```text' >> "$GITHUB_STEP_SUMMARY"
++          echo "${{ steps.meta-ghcr.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
++          if [[ -n "${{ steps.meta-dockerhub.outputs.tags }}" ]]; then
++            echo "${{ steps.meta-dockerhub.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
++          fi
++          echo '```' >> "$GITHUB_STEP_SUMMARY"
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -58,4 +58,10 @@
+ line-length = 100
+ target-version = "py310"
+ 
++[tool.ruff.lint]
++# Keep CI's lint contract explicit. New Ruff releases may add or enable
++# additional rule families; CI should not start failing solely because the
++# resolver selected a newer Ruff version.
++select = ["E4", "E7", "E9", "F"]
++
+ [tool.pytest.ini_options]
+diff --git a/src/stemlab/bootstrap.py b/src/stemlab/bootstrap.py
+--- a/src/stemlab/bootstrap.py
++++ b/src/stemlab/bootstrap.py
+@@ -3,7 +3,6 @@
+ import os
+ import shutil
+ import subprocess
+-import sys
+ import urllib.request
+ import venv
+ from dataclasses import dataclass
+diff --git a/src/stemlab/pipeline.py b/src/stemlab/pipeline.py
+--- a/src/stemlab/pipeline.py
++++ b/src/stemlab/pipeline.py
+@@ -1,7 +1,6 @@
+ from __future__ import annotations
+ 
+ import datetime as dt
+-import json
+ import shutil
+ import traceback
+ from dataclasses import asdict
+diff --git a/src/stemlab/speech.py b/src/stemlab/speech.py
+--- a/src/stemlab/speech.py
++++ b/src/stemlab/speech.py
+@@ -1,7 +1,6 @@
+ from __future__ import annotations
+ 
+ import csv
+-import json
+ from pathlib import Path
+ from typing import Any
+ 
+--- a/docker/install-stemlab.sh
++++ b/docker/install-stemlab.sh
+@@ -27,16 +27,24 @@
+ ref="$(resolve_ref)"
+ echo "Installing StemLab from $repo ref=$ref"
+ rm -rf "$destination"
++mkdir -p "$destination"
+ 
+-if ! git clone --depth 1 --branch "$ref" "$repo" "$destination"; then
++# Fetch through FETCH_HEAD instead of `git clone --branch` so STEMLAB_REF can
++# be a branch, tag, or exact commit SHA. CI uses the triggering commit SHA to
++# guarantee that the published container contains the code that passed tests.
++git -C "$destination" init -q
++git -C "$destination" remote add origin "$repo"
++
++if ! git -C "$destination" fetch --depth 1 origin "$ref"; then
+     if [[ "$requested_ref" == "latest" && "$ref" != "main" ]]; then
+-        echo "Latest release tag clone failed; falling back to main" >&2
+-        rm -rf "$destination"
+-        git clone --depth 1 --branch main "$repo" "$destination"
++        echo "Latest release ref fetch failed; falling back to main" >&2
++        git -C "$destination" fetch --depth 1 origin main
+         ref=main
+     else
+         exit 1
+     fi
+ fi
+ 
++git -C "$destination" -c advice.detachedHead=false checkout --detach FETCH_HEAD
++
+ python -m pip install --no-deps -e "$destination"
+diff --git a/CONTAINERS.md b/CONTAINERS.md
+new file mode 100644
+--- /dev/null
++++ b/CONTAINERS.md
+@@ -0,0 +1,41 @@
++# StemLab container publishing
++
++CI publishes the tested Linux AMD64 image after both Python matrix jobs pass.
++
++## GitHub Container Registry
++
++Successful pushes to `main` publish:
++
++```text
++ghcr.io/kieransimkin/stemlab:main
++ghcr.io/kieransimkin/stemlab:edge
++ghcr.io/kieransimkin/stemlab:sha-<commit>
++```
++
++Tags matching `v*` additionally publish the tag, semantic-version aliases, and
++`latest`. GHCR uses the workflow's built-in `GITHUB_TOKEN`; no extra secret is
++required.
++
++## Docker Hub
++
++Docker Hub publishing is optional. Configure these repository Actions secrets:
++
++```text
++DOCKERHUB_USERNAME
++DOCKERHUB_TOKEN
++```
++
++When both are present, the same image is also pushed to:
++
++```text
++<DOCKERHUB_USERNAME>/stemlab
++```
++
++Use a Docker Hub access token with push permission rather than an account
++password.
++
++## Reproducibility
++
++The image build receives the exact `github.sha` as `STEMLAB_REF`.
++`docker/install-stemlab.sh` now accepts branches, tags, and exact commit SHAs,
++so the image embeds exactly the revision that passed CI.

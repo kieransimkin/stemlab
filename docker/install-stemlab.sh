@@ -27,17 +27,25 @@ resolve_ref() {
 ref="$(resolve_ref)"
 echo "Installing StemLab from $repo ref=$ref"
 rm -rf "$destination"
+mkdir -p "$destination"
 
-if ! git clone --depth 1 --branch "$ref" "$repo" "$destination"; then
+# Fetch through FETCH_HEAD instead of `git clone --branch` so STEMLAB_REF can
+# be a branch, tag, or exact commit SHA. CI uses the triggering commit SHA to
+# guarantee that the published container contains the code that passed tests.
+git -C "$destination" init -q
+git -C "$destination" remote add origin "$repo"
+
+if ! git -C "$destination" fetch --depth 1 origin "$ref"; then
     if [[ "$requested_ref" == "latest" && "$ref" != "main" ]]; then
-        echo "Latest release tag clone failed; falling back to main" >&2
-        rm -rf "$destination"
-        git clone --depth 1 --branch main "$repo" "$destination"
+        echo "Latest release ref fetch failed; falling back to main" >&2
+        git -C "$destination" fetch --depth 1 origin main
         ref=main
     else
         exit 1
     fi
 fi
+
+git -C "$destination" -c advice.detachedHead=false checkout --detach FETCH_HEAD
 
 python -m pip install --no-deps -e "$destination"
 printf '%s\n' "$ref" > /opt/stemlab-installed-ref.txt
