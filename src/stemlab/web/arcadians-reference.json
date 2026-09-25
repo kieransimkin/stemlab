@@ -4,7 +4,256 @@
   "isrc": "QT6EB2639508",
   "bpm": 145.0,
   "lyrics": "No crown, no concrete\nJust mountain breath and moonlit stone\nArcadia...\nWhere the green stays gold\n\nPan in the pines, river in the light\nWildflower fires in the velvet night\nOld-world echoes under the trees\nOne land, one heart, one harmony\n\nHear the pipes through the valley below\nAncient rivers, timeless flow\nNo chains on the roots, no walls in the sky\nArcadia calling, we rise, we rise\n\nPan on the pipe\nWind in the pines\nMountain pulse in the bloodline\nHigher, higher, into the light\nWild green world, electrify\n\nAR-CA-DI-A!\nWild green frequency!\nBass in the valley, roots in the beat\nUnspoiled heaven under our feet!\n\nAR-CA-DI-A!\nLet the mountains shake!\nPan’s pipe screaming while the earth wakes\nNature in balance—\nBREAK! BREAK! BREAK!\n\nArcadia...\nArcadia...\n\nCallisto’s stars on the mountainside\nArcas dreaming where the rivers glide\nShepherd songs in the open air\nNo empire owns what the wild can share\n\nHear the pipes through the valley below\nAncient rivers, timeless flow\nNo chains on the roots, no walls in the sky\nArcadia calling, we rise, we rise\n\nAR-CA-DI-A!\nWild green frequency!\nThunder in the hills, fire in the leaves\nThe wild stays free when the people believe!\n\nAR-CA-DI-A!\nLet the mountains shake!\nPan’s pipe screaming while the earth wakes\nNature in balance—\nBREAK! BREAK! BREAK!\n\nFrom the old highlands\nTo the sound-system sky\nArcadia never died",
-  "lyric_timing": [],
+  "lyric_timing": [
+    {
+      "start": 2.89,
+      "end": 7.76,
+      "text": "No crown, no concrete"
+    },
+    {
+      "start": 7.81,
+      "end": 14.19,
+      "text": "Just mountain breath and moonlit stone"
+    },
+    {
+      "start": 14.29,
+      "end": 21.82,
+      "text": "Arcadia..."
+    },
+    {
+      "start": 21.83,
+      "end": 30.3,
+      "text": "Where the green stays gold"
+    },
+    {
+      "start": 57.46,
+      "end": 60.82,
+      "text": "Pan in the pines, river in the light"
+    },
+    {
+      "start": 60.82,
+      "end": 63.88,
+      "text": "Wildflower fires in the velvet night"
+    },
+    {
+      "start": 63.88,
+      "end": 67.1,
+      "text": "Old-world echoes under the trees"
+    },
+    {
+      "start": 67.1,
+      "end": 70.82,
+      "text": "One land, one heart, one harmony"
+    },
+    {
+      "start": 70.82,
+      "end": 73.8,
+      "text": "Hear the pipes through the valley below"
+    },
+    {
+      "start": 73.8,
+      "end": 77.1,
+      "text": "Ancient rivers, timeless flow"
+    },
+    {
+      "start": 77.1,
+      "end": 80.48,
+      "text": "No chains on the roots, no walls in the sky"
+    },
+    {
+      "start": 80.49,
+      "end": 84.94,
+      "text": "Arcadia calling, we rise, we rise"
+    },
+    {
+      "start": 85.0,
+      "end": 86.53,
+      "text": "Pan on the pipe"
+    },
+    {
+      "start": 86.65,
+      "end": 88.08,
+      "text": "Wind in the pines"
+    },
+    {
+      "start": 88.08,
+      "end": 91.42,
+      "text": "Mountain pulse in the bloodline"
+    },
+    {
+      "start": 91.42,
+      "end": 94.68,
+      "text": "Higher, higher, into the light"
+    },
+    {
+      "start": 94.68,
+      "end": 98.14,
+      "text": "Wild green world, electrify"
+    },
+    {
+      "start": 104.01,
+      "end": 108.08,
+      "text": "AR-CA-DI-A!"
+    },
+    {
+      "start": 108.09,
+      "end": 111.46,
+      "text": "Wild green frequency!"
+    },
+    {
+      "start": 111.47,
+      "end": 114.56,
+      "text": "Bass in the valley, roots in the beat"
+    },
+    {
+      "start": 114.58,
+      "end": 117.94,
+      "text": "Unspoiled heaven under our feet!"
+    },
+    {
+      "start": 117.94,
+      "end": 119.44,
+      "text": "AR-CA-DI-A!"
+    },
+    {
+      "start": 119.44,
+      "end": 121.26,
+      "text": "Let the mountains shake!"
+    },
+    {
+      "start": 121.26,
+      "end": 124.94,
+      "text": "Pan’s pipe screaming while the earth wakes"
+    },
+    {
+      "start": 124.94,
+      "end": 127.24,
+      "text": "Nature in balance—"
+    },
+    {
+      "start": 127.24,
+      "end": 133.94,
+      "text": "BREAK! BREAK! BREAK!"
+    },
+    {
+      "start": 133.94,
+      "end": 147.08,
+      "text": "Arcadia..."
+    },
+    {
+      "start": 147.08,
+      "end": 154.44,
+      "text": "Arcadia..."
+    },
+    {
+      "start": 154.44,
+      "end": 157.8,
+      "text": "Callisto’s stars on the mountainside"
+    },
+    {
+      "start": 157.81,
+      "end": 161.01,
+      "text": "Arcas dreaming where the rivers glide"
+    },
+    {
+      "start": 161.03,
+      "end": 164.26,
+      "text": "Shepherd songs in the open air"
+    },
+    {
+      "start": 164.36,
+      "end": 167.74,
+      "text": "No empire owns what the wild can share"
+    },
+    {
+      "start": 167.75,
+      "end": 171.17,
+      "text": "Hear the pipes through the valley below"
+    },
+    {
+      "start": 171.38,
+      "end": 173.54,
+      "text": "Ancient rivers, timeless flow"
+    },
+    {
+      "start": 173.54,
+      "end": 177.0,
+      "text": "No chains on the roots, no walls in the sky"
+    },
+    {
+      "start": 177.0,
+      "end": 181.42,
+      "text": "Arcadia calling, we rise, we rise"
+    },
+    {
+      "start": 187.54,
+      "end": 191.5,
+      "text": "AR-CA-DI-A!"
+    },
+    {
+      "start": 191.5,
+      "end": 194.4,
+      "text": "Wild green frequency!"
+    },
+    {
+      "start": 194.4,
+      "end": 198.02,
+      "text": "Thunder in the hills, fire in the leaves"
+    },
+    {
+      "start": 198.02,
+      "end": 201.68,
+      "text": "The wild stays free when the people believe!"
+    },
+    {
+      "start": 201.68,
+      "end": 203.14,
+      "text": "AR-CA-DI-A!"
+    },
+    {
+      "start": 203.14,
+      "end": 204.86,
+      "text": "Let the mountains shake!"
+    },
+    {
+      "start": 204.86,
+      "end": 208.3,
+      "text": "Pan’s pipe screaming while the earth wakes"
+    },
+    {
+      "start": 208.3,
+      "end": 210.94,
+      "text": "Nature in balance—"
+    },
+    {
+      "start": 210.94,
+      "end": 221.44,
+      "text": "BREAK! BREAK! BREAK!"
+    },
+    {
+      "start": 222.1,
+      "end": 227.78,
+      "text": "From the old highlands"
+    },
+    {
+      "start": 227.78,
+      "end": 235.38,
+      "text": "To the sound-system sky"
+    },
+    {
+      "start": 235.39,
+      "end": 246.59,
+      "text": "Arcadia never died"
+    }
+  ],
+  "example_audio": {
+    "filename": "Arcadians - 320kbps.mp3",
+    "sha256": "5a3d17d8b5b27d62a6bb9fa1f654c403db0341da826d650cc282dfa5758ee6de",
+    "bitrate_kbps": 320,
+    "sample_rate_hz": 44100,
+    "channels": 2,
+    "duration_seconds_estimated_cbr": 273.659
+  },
   "audio_reference": {
     "canonical_filename": "Arcadians - mastered.wav",
     "sha256": "b72436c8d3741a86b75af603f702e063b3c5be96738dd02181f32b74bdea1366",
@@ -18,14 +267,13 @@
   },
   "lyric_timing_reference": {
     "status": "canonical_user_edited_locked",
-    "expected_filename": "canonical-lyric-timing.lrc",
+    "filename": "canonical-lyric-timing.lrc",
     "sha256": "92b46abc4caf1caa8eddf7c306a9e767f8d0bbefed3b39d38e4b4f96981e9de7",
     "timestamp_format": "[mm:ss.cc]",
     "timestamp_tags": 96,
     "populated_lyric_cues": 48,
     "clear_end_line_count": 48,
     "first_cue_seconds": 2.89,
-    "last_tag_seconds": 246.59,
-    "note": "The exact artist-edited LRC is the canonical timing authority. This repository fixture records its verified identity and validation metadata; the timestamp contents are not reconstructed from summary data."
+    "last_tag_seconds": 246.59
   }
 }

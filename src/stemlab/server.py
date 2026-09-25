@@ -27,6 +27,7 @@ try:
     import socketio
     from fastapi import FastAPI, HTTPException, Request
     from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+    from .webui import install_routes as _install_web_routes
 except ImportError as exc:  # pragma: no cover - exercised by the CLI error path
     raise RuntimeError(
         "StemLab's HTTP service dependencies are not installed. "
@@ -986,8 +987,6 @@ def _resolve_result_path(song_hash: str, rel_path: str = "") -> tuple[Path, Path
         raise HTTPException(status_code=404, detail="not found")
     return root, target
 
-
-from .webui import install_routes as _install_web_routes
 
 _install_web_routes(
     http_app,

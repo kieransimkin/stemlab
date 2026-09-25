@@ -193,6 +193,23 @@ GET /api/<hash>/waveform?path=...
 GET /api/<hash>/spectrogram?path=spectrograms/...npz
 ```
 
+Optional known reference information can be supplied before upload: canonical
+BPM, canonical lyrics, and canonical lyric timing. Lyric timing accepts LRC or
+JSON events. The values are stored as `results/<hash>/canonical.json` and appear
+as synchronized reference lanes in every browser attached to that hash.
+
+When canonical BPM is present, StemLab draws a fixed beat grid at exactly
+`60 / BPM` seconds per beat. The grid is phase-aligned to the first detected
+beat, preferring the detector consensus as soon as it exists. This makes the
+known tempo directly comparable with the independent beat trackers.
+
+`examples/arcadians/` contains the bundled reference song **Arcadians** by
+Kieran Simkin: a 320 kbps analysis MP3, the canonical 145 BPM, definitive
+lyrics, the exact manually timed LRC, cover art, asset evidence, and metadata
+identifying the canonical lossless master. The upload page's **Load Arcadians
+example** button fills all three known-information fields from the same
+reference data.
+
 Upload arbitrary audio bytes with HTTP PUT. The filename is retained only as
 human-readable metadata; the content SHA-256 is the job identity:
 

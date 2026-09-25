@@ -1,29 +1,35 @@
 # Arcadians reference song
 
-`Arcadians` by Kieran Simkin is the project reference song for exercising
-StemLab's known-information and timeline layers.
+`Arcadians` by Kieran Simkin is the bundled StemLab reference song for exercising
+the known-information API and synchronized timeline layers.
 
-Known canonical data bundled here:
+Included reference material:
 
-- BPM: **145.0**
+- analysis audio: `Arcadians - 320kbps.mp3`
+- canonical BPM: **145.0**
 - canonical lyrics: `lyrics.txt`
+- manually edited canonical timing: `canonical-lyric-timing.lrc`
+- canonical metadata payload: `canonical.json`
+- release/asset evidence: `asset-manifest.json`
 - canonical cover art: `cover.jpg`
-- canonical master identity: SHA-256
-  `b72436c8d3741a86b75af603f702e063b3c5be96738dd02181f32b74bdea1366`
-- canonical master duration: `273.604558` seconds
-- canonical lyric-timing authority: `canonical-lyric-timing.lrc`, SHA-256
-  `92b46abc4caf1caa8eddf7c306a9e767f8d0bbefed3b39d38e4b4f96981e9de7`
 
-The canonical master audio itself is not committed here. Use the artist master
-whose SHA-256 matches the value above, upload it to the StemLab web service,
-then load the Arcadians reference from the upload form.
+The included MP3 has SHA-256
+`5a3d17d8b5b27d62a6bb9fa1f654c403db0341da826d650cc282dfa5758ee6de`.
+The canonical lossless master is intentionally identified separately by SHA-256
+`b72436c8d3741a86b75af603f702e063b3c5be96738dd02181f32b74bdea1366`
+and has a duration of `273.604558` seconds at 44.1 kHz stereo.
 
-The exact manually edited LRC is also not reconstructed from summary metadata.
-If the original `canonical-lyric-timing.lrc` is available, paste it into the
-Canonical lyric timing field (or PUT it via the canonical metadata endpoint)
-and StemLab will render it as a timed reference lane. Blank LRC timestamp lines
-are interpreted as lyric clear/end events.
+The LRC is the exact artist-edited canonical timing file. Blank timestamp lines
+are treated as clear/end cues for the preceding lyric. `canonical.json` and the
+web UI fixture contain the same timing normalized into start/end events.
 
-`reference.json` records the expected identities and validation metadata.
-`canonical.json` is a directly usable metadata payload containing the canonical
-BPM and lyrics.
+To exercise the CLI directly:
+
+```bash
+stemlab analyze "examples/arcadians/Arcadians - 320kbps.mp3" \
+  --output ./analysis-arcadians --profile practical --device auto
+```
+
+In the web UI, click **Load Arcadians example** before selecting/uploading the
+example MP3. The BPM, canonical lyrics and canonical timing are then stored
+against the uploaded audio hash and appear as synchronized reference layers.

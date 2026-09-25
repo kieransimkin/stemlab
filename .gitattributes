@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Canonical lyric timing files are byte-sensitive reference assets.
+examples/arcadians/*.lrc binary

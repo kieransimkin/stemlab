@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-23T22:52:56.224409+01:00",
+  "generator": "Z:\\My Songs\\Releases\\tools\\release_asset_manifest_sync.py",
+  "self_excluded_from_inventory": "asset-manifest.json",
+  "release": {
+    "title": "Arcadians",
+    "artist": "Kieran Simkin",
+    "folder": "Arcadians",
+    "release_date": "2026-09-25",
+    "upc": "882557810017",
+    "isrcs": [
+      "QT6EB2639508"
+    ],
+    "spotify": null,
+    "youtube": null,
+    "apple": "https://music.apple.com/us/album/arcadians-single/6785145235",
+    "hyperfollow": "https://distrokid.com/hyperfollow/kieransimkin/arcadians"
+  },
+  "evidence": {
+    "release_data": "Z:\\My Songs\\Releases\\EPK Batch 2026\\release-data.tsv",
+    "release_asset_audit": "Z:\\My Songs\\Releases\\reports\\release-asset-audit-2026-09-19.json",
+    "master_status": "confirmed by a single non-alternate designated master filename"
+  },
+  "canonical_assets": {
+    "cover": {
+      "path": "cover.jpg",
+      "bytes": 745386,
+      "sha256": "8bfeff939c1ffcba7529614263e05d4f1bb59a46e6c13501dbf12349edb047ee"
+    },
+    "master_wavs": [
+      {
+        "path": "Arcadians - mastered.wav",
+        "bytes": 48263888,
+        "sha256": "b72436c8d3741a86b75af603f702e063b3c5be96738dd02181f32b74bdea1366",
+        "sample_rate_hz": 44100,
+        "channels": 2,
+        "sample_width_bits": 16,
+        "duration_seconds": 273.604558
+      }
+    ],
+    "mp3_derivatives": [
+      {
+        "path": "Arcadians - 320kbps.mp3",
+        "file_bytes": 11708403,
+        "file_sha256": "5a3d17d8b5b27d62a6bb9fa1f654c403db0341da826d650cc282dfa5758ee6de",
+        "audio_bytes": 10946350,
+        "audio_sha256": "38bcb6899395d645061138d260e471e36169696239e07bd93d6cd7c1858ee933",
+        "mpeg_version": "1",
+        "bitrate_kbps_first_frame": 320,
+        "sample_rate_hz": 44100,
+        "channels": 2,
+        "duration_seconds_estimated_cbr": 273.659,
+        "id3_version": "2.3.0",
+        "tags": {
+          "title": "Arcadians",
+          "artist": "Kieran Simkin",
+          "album_artist": "Kieran Simkin",
+          "album": "Arcadians",
+          "track": "1/1",
+          "disc": "1/1",
+          "date": "2026",
+          "isrc": "QT6EB2639508"
+        },
+        "artwork": [
+          {
+            "mime": "image/jpeg",
+            "type": 3,
+            "description": "Cover",
+            "bytes": 745386,
+            "width": 1254,
+            "height": 1254,
+            "sha256": "8bfeff939c1ffcba7529614263e05d4f1bb59a46e6c13501dbf12349edb047ee"
+          }
+        ],
+        "warnings": []
+      }
+    ]
+  },
+  "lyrics": {
+    "status": "complete",
+    "track_count": 1,
+    "canonical_track_count": 1,
+    "tracks": [
+      {
+        "track_number": 1,
+        "track_title": "Arcadians",
+        "isrc": "QT6EB2639508",
+        "canonical_path": "canonical-lyrics/01 - QT6EB2639508 - Arcadians.txt",
+        "bytes": 1379,
+        "sha256": "3211562728d8259f537dba5d29702ba76f00bfeb95258340e066cc5b68e433e0",
+        "encoding": "utf-8",
+        "text": "No crown, no concrete\nJust mountain breath and moonlit stone\nArcadia...\nWhere the green stays gold\n\nPan in the pines, river in the light\nWildflower fires in the velvet night\nOld-world echoes under the trees\nOne land, one heart, one harmony\n\nHear the pipes through the valley below\nAncient rivers, timeless flow\nNo chains on the roots, no walls in the sky\nArcadia calling, we rise, we rise\n\nPan on the pipe\nWind in the pines\nMountain pulse in the bloodline\nHigher, higher, into the light\nWild green world, electrify\n\nAR-CA-DI-A!\nWild green frequency!\nBass in the valley, roots in the beat\nUnspoiled heaven under our feet!\n\nAR-CA-DI-A!\nLet the mountains shake!\nPan’s pipe screaming while the earth wakes\nNature in balance—\nBREAK! BREAK! BREAK!\n\nArcadia...\nArcadia...\n\nCallisto’s stars on the mountainside\nArcas dreaming where the rivers glide\nShepherd songs in the open air\nNo empire owns what the wild can share\n\nHear the pipes through the valley below\nAncient rivers, timeless flow\nNo chains on the roots, no walls in the sky\nArcadia calling, we rise, we rise\n\nAR-CA-DI-A!\nWild green frequency!\nThunder in the hills, fire in the leaves\nThe wild stays free when the people believe!\n\nAR-CA-DI-A!\nLet the mountains shake!\nPan’s pipe screaming while the earth wakes\nNature in balance—\nBREAK! BREAK! BREAK!\n\nFrom the old highlands\nTo the sound-system sky\nArcadia never died\n"
+      }
+    ],
+    "missing_tracks": [],
+    "policy": "Only tag-free canonical lyric derivatives are referenced. Original sources, drafts, evidence snapshots and backups are intentionally excluded."
+  },
+  "lyric_timing": {
+    "status": "canonical_user_edited_locked",
+    "path": "canonical-lyric-timing.lrc",
+    "bytes": 2542,
+    "sha256": "92b46abc4caf1caa8eddf7c306a9e767f8d0bbefed3b39d38e4b4f96981e9de7",
+    "encoding": "UTF-8 with BOM",
+    "authority": {
+      "status": "canonical_user_edited_locked",
+      "basis": "Kieran stated that he carefully manually timed Arcadians.lrc and asked to make it the new canonical lyric timing.",
+      "timing_accuracy_evidence": "Kieran carefully manually timed the lyric starts and clear/end events; the exact supplied file is preserved byte-for-byte and overrides the earlier automated estimate.",
+      "tempo_bpm_artist_confirmed": 145.0
+    },
+    "validation": {
+      "timestamp_format": "[mm:ss.cc]",
+      "timestamp_tags": 96,
+      "populated_lyric_cues": 48,
+      "clear_end_line_count": 48,
+      "backward_timestamps": 0,
+      "equal_adjacent_event_timestamps": 28,
+      "lyric_starts_strictly_increasing": true,
+      "first_cue_seconds": 2.89,
+      "last_tag_seconds": 246.59,
+      "canonical_master_duration_seconds": 273.60455782312926,
+      "last_tag_inside_master": true,
+      "canonical_text_line_parity": true,
+      "manual_source_byte_identical": true,
+      "metadata_tags": [
+        "[ti:Project title]",
+        "[ar:Project author]",
+        "[la:af]"
+      ],
+      "untimed_nonempty_lines": [
+        "Project title"
+      ],
+      "service_upload_readiness": "not established; the exact artist-designated source retains placeholder metadata and an untimed Project title line"
+    },
+    "scope": "Private canonical authority for lyric starts and blank clear/end events. It is not yet a service-specific upload derivative and does not establish beat phase, metre or first downbeat.",
+    "provenance": {
+      "path": "canonical-lyric-timing-provenance.json",
+      "bytes": 2565,
+      "sha256": "71f79b6dd665719a8aca22f0d2007fb36e3167855631b02675dad0180a1d386c"
+    }
+  },
+  "custom_manifests_preserved": [
+    {
+      "path": "epk-update-2026-09-23/staging-manifest.json",
+      "bytes": 655,
+      "modified_utc": "2026-09-23T14:21:47.878334+01:00",
+      "sha256": "eb4832002b3e075814dcc86f1d8ee8b0e91d843dde6f3f0728317923152fbed1",
+      "hash_status": "verified"
+    }
+  ],
+  "supporting_root_files": [
+    {
+      "path": "amazon-pitch-draft-2026-08-26.md",
+      "bytes": 3569,
+      "modified_utc": "2026-08-26T09:18:16.470452+01:00",
+      "sha256": "0d081e1c208d936fa0730fb4c5e79e9c7355abb2fc5190323bc9cb13f0ce8581",
+      "hash_status": "verified"
+    },
+    {
+      "path": "amazon-pitch-draft-2026-08-31.md",
+      "bytes": 3419,
+      "modified_utc": "2026-08-31T01:04:22.284803+01:00",
+      "sha256": "686949167a2bca080d29e71e51031dfc3b6f7475ac645f26b9b49c7d8f85727a",
+      "hash_status": "verified"
+    },
+    {
+      "path": "amazon-pitch-submission-2026-08-31.md",
+      "bytes": 1414,
+      "modified_utc": "2026-08-31T01:04:24.712074+01:00",
+      "sha256": "6137b3580a7cef637031d3afd6fe88a7b176417035d30a46ef4fa29eff837f17",
+      "hash_status": "verified"
+    },
+    {
+      "path": "Arcadians - karaoke version - Suno split v1.wav",
+      "bytes": 52539052,
+      "modified_utc": "2026-08-26T04:15:59.561699+01:00",
+      "sha256": "7c00174b740ae0f9ad936ecd83ee935af59c67f8c5110e1cf33d651652f87898",
+      "hash_status": "verified"
+    },
+    {
+      "path": "Arcadians - karaoke version - Suno split v2.wav",
+      "bytes": 52539052,
+      "modified_utc": "2026-08-26T04:16:33.724196+01:00",
+      "sha256": "5cac0afa82406ed910d1d3b4aa42864ca1dbfa8d23e7d3bbbca483ebad69ede9",
+      "hash_status": "verified"
+    },
+    {
+      "path": "Arcadians - lead vocal stem - Suno split v1.wav",
+      "bytes": 52539052,
+      "modified_utc": "2026-08-26T04:14:50.760095+01:00",
+      "sha256": "ca4827b6caceab03cccee1ffe918b54cba8d3399c5c6f15b161b246f1bf76746",
+      "hash_status": "verified"
+    },
+    {
+      "path": "Arcadians - lead vocal stem - Suno split v2.wav",
+      "bytes": 52539052,
+      "modified_utc": "2026-08-26T04:15:24.050799+01:00",
+      "sha256": "8a3567764cd6ba0ac9c1a5f0c6a0f301cc513085d34294e247cd96c32d44b85a",
+      "hash_status": "verified"
+    },
+    {
+      "path": "Arcadians - mastered.peak",
+      "bytes": 109476,
+      "modified_utc": "2026-09-20T23:02:19.216391+01:00",
+      "sha256": "6531ad7683d7f5377c8c7456d877760700d810e2b5295e696a53a6db756da041",
+      "hash_status": "verified"
+    },
+    {
+      "path": "arcadians_entire_chat_export.zip",
+      "bytes": 110925551,
+      "modified_utc": "2026-09-23T12:08:26.944887+01:00",
+      "sha256": "9519c0427896bd98920842b075675501c6c9fbf865a10f629cb8a11ef121fbc0",
+      "hash_status": "verified"
+    },
+    {
+      "path": "bpm-and-motion-clock-2026-09-23.md",
+      "bytes": 1837,
+      "modified_utc": "2026-09-23T12:32:44.218669+01:00",
+      "sha256": "ed81ce632a96efb7fd5fad3b30429cddb7074fcb4caa4c48debaa0a73214b83a",
+      "hash_status": "verified"
+    },
+    {
+      "path": "campaign-pack-index-2026-09-23.md",
+      "bytes": 1826,
+      "modified_utc": "2026-09-23T13:02:30.224749+01:00",
+      "sha256": "2c59e0f388cdaef94e52aef990b547958e8602519f34e02dec6969ac442121a1",
+      "hash_status": "verified"
+    },
+    {
+      "path": "canvas.jpg",
+      "bytes": 614648,
+      "modified_utc": "2026-06-29T23:03:08.377455+01:00",
+      "sha256": "56dedeb9a0872fa50678cd418e0089c0304e853ae8e1c5f11de94683bc0c5311",
+      "hash_status": "verified"
+    },
+    {
+      "path": "canvas.png",
+      "bytes": 2932146,
+      "modified_utc": "2026-06-29T23:02:09.116877+01:00",
+      "sha256": "0c6eebeaa62bd10cb0d41c1da851a515c6b3105591c9c786cf5c76c45ae8c6a4",
+      "hash_status": "verified"
+    },
+    {
+      "path": "comprehensive-marketing-plan-2026-09-23-to-2027-09-25.md",
+      "bytes": 20691,
+      "modified_utc": "2026-09-23T12:58:35.403750+01:00",
+      "sha256": "3b3061c85477f98dab32e922b63cc6448bee8d238181fa5e3545d22c8fbcc9e1",
+      "hash_status": "verified"
+    },
+    {
+      "path": "exhaustive-venue-ledger-2026-09-23.csv",
+      "bytes": 19813,
+      "modified_utc": "2026-09-23T13:02:29.690224+01:00",
+      "sha256": "ac6afc7be39f2d867c054b258911778750f63e0ee5f600b1e1bf8e13902b1eb3",
+      "hash_status": "verified"
+    },
+    {
+      "path": "marketing-calendar-2026-09-23-to-2027-09-25.csv",
+      "bytes": 7474,
+      "modified_utc": "2026-09-23T12:59:40.920561+01:00",
+      "sha256": "c0c6ad0783b338d6eea60fb447285820ca3024f69e97fa8793a6936916829df4",
+      "hash_status": "verified"
+    },
+    {
+      "path": "minimum-marketing-plan-2026-08-25.md",
+      "bytes": 2272,
+      "modified_utc": "2026-09-07T09:23:03.032964+01:00",
+      "sha256": "41b226803d45605ed0ed42940eefa27949794d5efaa2e2936416c45c23dbd905",
+      "hash_status": "verified"
+    },
+    {
+      "path": "outreach-opportunity-ledger-2026-09-23.csv",
+      "bytes": 7908,
+      "modified_utc": "2026-09-23T12:45:40.885088+01:00",
+      "sha256": "dc575ca6594ed8131e94339fc78366be4094625e9e00d993916872b2b574454f",
+      "hash_status": "verified"
+    },
+    {
+      "path": "pre-release-marketing-research-and-plan-2026-09-23.md",
+      "bytes": 21083,
+      "modified_utc": "2026-09-23T13:00:40.163737+01:00",
+      "sha256": "d5658c67f528d4c19d6a5e1c280e1762faeeda3e5b0a0fc44e46fed14bb45c63",
+      "hash_status": "verified"
+    },
+    {
+      "path": "release-fact-sheet.md",
+      "bytes": 2631,
+      "modified_utc": "2026-09-23T12:33:14.387007+01:00",
+      "sha256": "93c8709d836c7bd26a3a17ede747ac9f672aaaf381f1f9f6c10889afdf87bb13",
+      "hash_status": "verified"
+    },
+    {
+      "path": "reviewer-one-sheet-2026-09-23.md",
+      "bytes": 4384,
+      "modified_utc": "2026-09-23T12:21:35.791639+01:00",
+      "sha256": "8c60e0ccd551f6d207912ae7567531a54bc9a90f507400cc85f7c8224130b097",
+      "hash_status": "verified"
+    },
+    {
+      "path": "section-cue-timing.json",
+      "bytes": 10040,
+      "modified_utc": "2026-09-23T13:32:09.397119+01:00",
+      "sha256": "8574af85e9b7c5433c1468cdd4dbc7c96f8c72a938645b5e23e326432514cf66",
+      "hash_status": "verified"
+    },
+    {
+      "path": "section-cue-timing.md",
+      "bytes": 4665,
+      "modified_utc": "2026-09-23T13:32:09.685117+01:00",
+      "sha256": "a2bc436514edd6db0c1949dc2a8bb7a0f7de5b324da8bca6957a043467757977",
+      "hash_status": "verified"
+    },
+    {
+      "path": "tailored-venue-pitch-bank-2026-09-23.md",
+      "bytes": 24808,
+      "modified_utc": "2026-09-23T13:02:29.944227+01:00",
+      "sha256": "1fc6c64bd3d9132485254bf28beae2acdeffec2053ca02323b62abfb207ac3e2",
+      "hash_status": "verified"
+    },
+    {
+      "path": "visual-style.md",
+      "bytes": 28561,
+      "modified_utc": "2026-09-23T22:52:40.116544+01:00",
+      "sha256": "fa0933524fc0cb81c798cd0f78c22d4ee655536c52e29b334f8271a0cf0d9587",
+      "hash_status": "verified"
+    }
+  ],
+  "summary": {
+    "master_wavs": 1,
+    "mp3_derivatives": 1,
+    "custom_manifests": 1,
+    "supporting_root_files": 25,
+    "lyrics_status": "complete",
+    "lyric_timing_status": "canonical_user_edited_locked",
+    "blockers": []
+  }
+}
