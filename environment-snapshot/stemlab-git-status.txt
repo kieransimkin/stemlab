@@ -1,11 +1,9 @@
- M src/stemlab/vamp_runtime.py
-?? bar/analysis.json
-?? bar/manifest.json
-?? bar/sonic_visualiser/
-?? bar/spectrograms/htdemucs_ft/
-?? bar/spectrograms/openunmix_umxhq/
-?? bar/vamp/
-?? barr/
-?? environment-snapshot/
-?? stemlab-vamp-windows-uac-fix.patch
-?? tests/test_vamp_runtime.py
+ D environment-snapshot/git-remotes.txt
+ M environment-snapshot/nvidia-smi.txt
+ D environment-snapshot/relevant-environment.txt
+ M environment-snapshot/stemlab-commit.txt
+ D environment-snapshot/stemlab-git-status.txt
+ D environment-snapshot/windows.txt
+ M stemlab-working-environment.zip
+?? environment-snapshot/python-runtime.txt
+?? snapshot-stemlab-environment.ps1
