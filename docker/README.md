@@ -3,8 +3,20 @@
 This environment is designed from the supplied known-working Windows snapshot.
 It uses Python 3.13, PyTorch 2.14, the same pinned top-level Python package
 versions where they are portable, Sonic Annotator 1.7, and Vamp Plugin Pack
-2.0. It also installs the current StemLab GitHub release; when the repository
-has no published GitHub Release it falls back to `main`.
+2.0. The image is built from the current repository checkout, so local Docker
+builds test the same source tree you are about to commit.
+
+## Validate the CI container locally
+
+On Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\docker\ci-local.ps1
+```
+
+This builds the image from the current working tree and runs the same
+`verify-environment.sh` check used during the Docker build. Run it before
+pushing Docker-related changes.
 
 ## GPU run
 
@@ -41,14 +53,18 @@ docker compose --profile cpu run --rm stemlab-cpu
 STEMLAB_AUDIO_FILE=my-song.wav docker compose run --rm stemlab
 ```
 
-## Use a specific StemLab tag or commit
+## Build a specific StemLab tag or commit
+
+Check out the desired tag or commit first, then build normally:
 
 ```bash
-STEMLAB_REF=v0.2.0 docker compose build --no-cache stemlab
+git checkout v0.2.0
+docker compose build --no-cache stemlab
 ```
 
-`STEMLAB_REF=latest` is the default. It queries the GitHub releases API during
-build and falls back to `main` if no GitHub Release exists.
+The Docker build no longer re-clones GitHub. This avoids differences between
+the checked-out source, local uncommitted fixes, and the source placed in the
+container.
 
 ## Caches and outputs
 

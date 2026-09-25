@@ -40,5 +40,5 @@ Important host metadata warning:
 
 Docker-specific intentional change:
   The host snapshot had torch 2.14.0+cpu paired with torchaudio 2.11.0.
-  Docker installs a matched torch/torchaudio 2.14.0 pair. The GPU service uses
+  Docker mirrors torch 2.14.0 with torchaudio 2.11.0. The GPU service uses
   the PyTorch CUDA 13.0 wheel index; the CPU service uses the CPU wheel index.

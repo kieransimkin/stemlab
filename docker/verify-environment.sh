@@ -7,16 +7,28 @@ echo "=== StemLab Docker environment verification ($mode) ==="
 python --version
 python - <<'PY'
 import importlib
+import importlib.metadata
+
 mods = [
     'torch', 'torchaudio', 'numpy', 'scipy', 'soundfile', 'matplotlib',
     'demucs', 'openunmix', 'faster_whisper', 'beat_this', 'BeatNet',
-    'bs_roformer', 'madmom', 'typer', 'rich',
-    'fastapi', 'uvicorn', 'socketio',
+    'bs_roformer', 'typer', 'rich', 'fastapi', 'uvicorn', 'socketio',
 ]
 for name in mods:
     module = importlib.import_module(name)
     version = getattr(module, '__version__', '')
     print(f'{name}: OK {version}')
+
+# Exercise the exact compatibility path used by the BeatNet backend. This catches
+# madmom-prebuilt's distribution-name mismatch, NumPy's removed legacy aliases,
+# and BeatNet's unconditional optional PyAudio import during the image build.
+from stemlab.beats.beatnet import _load_beatnet_class
+
+beatnet_class = _load_beatnet_class()
+madmom = importlib.import_module('madmom')
+print(f'BeatNet.BeatNet: OK {beatnet_class.__name__}')
+print(f'madmom: OK {getattr(madmom, "__version__", "")}')
+print(f'madmom-prebuilt metadata: {importlib.metadata.version("madmom-prebuilt")}')
 
 import torch
 print('torch:', torch.__version__)

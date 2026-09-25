@@ -1,0 +1,486 @@
+diff --git a/.dockerignore b/.dockerignore
+index ac2e2b9..62b5316 100644
+--- a/.dockerignore
++++ b/.dockerignore
+@@ -1,10 +1,14 @@
+ .git
++.github
+ .venv
+ venv
+ __pycache__
+ .pytest_cache
++environment-snapshot
+ *.pyc
+ *.pyo
++*.patch
++*.zip
+ *.wav
+ *.flac
+ *.mp3
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 6ddc099..3b6823d 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -96,8 +96,7 @@ jobs:
+           platforms: linux/amd64
+           push: true
+           build-args: |
+-            STEMLAB_REPO=https://github.com/${{ github.repository }}.git
+-            STEMLAB_REF=${{ github.sha }}
++            STEMLAB_BUILD_REF=${{ github.sha }}
+           tags: |
+             ${{ steps.meta-ghcr.outputs.tags }}
+             ${{ steps.meta-dockerhub.outputs.tags }}
+diff --git a/compose.yaml b/compose.yaml
+index 7bdda42..fe5d014 100644
+--- a/compose.yaml
++++ b/compose.yaml
+@@ -6,8 +6,7 @@ services:
+       context: .
+       dockerfile: docker/Dockerfile
+       args:
+-        STEMLAB_REPO: ${STEMLAB_REPO:-https://github.com/kieransimkin/stemlab.git}
+-        STEMLAB_REF: ${STEMLAB_REF:-latest}
++        STEMLAB_BUILD_REF: ${STEMLAB_BUILD_REF:-local}
+         TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu130}
+         TORCH_VERSION: ${TORCH_VERSION:-2.14.0}
+         TORCHAUDIO_VERSION: ${TORCHAUDIO_VERSION:-2.11.0}
+@@ -35,8 +34,7 @@ services:
+       context: .
+       dockerfile: docker/Dockerfile
+       args:
+-        STEMLAB_REPO: ${STEMLAB_REPO:-https://github.com/kieransimkin/stemlab.git}
+-        STEMLAB_REF: ${STEMLAB_REF:-latest}
++        STEMLAB_BUILD_REF: ${STEMLAB_BUILD_REF:-local}
+         TORCH_INDEX_URL: ${TORCH_CPU_INDEX_URL:-https://download.pytorch.org/whl/cpu}
+         TORCH_VERSION: ${TORCH_VERSION:-2.14.0}
+         TORCHAUDIO_VERSION: ${TORCHAUDIO_VERSION:-2.11.0}
+@@ -62,8 +60,7 @@ services:
+       context: .
+       dockerfile: docker/Dockerfile
+       args:
+-        STEMLAB_REPO: ${STEMLAB_REPO:-https://github.com/kieransimkin/stemlab.git}
+-        STEMLAB_REF: ${STEMLAB_REF:-latest}
++        STEMLAB_BUILD_REF: ${STEMLAB_BUILD_REF:-local}
+         TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu130}
+         TORCH_VERSION: ${TORCH_VERSION:-2.14.0}
+         TORCHAUDIO_VERSION: ${TORCHAUDIO_VERSION:-2.11.0}
+@@ -99,8 +96,7 @@ services:
+       context: .
+       dockerfile: docker/Dockerfile
+       args:
+-        STEMLAB_REPO: ${STEMLAB_REPO:-https://github.com/kieransimkin/stemlab.git}
+-        STEMLAB_REF: ${STEMLAB_REF:-latest}
++        STEMLAB_BUILD_REF: ${STEMLAB_BUILD_REF:-local}
+         TORCH_INDEX_URL: ${TORCH_CPU_INDEX_URL:-https://download.pytorch.org/whl/cpu}
+         TORCH_VERSION: ${TORCH_VERSION:-2.14.0}
+         TORCHAUDIO_VERSION: ${TORCHAUDIO_VERSION:-2.11.0}
+diff --git a/docker/Dockerfile b/docker/Dockerfile
+index bbcf0e5..83ab532 100644
+--- a/docker/Dockerfile
++++ b/docker/Dockerfile
+@@ -1,8 +1,7 @@
+ FROM python:3.13-bookworm
+ 
+ ARG DEBIAN_FRONTEND=noninteractive
+-ARG STEMLAB_REPO=https://github.com/kieransimkin/stemlab.git
+-ARG STEMLAB_REF=latest
++ARG STEMLAB_BUILD_REF=local
+ ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu130
+ ARG TORCH_VERSION=2.14.0
+ ARG TORCHAUDIO_VERSION=2.11.0
+@@ -10,8 +9,7 @@ ARG TORCHAUDIO_VERSION=2.11.0
+ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+     PIP_NO_CACHE_DIR=1 \
+     PYTHONUNBUFFERED=1 \
+-    STEMLAB_REPO=${STEMLAB_REPO} \
+-    STEMLAB_REF=${STEMLAB_REF} \
++    STEMLAB_BUILD_REF=${STEMLAB_BUILD_REF} \
+     HF_HOME=/root/.cache/huggingface \
+     TORCH_HOME=/root/.cache/torch \
+     VAMP_PATH=/root/.vamp
+@@ -23,7 +21,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
+     curl \
+     ffmpeg \
+     git \
+-    jq \
+     libasound2 \
+     libfftw3-double3 \
+     libfftw3-dev \
+@@ -51,16 +48,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
+ COPY docker/requirements.lock.txt /opt/stemlab-docker/requirements.lock.txt
+ COPY docker/install-sonic-annotator.sh /opt/stemlab-docker/install-sonic-annotator.sh
+ COPY docker/install-vamp-pack.sh /opt/stemlab-docker/install-vamp-pack.sh
+-COPY docker/install-stemlab.sh /opt/stemlab-docker/install-stemlab.sh
+ COPY docker/verify-environment.sh /opt/stemlab-docker/verify-environment.sh
+ COPY docker/entrypoint.sh /opt/stemlab-docker/entrypoint.sh
+ COPY docker/start-web-service.sh /opt/stemlab-docker/start-web-service.sh
+ 
+ RUN chmod +x /opt/stemlab-docker/*.sh
+ 
+-# Keep torch/torchaudio internally matched in Docker even though the original
+-# working Windows snapshot contained torch 2.14.0+cpu with torchaudio 2.11.0.
+-# Matching binaries avoid ABI surprises while preserving the same torch series.
++# Mirror the known-working environment's version numbers. The CUDA service uses
++# the corresponding CUDA 13.0 wheels instead of the host's CPU torch wheel.
+ RUN python -m pip install --upgrade pip setuptools wheel \
+     && python -m pip install \
+         --index-url "${TORCH_INDEX_URL}" \
+@@ -72,9 +67,18 @@ RUN python -m pip install --upgrade pip setuptools wheel \
+ # wheel, avoiding the fragile source/Cython build of historical madmom.
+ RUN python -m pip install -r /opt/stemlab-docker/requirements.lock.txt
+ 
++# Install the external binary analysis stack before copying project source so
++# normal code changes do not invalidate these comparatively expensive layers.
+ RUN /opt/stemlab-docker/install-sonic-annotator.sh \
+-    && /opt/stemlab-docker/install-vamp-pack.sh \
+-    && /opt/stemlab-docker/install-stemlab.sh \
++    && /opt/stemlab-docker/install-vamp-pack.sh
++
++# Build the image from the exact checkout supplied as the Docker build context.
++# This makes local Docker builds test uncommitted changes and makes CI publish
++# exactly the source that actions/checkout supplied, without re-cloning GitHub.
++COPY . /opt/stemlab
++RUN python -m pip install --no-deps -e /opt/stemlab \
++    && printf '%s\n' "${STEMLAB_BUILD_REF}" > /opt/stemlab-installed-ref.txt \
++    && stemlab --help >/dev/null \
+     && /opt/stemlab-docker/verify-environment.sh --build
+ 
+ WORKDIR /work
+diff --git a/docker/README.md b/docker/README.md
+index ed2a46a..a8ab8f0 100644
+--- a/docker/README.md
++++ b/docker/README.md
+@@ -3,8 +3,20 @@
+ This environment is designed from the supplied known-working Windows snapshot.
+ It uses Python 3.13, PyTorch 2.14, the same pinned top-level Python package
+ versions where they are portable, Sonic Annotator 1.7, and Vamp Plugin Pack
+-2.0. It also installs the current StemLab GitHub release; when the repository
+-has no published GitHub Release it falls back to `main`.
++2.0. The image is built from the current repository checkout, so local Docker
++builds test the same source tree you are about to commit.
++
++## Validate the CI container locally
++
++On Windows PowerShell:
++
++```powershell
++powershell -ExecutionPolicy Bypass -File .\docker\ci-local.ps1
++```
++
++This builds the image from the current working tree and runs the same
++`verify-environment.sh` check used during the Docker build. Run it before
++pushing Docker-related changes.
+ 
+ ## GPU run
+ 
+@@ -41,14 +53,18 @@ docker compose --profile cpu run --rm stemlab-cpu
+ STEMLAB_AUDIO_FILE=my-song.wav docker compose run --rm stemlab
+ ```
+ 
+-## Use a specific StemLab tag or commit
++## Build a specific StemLab tag or commit
++
++Check out the desired tag or commit first, then build normally:
+ 
+ ```bash
+-STEMLAB_REF=v0.2.0 docker compose build --no-cache stemlab
++git checkout v0.2.0
++docker compose build --no-cache stemlab
+ ```
+ 
+-`STEMLAB_REF=latest` is the default. It queries the GitHub releases API during
+-build and falls back to `main` if no GitHub Release exists.
++The Docker build no longer re-clones GitHub. This avoids differences between
++the checked-out source, local uncommitted fixes, and the source placed in the
++container.
+ 
+ ## Caches and outputs
+ 
+diff --git a/docker/ci-local.ps1 b/docker/ci-local.ps1
+new file mode 100644
+index 0000000..bcab017
+--- /dev/null
++++ b/docker/ci-local.ps1
+@@ -0,0 +1,36 @@
++[CmdletBinding()]
++param(
++    [string]$Image = "stemlab-ci-local"
++)
++
++$ErrorActionPreference = "Stop"
++
++Write-Host "=== StemLab local container CI ==="
++docker version | Out-Host
++if ($LASTEXITCODE -ne 0) {
++    throw "Docker is not available. Start Docker Desktop or Docker Engine and retry."
++}
++
++docker build `
++    --pull `
++    --progress=plain `
++    --build-arg STEMLAB_BUILD_REF=local-working-tree `
++    -f docker/Dockerfile `
++    -t $Image `
++    .
++
++if ($LASTEXITCODE -ne 0) {
++    throw "StemLab Docker build failed."
++}
++
++docker run `
++    --rm `
++    --entrypoint /opt/stemlab-docker/verify-environment.sh `
++    $Image `
++    runtime
++
++if ($LASTEXITCODE -ne 0) {
++    throw "StemLab container runtime verification failed."
++}
++
++Write-Host "StemLab local container CI passed." -ForegroundColor Green
+diff --git a/docker/reference-working-environment.txt b/docker/reference-working-environment.txt
+index 90b5abe..58ff038 100644
+--- a/docker/reference-working-environment.txt
++++ b/docker/reference-working-environment.txt
+@@ -40,5 +40,5 @@ Important host metadata warning:
+ 
+ Docker-specific intentional change:
+   The host snapshot had torch 2.14.0+cpu paired with torchaudio 2.11.0.
+-  Docker installs a matched torch/torchaudio 2.14.0 pair. The GPU service uses
++  Docker mirrors torch 2.14.0 with torchaudio 2.11.0. The GPU service uses
+   the PyTorch CUDA 13.0 wheel index; the CPU service uses the CPU wheel index.
+diff --git a/docker/requirements.lock.txt b/docker/requirements.lock.txt
+index 379d6ab..cd84a1c 100644
+--- a/docker/requirements.lock.txt
++++ b/docker/requirements.lock.txt
+@@ -1,6 +1,6 @@
+ # Versions captured from Kieran's known-working StemLab environment on
+ # 2026-09-25. torch/torchaudio are installed separately in Docker so a CUDA
+-# or CPU wheel index can be selected while keeping their binary versions paired.
++# or CPU wheel index can be selected while preserving the captured version numbers.
+ beat-this==1.1.0
+ beatnet==1.1.1
+ bs-roformer==1.2.4
+diff --git a/docker/verify-environment.sh b/docker/verify-environment.sh
+index dbefcb0..ad95139 100644
+--- a/docker/verify-environment.sh
++++ b/docker/verify-environment.sh
+@@ -7,17 +7,29 @@ echo "=== StemLab Docker environment verification ($mode) ==="
+ python --version
+ python - <<'PY'
+ import importlib
++import importlib.metadata
++
+ mods = [
+     'torch', 'torchaudio', 'numpy', 'scipy', 'soundfile', 'matplotlib',
+     'demucs', 'openunmix', 'faster_whisper', 'beat_this', 'BeatNet',
+-    'bs_roformer', 'madmom', 'typer', 'rich',
+-    'fastapi', 'uvicorn', 'socketio',
++    'bs_roformer', 'typer', 'rich', 'fastapi', 'uvicorn', 'socketio',
+ ]
+ for name in mods:
+     module = importlib.import_module(name)
+     version = getattr(module, '__version__', '')
+     print(f'{name}: OK {version}')
+ 
++# Exercise the exact compatibility path used by the BeatNet backend. This catches
++# madmom-prebuilt's distribution-name mismatch, NumPy's removed legacy aliases,
++# and BeatNet's unconditional optional PyAudio import during the image build.
++from stemlab.beats.beatnet import _load_beatnet_class
++
++beatnet_class = _load_beatnet_class()
++madmom = importlib.import_module('madmom')
++print(f'BeatNet.BeatNet: OK {beatnet_class.__name__}')
++print(f'madmom: OK {getattr(madmom, "__version__", "")}')
++print(f'madmom-prebuilt metadata: {importlib.metadata.version("madmom-prebuilt")}')
++
+ import torch
+ print('torch:', torch.__version__)
+ print('cuda build:', torch.version.cuda)
+diff --git a/src/stemlab/beats/beatnet.py b/src/stemlab/beats/beatnet.py
+index 4c9e9db..dd0958d 100644
+--- a/src/stemlab/beats/beatnet.py
++++ b/src/stemlab/beats/beatnet.py
+@@ -1,6 +1,11 @@
+ from __future__ import annotations
+ 
++import importlib.metadata
++import importlib.util
++import sys
+ from pathlib import Path
++from types import ModuleType
++from typing import Any
+ 
+ import numpy as np
+ 
+@@ -9,17 +14,90 @@ from .base import BeatBackend
+ from .common import save_result, tempo_from_beats
+ 
+ 
+-class BeatNetBackend(BeatBackend):
+-    def analyze(self, audio_path: Path, output_dir: Path, stems: list[StemArtifact] | None = None) -> BeatResult:
++def _ensure_numpy_legacy_aliases() -> None:
++    """Provide aliases still referenced by madmom's NumPy compatibility layer."""
++    if "float" not in np.__dict__:
++        setattr(np, "float", np.float64)
++    if "int" not in np.__dict__:
++        setattr(np, "int", np.int_)
++
++
++def _install_pyaudio_stub() -> bool:
++    """Let BeatNet's offline mode import when optional PyAudio is not installed."""
++    if "pyaudio" in sys.modules or importlib.util.find_spec("pyaudio") is not None:
++        return False
++
++    pyaudio = ModuleType("pyaudio")
++
++    class UnavailablePyAudio:
++        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
++            raise RuntimeError("PyAudio is unavailable; BeatNet streaming mode cannot be used")
++
++    pyaudio.PyAudio = UnavailablePyAudio
++    pyaudio.paFloat32 = 0
++    pyaudio.paContinue = 0
++    sys.modules["pyaudio"] = pyaudio
++    return True
++
++
++def _load_beatnet_class() -> Any:
++    """Import BeatNet with the compatibility required by madmom-prebuilt.
++
++    madmom-prebuilt exposes the ``madmom`` module but its installed distribution
++    is named ``madmom-prebuilt``. madmom asks importlib.metadata for ``madmom``
++    during import, so temporarily map that lookup to the actual distribution.
++    BeatNet also imports PyAudio unconditionally even though offline analysis
++    does not use it.
++    """
++    _ensure_numpy_legacy_aliases()
++    installed_pyaudio_stub = _install_pyaudio_stub()
++    original_distribution = importlib.metadata.distribution
++
++    def compatible_distribution(name: str):
++        try:
++            return original_distribution(name)
++        except importlib.metadata.PackageNotFoundError:
++            if name != "madmom":
++                raise
++            return original_distribution("madmom-prebuilt")
++
++    importlib.metadata.distribution = compatible_distribution
++    try:
+         from BeatNet.BeatNet import BeatNet
+ 
++        return BeatNet
++    finally:
++        importlib.metadata.distribution = original_distribution
++        if installed_pyaudio_stub:
++            sys.modules.pop("pyaudio", None)
++
++
++class BeatNetBackend(BeatBackend):
++    def analyze(
++        self,
++        audio_path: Path,
++        output_dir: Path,
++        stems: list[StemArtifact] | None = None,
++    ) -> BeatResult:
++        BeatNet = _load_beatnet_class()
++
+         estimator = BeatNet(1, mode="offline", inference_model="DBN", plot=[], thread=False)
+         events = np.asarray(estimator.process(str(audio_path)))
+         if events.ndim == 1:
+             events = events.reshape(-1, 2)
+         beats = [float(x) for x in events[:, 0]] if len(events) else []
+-        downbeats = [float(t) for t, idx in events[:, :2] if int(round(float(idx))) == 1] if len(events) else []
++        downbeats = (
++            [float(t) for t, idx in events[:, :2] if int(round(float(idx))) == 1]
++            if len(events)
++            else []
++        )
+         return save_result(
+-            BeatResult("beatnet", beats, downbeats, tempo_from_beats(beats), {"mode": "offline", "decoder": "DBN"}),
++            BeatResult(
++                "beatnet",
++                beats,
++                downbeats,
++                tempo_from_beats(beats),
++                {"mode": "offline", "decoder": "DBN"},
++            ),
+             output_dir,
+         )
+diff --git a/tests/test_beatnet_compat.py b/tests/test_beatnet_compat.py
+new file mode 100644
+index 0000000..a52b79f
+--- /dev/null
++++ b/tests/test_beatnet_compat.py
+@@ -0,0 +1,69 @@
++from __future__ import annotations
++
++import importlib
++import importlib.metadata
++import importlib.util
++import sys
++
++import numpy as np
++
++from stemlab.beats.beatnet import _load_beatnet_class
++
++
++def test_beatnet_loader_supports_madmom_prebuilt_without_pyaudio(tmp_path, monkeypatch):
++    beatnet_dir = tmp_path / "BeatNet"
++    madmom_dir = tmp_path / "madmom"
++    dist_info = tmp_path / "madmom_prebuilt-0.17.post1.dist-info"
++    beatnet_dir.mkdir()
++    madmom_dir.mkdir()
++    dist_info.mkdir()
++
++    (beatnet_dir / "__init__.py").write_text("", encoding="utf-8")
++    (beatnet_dir / "BeatNet.py").write_text(
++        "import pyaudio\n"
++        "import madmom\n"
++        "class BeatNet:\n"
++        "    pass\n",
++        encoding="utf-8",
++    )
++    (madmom_dir / "__init__.py").write_text(
++        "from importlib.metadata import distribution\n"
++        "import numpy as np\n"
++        "__version__ = distribution('madmom').version\n"
++        "_legacy_aliases = (np.float, np.int)\n",
++        encoding="utf-8",
++    )
++    (dist_info / "METADATA").write_text(
++        "Metadata-Version: 2.1\n"
++        "Name: madmom-prebuilt\n"
++        "Version: 0.17.post1\n",
++        encoding="utf-8",
++    )
++
++    monkeypatch.syspath_prepend(str(tmp_path))
++    for name in ("BeatNet.BeatNet", "BeatNet", "madmom"):
++        monkeypatch.delitem(sys.modules, name, raising=False)
++    monkeypatch.delitem(sys.modules, "pyaudio", raising=False)
++    monkeypatch.delattr(np, "float", raising=False)
++    monkeypatch.delattr(np, "int", raising=False)
++
++    real_find_spec = importlib.util.find_spec
++
++    def find_spec_without_pyaudio(name, package=None):
++        if name == "pyaudio":
++            return None
++        return real_find_spec(name, package)
++
++    monkeypatch.setattr(importlib.util, "find_spec", find_spec_without_pyaudio)
++
++    original_distribution = importlib.metadata.distribution
++    beatnet_class = _load_beatnet_class()
++
++    assert beatnet_class.__name__ == "BeatNet"
++    assert importlib.metadata.distribution is original_distribution
++    assert "float" in np.__dict__
++    assert "int" in np.__dict__
++    assert "pyaudio" not in sys.modules
++
++    madmom = importlib.import_module("madmom")
++    assert madmom.__version__ == "0.17.post1"

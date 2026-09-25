@@ -1,6 +1,6 @@
 # Versions captured from Kieran's known-working StemLab environment on
 # 2026-09-25. torch/torchaudio are installed separately in Docker so a CUDA
-# or CPU wheel index can be selected while keeping their binary versions paired.
+# or CPU wheel index can be selected while preserving the captured version numbers.
 beat-this==1.1.0
 beatnet==1.1.1
 bs-roformer==1.2.4

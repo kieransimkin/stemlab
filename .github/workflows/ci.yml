@@ -96,8 +96,7 @@ jobs:
           platforms: linux/amd64
           push: true
           build-args: |
-            STEMLAB_REPO=https://github.com/${{ github.repository }}.git
-            STEMLAB_REF=${{ github.sha }}
+            STEMLAB_BUILD_REF=${{ github.sha }}
           tags: |
             ${{ steps.meta-ghcr.outputs.tags }}
             ${{ steps.meta-dockerhub.outputs.tags }}
