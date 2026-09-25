@@ -1,19 +1,21 @@
-name: Release assets
+name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  linux-release:
+  release-build:
+    name: Build and validate StemLab release
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.10"
           cache: pip
@@ -29,18 +31,39 @@ jobs:
           # madmom/BeatNet remain legacy-sensitive; preinstall Cython before resolving extras.
           python -m pip install 'Cython<3' 'numpy<2'
           python -m pip install -e '.[all,binary,dev]'
+          python -m pip install -U build twine
+
+      - name: Verify release tag matches StemLab version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          python - <<'PY'
+          import importlib.metadata
+          import os
+
+          tag = os.environ["GITHUB_REF_NAME"]
+          expected = tag[1:] if tag.startswith("v") else tag
+          # danceflow-stemlab is only the globally unique PyPI distribution
+          # identifier. The canonical project, import and CLI names remain StemLab/stemlab.
+          actual = importlib.metadata.version("danceflow-stemlab")
+          if actual != expected:
+              raise SystemExit(
+                  f"Release tag {tag!r} does not match StemLab package version {actual!r}"
+              )
+          print(f"StemLab release version verified: {actual}")
+          PY
 
       - name: Test package before release build
         run: |
-          python -m compileall -q src
+          python -m compileall -q src tests
           pytest
+          ruff check src tests scripts
 
-      - name: Build wheel and sdist
+      - name: Build StemLab wheel and sdist
         run: |
-          python -m pip install build
           python -m build
+          python -m twine check dist/*
 
-      - name: Build self-contained one-file CLI
+      - name: Build self-contained StemLab one-file CLI
         run: |
           python -m nuitka \
             --onefile \
@@ -63,7 +86,7 @@ jobs:
             --include-package-data=faster_whisper \
             src/stemlab/__main__.py
 
-      - name: Assemble release directory and manifest
+      - name: Assemble StemLab release directory and manifest
         run: |
           mkdir -p dist-release
           cp dist/* dist-release/
@@ -72,46 +95,104 @@ jobs:
           cat > dist-release/STEMLAB-ABOUT.txt <<'EOF'
           StemLab
           =======
+          Part of the Dance Flow project.
+
           Author: Kieran Simkin
           Website: https://kieransimkin.co.uk/
           My Songs: https://kieransimkin.co.uk/my-songs/
           Arcadians showcase: https://kieransimkin.co.uk/arcadians/
           Source: https://github.com/kieransimkin/stemlab
+          PyPI distribution: danceflow-stemlab
 
           StemLab performs multi-model music source separation plus sonic,
           harmonic, rhythmic, structural, lyrical and semantic analysis.
+
+          "danceflow-stemlab" is the package-registry identifier only.
+          The canonical project name is StemLab.
           EOF
           python scripts/release_manifest.py dist-release
           cat dist-release/SHA256SUMS
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Python distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: stemlab-python-distributions
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+          if-no-files-found: error
+
+      - name: Upload complete StemLab release assets
+        uses: actions/upload-artifact@v4
         with:
           name: stemlab-release-assets
           path: dist-release/*
+          if-no-files-found: error
 
-      - name: Add StemLab attribution to release notes
-        if: github.event_name == 'release'
+  github-release:
+    name: Publish StemLab GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: release-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Retrieve StemLab release assets
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-release-assets
+          path: dist-release
+
+      - name: Create or update StemLab GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          gh release view "$TAG" --json body -q .body > /tmp/release-body.md
+          if ! gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "$REPOSITORY" \
+              --verify-tag \
+              --title "StemLab ${TAG#v}" \
+              --generate-notes
+          fi
+
+          gh release view "$TAG" --repo "$REPOSITORY" --json body -q .body > /tmp/release-body.md
           if ! grep -q 'kieransimkin.co.uk/my-songs/' /tmp/release-body.md; then
             cat >> /tmp/release-body.md <<'EOF'
 
           ---
-          **StemLab by Kieran Simkin**
+          **StemLab by Kieran Simkin** — part of Dance Flow
+
           Website: https://kieransimkin.co.uk/
           Music catalogue: https://kieransimkin.co.uk/my-songs/
           Arcadians showcase: https://kieransimkin.co.uk/arcadians/
           Source: https://github.com/kieransimkin/stemlab
+          PyPI: https://pypi.org/project/danceflow-stemlab/
           EOF
-            gh release edit "$TAG" --notes-file /tmp/release-body.md
+            gh release edit "$TAG" --repo "$REPOSITORY" --notes-file /tmp/release-body.md
           fi
 
-      - name: Upload to GitHub Release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" dist-release/* --clobber
+          gh release upload "$TAG" dist-release/* \
+            --repo "$REPOSITORY" \
+            --clobber
+
+  pypi-publish:
+    name: Publish StemLab to PyPI
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: release-build
+    runs-on: ubuntu-24.04
+    environment:
+      name: pypi
+      url: https://pypi.org/p/danceflow-stemlab
+    permissions:
+      id-token: write
+    steps:
+      - name: Retrieve StemLab Python distributions
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-python-distributions
+          path: dist
+
+      - name: Publish danceflow-stemlab distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

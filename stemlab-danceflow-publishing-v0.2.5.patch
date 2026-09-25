@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+
+WORKFLOW = 'name: Release\n\non:\n  push:\n    tags: ["v*"]\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\njobs:\n  release-build:\n    name: Build and validate StemLab release\n    runs-on: ubuntu-22.04\n    steps:\n      - uses: actions/checkout@v7\n\n      - uses: actions/setup-python@v7\n        with:\n          python-version: "3.10"\n          cache: pip\n\n      - name: Native build requirements\n        run: |\n          sudo apt-get update\n          sudo apt-get install -y build-essential patchelf libsndfile1 ffmpeg\n\n      - name: Install Python build/runtime dependencies\n        run: |\n          python -m pip install -U pip wheel setuptools\n          # madmom/BeatNet remain legacy-sensitive; preinstall Cython before resolving extras.\n          python -m pip install \'Cython<3\' \'numpy<2\'\n          python -m pip install -e \'.[all,binary,dev]\'\n          python -m pip install -U build twine\n\n      - name: Verify release tag matches StemLab version\n        if: startsWith(github.ref, \'refs/tags/v\')\n        run: |\n          python - <<\'PY\'\n          import importlib.metadata\n          import os\n\n          tag = os.environ["GITHUB_REF_NAME"]\n          expected = tag[1:] if tag.startswith("v") else tag\n          # danceflow-stemlab is only the globally unique PyPI distribution\n          # identifier. The canonical project, import and CLI names remain StemLab/stemlab.\n          actual = importlib.metadata.version("danceflow-stemlab")\n          if actual != expected:\n              raise SystemExit(\n                  f"Release tag {tag!r} does not match StemLab package version {actual!r}"\n              )\n          print(f"StemLab release version verified: {actual}")\n          PY\n\n      - name: Test package before release build\n        run: |\n          python -m compileall -q src tests\n          pytest\n          ruff check src tests scripts\n\n      - name: Build StemLab wheel and sdist\n        run: |\n          python -m build\n          python -m twine check dist/*\n\n      - name: Build self-contained StemLab one-file CLI\n        run: |\n          python -m nuitka \\\n            --onefile \\\n            --assume-yes-for-downloads \\\n            --output-dir=build/nuitka \\\n            --output-filename=stemlab-linux-x86_64 \\\n            --include-package=stemlab \\\n            --include-package=demucs \\\n            --include-package=openunmix \\\n            --include-package=bs_roformer \\\n            --include-package=faster_whisper \\\n            --include-package=beat_this \\\n            --include-package=BeatNet \\\n            --include-package=librosa \\\n            --include-package=pyloudnorm \\\n            --include-package=cmudict \\\n            --include-package=sentence_transformers \\\n            --include-package=allin1_infer \\\n            --include-package-data=bs_roformer \\\n            --include-package-data=faster_whisper \\\n            src/stemlab/__main__.py\n\n      - name: Assemble StemLab release directory and manifest\n        run: |\n          mkdir -p dist-release\n          cp dist/* dist-release/\n          cp build/nuitka/stemlab-linux-x86_64 dist-release/\n          chmod +x dist-release/stemlab-linux-x86_64\n          cat > dist-release/STEMLAB-ABOUT.txt <<\'EOF\'\n          StemLab\n          =======\n          Part of the Dance Flow project.\n\n          Author: Kieran Simkin\n          Website: https://kieransimkin.co.uk/\n          My Songs: https://kieransimkin.co.uk/my-songs/\n          Arcadians showcase: https://kieransimkin.co.uk/arcadians/\n          Source: https://github.com/kieransimkin/stemlab\n          PyPI distribution: danceflow-stemlab\n\n          StemLab performs multi-model music source separation plus sonic,\n          harmonic, rhythmic, structural, lyrical and semantic analysis.\n\n          "danceflow-stemlab" is the package-registry identifier only.\n          The canonical project name is StemLab.\n          EOF\n          python scripts/release_manifest.py dist-release\n          cat dist-release/SHA256SUMS\n\n      - name: Upload Python distributions\n        uses: actions/upload-artifact@v4\n        with:\n          name: stemlab-python-distributions\n          path: |\n            dist/*.whl\n            dist/*.tar.gz\n          if-no-files-found: error\n\n      - name: Upload complete StemLab release assets\n        uses: actions/upload-artifact@v4\n        with:\n          name: stemlab-release-assets\n          path: dist-release/*\n          if-no-files-found: error\n\n  github-release:\n    name: Publish StemLab GitHub Release\n    if: startsWith(github.ref, \'refs/tags/v\')\n    needs: release-build\n    runs-on: ubuntu-24.04\n    permissions:\n      contents: write\n    steps:\n      - name: Retrieve StemLab release assets\n        uses: actions/download-artifact@v5\n        with:\n          name: stemlab-release-assets\n          path: dist-release\n\n      - name: Create or update StemLab GitHub Release\n        env:\n          GH_TOKEN: ${{ github.token }}\n          TAG: ${{ github.ref_name }}\n          REPOSITORY: ${{ github.repository }}\n        run: |\n          if ! gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then\n            gh release create "$TAG" \\\n              --repo "$REPOSITORY" \\\n              --verify-tag \\\n              --title "StemLab ${TAG#v}" \\\n              --generate-notes\n          fi\n\n          gh release view "$TAG" --repo "$REPOSITORY" --json body -q .body > /tmp/release-body.md\n          if ! grep -q \'kieransimkin.co.uk/my-songs/\' /tmp/release-body.md; then\n            cat >> /tmp/release-body.md <<\'EOF\'\n\n          ---\n          **StemLab by Kieran Simkin** — part of Dance Flow\n\n          Website: https://kieransimkin.co.uk/\n          Music catalogue: https://kieransimkin.co.uk/my-songs/\n          Arcadians showcase: https://kieransimkin.co.uk/arcadians/\n          Source: https://github.com/kieransimkin/stemlab\n          PyPI: https://pypi.org/project/danceflow-stemlab/\n          EOF\n            gh release edit "$TAG" --repo "$REPOSITORY" --notes-file /tmp/release-body.md\n          fi\n\n          gh release upload "$TAG" dist-release/* \\\n            --repo "$REPOSITORY" \\\n            --clobber\n\n  pypi-publish:\n    name: Publish StemLab to PyPI\n    if: startsWith(github.ref, \'refs/tags/v\')\n    needs: release-build\n    runs-on: ubuntu-24.04\n    environment:\n      name: pypi\n      url: https://pypi.org/p/danceflow-stemlab\n    permissions:\n      id-token: write\n    steps:\n      - name: Retrieve StemLab Python distributions\n        uses: actions/download-artifact@v5\n        with:\n          name: stemlab-python-distributions\n          path: dist\n\n      - name: Publish danceflow-stemlab distribution to PyPI\n        uses: pypa/gh-action-pypi-publish@release/v1\n'
+PYPI_DOC = '# Publishing StemLab\n\n**StemLab** is the canonical project and product name.\n\nStemLab is part of the wider **Dance Flow** project. Because the bare `stemlab`\nname is already allocated on PyPI, its Python distribution uses the globally\nunique registry identifier **`danceflow-stemlab`**.\n\nThat packaging identifier does not rename the project.\n\n| Identity | Value |\n| --- | --- |\n| Canonical project/product | **StemLab** |\n| Parent project | **Dance Flow** |\n| PyPI distribution | `danceflow-stemlab` |\n| Install command | `pip install danceflow-stemlab` |\n| Python import | `import stemlab` |\n| CLI | `stemlab` |\n| GitHub repository | `kieransimkin/stemlab` |\n| Container image | `stemlab` |\n| GitHub release title | `StemLab <version>` |\n\n## Destinations\n\nA successful version tag such as `v0.2.0` publishes StemLab to:\n\n- PyPI as the `danceflow-stemlab` distribution.\n- GitHub Releases as **StemLab**, with wheel, sdist, Linux one-file CLI,\n  checksums, release manifest and attribution material.\n- GitHub Container Registry as the `stemlab` image.\n- Docker Hub as the `stemlab` image when the Docker Hub secrets are configured.\n\nThe existing CI workflow handles GHCR and Docker Hub. The Release workflow\nhandles GitHub Releases and PyPI.\n\n## One-time PyPI Trusted Publisher setup\n\nStemLab uses PyPI Trusted Publishing (OIDC), so no persistent PyPI API token is\nstored in GitHub Secrets.\n\nConfigure a pending GitHub publisher in your PyPI account using these values:\n\n| Field | Value |\n| --- | --- |\n| PyPI project name | `danceflow-stemlab` |\n| GitHub owner | `kieransimkin` |\n| GitHub repository | `stemlab` |\n| Workflow filename | `release.yml` |\n| Environment | `pypi` |\n\nThe PyPI project will be created as `danceflow-stemlab` on the first successful\nTrusted Publishing upload. Its README and metadata identify the software itself\nas **StemLab**.\n\n## GitHub environment\n\nCreate the GitHub Actions environment:\n\n`Repository Settings -> Environments -> New environment -> pypi`\n\nRequired reviewers are optional but recommended for publishing protection.\n\n## Releasing StemLab 0.2.0\n\nThe version in `pyproject.toml` must equal the tag without the leading `v`.\n\n```bash\ngit pull\ngit status\ngit tag -a v0.2.0 -m "StemLab 0.2.0"\ngit push origin v0.2.0\n```\n\nThe tag starts:\n\n1. **CI** — tests StemLab and publishes versioned `stemlab` images to GHCR and\n   Docker Hub.\n2. **Release** — tests StemLab again, builds the wheel/sdist and standalone CLI,\n   creates the **StemLab 0.2.0** GitHub Release, and publishes the\n   `danceflow-stemlab` Python distribution to PyPI using OIDC.\n\n## Manual workflow runs\n\n`workflow_dispatch` builds and validates the release artifacts, but it does not\npublish to PyPI or create a GitHub Release. Publication requires a `v*` tag.\n\n## Public attribution\n\nRelease material retains the canonical StemLab name and includes:\n\n- Kieran Simkin\n- https://kieransimkin.co.uk/\n- https://kieransimkin.co.uk/my-songs/\n- https://kieransimkin.co.uk/arcadians/\n- https://github.com/kieransimkin/stemlab\n'
+TEST_IDENTITY = 'from pathlib import Path\n\nimport tomllib\n\n\ndef test_stemlab_canonical_identity_is_not_distribution_name():\n    root = Path(__file__).resolve().parents[1]\n    pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))\n    readme = (root / "README.md").read_text(encoding="utf-8")\n\n    # The registry coordinate is namespaced under Dance Flow because the bare\n    # PyPI name is unavailable. It must not rename the product itself.\n    assert pyproject["project"]["name"] == "danceflow-stemlab"\n    assert pyproject["project"]["scripts"]["stemlab"] == "stemlab.cli:app"\n    assert readme.startswith("# StemLab")\n    assert "canonical project name is **StemLab**" in readme\n    assert "pip install danceflow-stemlab" in readme\n'
+
+def run(cmd: list[str], cwd: Path) -> None:
+    print("+", " ".join(cmd))
+    subprocess.run(cmd, cwd=cwd, check=True)
+
+def replace_once(text: str, old: str, new: str, label: str) -> str:
+    if new in text:
+        return text
+    if old not in text:
+        raise SystemExit(f"Could not locate expected {label} in file")
+    return text.replace(old, new, 1)
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="StemLab v0.2.5 Dance Flow / PyPI distribution publishing upgrade."
+    )
+    parser.add_argument("repository", nargs="?", default=".")
+    parser.add_argument("--no-validate", action="store_true")
+    args = parser.parse_args()
+
+    root = Path(args.repository).expanduser().resolve()
+    if not (root / ".git").exists() or not (root / "pyproject.toml").is_file():
+        parser.error(f"Not a StemLab checkout: {root}")
+
+    # PyPI/distribution identity only. Package, CLI, repo, containers and all
+    # human-facing project names remain StemLab/stemlab.
+    pyproject_path = root / "pyproject.toml"
+    pyproject = pyproject_path.read_text(encoding="utf-8")
+    pyproject = replace_once(
+        pyproject,
+        'name = "stemlab"\n',
+        'name = "danceflow-stemlab"\n',
+        "project distribution name",
+    )
+    if "requires-python" not in pyproject:
+        pyproject = replace_once(
+            pyproject,
+            'readme = "README.md"\n',
+            'readme = "README.md"\nrequires-python = ">=3.10"\n',
+            "readme field",
+        )
+    pyproject_path.write_text(pyproject, encoding="utf-8", newline="\n")
+    print("updated: pyproject.toml (PyPI distribution danceflow-stemlab; project remains StemLab)")
+
+    readme_path = root / "README.md"
+    readme = readme_path.read_text(encoding="utf-8")
+    identity_block = """\n> **Packaging identity:** the canonical project name is **StemLab**. StemLab is part of the **Dance Flow** project. The PyPI distribution is named `danceflow-stemlab` solely because Python package-registry names are globally unique. The Python import, CLI, GitHub repository and container image remain `stemlab`.\n"""
+    if identity_block.strip() not in readme:
+        marker = "> **StemLab by [Kieran Simkin](https://kieransimkin.co.uk/)** · [My Songs](https://kieransimkin.co.uk/my-songs/) · [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) · [Source](https://github.com/kieransimkin/stemlab)\n"
+        readme = replace_once(readme, marker, marker + identity_block, "README attribution header")
+
+    pypi_install = """\nFrom PyPI, install the released StemLab distribution with:\n\n```bash\npip install danceflow-stemlab\n```\n\nThe installed Python package and command remain `stemlab`. For development from a source checkout:\n"""
+    old_install_intro = "Python 3.10 or 3.11 is recommended because the legacy BeatNet/madmom ecosystem is less predictable on newer Python versions.\n\n"
+    if "pip install danceflow-stemlab" not in readme:
+        readme = replace_once(
+            readme,
+            old_install_intro,
+            old_install_intro + pypi_install + "\n",
+            "README install introduction",
+        )
+
+    old_release = "`.github/workflows/release.yml` runs for every published GitHub Release. It builds wheel/sdist artifacts and a Linux x86-64 **Nuitka one-file executable**, then writes both `SHA256SUMS` and `release-assets.json` containing file names, sizes and SHA-256 digests before uploading all assets to the release."
+    new_release = "`.github/workflows/release.yml` is tag-driven. A `v*` tag builds and validates StemLab, creates/updates the **StemLab** GitHub Release, publishes the Python distribution to PyPI as `danceflow-stemlab` using Trusted Publishing/OIDC, and attaches the wheel, sdist, Linux x86-64 **Nuitka one-file executable**, `SHA256SUMS`, `release-assets.json`, and attribution material. The PyPI distribution identifier does not rename the StemLab project."
+    if old_release in readme:
+        readme = readme.replace(old_release, new_release, 1)
+    readme_path.write_text(readme, encoding="utf-8", newline="\n")
+    print("updated: README.md (StemLab canonical identity + Dance Flow/PyPI distinction)")
+
+    workflow_path = root / ".github" / "workflows" / "release.yml"
+    workflow_path.parent.mkdir(parents=True, exist_ok=True)
+    workflow_path.write_text(WORKFLOW, encoding="utf-8", newline="\n")
+    print("updated: .github/workflows/release.yml")
+
+    doc_path = root / "PYPI_PUBLISHING.md"
+    doc_path.write_text(PYPI_DOC, encoding="utf-8", newline="\n")
+    print("added/updated: PYPI_PUBLISHING.md")
+
+    test_path = root / "tests" / "test_distribution_identity.py"
+    test_path.write_text(TEST_IDENTITY, encoding="utf-8", newline="\n")
+    print("added/updated: tests/test_distribution_identity.py")
+
+    if args.no_validate:
+        print("Validation skipped.")
+        return 0
+
+    if sys.version_info >= (3, 11):
+        run([
+            sys.executable, "-c",
+            "import pathlib,tomllib; p=tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8')); "
+            "assert p['project']['name']=='danceflow-stemlab'; "
+            "assert p['project']['scripts']['stemlab']=='stemlab.cli:app'; "
+            "print('StemLab distribution metadata: OK')"
+        ], root)
+
+    # This focused test has no optional server dependency.
+    run([sys.executable, "-m", "pytest", "-q", "tests/test_distribution_identity.py"], root)
+    run([sys.executable, "-m", "ruff", "check", "tests/test_distribution_identity.py"], root)
+    run(["git", "diff", "--check"], root)
+
+    print("\nStemLab v0.2.5 publishing identity upgrade applied successfully.")
+    print("Canonical project: StemLab")
+    print("Parent project: Dance Flow")
+    print("PyPI distribution only: danceflow-stemlab")
+    print("Import / CLI / containers: stemlab")
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -2,6 +2,8 @@
 
 > **StemLab by [Kieran Simkin](https://kieransimkin.co.uk/)** · [My Songs](https://kieransimkin.co.uk/my-songs/) · [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) · [Source](https://github.com/kieransimkin/stemlab)
 
+> **Packaging identity:** the canonical project name is **StemLab**. StemLab is part of the **Dance Flow** project. The PyPI distribution is named `danceflow-stemlab` solely because Python package-registry names are globally unique. The Python import, CLI, GitHub repository and container image remain `stemlab`.
+
 StemLab is an assessment-oriented Python/PyTorch audio pipeline. Given one master WAV and a named output directory it runs a deliberately diverse set of high-capacity source-separation models, a smaller low-latency comparison model, speech/VAD + Whisper analysis, spectrogram generation, three independent beat/downbeat systems, and a Sonic Visualiser session that ties the results together on one timeline.
 
 > **Model weights are not redistributed by this project.** They are fetched from their upstream registries/releases on first use. This avoids silently republishing checkpoints whose licensing may differ from the source code license, and lets upstream integrity metadata be used where available.
@@ -86,6 +88,15 @@ The derived artifacts live under `deep/` (`sonic/`, `rhythm/`, `harmony/`, `stru
 ## Install
 
 Python 3.10 or 3.11 is recommended because the legacy BeatNet/madmom ecosystem is less predictable on newer Python versions.
+
+
+From PyPI, install the released StemLab distribution with:
+
+```bash
+pip install danceflow-stemlab
+```
+
+The installed Python package and command remain `stemlab`. For development from a source checkout:
 
 ```bash
 python -m venv .venv
@@ -324,7 +335,7 @@ The full run is intentionally expensive. Mega-53 is the dominant VRAM/storage pa
 
 ## Binary/release CI
 
-`.github/workflows/release.yml` runs for every published GitHub Release. It builds wheel/sdist artifacts and a Linux x86-64 **Nuitka one-file executable**, then writes both `SHA256SUMS` and `release-assets.json` containing file names, sizes and SHA-256 digests before uploading all assets to the release.
+`.github/workflows/release.yml` is tag-driven. A `v*` tag builds and validates StemLab, creates/updates the **StemLab** GitHub Release, publishes the Python distribution to PyPI as `danceflow-stemlab` using Trusted Publishing/OIDC, and attaches the wheel, sdist, Linux x86-64 **Nuitka one-file executable**, `SHA256SUMS`, `release-assets.json`, and attribution material. The PyPI distribution identifier does not rename the StemLab project.
 
 A terminology caveat matters here: upstream PyTorch, torchaudio, CUDA and audio-codec wheels contain native shared libraries. A genuinely fully-static executable containing that stack is not realistically produced from the stock wheels. The workflow therefore requests a static Python runtime from Nuitka where available and packages the remaining native runtime into the one-file executable. It is self-contained for distribution, but it is **not an ELF with zero dynamic dependencies**. Producing the latter would require custom static builds of PyTorch/libtorch and its native dependency tree for one fixed platform, and would make CUDA support especially problematic.
 

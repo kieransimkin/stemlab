@@ -3,10 +3,11 @@ requires = ["setuptools>=75", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "stemlab"
+name = "danceflow-stemlab"
 version = "0.2.0"
 description = "Multi-model music stem separation, structural, harmonic, rhythmic, sonic and semantic analysis pipeline"
 readme = "README.md"
+requires-python = ">=3.10"
 authors = [{name = "Kieran Simkin"}]
 maintainers = [{name = "Kieran Simkin"}]
 keywords = ["music", "audio", "source separation", "MIR", "music information retrieval", "spectrogram", "lyrics", "rhythm", "harmony"]
