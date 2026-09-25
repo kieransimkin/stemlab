@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import io
+import json
 import re
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import quote
 
+from .canonical import load_canonical, save_canonical
+
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, Request
     from fastapi.responses import FileResponse, JSONResponse, Response
 except ImportError as exc:  # pragma: no cover - server extra controls this path
     raise RuntimeError(
@@ -161,11 +164,70 @@ def _spectrogram_strip_png(
     return buffer.getvalue()
 
 
+def _first_detected_beat(root: Path) -> tuple[float | None, str | None]:
+    """Return the earliest beat from the best available detector result.
+
+    Consensus is preferred once it exists; before then the browser can anchor a
+    canonical-BPM grid to the first available detector. The anchor is therefore
+    useful during an in-progress analysis and becomes consensus-backed when the
+    consensus file appears.
+    """
+    candidates = (
+        ("beats/consensus.json", "beats"),
+        ("beats/beat_transformer.json", "beats"),
+        ("beats/beat_this.json", "beats"),
+        ("beats/beatnet.json", "beats"),
+        ("vamp/data/vamp_beats.json", "events"),
+    )
+    fallback: tuple[float, str] | None = None
+
+    for rel_path, field in candidates:
+        path = root / rel_path
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, OSError, json.JSONDecodeError):
+            continue
+
+        values: list[float] = []
+        if field == "beats":
+            raw = data.get("beats", []) if isinstance(data, dict) else []
+            for value in raw:
+                try:
+                    number = float(value)
+                except (TypeError, ValueError):
+                    continue
+                if number >= 0:
+                    values.append(number)
+        else:
+            raw = data.get("events", []) if isinstance(data, dict) else []
+            for event in raw:
+                if not isinstance(event, dict):
+                    continue
+                try:
+                    number = float(event.get("start"))
+                except (TypeError, ValueError):
+                    continue
+                if number >= 0:
+                    values.append(number)
+
+        if not values:
+            continue
+
+        first = min(values)
+        if rel_path == "beats/consensus.json":
+            return first, rel_path
+        if fallback is None:
+            fallback = (first, rel_path)
+
+    return fallback if fallback is not None else (None, None)
+
+
 def install_routes(
     app: FastAPI,
     *,
     results_dir_provider: Callable[[], Path],
     scheduler_provider: Callable[[], Any],
+    socketio_server: Any | None = None,
 ) -> None:
     """Register UI/API routes before StemLab's generic result-tree catch-alls."""
 
@@ -195,6 +257,7 @@ def install_routes(
             "source_audio": "GET /api/{sha256}/source",
             "waveform": "GET /api/{sha256}/waveform?path=...",
             "spectrogram": "GET /api/{sha256}/spectrogram?path=...",
+            "canonical": "GET/PUT /api/{sha256}/canonical",
             "results_root": str(results_dir_provider()),
         }
 
@@ -229,12 +292,58 @@ def install_routes(
         except Exception:
             pass
 
+        first_beat, first_beat_source = _first_detected_beat(root)
         return {
             "hash": song_hash,
             "status": scheduler_provider().status(song_hash),
             "duration_seconds": duration_seconds,
             "source_url": f"/api/{song_hash}/source",
             "files": files,
+            "canonical": load_canonical(root),
+            "first_detected_beat": first_beat,
+            "first_detected_beat_source": first_beat_source,
+        }
+
+    @app.get("/api/{song_hash}/canonical")
+    async def canonical_metadata(song_hash: str) -> dict[str, Any]:
+        try:
+            song_hash = _normalise_hash(song_hash)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        root = (results_dir_provider() / song_hash).resolve()
+        if not root.is_dir():
+            raise HTTPException(status_code=404, detail="result hash not found")
+        return load_canonical(root)
+
+    @app.put("/api/{song_hash}/canonical")
+    async def update_canonical_metadata(song_hash: str, request: Request) -> dict[str, Any]:
+        try:
+            song_hash = _normalise_hash(song_hash)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        root = (results_dir_provider() / song_hash).resolve()
+        if not root.is_dir():
+            raise HTTPException(status_code=404, detail="result hash not found")
+
+        try:
+            payload = await request.json()
+            canonical = save_canonical(root, payload)
+        except (ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        event = {
+            "event": "canonical_metadata",
+            "hash": song_hash,
+            "canonical": canonical,
+        }
+        if socketio_server is not None:
+            await socketio_server.emit("canonical_metadata", event, room=song_hash)
+
+        return {
+            "hash": song_hash,
+            "canonical": canonical,
+            "path": f"/{song_hash}/canonical.json",
         }
 
     @app.get("/api/{song_hash}/source")

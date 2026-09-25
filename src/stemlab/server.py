@@ -993,6 +993,7 @@ _install_web_routes(
     http_app,
     results_dir_provider=lambda: settings.results_dir,
     scheduler_provider=_scheduler_from_app,
+    socketio_server=sio,
 )
 
 

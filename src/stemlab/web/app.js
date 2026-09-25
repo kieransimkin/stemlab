@@ -381,6 +381,10 @@ class Timeline {
     const ext = fileExt(path);
     const key = `file:${path}`;
 
+    if (path === "canonical.json") {
+      return;
+    }
+
     if (AUDIO_EXTENSIONS.has(ext)) {
       const lane = this.createLane(key, prettyPath(path), "audio waveform", "waveform");
       lane.rendered = true;
@@ -684,7 +688,7 @@ chooseButton.addEventListener("click", event => {
 });
 fileInput.addEventListener("change", () => startUpload(fileInput.files?.[0]));
 dropZone.addEventListener("click", event => {
-  if (event.target === chooseButton) return;
+  if (event.target === chooseButton || event.target.closest(".known-info")) return;
   fileInput.click();
 });
 dropZone.addEventListener("keydown", event => {

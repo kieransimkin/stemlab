@@ -24,6 +24,33 @@
           <p>or choose a file to upload and analyse</p>
           <button id="chooseButton" class="primary">Choose audio</button>
           <input id="fileInput" type="file" accept="audio/*,.wav,.flac,.mp3,.ogg,.opus,.m4a,.aif,.aiff" hidden>
+
+          <details class="known-info">
+            <summary>Known reference information <span class="small">(optional)</span></summary>
+            <div class="known-info-grid">
+              <label>
+                <span>Canonical BPM</span>
+                <input id="canonicalBpm" type="number" min="1" max="400" step="0.001" placeholder="e.g. 145">
+              </label>
+              <div class="known-info-actions">
+                <button id="loadArcadiansReference" type="button" class="button">Load Arcadians example</button>
+                <span id="knownInfoStatus" class="small"></span>
+              </div>
+              <label class="wide">
+                <span>Canonical lyrics</span>
+                <textarea id="canonicalLyrics" rows="7" placeholder="Paste the definitive lyrics here"></textarea>
+              </label>
+              <label class="wide">
+                <span>Canonical lyric timing</span>
+                <textarea id="canonicalTiming" rows="7" placeholder="LRC timestamps or JSON events: [{&quot;start&quot;: 2.89, &quot;end&quot;: 5.12, &quot;text&quot;: &quot;...&quot;}]"></textarea>
+              </label>
+              <p class="known-info-help wide">
+                These values are stored against the uploaded file's SHA-256. BPM creates a fixed beat grid
+                anchored to the first detected beat; lyrics and timed lyrics appear as reference lanes.
+              </p>
+            </div>
+          </details>
+
           <div id="uploadProgressWrap" class="progress-wrap hidden">
             <div class="progress-track"><div id="uploadProgress" class="progress-fill"></div></div>
             <div id="uploadLabel" class="small"></div>
@@ -86,5 +113,6 @@
 
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   <script type="module" src="/assets/app.js"></script>
+  <script type="module" src="/assets/canonical.js"></script>
 </body>
 </html>

@@ -52,7 +52,7 @@ stemlab = "stemlab.cli:app"
 where = ["src"]
 
 [tool.setuptools.package-data]
-stemlab = ["web/*.html", "web/*.css", "web/*.js"]
+stemlab = ["web/*.html", "web/*.css", "web/*.js", "web/*.json"]
 
 [tool.ruff]
 line-length = 100

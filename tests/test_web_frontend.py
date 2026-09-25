@@ -43,3 +43,5 @@ def test_frontend_assets_are_present():
     assert (web / "index.html").is_file()
     assert (web / "style.css").is_file()
     assert (web / "app.js").is_file()
+    assert (web / "canonical.js").is_file()
+    assert (web / "arcadians-reference.json").is_file()

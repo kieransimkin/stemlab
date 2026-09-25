@@ -1,0 +1,31 @@
+{
+  "title": "Arcadians",
+  "artist": "Kieran Simkin",
+  "isrc": "QT6EB2639508",
+  "bpm": 145.0,
+  "lyrics": "No crown, no concrete\nJust mountain breath and moonlit stone\nArcadia...\nWhere the green stays gold\n\nPan in the pines, river in the light\nWildflower fires in the velvet night\nOld-world echoes under the trees\nOne land, one heart, one harmony\n\nHear the pipes through the valley below\nAncient rivers, timeless flow\nNo chains on the roots, no walls in the sky\nArcadia calling, we rise, we rise\n\nPan on the pipe\nWind in the pines\nMountain pulse in the bloodline\nHigher, higher, into the light\nWild green world, electrify\n\nAR-CA-DI-A!\nWild green frequency!\nBass in the valley, roots in the beat\nUnspoiled heaven under our feet!\n\nAR-CA-DI-A!\nLet the mountains shake!\nPan’s pipe screaming while the earth wakes\nNature in balance—\nBREAK! BREAK! BREAK!\n\nArcadia...\nArcadia...\n\nCallisto’s stars on the mountainside\nArcas dreaming where the rivers glide\nShepherd songs in the open air\nNo empire owns what the wild can share\n\nHear the pipes through the valley below\nAncient rivers, timeless flow\nNo chains on the roots, no walls in the sky\nArcadia calling, we rise, we rise\n\nAR-CA-DI-A!\nWild green frequency!\nThunder in the hills, fire in the leaves\nThe wild stays free when the people believe!\n\nAR-CA-DI-A!\nLet the mountains shake!\nPan’s pipe screaming while the earth wakes\nNature in balance—\nBREAK! BREAK! BREAK!\n\nFrom the old highlands\nTo the sound-system sky\nArcadia never died",
+  "lyric_timing": [],
+  "audio_reference": {
+    "canonical_filename": "Arcadians - mastered.wav",
+    "sha256": "b72436c8d3741a86b75af603f702e063b3c5be96738dd02181f32b74bdea1366",
+    "duration_seconds": 273.604558,
+    "sample_rate_hz": 44100,
+    "channels": 2
+  },
+  "cover_reference": {
+    "filename": "cover.jpg",
+    "sha256": "8bfeff939c1ffcba7529614263e05d4f1bb59a46e6c13501dbf12349edb047ee"
+  },
+  "lyric_timing_reference": {
+    "status": "canonical_user_edited_locked",
+    "expected_filename": "canonical-lyric-timing.lrc",
+    "sha256": "92b46abc4caf1caa8eddf7c306a9e767f8d0bbefed3b39d38e4b4f96981e9de7",
+    "timestamp_format": "[mm:ss.cc]",
+    "timestamp_tags": 96,
+    "populated_lyric_cues": 48,
+    "clear_end_line_count": 48,
+    "first_cue_seconds": 2.89,
+    "last_tag_seconds": 246.59,
+    "note": "The exact artist-edited LRC is the canonical timing authority. This repository fixture records its verified identity and validation metadata; the timestamp contents are not reconstructed from summary data."
+  }
+}
