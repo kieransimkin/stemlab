@@ -1,0 +1,13 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 67f2999..6ddc099 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -25,7 +25,7 @@ jobs:
+           python-version: ${{ matrix.python }}
+           cache: pip
+       - run: python -m pip install -U pip
+-      - run: pip install -e ".[dev]"
++      - run: pip install -e ".[dev,server]"
+       - run: python -m compileall -q src tests
+       - run: pytest
+       - run: ruff check src tests scripts
