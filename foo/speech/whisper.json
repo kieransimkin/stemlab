@@ -1,0 +1,6217 @@
+{
+  "duration": 168.003375,
+  "duration_after_vad": 168.003375,
+  "language": "en",
+  "language_probability": 0.9195153713226318,
+  "model": "large-v3",
+  "regions": [
+    {
+      "end": 1.24,
+      "end_sample": 19840,
+      "start": 0.104,
+      "start_sample": 1664
+    },
+    {
+      "end": 2.808,
+      "end_sample": 44928,
+      "start": 2.312,
+      "start_sample": 36992
+    },
+    {
+      "end": 5.272,
+      "end_sample": 84352,
+      "start": 3.656,
+      "start_sample": 58496
+    },
+    {
+      "end": 8.152,
+      "end_sample": 130432,
+      "start": 5.608,
+      "start_sample": 89728
+    },
+    {
+      "end": 29.08,
+      "end_sample": 465280,
+      "start": 8.52,
+      "start_sample": 136320
+    },
+    {
+      "end": 48.568,
+      "end_sample": 777088,
+      "start": 29.736,
+      "start_sample": 475776
+    },
+    {
+      "end": 62.84,
+      "end_sample": 1005440,
+      "start": 48.68,
+      "start_sample": 778880
+    },
+    {
+      "end": 70.072,
+      "end_sample": 1121152,
+      "start": 62.952,
+      "start_sample": 1007232
+    },
+    {
+      "end": 105.752,
+      "end_sample": 1692032,
+      "start": 70.344,
+      "start_sample": 1125504
+    },
+    {
+      "end": 112.824,
+      "end_sample": 1805184,
+      "start": 105.96,
+      "start_sample": 1695360
+    },
+    {
+      "end": 114.328,
+      "end_sample": 1829248,
+      "start": 113.192,
+      "start_sample": 1811072
+    },
+    {
+      "end": 134.264,
+      "end_sample": 2148224,
+      "start": 115.688,
+      "start_sample": 1851008
+    },
+    {
+      "end": 137.784,
+      "end_sample": 2204544,
+      "start": 134.408,
+      "start_sample": 2150528
+    },
+    {
+      "end": 141.336,
+      "end_sample": 2261376,
+      "start": 137.96,
+      "start_sample": 2207360
+    },
+    {
+      "end": 156.408,
+      "end_sample": 2502528,
+      "start": 141.512,
+      "start_sample": 2264192
+    },
+    {
+      "end": 159.864,
+      "end_sample": 2557824,
+      "start": 156.584,
+      "start_sample": 2505344
+    }
+  ],
+  "segments": [
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 0.88,
+      "id": 1,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 0.0,
+      "text": " Duh duh dun duh dun",
+      "words": [
+        {
+          "end": 0.28,
+          "probability": 0.2568532843142748,
+          "start": 0.0,
+          "word": " Duh"
+        },
+        {
+          "end": 0.32,
+          "probability": 0.4307433068752289,
+          "start": 0.28,
+          "word": " duh"
+        },
+        {
+          "end": 0.48,
+          "probability": 0.27924734354019165,
+          "start": 0.32,
+          "word": " dun"
+        },
+        {
+          "end": 0.7,
+          "probability": 0.4990689158439636,
+          "start": 0.48,
+          "word": " duh"
+        },
+        {
+          "end": 0.88,
+          "probability": 0.668911337852478,
+          "start": 0.7,
+          "word": " dun"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 2.36,
+      "id": 2,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 1.8799999999999994,
+      "text": " Hmm",
+      "words": [
+        {
+          "end": 2.36,
+          "probability": 0.01815389096736908,
+          "start": 1.8799999999999994,
+          "word": " Hmm"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 4.9,
+      "id": 3,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 3.3399999999999994,
+      "text": " Duh duh dun chips and ketchup",
+      "words": [
+        {
+          "end": 3.82,
+          "probability": 0.8330014050006866,
+          "start": 3.3399999999999994,
+          "word": " Duh"
+        },
+        {
+          "end": 3.9,
+          "probability": 0.9698699712753296,
+          "start": 3.82,
+          "word": " duh"
+        },
+        {
+          "end": 3.98,
+          "probability": 0.7343339323997498,
+          "start": 3.9,
+          "word": " dun"
+        },
+        {
+          "end": 4.26,
+          "probability": 0.6061738133430481,
+          "start": 3.98,
+          "word": " chips"
+        },
+        {
+          "end": 4.48,
+          "probability": 0.9040471911430359,
+          "start": 4.26,
+          "word": " and"
+        },
+        {
+          "end": 4.9,
+          "probability": 0.9762536883354187,
+          "start": 4.48,
+          "word": " ketchup"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 7.48,
+      "id": 4,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 4.9,
+      "text": " Duh duh dun duh duh duh",
+      "words": [
+        {
+          "end": 5.84,
+          "probability": 0.4673853199928999,
+          "start": 4.9,
+          "word": " Duh"
+        },
+        {
+          "end": 6.06,
+          "probability": 0.8871315121650696,
+          "start": 5.84,
+          "word": " duh"
+        },
+        {
+          "end": 6.52,
+          "probability": 0.6785937547683716,
+          "start": 6.06,
+          "word": " dun"
+        },
+        {
+          "end": 6.92,
+          "probability": 0.441362589597702,
+          "start": 6.52,
+          "word": " duh"
+        },
+        {
+          "end": 7.16,
+          "probability": 0.6115933060646057,
+          "start": 6.92,
+          "word": " duh"
+        },
+        {
+          "end": 7.48,
+          "probability": 0.38861194252967834,
+          "start": 7.16,
+          "word": " duh"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 9.86,
+      "id": 5,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 8.0,
+      "text": " Feeling a little bit sad today",
+      "words": [
+        {
+          "end": 8.24,
+          "probability": 0.2085692286491394,
+          "start": 8.0,
+          "word": " Feeling"
+        },
+        {
+          "end": 8.96,
+          "probability": 0.9976903200149536,
+          "start": 8.24,
+          "word": " a"
+        },
+        {
+          "end": 9.12,
+          "probability": 0.9862538576126099,
+          "start": 8.96,
+          "word": " little"
+        },
+        {
+          "end": 9.3,
+          "probability": 0.9749482870101929,
+          "start": 9.12,
+          "word": " bit"
+        },
+        {
+          "end": 9.54,
+          "probability": 0.9981643557548523,
+          "start": 9.3,
+          "word": " sad"
+        },
+        {
+          "end": 9.86,
+          "probability": 0.9977293610572815,
+          "start": 9.54,
+          "word": " today"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 11.44,
+      "id": 6,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 9.86,
+      "text": " Feeling a little bit bored",
+      "words": [
+        {
+          "end": 10.46,
+          "probability": 0.8273062109947205,
+          "start": 9.86,
+          "word": " Feeling"
+        },
+        {
+          "end": 10.74,
+          "probability": 0.9988580942153931,
+          "start": 10.46,
+          "word": " a"
+        },
+        {
+          "end": 10.88,
+          "probability": 0.9956337809562683,
+          "start": 10.74,
+          "word": " little"
+        },
+        {
+          "end": 11.08,
+          "probability": 0.9979755282402039,
+          "start": 10.88,
+          "word": " bit"
+        },
+        {
+          "end": 11.44,
+          "probability": 0.9961341619491577,
+          "start": 11.08,
+          "word": " bored"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 13.56,
+      "id": 7,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 12.0,
+      "text": " Brighton's waiting outside my door",
+      "words": [
+        {
+          "end": 12.26,
+          "probability": 0.9784575899442037,
+          "start": 12.0,
+          "word": " Brighton's"
+        },
+        {
+          "end": 12.5,
+          "probability": 0.9884567260742188,
+          "start": 12.26,
+          "word": " waiting"
+        },
+        {
+          "end": 12.9,
+          "probability": 0.9927005171775818,
+          "start": 12.5,
+          "word": " outside"
+        },
+        {
+          "end": 13.24,
+          "probability": 0.9984090924263,
+          "start": 12.9,
+          "word": " my"
+        },
+        {
+          "end": 13.56,
+          "probability": 0.9982813596725464,
+          "start": 13.24,
+          "word": " door"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 14.82,
+      "id": 8,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 13.56,
+      "text": " But nothing sounds fun anymore",
+      "words": [
+        {
+          "end": 13.74,
+          "probability": 0.8618804812431335,
+          "start": 13.56,
+          "word": " But"
+        },
+        {
+          "end": 13.92,
+          "probability": 0.9772764444351196,
+          "start": 13.74,
+          "word": " nothing"
+        },
+        {
+          "end": 14.16,
+          "probability": 0.95842444896698,
+          "start": 13.92,
+          "word": " sounds"
+        },
+        {
+          "end": 14.42,
+          "probability": 0.997840404510498,
+          "start": 14.16,
+          "word": " fun"
+        },
+        {
+          "end": 14.82,
+          "probability": 0.9396820068359375,
+          "start": 14.42,
+          "word": " anymore"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 16.86,
+      "id": 9,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 14.82,
+      "text": " Could get a pizza at Donatello's",
+      "words": [
+        {
+          "end": 15.34,
+          "probability": 0.9131218791007996,
+          "start": 14.82,
+          "word": " Could"
+        },
+        {
+          "end": 15.5,
+          "probability": 0.998134195804596,
+          "start": 15.34,
+          "word": " get"
+        },
+        {
+          "end": 15.6,
+          "probability": 0.9859943389892578,
+          "start": 15.5,
+          "word": " a"
+        },
+        {
+          "end": 15.86,
+          "probability": 0.9922547340393066,
+          "start": 15.6,
+          "word": " pizza"
+        },
+        {
+          "end": 16.08,
+          "probability": 0.994788408279419,
+          "start": 15.86,
+          "word": " at"
+        },
+        {
+          "end": 16.86,
+          "probability": 0.8308913856744766,
+          "start": 16.08,
+          "word": " Donatello's"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 18.5,
+      "id": 10,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 16.86,
+      "text": " Sit in the lanes and watch the crowds go",
+      "words": [
+        {
+          "end": 17.0,
+          "probability": 0.7513047456741333,
+          "start": 16.86,
+          "word": " Sit"
+        },
+        {
+          "end": 17.18,
+          "probability": 0.9973692893981934,
+          "start": 17.0,
+          "word": " in"
+        },
+        {
+          "end": 17.32,
+          "probability": 0.9953225255012512,
+          "start": 17.18,
+          "word": " the"
+        },
+        {
+          "end": 17.58,
+          "probability": 0.9905896186828613,
+          "start": 17.32,
+          "word": " lanes"
+        },
+        {
+          "end": 17.68,
+          "probability": 0.9791491627693176,
+          "start": 17.58,
+          "word": " and"
+        },
+        {
+          "end": 17.84,
+          "probability": 0.9984378218650818,
+          "start": 17.68,
+          "word": " watch"
+        },
+        {
+          "end": 18.02,
+          "probability": 0.9984048008918762,
+          "start": 17.84,
+          "word": " the"
+        },
+        {
+          "end": 18.24,
+          "probability": 0.9900315999984741,
+          "start": 18.02,
+          "word": " crowds"
+        },
+        {
+          "end": 18.5,
+          "probability": 0.9982985854148865,
+          "start": 18.24,
+          "word": " go"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 20.14,
+      "id": 11,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 18.5,
+      "text": " But I'm not hungry so that's no good",
+      "words": [
+        {
+          "end": 18.7,
+          "probability": 0.984079897403717,
+          "start": 18.5,
+          "word": " But"
+        },
+        {
+          "end": 18.86,
+          "probability": 0.9915537536144257,
+          "start": 18.7,
+          "word": " I'm"
+        },
+        {
+          "end": 19.02,
+          "probability": 0.9983670115470886,
+          "start": 18.86,
+          "word": " not"
+        },
+        {
+          "end": 19.4,
+          "probability": 0.9986898303031921,
+          "start": 19.02,
+          "word": " hungry"
+        },
+        {
+          "end": 19.52,
+          "probability": 0.8549134135246277,
+          "start": 19.4,
+          "word": " so"
+        },
+        {
+          "end": 19.74,
+          "probability": 0.9979364275932312,
+          "start": 19.52,
+          "word": " that's"
+        },
+        {
+          "end": 19.84,
+          "probability": 0.993911862373352,
+          "start": 19.74,
+          "word": " no"
+        },
+        {
+          "end": 20.14,
+          "probability": 0.9990684390068054,
+          "start": 19.84,
+          "word": " good"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 21.92,
+      "id": 12,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 20.14,
+      "text": " Even though I know that the pizza would",
+      "words": [
+        {
+          "end": 20.36,
+          "probability": 0.9783846139907837,
+          "start": 20.14,
+          "word": " Even"
+        },
+        {
+          "end": 20.52,
+          "probability": 0.9937478303909302,
+          "start": 20.36,
+          "word": " though"
+        },
+        {
+          "end": 20.68,
+          "probability": 0.9940418601036072,
+          "start": 20.52,
+          "word": " I"
+        },
+        {
+          "end": 20.94,
+          "probability": 0.9975977540016174,
+          "start": 20.68,
+          "word": " know"
+        },
+        {
+          "end": 21.14,
+          "probability": 0.9953548908233643,
+          "start": 20.94,
+          "word": " that"
+        },
+        {
+          "end": 21.28,
+          "probability": 0.978760838508606,
+          "start": 21.14,
+          "word": " the"
+        },
+        {
+          "end": 21.58,
+          "probability": 0.9965214729309082,
+          "start": 21.28,
+          "word": " pizza"
+        },
+        {
+          "end": 21.92,
+          "probability": 0.9972509741783142,
+          "start": 21.58,
+          "word": " would"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 23.42,
+      "id": 13,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 21.92,
+      "text": " There must be something",
+      "words": [
+        {
+          "end": 22.48,
+          "probability": 0.9069802761077881,
+          "start": 21.92,
+          "word": " There"
+        },
+        {
+          "end": 22.74,
+          "probability": 0.9994779229164124,
+          "start": 22.48,
+          "word": " must"
+        },
+        {
+          "end": 22.98,
+          "probability": 0.998986542224884,
+          "start": 22.74,
+          "word": " be"
+        },
+        {
+          "end": 23.42,
+          "probability": 0.9761818647384644,
+          "start": 22.98,
+          "word": " something"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.2193149377481412,
+      "end": 25.22,
+      "id": 14,
+      "no_speech_prob": 0.37340930104255676,
+      "start": 23.42,
+      "text": " There must be somewhere",
+      "words": [
+        {
+          "end": 24.26,
+          "probability": 0.9334422945976257,
+          "start": 23.42,
+          "word": " There"
+        },
+        {
+          "end": 24.52,
+          "probability": 0.9998757839202881,
+          "start": 24.26,
+          "word": " must"
+        },
+        {
+          "end": 24.74,
+          "probability": 0.9997444748878479,
+          "start": 24.52,
+          "word": " be"
+        },
+        {
+          "end": 25.22,
+          "probability": 0.9949700236320496,
+          "start": 24.74,
+          "word": " somewhere"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 26.96,
+      "id": 15,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 25.22,
+      "text": " I've got the whole of Brighton",
+      "words": [
+        {
+          "end": 25.8,
+          "probability": 0.4407004490494728,
+          "start": 25.22,
+          "word": " I've"
+        },
+        {
+          "end": 25.98,
+          "probability": 0.9914558529853821,
+          "start": 25.8,
+          "word": " got"
+        },
+        {
+          "end": 26.14,
+          "probability": 0.9927645325660706,
+          "start": 25.98,
+          "word": " the"
+        },
+        {
+          "end": 26.36,
+          "probability": 0.9909365773200989,
+          "start": 26.14,
+          "word": " whole"
+        },
+        {
+          "end": 26.56,
+          "probability": 0.9871206879615784,
+          "start": 26.36,
+          "word": " of"
+        },
+        {
+          "end": 26.96,
+          "probability": 0.9737739861011505,
+          "start": 26.56,
+          "word": " Brighton"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 28.36,
+      "id": 16,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 26.96,
+      "text": " But I don't wanna go anywhere",
+      "words": [
+        {
+          "end": 27.12,
+          "probability": 0.11055169254541397,
+          "start": 26.96,
+          "word": " But"
+        },
+        {
+          "end": 27.24,
+          "probability": 0.991015613079071,
+          "start": 27.12,
+          "word": " I"
+        },
+        {
+          "end": 27.5,
+          "probability": 0.9979419410228729,
+          "start": 27.24,
+          "word": " don't"
+        },
+        {
+          "end": 27.62,
+          "probability": 0.4629146158695221,
+          "start": 27.5,
+          "word": " wanna"
+        },
+        {
+          "end": 27.82,
+          "probability": 0.9954708814620972,
+          "start": 27.62,
+          "word": " go"
+        },
+        {
+          "end": 28.36,
+          "probability": 0.9955249428749084,
+          "start": 27.82,
+          "word": " anywhere"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 30.9,
+      "id": 17,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 29.82,
+      "text": " Donatello's not hungry",
+      "words": [
+        {
+          "end": 30.34,
+          "probability": 0.9206380546092987,
+          "start": 29.82,
+          "word": " Donatello's"
+        },
+        {
+          "end": 30.44,
+          "probability": 0.9765393733978271,
+          "start": 30.34,
+          "word": " not"
+        },
+        {
+          "end": 30.9,
+          "probability": 0.9945078492164612,
+          "start": 30.44,
+          "word": " hungry"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 32.6,
+      "id": 18,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 30.9,
+      "text": " The boldplex can't go straight",
+      "words": [
+        {
+          "end": 31.26,
+          "probability": 0.8794485926628113,
+          "start": 30.9,
+          "word": " The"
+        },
+        {
+          "end": 31.68,
+          "probability": 0.6584228873252869,
+          "start": 31.26,
+          "word": " boldplex"
+        },
+        {
+          "end": 32.14,
+          "probability": 0.9681648015975952,
+          "start": 31.68,
+          "word": " can't"
+        },
+        {
+          "end": 32.22,
+          "probability": 0.7607933878898621,
+          "start": 32.14,
+          "word": " go"
+        },
+        {
+          "end": 32.6,
+          "probability": 0.9965362548828125,
+          "start": 32.22,
+          "word": " straight"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 34.28,
+      "id": 19,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 32.6,
+      "text": " West Street to lefty",
+      "words": [
+        {
+          "end": 33.16,
+          "probability": 0.9778892993927002,
+          "start": 32.6,
+          "word": " West"
+        },
+        {
+          "end": 33.5,
+          "probability": 0.7425283193588257,
+          "start": 33.16,
+          "word": " Street"
+        },
+        {
+          "end": 33.78,
+          "probability": 0.700114369392395,
+          "start": 33.5,
+          "word": " to"
+        },
+        {
+          "end": 34.28,
+          "probability": 0.5079967826604843,
+          "start": 33.78,
+          "word": " lefty"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 36.04,
+      "id": 20,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 34.28,
+      "text": " So where we going? Brighton Beach",
+      "words": [
+        {
+          "end": 34.7,
+          "probability": 0.9556600451469421,
+          "start": 34.28,
+          "word": " So"
+        },
+        {
+          "end": 34.9,
+          "probability": 0.97060227394104,
+          "start": 34.7,
+          "word": " where"
+        },
+        {
+          "end": 34.98,
+          "probability": 0.928244411945343,
+          "start": 34.9,
+          "word": " we"
+        },
+        {
+          "end": 35.26,
+          "probability": 0.9292544722557068,
+          "start": 34.98,
+          "word": " going?"
+        },
+        {
+          "end": 35.8,
+          "probability": 0.995492160320282,
+          "start": 35.38,
+          "word": " Brighton"
+        },
+        {
+          "end": 36.04,
+          "probability": 0.9841460585594177,
+          "start": 35.8,
+          "word": " Beach"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 39.12,
+      "id": 21,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 36.04,
+      "text": " So what shall we do? Where shall we be?",
+      "words": [
+        {
+          "end": 36.24,
+          "probability": 0.8854514956474304,
+          "start": 36.04,
+          "word": " So"
+        },
+        {
+          "end": 36.5,
+          "probability": 0.9973926544189453,
+          "start": 36.24,
+          "word": " what"
+        },
+        {
+          "end": 36.84,
+          "probability": 0.9963977336883545,
+          "start": 36.5,
+          "word": " shall"
+        },
+        {
+          "end": 37.14,
+          "probability": 0.9998420476913452,
+          "start": 36.84,
+          "word": " we"
+        },
+        {
+          "end": 37.4,
+          "probability": 0.9998898506164551,
+          "start": 37.14,
+          "word": " do?"
+        },
+        {
+          "end": 38.0,
+          "probability": 0.997016429901123,
+          "start": 37.54,
+          "word": " Where"
+        },
+        {
+          "end": 38.6,
+          "probability": 0.9977924823760986,
+          "start": 38.0,
+          "word": " shall"
+        },
+        {
+          "end": 38.9,
+          "probability": 0.9997139573097229,
+          "start": 38.6,
+          "word": " we"
+        },
+        {
+          "end": 39.12,
+          "probability": 0.9995771050453186,
+          "start": 38.9,
+          "word": " be?"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 40.9,
+      "id": 22,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 39.24,
+      "text": " Let's just go down Brighton Beach",
+      "words": [
+        {
+          "end": 39.6,
+          "probability": 0.9980100393295288,
+          "start": 39.24,
+          "word": " Let's"
+        },
+        {
+          "end": 39.74,
+          "probability": 0.9981264472007751,
+          "start": 39.6,
+          "word": " just"
+        },
+        {
+          "end": 39.98,
+          "probability": 0.9988825917243958,
+          "start": 39.74,
+          "word": " go"
+        },
+        {
+          "end": 40.22,
+          "probability": 0.9971355199813843,
+          "start": 39.98,
+          "word": " down"
+        },
+        {
+          "end": 40.64,
+          "probability": 0.9990045130252838,
+          "start": 40.22,
+          "word": " Brighton"
+        },
+        {
+          "end": 40.9,
+          "probability": 0.993441104888916,
+          "start": 40.64,
+          "word": " Beach"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 42.84,
+      "id": 23,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 40.9,
+      "text": " And draw dicks on pebbles",
+      "words": [
+        {
+          "end": 41.1,
+          "probability": 0.9387991428375244,
+          "start": 40.9,
+          "word": " And"
+        },
+        {
+          "end": 41.34,
+          "probability": 0.9975504279136658,
+          "start": 41.1,
+          "word": " draw"
+        },
+        {
+          "end": 42.02,
+          "probability": 0.9971095025539398,
+          "start": 41.34,
+          "word": " dicks"
+        },
+        {
+          "end": 42.24,
+          "probability": 0.9934415817260742,
+          "start": 42.02,
+          "word": " on"
+        },
+        {
+          "end": 42.84,
+          "probability": 0.9862727224826813,
+          "start": 42.24,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 45.26,
+      "id": 24,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 42.84,
+      "text": " Get chips and ketchup for tea",
+      "words": [
+        {
+          "end": 43.14,
+          "probability": 0.9814863801002502,
+          "start": 42.84,
+          "word": " Get"
+        },
+        {
+          "end": 43.5,
+          "probability": 0.9943311214447021,
+          "start": 43.14,
+          "word": " chips"
+        },
+        {
+          "end": 43.98,
+          "probability": 0.9963986873626709,
+          "start": 43.5,
+          "word": " and"
+        },
+        {
+          "end": 44.54,
+          "probability": 0.993720531463623,
+          "start": 43.98,
+          "word": " ketchup"
+        },
+        {
+          "end": 45.02,
+          "probability": 0.9109284281730652,
+          "start": 44.54,
+          "word": " for"
+        },
+        {
+          "end": 45.26,
+          "probability": 0.9548708200454712,
+          "start": 45.02,
+          "word": " tea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 50.08,
+      "id": 25,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 47.93999999999999,
+      "text": " Could go shopping in Churchill Square",
+      "words": [
+        {
+          "end": 48.459999999999994,
+          "probability": 0.9387743473052979,
+          "start": 47.93999999999999,
+          "word": " Could"
+        },
+        {
+          "end": 48.98,
+          "probability": 0.9996734857559204,
+          "start": 48.459999999999994,
+          "word": " go"
+        },
+        {
+          "end": 49.32,
+          "probability": 0.9827100038528442,
+          "start": 48.98,
+          "word": " shopping"
+        },
+        {
+          "end": 49.5,
+          "probability": 0.9992086291313171,
+          "start": 49.32,
+          "word": " in"
+        },
+        {
+          "end": 49.76,
+          "probability": 0.9941713213920593,
+          "start": 49.5,
+          "word": " Churchill"
+        },
+        {
+          "end": 50.08,
+          "probability": 0.9985893368721008,
+          "start": 49.76,
+          "word": " Square"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 51.94,
+      "id": 26,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 50.08,
+      "text": " But there were far too many people there",
+      "words": [
+        {
+          "end": 50.34,
+          "probability": 0.9957601428031921,
+          "start": 50.08,
+          "word": " But"
+        },
+        {
+          "end": 50.52,
+          "probability": 0.9989213943481445,
+          "start": 50.34,
+          "word": " there"
+        },
+        {
+          "end": 50.66,
+          "probability": 0.5630629062652588,
+          "start": 50.52,
+          "word": " were"
+        },
+        {
+          "end": 50.82,
+          "probability": 0.9994387030601501,
+          "start": 50.66,
+          "word": " far"
+        },
+        {
+          "end": 50.94,
+          "probability": 0.9997517466545105,
+          "start": 50.82,
+          "word": " too"
+        },
+        {
+          "end": 51.2,
+          "probability": 0.9997814297676086,
+          "start": 50.94,
+          "word": " many"
+        },
+        {
+          "end": 51.56,
+          "probability": 0.9997424483299255,
+          "start": 51.2,
+          "word": " people"
+        },
+        {
+          "end": 51.94,
+          "probability": 0.9708055853843689,
+          "start": 51.56,
+          "word": " there"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.10789634537745695,
+      "end": 53.58,
+      "id": 27,
+      "no_speech_prob": 0.003341440809890628,
+      "start": 51.94,
+      "text": " Queues at the tills and crowds downstairs",
+      "words": [
+        {
+          "end": 52.34,
+          "probability": 0.809906393289566,
+          "start": 51.94,
+          "word": " Queues"
+        },
+        {
+          "end": 52.48,
+          "probability": 0.9991581439971924,
+          "start": 52.34,
+          "word": " at"
+        },
+        {
+          "end": 52.62,
+          "probability": 0.951566755771637,
+          "start": 52.48,
+          "word": " the"
+        },
+        {
+          "end": 52.84,
+          "probability": 0.3340732157230377,
+          "start": 52.62,
+          "word": " tills"
+        },
+        {
+          "end": 52.98,
+          "probability": 0.9207940697669983,
+          "start": 52.84,
+          "word": " and"
+        },
+        {
+          "end": 53.2,
+          "probability": 0.9931432008743286,
+          "start": 52.98,
+          "word": " crowds"
+        },
+        {
+          "end": 53.58,
+          "probability": 0.9994198083877563,
+          "start": 53.2,
+          "word": " downstairs"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 56.88,
+      "id": 28,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 55.22,
+      "text": " Could see a film at the marina",
+      "words": [
+        {
+          "end": 55.46,
+          "probability": 0.06911399960517883,
+          "start": 55.22,
+          "word": " Could"
+        },
+        {
+          "end": 55.64,
+          "probability": 0.9946112632751465,
+          "start": 55.46,
+          "word": " see"
+        },
+        {
+          "end": 55.72,
+          "probability": 0.9899592995643616,
+          "start": 55.64,
+          "word": " a"
+        },
+        {
+          "end": 55.94,
+          "probability": 0.9969461560249329,
+          "start": 55.72,
+          "word": " film"
+        },
+        {
+          "end": 56.12,
+          "probability": 0.9916179776191711,
+          "start": 55.94,
+          "word": " at"
+        },
+        {
+          "end": 56.24,
+          "probability": 0.9555394053459167,
+          "start": 56.12,
+          "word": " the"
+        },
+        {
+          "end": 56.88,
+          "probability": 0.9623381197452545,
+          "start": 56.24,
+          "word": " marina"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 58.54,
+      "id": 29,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 56.88,
+      "text": " Big screen popcorn comfy seat",
+      "words": [
+        {
+          "end": 57.14,
+          "probability": 0.3156038522720337,
+          "start": 56.88,
+          "word": " Big"
+        },
+        {
+          "end": 57.36,
+          "probability": 0.9762085676193237,
+          "start": 57.14,
+          "word": " screen"
+        },
+        {
+          "end": 57.64,
+          "probability": 0.4382406771183014,
+          "start": 57.36,
+          "word": " popcorn"
+        },
+        {
+          "end": 58.08,
+          "probability": 0.31507763266563416,
+          "start": 57.64,
+          "word": " comfy"
+        },
+        {
+          "end": 58.54,
+          "probability": 0.6318308115005493,
+          "start": 58.08,
+          "word": " seat"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 60.3,
+      "id": 30,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 58.54,
+      "text": " But the ticket price nearly made me cry",
+      "words": [
+        {
+          "end": 58.8,
+          "probability": 0.2483593374490738,
+          "start": 58.54,
+          "word": " But"
+        },
+        {
+          "end": 59.04,
+          "probability": 0.9791810512542725,
+          "start": 58.8,
+          "word": " the"
+        },
+        {
+          "end": 59.2,
+          "probability": 0.9987766146659851,
+          "start": 59.04,
+          "word": " ticket"
+        },
+        {
+          "end": 59.42,
+          "probability": 0.9970802664756775,
+          "start": 59.2,
+          "word": " price"
+        },
+        {
+          "end": 59.6,
+          "probability": 0.9825025796890259,
+          "start": 59.42,
+          "word": " nearly"
+        },
+        {
+          "end": 59.86,
+          "probability": 0.9978427886962891,
+          "start": 59.6,
+          "word": " made"
+        },
+        {
+          "end": 60.04,
+          "probability": 0.9983970522880554,
+          "start": 59.86,
+          "word": " me"
+        },
+        {
+          "end": 60.3,
+          "probability": 0.9976123571395874,
+          "start": 60.04,
+          "word": " cry"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 62.3,
+      "id": 31,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 60.3,
+      "text": " So I'll give that one a miss tonight",
+      "words": [
+        {
+          "end": 60.62,
+          "probability": 0.940589427947998,
+          "start": 60.3,
+          "word": " So"
+        },
+        {
+          "end": 60.86,
+          "probability": 0.9768809974193573,
+          "start": 60.62,
+          "word": " I'll"
+        },
+        {
+          "end": 61.04,
+          "probability": 0.9973574280738831,
+          "start": 60.86,
+          "word": " give"
+        },
+        {
+          "end": 61.24,
+          "probability": 0.9966381788253784,
+          "start": 61.04,
+          "word": " that"
+        },
+        {
+          "end": 61.46,
+          "probability": 0.9966408014297485,
+          "start": 61.24,
+          "word": " one"
+        },
+        {
+          "end": 61.68,
+          "probability": 0.9910846948623657,
+          "start": 61.46,
+          "word": " a"
+        },
+        {
+          "end": 61.9,
+          "probability": 0.9940407872200012,
+          "start": 61.68,
+          "word": " miss"
+        },
+        {
+          "end": 62.3,
+          "probability": 0.9930014610290527,
+          "start": 61.9,
+          "word": " tonight"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 64.02,
+      "id": 32,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 62.3,
+      "text": " There must be something",
+      "words": [
+        {
+          "end": 63.06,
+          "probability": 0.9677466750144958,
+          "start": 62.3,
+          "word": " There"
+        },
+        {
+          "end": 63.34,
+          "probability": 0.9989346861839294,
+          "start": 63.06,
+          "word": " must"
+        },
+        {
+          "end": 63.52,
+          "probability": 0.9994277358055115,
+          "start": 63.34,
+          "word": " be"
+        },
+        {
+          "end": 64.02,
+          "probability": 0.968410074710846,
+          "start": 63.52,
+          "word": " something"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 65.8,
+      "id": 33,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 64.02,
+      "text": " There must be somewhere",
+      "words": [
+        {
+          "end": 64.54,
+          "probability": 0.646689236164093,
+          "start": 64.02,
+          "word": " There"
+        },
+        {
+          "end": 65.08,
+          "probability": 0.9993045330047607,
+          "start": 64.54,
+          "word": " must"
+        },
+        {
+          "end": 65.32,
+          "probability": 0.9997314810752869,
+          "start": 65.08,
+          "word": " be"
+        },
+        {
+          "end": 65.8,
+          "probability": 0.9934585690498352,
+          "start": 65.32,
+          "word": " somewhere"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 67.54,
+      "id": 34,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 65.8,
+      "text": " I've got the whole of Brighton",
+      "words": [
+        {
+          "end": 66.38,
+          "probability": 0.9926967322826385,
+          "start": 65.8,
+          "word": " I've"
+        },
+        {
+          "end": 66.58,
+          "probability": 0.9987492561340332,
+          "start": 66.38,
+          "word": " got"
+        },
+        {
+          "end": 66.74,
+          "probability": 0.9983793497085571,
+          "start": 66.58,
+          "word": " the"
+        },
+        {
+          "end": 66.94,
+          "probability": 0.998578667640686,
+          "start": 66.74,
+          "word": " whole"
+        },
+        {
+          "end": 67.14,
+          "probability": 0.9978553652763367,
+          "start": 66.94,
+          "word": " of"
+        },
+        {
+          "end": 67.54,
+          "probability": 0.9978705942630768,
+          "start": 67.14,
+          "word": " Brighton"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 68.94,
+      "id": 35,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 67.54,
+      "text": " But I don't wanna go anywhere",
+      "words": [
+        {
+          "end": 67.68,
+          "probability": 0.7652562260627747,
+          "start": 67.54,
+          "word": " But"
+        },
+        {
+          "end": 67.82,
+          "probability": 0.9984064698219299,
+          "start": 67.68,
+          "word": " I"
+        },
+        {
+          "end": 68.08,
+          "probability": 0.9993258118629456,
+          "start": 67.82,
+          "word": " don't"
+        },
+        {
+          "end": 68.2,
+          "probability": 0.6038278937339783,
+          "start": 68.08,
+          "word": " wanna"
+        },
+        {
+          "end": 68.4,
+          "probability": 0.9987720847129822,
+          "start": 68.2,
+          "word": " go"
+        },
+        {
+          "end": 68.94,
+          "probability": 0.9986043572425842,
+          "start": 68.4,
+          "word": " anywhere"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 71.48,
+      "id": 36,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 70.46,
+      "text": " Donatello's not hungry",
+      "words": [
+        {
+          "end": 70.94,
+          "probability": 0.9406086802482605,
+          "start": 70.46,
+          "word": " Donatello's"
+        },
+        {
+          "end": 71.04,
+          "probability": 0.9228179454803467,
+          "start": 70.94,
+          "word": " not"
+        },
+        {
+          "end": 71.48,
+          "probability": 0.9980850219726562,
+          "start": 71.04,
+          "word": " hungry"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 73.2,
+      "id": 37,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 71.48,
+      "text": " The boldplex can't go straight",
+      "words": [
+        {
+          "end": 71.84,
+          "probability": 0.9636240005493164,
+          "start": 71.48,
+          "word": " The"
+        },
+        {
+          "end": 72.28,
+          "probability": 0.44791343435645103,
+          "start": 71.84,
+          "word": " boldplex"
+        },
+        {
+          "end": 72.7,
+          "probability": 0.978251188993454,
+          "start": 72.28,
+          "word": " can't"
+        },
+        {
+          "end": 72.82,
+          "probability": 0.1517423540353775,
+          "start": 72.7,
+          "word": " go"
+        },
+        {
+          "end": 73.2,
+          "probability": 0.9990561604499817,
+          "start": 72.82,
+          "word": " straight"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 74.84,
+      "id": 38,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 73.2,
+      "text": " West Street to lefty",
+      "words": [
+        {
+          "end": 73.74,
+          "probability": 0.9756225943565369,
+          "start": 73.2,
+          "word": " West"
+        },
+        {
+          "end": 74.08,
+          "probability": 0.5858162045478821,
+          "start": 73.74,
+          "word": " Street"
+        },
+        {
+          "end": 74.34,
+          "probability": 0.34085798263549805,
+          "start": 74.08,
+          "word": " to"
+        },
+        {
+          "end": 74.84,
+          "probability": 0.33363770693540573,
+          "start": 74.34,
+          "word": " lefty"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 76.62,
+      "id": 39,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 74.84,
+      "text": " So where we going? Brighton Beach",
+      "words": [
+        {
+          "end": 75.32,
+          "probability": 0.9737862944602966,
+          "start": 74.84,
+          "word": " So"
+        },
+        {
+          "end": 75.48,
+          "probability": 0.9886686205863953,
+          "start": 75.32,
+          "word": " where"
+        },
+        {
+          "end": 75.54,
+          "probability": 0.9033388495445251,
+          "start": 75.48,
+          "word": " we"
+        },
+        {
+          "end": 75.78,
+          "probability": 0.9566919803619385,
+          "start": 75.54,
+          "word": " going?"
+        },
+        {
+          "end": 76.46,
+          "probability": 0.994717538356781,
+          "start": 76.0,
+          "word": " Brighton"
+        },
+        {
+          "end": 76.62,
+          "probability": 0.9403092861175537,
+          "start": 76.46,
+          "word": " Beach"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 79.7,
+      "id": 40,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 76.62,
+      "text": " So what shall we do? Where shall we be?",
+      "words": [
+        {
+          "end": 76.82,
+          "probability": 0.9369233250617981,
+          "start": 76.62,
+          "word": " So"
+        },
+        {
+          "end": 77.04,
+          "probability": 0.997760534286499,
+          "start": 76.82,
+          "word": " what"
+        },
+        {
+          "end": 77.42,
+          "probability": 0.9957776069641113,
+          "start": 77.04,
+          "word": " shall"
+        },
+        {
+          "end": 77.72,
+          "probability": 0.9997749924659729,
+          "start": 77.42,
+          "word": " we"
+        },
+        {
+          "end": 78.02,
+          "probability": 0.9997847676277161,
+          "start": 77.72,
+          "word": " do?"
+        },
+        {
+          "end": 78.6,
+          "probability": 0.9979239702224731,
+          "start": 78.12,
+          "word": " Where"
+        },
+        {
+          "end": 79.18,
+          "probability": 0.9973740577697754,
+          "start": 78.6,
+          "word": " shall"
+        },
+        {
+          "end": 79.5,
+          "probability": 0.9996954202651978,
+          "start": 79.18,
+          "word": " we"
+        },
+        {
+          "end": 79.7,
+          "probability": 0.9995160102844238,
+          "start": 79.5,
+          "word": " be?"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.03285008270177059,
+      "end": 81.46,
+      "id": 41,
+      "no_speech_prob": 0.002926953136920929,
+      "start": 79.82,
+      "text": " Let's just go down Brighton Beach",
+      "words": [
+        {
+          "end": 80.16,
+          "probability": 0.9971636831760406,
+          "start": 79.82,
+          "word": " Let's"
+        },
+        {
+          "end": 80.32,
+          "probability": 0.9973674416542053,
+          "start": 80.16,
+          "word": " just"
+        },
+        {
+          "end": 80.54,
+          "probability": 0.9983661770820618,
+          "start": 80.32,
+          "word": " go"
+        },
+        {
+          "end": 80.8,
+          "probability": 0.9984489679336548,
+          "start": 80.54,
+          "word": " down"
+        },
+        {
+          "end": 81.22,
+          "probability": 0.9992457926273346,
+          "start": 80.8,
+          "word": " Brighton"
+        },
+        {
+          "end": 81.46,
+          "probability": 0.9903624653816223,
+          "start": 81.22,
+          "word": " Beach"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 83.4,
+      "id": 42,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 81.46,
+      "text": " And draw dicks on pebbles",
+      "words": [
+        {
+          "end": 81.68,
+          "probability": 0.07530900835990906,
+          "start": 81.46,
+          "word": " And"
+        },
+        {
+          "end": 81.9,
+          "probability": 0.932597815990448,
+          "start": 81.68,
+          "word": " draw"
+        },
+        {
+          "end": 82.44,
+          "probability": 0.9543517231941223,
+          "start": 81.9,
+          "word": " dicks"
+        },
+        {
+          "end": 82.76,
+          "probability": 0.9826105237007141,
+          "start": 82.44,
+          "word": " on"
+        },
+        {
+          "end": 83.4,
+          "probability": 0.989570677280426,
+          "start": 82.76,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 85.86,
+      "id": 43,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 83.4,
+      "text": " Get chips and ketchup for tea",
+      "words": [
+        {
+          "end": 83.64,
+          "probability": 0.4797928035259247,
+          "start": 83.4,
+          "word": " Get"
+        },
+        {
+          "end": 84.06,
+          "probability": 0.9323344230651855,
+          "start": 83.64,
+          "word": " chips"
+        },
+        {
+          "end": 84.6,
+          "probability": 0.9467683434486389,
+          "start": 84.06,
+          "word": " and"
+        },
+        {
+          "end": 85.08,
+          "probability": 0.76589435338974,
+          "start": 84.6,
+          "word": " ketchup"
+        },
+        {
+          "end": 85.6,
+          "probability": 0.9052250981330872,
+          "start": 85.08,
+          "word": " for"
+        },
+        {
+          "end": 85.86,
+          "probability": 0.9610752463340759,
+          "start": 85.6,
+          "word": " tea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 89.58,
+      "id": 44,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 87.96,
+      "text": " I could go bowling",
+      "words": [
+        {
+          "end": 88.44,
+          "probability": 0.7361195087432861,
+          "start": 87.96,
+          "word": " I"
+        },
+        {
+          "end": 88.92,
+          "probability": 0.8919735550880432,
+          "start": 88.44,
+          "word": " could"
+        },
+        {
+          "end": 89.1,
+          "probability": 0.9899029731750488,
+          "start": 88.92,
+          "word": " go"
+        },
+        {
+          "end": 89.58,
+          "probability": 0.9878089427947998,
+          "start": 89.1,
+          "word": " bowling"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 90.32,
+      "id": 45,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 89.58,
+      "text": " But here's the thing",
+      "words": [
+        {
+          "end": 89.88,
+          "probability": 0.26213064789772034,
+          "start": 89.58,
+          "word": " But"
+        },
+        {
+          "end": 90.08,
+          "probability": 0.9899230897426605,
+          "start": 89.88,
+          "word": " here's"
+        },
+        {
+          "end": 90.1,
+          "probability": 0.995414137840271,
+          "start": 90.08,
+          "word": " the"
+        },
+        {
+          "end": 90.32,
+          "probability": 0.9982665181159973,
+          "start": 90.1,
+          "word": " thing"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 91.96,
+      "id": 46,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 90.32,
+      "text": " I aim for the middle and hit everything",
+      "words": [
+        {
+          "end": 90.54,
+          "probability": 0.7277642488479614,
+          "start": 90.32,
+          "word": " I"
+        },
+        {
+          "end": 90.76,
+          "probability": 0.9830995798110962,
+          "start": 90.54,
+          "word": " aim"
+        },
+        {
+          "end": 90.88,
+          "probability": 0.9966809153556824,
+          "start": 90.76,
+          "word": " for"
+        },
+        {
+          "end": 90.98,
+          "probability": 0.9966991543769836,
+          "start": 90.88,
+          "word": " the"
+        },
+        {
+          "end": 91.2,
+          "probability": 0.9989213943481445,
+          "start": 90.98,
+          "word": " middle"
+        },
+        {
+          "end": 91.34,
+          "probability": 0.7600452899932861,
+          "start": 91.2,
+          "word": " and"
+        },
+        {
+          "end": 91.5,
+          "probability": 0.9971258044242859,
+          "start": 91.34,
+          "word": " hit"
+        },
+        {
+          "end": 91.96,
+          "probability": 0.9960657954216003,
+          "start": 91.5,
+          "word": " everything"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 93.6,
+      "id": 47,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 91.96,
+      "text": " Except for the pins that are straight ahead",
+      "words": [
+        {
+          "end": 92.34,
+          "probability": 0.964796245098114,
+          "start": 91.96,
+          "word": " Except"
+        },
+        {
+          "end": 92.62,
+          "probability": 0.9892045855522156,
+          "start": 92.34,
+          "word": " for"
+        },
+        {
+          "end": 92.76,
+          "probability": 0.9939238429069519,
+          "start": 92.62,
+          "word": " the"
+        },
+        {
+          "end": 92.92,
+          "probability": 0.9973604083061218,
+          "start": 92.76,
+          "word": " pins"
+        },
+        {
+          "end": 93.12,
+          "probability": 0.9645882248878479,
+          "start": 92.92,
+          "word": " that"
+        },
+        {
+          "end": 93.16,
+          "probability": 0.979741096496582,
+          "start": 93.12,
+          "word": " are"
+        },
+        {
+          "end": 93.34,
+          "probability": 0.9968289732933044,
+          "start": 93.16,
+          "word": " straight"
+        },
+        {
+          "end": 93.6,
+          "probability": 0.9900320768356323,
+          "start": 93.34,
+          "word": " ahead"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 95.44,
+      "id": 48,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 93.6,
+      "text": " The ball goes left and I turn bright red",
+      "words": [
+        {
+          "end": 93.88,
+          "probability": 0.978593111038208,
+          "start": 93.6,
+          "word": " The"
+        },
+        {
+          "end": 94.02,
+          "probability": 0.9797313809394836,
+          "start": 93.88,
+          "word": " ball"
+        },
+        {
+          "end": 94.18,
+          "probability": 0.9908261895179749,
+          "start": 94.02,
+          "word": " goes"
+        },
+        {
+          "end": 94.48,
+          "probability": 0.997818112373352,
+          "start": 94.18,
+          "word": " left"
+        },
+        {
+          "end": 94.66,
+          "probability": 0.8667700886726379,
+          "start": 94.48,
+          "word": " and"
+        },
+        {
+          "end": 94.74,
+          "probability": 0.9902669787406921,
+          "start": 94.66,
+          "word": " I"
+        },
+        {
+          "end": 94.9,
+          "probability": 0.9868098497390747,
+          "start": 94.74,
+          "word": " turn"
+        },
+        {
+          "end": 95.14,
+          "probability": 0.9981516003608704,
+          "start": 94.9,
+          "word": " bright"
+        },
+        {
+          "end": 95.44,
+          "probability": 0.9943647384643555,
+          "start": 95.14,
+          "word": " red"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 97.12,
+      "id": 49,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 95.44,
+      "text": " I could go dancing down West Street",
+      "words": [
+        {
+          "end": 95.7,
+          "probability": 0.9859477281570435,
+          "start": 95.44,
+          "word": " I"
+        },
+        {
+          "end": 95.98,
+          "probability": 0.9988170862197876,
+          "start": 95.7,
+          "word": " could"
+        },
+        {
+          "end": 96.24,
+          "probability": 0.992148220539093,
+          "start": 95.98,
+          "word": " go"
+        },
+        {
+          "end": 96.5,
+          "probability": 0.973071813583374,
+          "start": 96.24,
+          "word": " dancing"
+        },
+        {
+          "end": 96.66,
+          "probability": 0.9219462275505066,
+          "start": 96.5,
+          "word": " down"
+        },
+        {
+          "end": 96.86,
+          "probability": 0.023932920768857002,
+          "start": 96.66,
+          "word": " West"
+        },
+        {
+          "end": 97.12,
+          "probability": 0.9213707447052002,
+          "start": 96.86,
+          "word": " Street"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 98.66,
+      "id": 50,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 97.12,
+      "text": " Neon lights and a 4-4 beat",
+      "words": [
+        {
+          "end": 97.42,
+          "probability": 0.7863307893276215,
+          "start": 97.12,
+          "word": " Neon"
+        },
+        {
+          "end": 97.74,
+          "probability": 0.9757291674613953,
+          "start": 97.42,
+          "word": " lights"
+        },
+        {
+          "end": 97.96,
+          "probability": 0.7778372764587402,
+          "start": 97.74,
+          "word": " and"
+        },
+        {
+          "end": 98.04,
+          "probability": 0.9734268188476562,
+          "start": 97.96,
+          "word": " a"
+        },
+        {
+          "end": 98.24,
+          "probability": 0.8681017756462097,
+          "start": 98.04,
+          "word": " 4"
+        },
+        {
+          "end": 98.44,
+          "probability": 0.858698308467865,
+          "start": 98.24,
+          "word": "-4"
+        },
+        {
+          "end": 98.66,
+          "probability": 0.900680422782898,
+          "start": 98.44,
+          "word": " beat"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 100.32,
+      "id": 51,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 98.66,
+      "text": " But both of my feet wanna lead the way",
+      "words": [
+        {
+          "end": 98.88,
+          "probability": 0.948207437992096,
+          "start": 98.66,
+          "word": " But"
+        },
+        {
+          "end": 99.02,
+          "probability": 0.18486753106117249,
+          "start": 98.88,
+          "word": " both"
+        },
+        {
+          "end": 99.1,
+          "probability": 0.9631769061088562,
+          "start": 99.02,
+          "word": " of"
+        },
+        {
+          "end": 99.26,
+          "probability": 0.9989491105079651,
+          "start": 99.1,
+          "word": " my"
+        },
+        {
+          "end": 99.54,
+          "probability": 0.9992708563804626,
+          "start": 99.26,
+          "word": " feet"
+        },
+        {
+          "end": 99.76,
+          "probability": 0.6742622256278992,
+          "start": 99.54,
+          "word": " wanna"
+        },
+        {
+          "end": 100.0,
+          "probability": 0.9910495281219482,
+          "start": 99.76,
+          "word": " lead"
+        },
+        {
+          "end": 100.12,
+          "probability": 0.9980760812759399,
+          "start": 100.0,
+          "word": " the"
+        },
+        {
+          "end": 100.32,
+          "probability": 0.9992446899414062,
+          "start": 100.12,
+          "word": " way"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 102.06,
+      "id": 52,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 100.32,
+      "text": " And neither one knows how to dance anyway",
+      "words": [
+        {
+          "end": 100.52,
+          "probability": 0.9654324650764465,
+          "start": 100.32,
+          "word": " And"
+        },
+        {
+          "end": 100.64,
+          "probability": 0.8449615240097046,
+          "start": 100.52,
+          "word": " neither"
+        },
+        {
+          "end": 100.82,
+          "probability": 0.9961185455322266,
+          "start": 100.64,
+          "word": " one"
+        },
+        {
+          "end": 101.1,
+          "probability": 0.9974452257156372,
+          "start": 100.82,
+          "word": " knows"
+        },
+        {
+          "end": 101.22,
+          "probability": 0.9915798902511597,
+          "start": 101.1,
+          "word": " how"
+        },
+        {
+          "end": 101.34,
+          "probability": 0.998932421207428,
+          "start": 101.22,
+          "word": " to"
+        },
+        {
+          "end": 101.72,
+          "probability": 0.9986090064048767,
+          "start": 101.34,
+          "word": " dance"
+        },
+        {
+          "end": 102.06,
+          "probability": 0.9319021105766296,
+          "start": 101.72,
+          "word": " anyway"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 105.34,
+      "id": 53,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 102.06,
+      "text": " So grab that sharpie, come with me",
+      "words": [
+        {
+          "end": 102.74,
+          "probability": 0.9710221886634827,
+          "start": 102.06,
+          "word": " So"
+        },
+        {
+          "end": 103.06,
+          "probability": 0.9885977506637573,
+          "start": 102.74,
+          "word": " grab"
+        },
+        {
+          "end": 103.26,
+          "probability": 0.98811274766922,
+          "start": 103.06,
+          "word": " that"
+        },
+        {
+          "end": 104.08,
+          "probability": 0.6882321834564209,
+          "start": 103.26,
+          "word": " sharpie,"
+        },
+        {
+          "end": 104.56,
+          "probability": 0.9840144515037537,
+          "start": 104.08,
+          "word": " come"
+        },
+        {
+          "end": 104.96,
+          "probability": 0.9996404647827148,
+          "start": 104.56,
+          "word": " with"
+        },
+        {
+          "end": 105.34,
+          "probability": 0.9996138215065002,
+          "start": 104.96,
+          "word": " me"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 108.82,
+      "id": 54,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 105.89999999999999,
+      "text": " We'll make some art beside the sea",
+      "words": [
+        {
+          "end": 106.38,
+          "probability": 0.9777402281761169,
+          "start": 105.89999999999999,
+          "word": " We'll"
+        },
+        {
+          "end": 106.58,
+          "probability": 0.9990528225898743,
+          "start": 106.38,
+          "word": " make"
+        },
+        {
+          "end": 106.76,
+          "probability": 0.999045193195343,
+          "start": 106.58,
+          "word": " some"
+        },
+        {
+          "end": 107.12,
+          "probability": 0.9955933690071106,
+          "start": 106.76,
+          "word": " art"
+        },
+        {
+          "end": 107.84,
+          "probability": 0.9143562912940979,
+          "start": 107.12,
+          "word": " beside"
+        },
+        {
+          "end": 108.54,
+          "probability": 0.9979787468910217,
+          "start": 107.84,
+          "word": " the"
+        },
+        {
+          "end": 108.82,
+          "probability": 0.9577049016952515,
+          "start": 108.54,
+          "word": " sea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.07216034442868852,
+      "end": 111.14,
+      "id": 55,
+      "no_speech_prob": 0.00365883344784379,
+      "start": 109.39999999999999,
+      "text": " The goals can judge us",
+      "words": [
+        {
+          "end": 109.88,
+          "probability": 0.978949785232544,
+          "start": 109.39999999999999,
+          "word": " The"
+        },
+        {
+          "end": 110.14,
+          "probability": 0.6051326394081116,
+          "start": 109.88,
+          "word": " goals"
+        },
+        {
+          "end": 110.3,
+          "probability": 0.9958170056343079,
+          "start": 110.14,
+          "word": " can"
+        },
+        {
+          "end": 110.64,
+          "probability": 0.9969140291213989,
+          "start": 110.3,
+          "word": " judge"
+        },
+        {
+          "end": 111.14,
+          "probability": 0.9997751116752625,
+          "start": 110.64,
+          "word": " us"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 112.3,
+      "id": 56,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 111.46,
+      "text": " Let them be",
+      "words": [
+        {
+          "end": 111.64,
+          "probability": 0.33356973528862,
+          "start": 111.46,
+          "word": " Let"
+        },
+        {
+          "end": 111.94,
+          "probability": 0.9802572131156921,
+          "start": 111.64,
+          "word": " them"
+        },
+        {
+          "end": 112.3,
+          "probability": 0.9917454123497009,
+          "start": 111.94,
+          "word": " be"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 114.08,
+      "id": 57,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 112.3,
+      "text": " We've got chips",
+      "words": [
+        {
+          "end": 113.42,
+          "probability": 0.6854813992977142,
+          "start": 112.3,
+          "word": " We've"
+        },
+        {
+          "end": 113.64,
+          "probability": 0.9927248954772949,
+          "start": 113.42,
+          "word": " got"
+        },
+        {
+          "end": 114.08,
+          "probability": 0.6865593791007996,
+          "start": 113.64,
+          "word": " chips"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 117.58,
+      "id": 58,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 115.26,
+      "text": " And ketchup for tea",
+      "words": [
+        {
+          "end": 115.98,
+          "probability": 0.4049490690231323,
+          "start": 115.26,
+          "word": " And"
+        },
+        {
+          "end": 116.7,
+          "probability": 0.5321682095527649,
+          "start": 115.98,
+          "word": " ketchup"
+        },
+        {
+          "end": 117.34,
+          "probability": 0.7172211408615112,
+          "start": 116.7,
+          "word": " for"
+        },
+        {
+          "end": 117.58,
+          "probability": 0.8201481103897095,
+          "start": 117.34,
+          "word": " tea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 119.06,
+      "id": 59,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 117.58,
+      "text": " Donatello's not hungry",
+      "words": [
+        {
+          "end": 118.54,
+          "probability": 0.7388724589254707,
+          "start": 117.58,
+          "word": " Donatello's"
+        },
+        {
+          "end": 118.64,
+          "probability": 0.9899375438690186,
+          "start": 118.54,
+          "word": " not"
+        },
+        {
+          "end": 119.06,
+          "probability": 0.9977820515632629,
+          "start": 118.64,
+          "word": " hungry"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 120.72,
+      "id": 60,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 119.06,
+      "text": " The boldplex can't go straight",
+      "words": [
+        {
+          "end": 119.4,
+          "probability": 0.8043513298034668,
+          "start": 119.06,
+          "word": " The"
+        },
+        {
+          "end": 119.86,
+          "probability": 0.44115884229540825,
+          "start": 119.4,
+          "word": " boldplex"
+        },
+        {
+          "end": 120.3,
+          "probability": 0.9818422496318817,
+          "start": 119.86,
+          "word": " can't"
+        },
+        {
+          "end": 120.36,
+          "probability": 0.07497113943099976,
+          "start": 120.3,
+          "word": " go"
+        },
+        {
+          "end": 120.72,
+          "probability": 0.9580881595611572,
+          "start": 120.36,
+          "word": " straight"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 122.4,
+      "id": 61,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 120.72,
+      "text": " West Street to lefty",
+      "words": [
+        {
+          "end": 121.32,
+          "probability": 0.8515537977218628,
+          "start": 120.72,
+          "word": " West"
+        },
+        {
+          "end": 121.68,
+          "probability": 0.5046722888946533,
+          "start": 121.32,
+          "word": " Street"
+        },
+        {
+          "end": 121.9,
+          "probability": 0.0587339848279953,
+          "start": 121.68,
+          "word": " to"
+        },
+        {
+          "end": 122.4,
+          "probability": 0.6050367057323456,
+          "start": 121.9,
+          "word": " lefty"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 124.2,
+      "id": 62,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 122.4,
+      "text": " So where we going? Brighton Beach",
+      "words": [
+        {
+          "end": 122.78,
+          "probability": 0.9230648875236511,
+          "start": 122.4,
+          "word": " So"
+        },
+        {
+          "end": 123.06,
+          "probability": 0.9521276354789734,
+          "start": 122.78,
+          "word": " where"
+        },
+        {
+          "end": 123.16,
+          "probability": 0.9163739681243896,
+          "start": 123.06,
+          "word": " we"
+        },
+        {
+          "end": 123.44,
+          "probability": 0.7776932120323181,
+          "start": 123.16,
+          "word": " going?"
+        },
+        {
+          "end": 124.0,
+          "probability": 0.975089818239212,
+          "start": 123.62,
+          "word": " Brighton"
+        },
+        {
+          "end": 124.2,
+          "probability": 0.958960771560669,
+          "start": 124.0,
+          "word": " Beach"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 127.3,
+      "id": 63,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 124.2,
+      "text": " So what shall we do? Where shall we be?",
+      "words": [
+        {
+          "end": 124.46,
+          "probability": 0.8804574608802795,
+          "start": 124.2,
+          "word": " So"
+        },
+        {
+          "end": 124.68,
+          "probability": 0.9846818447113037,
+          "start": 124.46,
+          "word": " what"
+        },
+        {
+          "end": 125.0,
+          "probability": 0.9659071564674377,
+          "start": 124.68,
+          "word": " shall"
+        },
+        {
+          "end": 125.3,
+          "probability": 0.9992727637290955,
+          "start": 125.0,
+          "word": " we"
+        },
+        {
+          "end": 125.56,
+          "probability": 0.9994753003120422,
+          "start": 125.3,
+          "word": " do?"
+        },
+        {
+          "end": 126.16,
+          "probability": 0.977081835269928,
+          "start": 125.68,
+          "word": " Where"
+        },
+        {
+          "end": 126.74,
+          "probability": 0.9844273924827576,
+          "start": 126.16,
+          "word": " shall"
+        },
+        {
+          "end": 127.04,
+          "probability": 0.9979996085166931,
+          "start": 126.74,
+          "word": " we"
+        },
+        {
+          "end": 127.3,
+          "probability": 0.9989112615585327,
+          "start": 127.04,
+          "word": " be?"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 129.06,
+      "id": 64,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 127.5,
+      "text": " Let's just go down Brighton Beach",
+      "words": [
+        {
+          "end": 127.8,
+          "probability": 0.9529447257518768,
+          "start": 127.5,
+          "word": " Let's"
+        },
+        {
+          "end": 127.92,
+          "probability": 0.9752323031425476,
+          "start": 127.8,
+          "word": " just"
+        },
+        {
+          "end": 128.14,
+          "probability": 0.994520902633667,
+          "start": 127.92,
+          "word": " go"
+        },
+        {
+          "end": 128.38,
+          "probability": 0.9894646406173706,
+          "start": 128.14,
+          "word": " down"
+        },
+        {
+          "end": 128.8,
+          "probability": 0.9885202944278717,
+          "start": 128.38,
+          "word": " Brighton"
+        },
+        {
+          "end": 129.06,
+          "probability": 0.9117193818092346,
+          "start": 128.8,
+          "word": " Beach"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 130.92,
+      "id": 65,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 129.06,
+      "text": " And draw dicks on pebbles",
+      "words": [
+        {
+          "end": 129.24,
+          "probability": 0.5815048217773438,
+          "start": 129.06,
+          "word": " And"
+        },
+        {
+          "end": 129.48,
+          "probability": 0.9868805408477783,
+          "start": 129.24,
+          "word": " draw"
+        },
+        {
+          "end": 130.16,
+          "probability": 0.9712033867835999,
+          "start": 129.48,
+          "word": " dicks"
+        },
+        {
+          "end": 130.34,
+          "probability": 0.9911192059516907,
+          "start": 130.16,
+          "word": " on"
+        },
+        {
+          "end": 130.92,
+          "probability": 0.970376044511795,
+          "start": 130.34,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 133.46,
+      "id": 66,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 130.92,
+      "text": " Get chips and ketchup for tea",
+      "words": [
+        {
+          "end": 131.24,
+          "probability": 0.9586195945739746,
+          "start": 130.92,
+          "word": " Get"
+        },
+        {
+          "end": 131.74,
+          "probability": 0.9795357584953308,
+          "start": 131.24,
+          "word": " chips"
+        },
+        {
+          "end": 132.16,
+          "probability": 0.9703987240791321,
+          "start": 131.74,
+          "word": " and"
+        },
+        {
+          "end": 132.7,
+          "probability": 0.992609441280365,
+          "start": 132.16,
+          "word": " ketchup"
+        },
+        {
+          "end": 133.22,
+          "probability": 0.9605727791786194,
+          "start": 132.7,
+          "word": " for"
+        },
+        {
+          "end": 133.46,
+          "probability": 0.996056318283081,
+          "start": 133.22,
+          "word": " tea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 135.4,
+      "id": 67,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 133.46,
+      "text": " Draw dicks on pebbles",
+      "words": [
+        {
+          "end": 133.94,
+          "probability": 0.9780340790748596,
+          "start": 133.46,
+          "word": " Draw"
+        },
+        {
+          "end": 134.48,
+          "probability": 0.9980355203151703,
+          "start": 133.94,
+          "word": " dicks"
+        },
+        {
+          "end": 134.78,
+          "probability": 0.9976716637611389,
+          "start": 134.48,
+          "word": " on"
+        },
+        {
+          "end": 135.4,
+          "probability": 0.9992292523384094,
+          "start": 134.78,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 137.04,
+      "id": 68,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 135.4,
+      "text": " Down by the sea",
+      "words": [
+        {
+          "end": 135.9,
+          "probability": 0.9898043870925903,
+          "start": 135.4,
+          "word": " Down"
+        },
+        {
+          "end": 136.24,
+          "probability": 0.9992328882217407,
+          "start": 135.9,
+          "word": " by"
+        },
+        {
+          "end": 136.6,
+          "probability": 0.9988914132118225,
+          "start": 136.24,
+          "word": " the"
+        },
+        {
+          "end": 137.04,
+          "probability": 0.9968968629837036,
+          "start": 136.6,
+          "word": " sea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 138.94,
+      "id": 69,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 137.04,
+      "text": " Draw dicks on pebbles",
+      "words": [
+        {
+          "end": 137.54,
+          "probability": 0.9847409129142761,
+          "start": 137.04,
+          "word": " Draw"
+        },
+        {
+          "end": 138.0,
+          "probability": 0.9991448819637299,
+          "start": 137.54,
+          "word": " dicks"
+        },
+        {
+          "end": 138.24,
+          "probability": 0.998934805393219,
+          "start": 138.0,
+          "word": " on"
+        },
+        {
+          "end": 138.94,
+          "probability": 0.9995213150978088,
+          "start": 138.24,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.020245420425629414,
+      "end": 140.56,
+      "id": 70,
+      "no_speech_prob": 0.002523625735193491,
+      "start": 139.46,
+      "text": " You and me",
+      "words": [
+        {
+          "end": 139.48,
+          "probability": 0.9916536211967468,
+          "start": 139.12,
+          "word": " You"
+        },
+        {
+          "end": 140.1,
+          "probability": 0.9955820441246033,
+          "start": 139.48,
+          "word": " and"
+        },
+        {
+          "end": 140.56,
+          "probability": 0.9958592057228088,
+          "start": 140.1,
+          "word": " me"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 142.54,
+      "id": 71,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 141.46,
+      "text": " Dicks on pebbles",
+      "words": [
+        {
+          "end": 141.64,
+          "probability": 0.5528795570135117,
+          "start": 141.46,
+          "word": " Dicks"
+        },
+        {
+          "end": 141.9,
+          "probability": 0.9394945502281189,
+          "start": 141.64,
+          "word": " on"
+        },
+        {
+          "end": 142.54,
+          "probability": 0.8576026856899261,
+          "start": 141.9,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 143.9,
+      "id": 72,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 142.54,
+      "text": " And chips for tea",
+      "words": [
+        {
+          "end": 142.8,
+          "probability": 0.010035121813416481,
+          "start": 142.54,
+          "word": " And"
+        },
+        {
+          "end": 143.32,
+          "probability": 0.9577693939208984,
+          "start": 142.8,
+          "word": " chips"
+        },
+        {
+          "end": 143.72,
+          "probability": 0.9552696943283081,
+          "start": 143.32,
+          "word": " for"
+        },
+        {
+          "end": 143.9,
+          "probability": 0.5291402339935303,
+          "start": 143.72,
+          "word": " tea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 148.4,
+      "id": 73,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 146.5,
+      "text": " Let's just go down Brighton Beach",
+      "words": [
+        {
+          "end": 147.16,
+          "probability": 0.6999050378799438,
+          "start": 146.5,
+          "word": " Let's"
+        },
+        {
+          "end": 147.26,
+          "probability": 0.9865400195121765,
+          "start": 147.16,
+          "word": " just"
+        },
+        {
+          "end": 147.5,
+          "probability": 0.9580148458480835,
+          "start": 147.26,
+          "word": " go"
+        },
+        {
+          "end": 147.72,
+          "probability": 0.9805489182472229,
+          "start": 147.5,
+          "word": " down"
+        },
+        {
+          "end": 148.2,
+          "probability": 0.9593507945537567,
+          "start": 147.72,
+          "word": " Brighton"
+        },
+        {
+          "end": 148.4,
+          "probability": 0.6387774348258972,
+          "start": 148.2,
+          "word": " Beach"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 150.36,
+      "id": 74,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 148.4,
+      "text": " And draw dicks on pebbles",
+      "words": [
+        {
+          "end": 148.62,
+          "probability": 0.4405454993247986,
+          "start": 148.4,
+          "word": " And"
+        },
+        {
+          "end": 148.86,
+          "probability": 0.9902297854423523,
+          "start": 148.62,
+          "word": " draw"
+        },
+        {
+          "end": 149.52,
+          "probability": 0.9618957936763763,
+          "start": 148.86,
+          "word": " dicks"
+        },
+        {
+          "end": 149.84,
+          "probability": 0.9854314923286438,
+          "start": 149.52,
+          "word": " on"
+        },
+        {
+          "end": 150.36,
+          "probability": 0.9962781965732574,
+          "start": 149.84,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 152.86,
+      "id": 75,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 150.36,
+      "text": " Get chips and ketchup for tea",
+      "words": [
+        {
+          "end": 150.66,
+          "probability": 0.9195560812950134,
+          "start": 150.36,
+          "word": " Get"
+        },
+        {
+          "end": 151.12,
+          "probability": 0.9846039414405823,
+          "start": 150.66,
+          "word": " chips"
+        },
+        {
+          "end": 151.62,
+          "probability": 0.9270549416542053,
+          "start": 151.12,
+          "word": " and"
+        },
+        {
+          "end": 152.0,
+          "probability": 0.8661850690841675,
+          "start": 151.62,
+          "word": " ketchup"
+        },
+        {
+          "end": 152.52,
+          "probability": 0.8042686581611633,
+          "start": 152.0,
+          "word": " for"
+        },
+        {
+          "end": 152.86,
+          "probability": 0.9900652766227722,
+          "start": 152.52,
+          "word": " tea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 153.98,
+      "id": 76,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 152.86,
+      "text": " Draw dicks on pebbles",
+      "words": [
+        {
+          "end": 153.26,
+          "probability": 2.235727515653707e-05,
+          "start": 152.86,
+          "word": " Draw"
+        },
+        {
+          "end": 153.52,
+          "probability": 0.818218857049942,
+          "start": 153.26,
+          "word": " dicks"
+        },
+        {
+          "end": 153.74,
+          "probability": 0.9782952666282654,
+          "start": 153.52,
+          "word": " on"
+        },
+        {
+          "end": 153.98,
+          "probability": 0.9932964146137238,
+          "start": 153.74,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 155.76,
+      "id": 77,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 153.98,
+      "text": " Get chips and ketchup for tea",
+      "words": [
+        {
+          "end": 154.46,
+          "probability": 0.28347039222717285,
+          "start": 153.98,
+          "word": " Get"
+        },
+        {
+          "end": 154.74,
+          "probability": 0.7390894293785095,
+          "start": 154.46,
+          "word": " chips"
+        },
+        {
+          "end": 155.1,
+          "probability": 0.9767603278160095,
+          "start": 154.74,
+          "word": " and"
+        },
+        {
+          "end": 155.1,
+          "probability": 0.9795089960098267,
+          "start": 155.1,
+          "word": " ketchup"
+        },
+        {
+          "end": 155.54,
+          "probability": 0.9676879048347473,
+          "start": 155.1,
+          "word": " for"
+        },
+        {
+          "end": 155.76,
+          "probability": 0.9940487146377563,
+          "start": 155.54,
+          "word": " tea"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 157.76,
+      "id": 78,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 155.76,
+      "text": " Draw dicks on pebbles",
+      "words": [
+        {
+          "end": 156.24,
+          "probability": 0.17238301038742065,
+          "start": 155.76,
+          "word": " Draw"
+        },
+        {
+          "end": 157.04,
+          "probability": 0.96095409989357,
+          "start": 156.24,
+          "word": " dicks"
+        },
+        {
+          "end": 157.24,
+          "probability": 0.9930773973464966,
+          "start": 157.04,
+          "word": " on"
+        },
+        {
+          "end": 157.76,
+          "probability": 0.9970493614673615,
+          "start": 157.24,
+          "word": " pebbles"
+        }
+      ]
+    },
+    {
+      "avg_logprob": -0.12955939606444478,
+      "end": 159.46,
+      "id": 79,
+      "no_speech_prob": 0.015968622639775276,
+      "start": 157.76,
+      "text": " Get chips and ketchup for tea",
+      "words": [
+        {
+          "end": 157.96,
+          "probability": 0.7971984148025513,
+          "start": 157.76,
+          "word": " Get"
+        },
+        {
+          "end": 158.24,
+          "probability": 0.8532305955886841,
+          "start": 157.96,
+          "word": " chips"
+        },
+        {
+          "end": 158.7,
+          "probability": 0.9843197464942932,
+          "start": 158.24,
+          "word": " and"
+        },
+        {
+          "end": 158.7,
+          "probability": 0.9947015047073364,
+          "start": 158.7,
+          "word": " ketchup"
+        },
+        {
+          "end": 158.96,
+          "probability": 0.9847742915153503,
+          "start": 158.7,
+          "word": " for"
+        },
+        {
+          "end": 159.46,
+          "probability": 0.9964873790740967,
+          "start": 158.96,
+          "word": " tea"
+        }
+      ]
+    }
+  ],
+  "source_vocals": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\stems\\htdemucs_ft\\vocals.wav",
+  "spoken_word_wav": "C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\foo\\speech\\spoken_word.wav",
+  "words": [
+    {
+      "end": 0.28,
+      "probability": 0.2568532843142748,
+      "start": 0.0,
+      "word": " Duh"
+    },
+    {
+      "end": 0.32,
+      "probability": 0.4307433068752289,
+      "start": 0.28,
+      "word": " duh"
+    },
+    {
+      "end": 0.48,
+      "probability": 0.27924734354019165,
+      "start": 0.32,
+      "word": " dun"
+    },
+    {
+      "end": 0.7,
+      "probability": 0.4990689158439636,
+      "start": 0.48,
+      "word": " duh"
+    },
+    {
+      "end": 0.88,
+      "probability": 0.668911337852478,
+      "start": 0.7,
+      "word": " dun"
+    },
+    {
+      "end": 2.36,
+      "probability": 0.01815389096736908,
+      "start": 1.8799999999999994,
+      "word": " Hmm"
+    },
+    {
+      "end": 3.82,
+      "probability": 0.8330014050006866,
+      "start": 3.3399999999999994,
+      "word": " Duh"
+    },
+    {
+      "end": 3.9,
+      "probability": 0.9698699712753296,
+      "start": 3.82,
+      "word": " duh"
+    },
+    {
+      "end": 3.98,
+      "probability": 0.7343339323997498,
+      "start": 3.9,
+      "word": " dun"
+    },
+    {
+      "end": 4.26,
+      "probability": 0.6061738133430481,
+      "start": 3.98,
+      "word": " chips"
+    },
+    {
+      "end": 4.48,
+      "probability": 0.9040471911430359,
+      "start": 4.26,
+      "word": " and"
+    },
+    {
+      "end": 4.9,
+      "probability": 0.9762536883354187,
+      "start": 4.48,
+      "word": " ketchup"
+    },
+    {
+      "end": 5.84,
+      "probability": 0.4673853199928999,
+      "start": 4.9,
+      "word": " Duh"
+    },
+    {
+      "end": 6.06,
+      "probability": 0.8871315121650696,
+      "start": 5.84,
+      "word": " duh"
+    },
+    {
+      "end": 6.52,
+      "probability": 0.6785937547683716,
+      "start": 6.06,
+      "word": " dun"
+    },
+    {
+      "end": 6.92,
+      "probability": 0.441362589597702,
+      "start": 6.52,
+      "word": " duh"
+    },
+    {
+      "end": 7.16,
+      "probability": 0.6115933060646057,
+      "start": 6.92,
+      "word": " duh"
+    },
+    {
+      "end": 7.48,
+      "probability": 0.38861194252967834,
+      "start": 7.16,
+      "word": " duh"
+    },
+    {
+      "end": 8.24,
+      "probability": 0.2085692286491394,
+      "start": 8.0,
+      "word": " Feeling"
+    },
+    {
+      "end": 8.96,
+      "probability": 0.9976903200149536,
+      "start": 8.24,
+      "word": " a"
+    },
+    {
+      "end": 9.12,
+      "probability": 0.9862538576126099,
+      "start": 8.96,
+      "word": " little"
+    },
+    {
+      "end": 9.3,
+      "probability": 0.9749482870101929,
+      "start": 9.12,
+      "word": " bit"
+    },
+    {
+      "end": 9.54,
+      "probability": 0.9981643557548523,
+      "start": 9.3,
+      "word": " sad"
+    },
+    {
+      "end": 9.86,
+      "probability": 0.9977293610572815,
+      "start": 9.54,
+      "word": " today"
+    },
+    {
+      "end": 10.46,
+      "probability": 0.8273062109947205,
+      "start": 9.86,
+      "word": " Feeling"
+    },
+    {
+      "end": 10.74,
+      "probability": 0.9988580942153931,
+      "start": 10.46,
+      "word": " a"
+    },
+    {
+      "end": 10.88,
+      "probability": 0.9956337809562683,
+      "start": 10.74,
+      "word": " little"
+    },
+    {
+      "end": 11.08,
+      "probability": 0.9979755282402039,
+      "start": 10.88,
+      "word": " bit"
+    },
+    {
+      "end": 11.44,
+      "probability": 0.9961341619491577,
+      "start": 11.08,
+      "word": " bored"
+    },
+    {
+      "end": 12.26,
+      "probability": 0.9784575899442037,
+      "start": 12.0,
+      "word": " Brighton's"
+    },
+    {
+      "end": 12.5,
+      "probability": 0.9884567260742188,
+      "start": 12.26,
+      "word": " waiting"
+    },
+    {
+      "end": 12.9,
+      "probability": 0.9927005171775818,
+      "start": 12.5,
+      "word": " outside"
+    },
+    {
+      "end": 13.24,
+      "probability": 0.9984090924263,
+      "start": 12.9,
+      "word": " my"
+    },
+    {
+      "end": 13.56,
+      "probability": 0.9982813596725464,
+      "start": 13.24,
+      "word": " door"
+    },
+    {
+      "end": 13.74,
+      "probability": 0.8618804812431335,
+      "start": 13.56,
+      "word": " But"
+    },
+    {
+      "end": 13.92,
+      "probability": 0.9772764444351196,
+      "start": 13.74,
+      "word": " nothing"
+    },
+    {
+      "end": 14.16,
+      "probability": 0.95842444896698,
+      "start": 13.92,
+      "word": " sounds"
+    },
+    {
+      "end": 14.42,
+      "probability": 0.997840404510498,
+      "start": 14.16,
+      "word": " fun"
+    },
+    {
+      "end": 14.82,
+      "probability": 0.9396820068359375,
+      "start": 14.42,
+      "word": " anymore"
+    },
+    {
+      "end": 15.34,
+      "probability": 0.9131218791007996,
+      "start": 14.82,
+      "word": " Could"
+    },
+    {
+      "end": 15.5,
+      "probability": 0.998134195804596,
+      "start": 15.34,
+      "word": " get"
+    },
+    {
+      "end": 15.6,
+      "probability": 0.9859943389892578,
+      "start": 15.5,
+      "word": " a"
+    },
+    {
+      "end": 15.86,
+      "probability": 0.9922547340393066,
+      "start": 15.6,
+      "word": " pizza"
+    },
+    {
+      "end": 16.08,
+      "probability": 0.994788408279419,
+      "start": 15.86,
+      "word": " at"
+    },
+    {
+      "end": 16.86,
+      "probability": 0.8308913856744766,
+      "start": 16.08,
+      "word": " Donatello's"
+    },
+    {
+      "end": 17.0,
+      "probability": 0.7513047456741333,
+      "start": 16.86,
+      "word": " Sit"
+    },
+    {
+      "end": 17.18,
+      "probability": 0.9973692893981934,
+      "start": 17.0,
+      "word": " in"
+    },
+    {
+      "end": 17.32,
+      "probability": 0.9953225255012512,
+      "start": 17.18,
+      "word": " the"
+    },
+    {
+      "end": 17.58,
+      "probability": 0.9905896186828613,
+      "start": 17.32,
+      "word": " lanes"
+    },
+    {
+      "end": 17.68,
+      "probability": 0.9791491627693176,
+      "start": 17.58,
+      "word": " and"
+    },
+    {
+      "end": 17.84,
+      "probability": 0.9984378218650818,
+      "start": 17.68,
+      "word": " watch"
+    },
+    {
+      "end": 18.02,
+      "probability": 0.9984048008918762,
+      "start": 17.84,
+      "word": " the"
+    },
+    {
+      "end": 18.24,
+      "probability": 0.9900315999984741,
+      "start": 18.02,
+      "word": " crowds"
+    },
+    {
+      "end": 18.5,
+      "probability": 0.9982985854148865,
+      "start": 18.24,
+      "word": " go"
+    },
+    {
+      "end": 18.7,
+      "probability": 0.984079897403717,
+      "start": 18.5,
+      "word": " But"
+    },
+    {
+      "end": 18.86,
+      "probability": 0.9915537536144257,
+      "start": 18.7,
+      "word": " I'm"
+    },
+    {
+      "end": 19.02,
+      "probability": 0.9983670115470886,
+      "start": 18.86,
+      "word": " not"
+    },
+    {
+      "end": 19.4,
+      "probability": 0.9986898303031921,
+      "start": 19.02,
+      "word": " hungry"
+    },
+    {
+      "end": 19.52,
+      "probability": 0.8549134135246277,
+      "start": 19.4,
+      "word": " so"
+    },
+    {
+      "end": 19.74,
+      "probability": 0.9979364275932312,
+      "start": 19.52,
+      "word": " that's"
+    },
+    {
+      "end": 19.84,
+      "probability": 0.993911862373352,
+      "start": 19.74,
+      "word": " no"
+    },
+    {
+      "end": 20.14,
+      "probability": 0.9990684390068054,
+      "start": 19.84,
+      "word": " good"
+    },
+    {
+      "end": 20.36,
+      "probability": 0.9783846139907837,
+      "start": 20.14,
+      "word": " Even"
+    },
+    {
+      "end": 20.52,
+      "probability": 0.9937478303909302,
+      "start": 20.36,
+      "word": " though"
+    },
+    {
+      "end": 20.68,
+      "probability": 0.9940418601036072,
+      "start": 20.52,
+      "word": " I"
+    },
+    {
+      "end": 20.94,
+      "probability": 0.9975977540016174,
+      "start": 20.68,
+      "word": " know"
+    },
+    {
+      "end": 21.14,
+      "probability": 0.9953548908233643,
+      "start": 20.94,
+      "word": " that"
+    },
+    {
+      "end": 21.28,
+      "probability": 0.978760838508606,
+      "start": 21.14,
+      "word": " the"
+    },
+    {
+      "end": 21.58,
+      "probability": 0.9965214729309082,
+      "start": 21.28,
+      "word": " pizza"
+    },
+    {
+      "end": 21.92,
+      "probability": 0.9972509741783142,
+      "start": 21.58,
+      "word": " would"
+    },
+    {
+      "end": 22.48,
+      "probability": 0.9069802761077881,
+      "start": 21.92,
+      "word": " There"
+    },
+    {
+      "end": 22.74,
+      "probability": 0.9994779229164124,
+      "start": 22.48,
+      "word": " must"
+    },
+    {
+      "end": 22.98,
+      "probability": 0.998986542224884,
+      "start": 22.74,
+      "word": " be"
+    },
+    {
+      "end": 23.42,
+      "probability": 0.9761818647384644,
+      "start": 22.98,
+      "word": " something"
+    },
+    {
+      "end": 24.26,
+      "probability": 0.9334422945976257,
+      "start": 23.42,
+      "word": " There"
+    },
+    {
+      "end": 24.52,
+      "probability": 0.9998757839202881,
+      "start": 24.26,
+      "word": " must"
+    },
+    {
+      "end": 24.74,
+      "probability": 0.9997444748878479,
+      "start": 24.52,
+      "word": " be"
+    },
+    {
+      "end": 25.22,
+      "probability": 0.9949700236320496,
+      "start": 24.74,
+      "word": " somewhere"
+    },
+    {
+      "end": 25.8,
+      "probability": 0.4407004490494728,
+      "start": 25.22,
+      "word": " I've"
+    },
+    {
+      "end": 25.98,
+      "probability": 0.9914558529853821,
+      "start": 25.8,
+      "word": " got"
+    },
+    {
+      "end": 26.14,
+      "probability": 0.9927645325660706,
+      "start": 25.98,
+      "word": " the"
+    },
+    {
+      "end": 26.36,
+      "probability": 0.9909365773200989,
+      "start": 26.14,
+      "word": " whole"
+    },
+    {
+      "end": 26.56,
+      "probability": 0.9871206879615784,
+      "start": 26.36,
+      "word": " of"
+    },
+    {
+      "end": 26.96,
+      "probability": 0.9737739861011505,
+      "start": 26.56,
+      "word": " Brighton"
+    },
+    {
+      "end": 27.12,
+      "probability": 0.11055169254541397,
+      "start": 26.96,
+      "word": " But"
+    },
+    {
+      "end": 27.24,
+      "probability": 0.991015613079071,
+      "start": 27.12,
+      "word": " I"
+    },
+    {
+      "end": 27.5,
+      "probability": 0.9979419410228729,
+      "start": 27.24,
+      "word": " don't"
+    },
+    {
+      "end": 27.62,
+      "probability": 0.4629146158695221,
+      "start": 27.5,
+      "word": " wanna"
+    },
+    {
+      "end": 27.82,
+      "probability": 0.9954708814620972,
+      "start": 27.62,
+      "word": " go"
+    },
+    {
+      "end": 28.36,
+      "probability": 0.9955249428749084,
+      "start": 27.82,
+      "word": " anywhere"
+    },
+    {
+      "end": 30.34,
+      "probability": 0.9206380546092987,
+      "start": 29.82,
+      "word": " Donatello's"
+    },
+    {
+      "end": 30.44,
+      "probability": 0.9765393733978271,
+      "start": 30.34,
+      "word": " not"
+    },
+    {
+      "end": 30.9,
+      "probability": 0.9945078492164612,
+      "start": 30.44,
+      "word": " hungry"
+    },
+    {
+      "end": 31.26,
+      "probability": 0.8794485926628113,
+      "start": 30.9,
+      "word": " The"
+    },
+    {
+      "end": 31.68,
+      "probability": 0.6584228873252869,
+      "start": 31.26,
+      "word": " boldplex"
+    },
+    {
+      "end": 32.14,
+      "probability": 0.9681648015975952,
+      "start": 31.68,
+      "word": " can't"
+    },
+    {
+      "end": 32.22,
+      "probability": 0.7607933878898621,
+      "start": 32.14,
+      "word": " go"
+    },
+    {
+      "end": 32.6,
+      "probability": 0.9965362548828125,
+      "start": 32.22,
+      "word": " straight"
+    },
+    {
+      "end": 33.16,
+      "probability": 0.9778892993927002,
+      "start": 32.6,
+      "word": " West"
+    },
+    {
+      "end": 33.5,
+      "probability": 0.7425283193588257,
+      "start": 33.16,
+      "word": " Street"
+    },
+    {
+      "end": 33.78,
+      "probability": 0.700114369392395,
+      "start": 33.5,
+      "word": " to"
+    },
+    {
+      "end": 34.28,
+      "probability": 0.5079967826604843,
+      "start": 33.78,
+      "word": " lefty"
+    },
+    {
+      "end": 34.7,
+      "probability": 0.9556600451469421,
+      "start": 34.28,
+      "word": " So"
+    },
+    {
+      "end": 34.9,
+      "probability": 0.97060227394104,
+      "start": 34.7,
+      "word": " where"
+    },
+    {
+      "end": 34.98,
+      "probability": 0.928244411945343,
+      "start": 34.9,
+      "word": " we"
+    },
+    {
+      "end": 35.26,
+      "probability": 0.9292544722557068,
+      "start": 34.98,
+      "word": " going?"
+    },
+    {
+      "end": 35.8,
+      "probability": 0.995492160320282,
+      "start": 35.38,
+      "word": " Brighton"
+    },
+    {
+      "end": 36.04,
+      "probability": 0.9841460585594177,
+      "start": 35.8,
+      "word": " Beach"
+    },
+    {
+      "end": 36.24,
+      "probability": 0.8854514956474304,
+      "start": 36.04,
+      "word": " So"
+    },
+    {
+      "end": 36.5,
+      "probability": 0.9973926544189453,
+      "start": 36.24,
+      "word": " what"
+    },
+    {
+      "end": 36.84,
+      "probability": 0.9963977336883545,
+      "start": 36.5,
+      "word": " shall"
+    },
+    {
+      "end": 37.14,
+      "probability": 0.9998420476913452,
+      "start": 36.84,
+      "word": " we"
+    },
+    {
+      "end": 37.4,
+      "probability": 0.9998898506164551,
+      "start": 37.14,
+      "word": " do?"
+    },
+    {
+      "end": 38.0,
+      "probability": 0.997016429901123,
+      "start": 37.54,
+      "word": " Where"
+    },
+    {
+      "end": 38.6,
+      "probability": 0.9977924823760986,
+      "start": 38.0,
+      "word": " shall"
+    },
+    {
+      "end": 38.9,
+      "probability": 0.9997139573097229,
+      "start": 38.6,
+      "word": " we"
+    },
+    {
+      "end": 39.12,
+      "probability": 0.9995771050453186,
+      "start": 38.9,
+      "word": " be?"
+    },
+    {
+      "end": 39.6,
+      "probability": 0.9980100393295288,
+      "start": 39.24,
+      "word": " Let's"
+    },
+    {
+      "end": 39.74,
+      "probability": 0.9981264472007751,
+      "start": 39.6,
+      "word": " just"
+    },
+    {
+      "end": 39.98,
+      "probability": 0.9988825917243958,
+      "start": 39.74,
+      "word": " go"
+    },
+    {
+      "end": 40.22,
+      "probability": 0.9971355199813843,
+      "start": 39.98,
+      "word": " down"
+    },
+    {
+      "end": 40.64,
+      "probability": 0.9990045130252838,
+      "start": 40.22,
+      "word": " Brighton"
+    },
+    {
+      "end": 40.9,
+      "probability": 0.993441104888916,
+      "start": 40.64,
+      "word": " Beach"
+    },
+    {
+      "end": 41.1,
+      "probability": 0.9387991428375244,
+      "start": 40.9,
+      "word": " And"
+    },
+    {
+      "end": 41.34,
+      "probability": 0.9975504279136658,
+      "start": 41.1,
+      "word": " draw"
+    },
+    {
+      "end": 42.02,
+      "probability": 0.9971095025539398,
+      "start": 41.34,
+      "word": " dicks"
+    },
+    {
+      "end": 42.24,
+      "probability": 0.9934415817260742,
+      "start": 42.02,
+      "word": " on"
+    },
+    {
+      "end": 42.84,
+      "probability": 0.9862727224826813,
+      "start": 42.24,
+      "word": " pebbles"
+    },
+    {
+      "end": 43.14,
+      "probability": 0.9814863801002502,
+      "start": 42.84,
+      "word": " Get"
+    },
+    {
+      "end": 43.5,
+      "probability": 0.9943311214447021,
+      "start": 43.14,
+      "word": " chips"
+    },
+    {
+      "end": 43.98,
+      "probability": 0.9963986873626709,
+      "start": 43.5,
+      "word": " and"
+    },
+    {
+      "end": 44.54,
+      "probability": 0.993720531463623,
+      "start": 43.98,
+      "word": " ketchup"
+    },
+    {
+      "end": 45.02,
+      "probability": 0.9109284281730652,
+      "start": 44.54,
+      "word": " for"
+    },
+    {
+      "end": 45.26,
+      "probability": 0.9548708200454712,
+      "start": 45.02,
+      "word": " tea"
+    },
+    {
+      "end": 48.459999999999994,
+      "probability": 0.9387743473052979,
+      "start": 47.93999999999999,
+      "word": " Could"
+    },
+    {
+      "end": 48.98,
+      "probability": 0.9996734857559204,
+      "start": 48.459999999999994,
+      "word": " go"
+    },
+    {
+      "end": 49.32,
+      "probability": 0.9827100038528442,
+      "start": 48.98,
+      "word": " shopping"
+    },
+    {
+      "end": 49.5,
+      "probability": 0.9992086291313171,
+      "start": 49.32,
+      "word": " in"
+    },
+    {
+      "end": 49.76,
+      "probability": 0.9941713213920593,
+      "start": 49.5,
+      "word": " Churchill"
+    },
+    {
+      "end": 50.08,
+      "probability": 0.9985893368721008,
+      "start": 49.76,
+      "word": " Square"
+    },
+    {
+      "end": 50.34,
+      "probability": 0.9957601428031921,
+      "start": 50.08,
+      "word": " But"
+    },
+    {
+      "end": 50.52,
+      "probability": 0.9989213943481445,
+      "start": 50.34,
+      "word": " there"
+    },
+    {
+      "end": 50.66,
+      "probability": 0.5630629062652588,
+      "start": 50.52,
+      "word": " were"
+    },
+    {
+      "end": 50.82,
+      "probability": 0.9994387030601501,
+      "start": 50.66,
+      "word": " far"
+    },
+    {
+      "end": 50.94,
+      "probability": 0.9997517466545105,
+      "start": 50.82,
+      "word": " too"
+    },
+    {
+      "end": 51.2,
+      "probability": 0.9997814297676086,
+      "start": 50.94,
+      "word": " many"
+    },
+    {
+      "end": 51.56,
+      "probability": 0.9997424483299255,
+      "start": 51.2,
+      "word": " people"
+    },
+    {
+      "end": 51.94,
+      "probability": 0.9708055853843689,
+      "start": 51.56,
+      "word": " there"
+    },
+    {
+      "end": 52.34,
+      "probability": 0.809906393289566,
+      "start": 51.94,
+      "word": " Queues"
+    },
+    {
+      "end": 52.48,
+      "probability": 0.9991581439971924,
+      "start": 52.34,
+      "word": " at"
+    },
+    {
+      "end": 52.62,
+      "probability": 0.951566755771637,
+      "start": 52.48,
+      "word": " the"
+    },
+    {
+      "end": 52.84,
+      "probability": 0.3340732157230377,
+      "start": 52.62,
+      "word": " tills"
+    },
+    {
+      "end": 52.98,
+      "probability": 0.9207940697669983,
+      "start": 52.84,
+      "word": " and"
+    },
+    {
+      "end": 53.2,
+      "probability": 0.9931432008743286,
+      "start": 52.98,
+      "word": " crowds"
+    },
+    {
+      "end": 53.58,
+      "probability": 0.9994198083877563,
+      "start": 53.2,
+      "word": " downstairs"
+    },
+    {
+      "end": 55.46,
+      "probability": 0.06911399960517883,
+      "start": 55.22,
+      "word": " Could"
+    },
+    {
+      "end": 55.64,
+      "probability": 0.9946112632751465,
+      "start": 55.46,
+      "word": " see"
+    },
+    {
+      "end": 55.72,
+      "probability": 0.9899592995643616,
+      "start": 55.64,
+      "word": " a"
+    },
+    {
+      "end": 55.94,
+      "probability": 0.9969461560249329,
+      "start": 55.72,
+      "word": " film"
+    },
+    {
+      "end": 56.12,
+      "probability": 0.9916179776191711,
+      "start": 55.94,
+      "word": " at"
+    },
+    {
+      "end": 56.24,
+      "probability": 0.9555394053459167,
+      "start": 56.12,
+      "word": " the"
+    },
+    {
+      "end": 56.88,
+      "probability": 0.9623381197452545,
+      "start": 56.24,
+      "word": " marina"
+    },
+    {
+      "end": 57.14,
+      "probability": 0.3156038522720337,
+      "start": 56.88,
+      "word": " Big"
+    },
+    {
+      "end": 57.36,
+      "probability": 0.9762085676193237,
+      "start": 57.14,
+      "word": " screen"
+    },
+    {
+      "end": 57.64,
+      "probability": 0.4382406771183014,
+      "start": 57.36,
+      "word": " popcorn"
+    },
+    {
+      "end": 58.08,
+      "probability": 0.31507763266563416,
+      "start": 57.64,
+      "word": " comfy"
+    },
+    {
+      "end": 58.54,
+      "probability": 0.6318308115005493,
+      "start": 58.08,
+      "word": " seat"
+    },
+    {
+      "end": 58.8,
+      "probability": 0.2483593374490738,
+      "start": 58.54,
+      "word": " But"
+    },
+    {
+      "end": 59.04,
+      "probability": 0.9791810512542725,
+      "start": 58.8,
+      "word": " the"
+    },
+    {
+      "end": 59.2,
+      "probability": 0.9987766146659851,
+      "start": 59.04,
+      "word": " ticket"
+    },
+    {
+      "end": 59.42,
+      "probability": 0.9970802664756775,
+      "start": 59.2,
+      "word": " price"
+    },
+    {
+      "end": 59.6,
+      "probability": 0.9825025796890259,
+      "start": 59.42,
+      "word": " nearly"
+    },
+    {
+      "end": 59.86,
+      "probability": 0.9978427886962891,
+      "start": 59.6,
+      "word": " made"
+    },
+    {
+      "end": 60.04,
+      "probability": 0.9983970522880554,
+      "start": 59.86,
+      "word": " me"
+    },
+    {
+      "end": 60.3,
+      "probability": 0.9976123571395874,
+      "start": 60.04,
+      "word": " cry"
+    },
+    {
+      "end": 60.62,
+      "probability": 0.940589427947998,
+      "start": 60.3,
+      "word": " So"
+    },
+    {
+      "end": 60.86,
+      "probability": 0.9768809974193573,
+      "start": 60.62,
+      "word": " I'll"
+    },
+    {
+      "end": 61.04,
+      "probability": 0.9973574280738831,
+      "start": 60.86,
+      "word": " give"
+    },
+    {
+      "end": 61.24,
+      "probability": 0.9966381788253784,
+      "start": 61.04,
+      "word": " that"
+    },
+    {
+      "end": 61.46,
+      "probability": 0.9966408014297485,
+      "start": 61.24,
+      "word": " one"
+    },
+    {
+      "end": 61.68,
+      "probability": 0.9910846948623657,
+      "start": 61.46,
+      "word": " a"
+    },
+    {
+      "end": 61.9,
+      "probability": 0.9940407872200012,
+      "start": 61.68,
+      "word": " miss"
+    },
+    {
+      "end": 62.3,
+      "probability": 0.9930014610290527,
+      "start": 61.9,
+      "word": " tonight"
+    },
+    {
+      "end": 63.06,
+      "probability": 0.9677466750144958,
+      "start": 62.3,
+      "word": " There"
+    },
+    {
+      "end": 63.34,
+      "probability": 0.9989346861839294,
+      "start": 63.06,
+      "word": " must"
+    },
+    {
+      "end": 63.52,
+      "probability": 0.9994277358055115,
+      "start": 63.34,
+      "word": " be"
+    },
+    {
+      "end": 64.02,
+      "probability": 0.968410074710846,
+      "start": 63.52,
+      "word": " something"
+    },
+    {
+      "end": 64.54,
+      "probability": 0.646689236164093,
+      "start": 64.02,
+      "word": " There"
+    },
+    {
+      "end": 65.08,
+      "probability": 0.9993045330047607,
+      "start": 64.54,
+      "word": " must"
+    },
+    {
+      "end": 65.32,
+      "probability": 0.9997314810752869,
+      "start": 65.08,
+      "word": " be"
+    },
+    {
+      "end": 65.8,
+      "probability": 0.9934585690498352,
+      "start": 65.32,
+      "word": " somewhere"
+    },
+    {
+      "end": 66.38,
+      "probability": 0.9926967322826385,
+      "start": 65.8,
+      "word": " I've"
+    },
+    {
+      "end": 66.58,
+      "probability": 0.9987492561340332,
+      "start": 66.38,
+      "word": " got"
+    },
+    {
+      "end": 66.74,
+      "probability": 0.9983793497085571,
+      "start": 66.58,
+      "word": " the"
+    },
+    {
+      "end": 66.94,
+      "probability": 0.998578667640686,
+      "start": 66.74,
+      "word": " whole"
+    },
+    {
+      "end": 67.14,
+      "probability": 0.9978553652763367,
+      "start": 66.94,
+      "word": " of"
+    },
+    {
+      "end": 67.54,
+      "probability": 0.9978705942630768,
+      "start": 67.14,
+      "word": " Brighton"
+    },
+    {
+      "end": 67.68,
+      "probability": 0.7652562260627747,
+      "start": 67.54,
+      "word": " But"
+    },
+    {
+      "end": 67.82,
+      "probability": 0.9984064698219299,
+      "start": 67.68,
+      "word": " I"
+    },
+    {
+      "end": 68.08,
+      "probability": 0.9993258118629456,
+      "start": 67.82,
+      "word": " don't"
+    },
+    {
+      "end": 68.2,
+      "probability": 0.6038278937339783,
+      "start": 68.08,
+      "word": " wanna"
+    },
+    {
+      "end": 68.4,
+      "probability": 0.9987720847129822,
+      "start": 68.2,
+      "word": " go"
+    },
+    {
+      "end": 68.94,
+      "probability": 0.9986043572425842,
+      "start": 68.4,
+      "word": " anywhere"
+    },
+    {
+      "end": 70.94,
+      "probability": 0.9406086802482605,
+      "start": 70.46,
+      "word": " Donatello's"
+    },
+    {
+      "end": 71.04,
+      "probability": 0.9228179454803467,
+      "start": 70.94,
+      "word": " not"
+    },
+    {
+      "end": 71.48,
+      "probability": 0.9980850219726562,
+      "start": 71.04,
+      "word": " hungry"
+    },
+    {
+      "end": 71.84,
+      "probability": 0.9636240005493164,
+      "start": 71.48,
+      "word": " The"
+    },
+    {
+      "end": 72.28,
+      "probability": 0.44791343435645103,
+      "start": 71.84,
+      "word": " boldplex"
+    },
+    {
+      "end": 72.7,
+      "probability": 0.978251188993454,
+      "start": 72.28,
+      "word": " can't"
+    },
+    {
+      "end": 72.82,
+      "probability": 0.1517423540353775,
+      "start": 72.7,
+      "word": " go"
+    },
+    {
+      "end": 73.2,
+      "probability": 0.9990561604499817,
+      "start": 72.82,
+      "word": " straight"
+    },
+    {
+      "end": 73.74,
+      "probability": 0.9756225943565369,
+      "start": 73.2,
+      "word": " West"
+    },
+    {
+      "end": 74.08,
+      "probability": 0.5858162045478821,
+      "start": 73.74,
+      "word": " Street"
+    },
+    {
+      "end": 74.34,
+      "probability": 0.34085798263549805,
+      "start": 74.08,
+      "word": " to"
+    },
+    {
+      "end": 74.84,
+      "probability": 0.33363770693540573,
+      "start": 74.34,
+      "word": " lefty"
+    },
+    {
+      "end": 75.32,
+      "probability": 0.9737862944602966,
+      "start": 74.84,
+      "word": " So"
+    },
+    {
+      "end": 75.48,
+      "probability": 0.9886686205863953,
+      "start": 75.32,
+      "word": " where"
+    },
+    {
+      "end": 75.54,
+      "probability": 0.9033388495445251,
+      "start": 75.48,
+      "word": " we"
+    },
+    {
+      "end": 75.78,
+      "probability": 0.9566919803619385,
+      "start": 75.54,
+      "word": " going?"
+    },
+    {
+      "end": 76.46,
+      "probability": 0.994717538356781,
+      "start": 76.0,
+      "word": " Brighton"
+    },
+    {
+      "end": 76.62,
+      "probability": 0.9403092861175537,
+      "start": 76.46,
+      "word": " Beach"
+    },
+    {
+      "end": 76.82,
+      "probability": 0.9369233250617981,
+      "start": 76.62,
+      "word": " So"
+    },
+    {
+      "end": 77.04,
+      "probability": 0.997760534286499,
+      "start": 76.82,
+      "word": " what"
+    },
+    {
+      "end": 77.42,
+      "probability": 0.9957776069641113,
+      "start": 77.04,
+      "word": " shall"
+    },
+    {
+      "end": 77.72,
+      "probability": 0.9997749924659729,
+      "start": 77.42,
+      "word": " we"
+    },
+    {
+      "end": 78.02,
+      "probability": 0.9997847676277161,
+      "start": 77.72,
+      "word": " do?"
+    },
+    {
+      "end": 78.6,
+      "probability": 0.9979239702224731,
+      "start": 78.12,
+      "word": " Where"
+    },
+    {
+      "end": 79.18,
+      "probability": 0.9973740577697754,
+      "start": 78.6,
+      "word": " shall"
+    },
+    {
+      "end": 79.5,
+      "probability": 0.9996954202651978,
+      "start": 79.18,
+      "word": " we"
+    },
+    {
+      "end": 79.7,
+      "probability": 0.9995160102844238,
+      "start": 79.5,
+      "word": " be?"
+    },
+    {
+      "end": 80.16,
+      "probability": 0.9971636831760406,
+      "start": 79.82,
+      "word": " Let's"
+    },
+    {
+      "end": 80.32,
+      "probability": 0.9973674416542053,
+      "start": 80.16,
+      "word": " just"
+    },
+    {
+      "end": 80.54,
+      "probability": 0.9983661770820618,
+      "start": 80.32,
+      "word": " go"
+    },
+    {
+      "end": 80.8,
+      "probability": 0.9984489679336548,
+      "start": 80.54,
+      "word": " down"
+    },
+    {
+      "end": 81.22,
+      "probability": 0.9992457926273346,
+      "start": 80.8,
+      "word": " Brighton"
+    },
+    {
+      "end": 81.46,
+      "probability": 0.9903624653816223,
+      "start": 81.22,
+      "word": " Beach"
+    },
+    {
+      "end": 81.68,
+      "probability": 0.07530900835990906,
+      "start": 81.46,
+      "word": " And"
+    },
+    {
+      "end": 81.9,
+      "probability": 0.932597815990448,
+      "start": 81.68,
+      "word": " draw"
+    },
+    {
+      "end": 82.44,
+      "probability": 0.9543517231941223,
+      "start": 81.9,
+      "word": " dicks"
+    },
+    {
+      "end": 82.76,
+      "probability": 0.9826105237007141,
+      "start": 82.44,
+      "word": " on"
+    },
+    {
+      "end": 83.4,
+      "probability": 0.989570677280426,
+      "start": 82.76,
+      "word": " pebbles"
+    },
+    {
+      "end": 83.64,
+      "probability": 0.4797928035259247,
+      "start": 83.4,
+      "word": " Get"
+    },
+    {
+      "end": 84.06,
+      "probability": 0.9323344230651855,
+      "start": 83.64,
+      "word": " chips"
+    },
+    {
+      "end": 84.6,
+      "probability": 0.9467683434486389,
+      "start": 84.06,
+      "word": " and"
+    },
+    {
+      "end": 85.08,
+      "probability": 0.76589435338974,
+      "start": 84.6,
+      "word": " ketchup"
+    },
+    {
+      "end": 85.6,
+      "probability": 0.9052250981330872,
+      "start": 85.08,
+      "word": " for"
+    },
+    {
+      "end": 85.86,
+      "probability": 0.9610752463340759,
+      "start": 85.6,
+      "word": " tea"
+    },
+    {
+      "end": 88.44,
+      "probability": 0.7361195087432861,
+      "start": 87.96,
+      "word": " I"
+    },
+    {
+      "end": 88.92,
+      "probability": 0.8919735550880432,
+      "start": 88.44,
+      "word": " could"
+    },
+    {
+      "end": 89.1,
+      "probability": 0.9899029731750488,
+      "start": 88.92,
+      "word": " go"
+    },
+    {
+      "end": 89.58,
+      "probability": 0.9878089427947998,
+      "start": 89.1,
+      "word": " bowling"
+    },
+    {
+      "end": 89.88,
+      "probability": 0.26213064789772034,
+      "start": 89.58,
+      "word": " But"
+    },
+    {
+      "end": 90.08,
+      "probability": 0.9899230897426605,
+      "start": 89.88,
+      "word": " here's"
+    },
+    {
+      "end": 90.1,
+      "probability": 0.995414137840271,
+      "start": 90.08,
+      "word": " the"
+    },
+    {
+      "end": 90.32,
+      "probability": 0.9982665181159973,
+      "start": 90.1,
+      "word": " thing"
+    },
+    {
+      "end": 90.54,
+      "probability": 0.7277642488479614,
+      "start": 90.32,
+      "word": " I"
+    },
+    {
+      "end": 90.76,
+      "probability": 0.9830995798110962,
+      "start": 90.54,
+      "word": " aim"
+    },
+    {
+      "end": 90.88,
+      "probability": 0.9966809153556824,
+      "start": 90.76,
+      "word": " for"
+    },
+    {
+      "end": 90.98,
+      "probability": 0.9966991543769836,
+      "start": 90.88,
+      "word": " the"
+    },
+    {
+      "end": 91.2,
+      "probability": 0.9989213943481445,
+      "start": 90.98,
+      "word": " middle"
+    },
+    {
+      "end": 91.34,
+      "probability": 0.7600452899932861,
+      "start": 91.2,
+      "word": " and"
+    },
+    {
+      "end": 91.5,
+      "probability": 0.9971258044242859,
+      "start": 91.34,
+      "word": " hit"
+    },
+    {
+      "end": 91.96,
+      "probability": 0.9960657954216003,
+      "start": 91.5,
+      "word": " everything"
+    },
+    {
+      "end": 92.34,
+      "probability": 0.964796245098114,
+      "start": 91.96,
+      "word": " Except"
+    },
+    {
+      "end": 92.62,
+      "probability": 0.9892045855522156,
+      "start": 92.34,
+      "word": " for"
+    },
+    {
+      "end": 92.76,
+      "probability": 0.9939238429069519,
+      "start": 92.62,
+      "word": " the"
+    },
+    {
+      "end": 92.92,
+      "probability": 0.9973604083061218,
+      "start": 92.76,
+      "word": " pins"
+    },
+    {
+      "end": 93.12,
+      "probability": 0.9645882248878479,
+      "start": 92.92,
+      "word": " that"
+    },
+    {
+      "end": 93.16,
+      "probability": 0.979741096496582,
+      "start": 93.12,
+      "word": " are"
+    },
+    {
+      "end": 93.34,
+      "probability": 0.9968289732933044,
+      "start": 93.16,
+      "word": " straight"
+    },
+    {
+      "end": 93.6,
+      "probability": 0.9900320768356323,
+      "start": 93.34,
+      "word": " ahead"
+    },
+    {
+      "end": 93.88,
+      "probability": 0.978593111038208,
+      "start": 93.6,
+      "word": " The"
+    },
+    {
+      "end": 94.02,
+      "probability": 0.9797313809394836,
+      "start": 93.88,
+      "word": " ball"
+    },
+    {
+      "end": 94.18,
+      "probability": 0.9908261895179749,
+      "start": 94.02,
+      "word": " goes"
+    },
+    {
+      "end": 94.48,
+      "probability": 0.997818112373352,
+      "start": 94.18,
+      "word": " left"
+    },
+    {
+      "end": 94.66,
+      "probability": 0.8667700886726379,
+      "start": 94.48,
+      "word": " and"
+    },
+    {
+      "end": 94.74,
+      "probability": 0.9902669787406921,
+      "start": 94.66,
+      "word": " I"
+    },
+    {
+      "end": 94.9,
+      "probability": 0.9868098497390747,
+      "start": 94.74,
+      "word": " turn"
+    },
+    {
+      "end": 95.14,
+      "probability": 0.9981516003608704,
+      "start": 94.9,
+      "word": " bright"
+    },
+    {
+      "end": 95.44,
+      "probability": 0.9943647384643555,
+      "start": 95.14,
+      "word": " red"
+    },
+    {
+      "end": 95.7,
+      "probability": 0.9859477281570435,
+      "start": 95.44,
+      "word": " I"
+    },
+    {
+      "end": 95.98,
+      "probability": 0.9988170862197876,
+      "start": 95.7,
+      "word": " could"
+    },
+    {
+      "end": 96.24,
+      "probability": 0.992148220539093,
+      "start": 95.98,
+      "word": " go"
+    },
+    {
+      "end": 96.5,
+      "probability": 0.973071813583374,
+      "start": 96.24,
+      "word": " dancing"
+    },
+    {
+      "end": 96.66,
+      "probability": 0.9219462275505066,
+      "start": 96.5,
+      "word": " down"
+    },
+    {
+      "end": 96.86,
+      "probability": 0.023932920768857002,
+      "start": 96.66,
+      "word": " West"
+    },
+    {
+      "end": 97.12,
+      "probability": 0.9213707447052002,
+      "start": 96.86,
+      "word": " Street"
+    },
+    {
+      "end": 97.42,
+      "probability": 0.7863307893276215,
+      "start": 97.12,
+      "word": " Neon"
+    },
+    {
+      "end": 97.74,
+      "probability": 0.9757291674613953,
+      "start": 97.42,
+      "word": " lights"
+    },
+    {
+      "end": 97.96,
+      "probability": 0.7778372764587402,
+      "start": 97.74,
+      "word": " and"
+    },
+    {
+      "end": 98.04,
+      "probability": 0.9734268188476562,
+      "start": 97.96,
+      "word": " a"
+    },
+    {
+      "end": 98.24,
+      "probability": 0.8681017756462097,
+      "start": 98.04,
+      "word": " 4"
+    },
+    {
+      "end": 98.44,
+      "probability": 0.858698308467865,
+      "start": 98.24,
+      "word": "-4"
+    },
+    {
+      "end": 98.66,
+      "probability": 0.900680422782898,
+      "start": 98.44,
+      "word": " beat"
+    },
+    {
+      "end": 98.88,
+      "probability": 0.948207437992096,
+      "start": 98.66,
+      "word": " But"
+    },
+    {
+      "end": 99.02,
+      "probability": 0.18486753106117249,
+      "start": 98.88,
+      "word": " both"
+    },
+    {
+      "end": 99.1,
+      "probability": 0.9631769061088562,
+      "start": 99.02,
+      "word": " of"
+    },
+    {
+      "end": 99.26,
+      "probability": 0.9989491105079651,
+      "start": 99.1,
+      "word": " my"
+    },
+    {
+      "end": 99.54,
+      "probability": 0.9992708563804626,
+      "start": 99.26,
+      "word": " feet"
+    },
+    {
+      "end": 99.76,
+      "probability": 0.6742622256278992,
+      "start": 99.54,
+      "word": " wanna"
+    },
+    {
+      "end": 100.0,
+      "probability": 0.9910495281219482,
+      "start": 99.76,
+      "word": " lead"
+    },
+    {
+      "end": 100.12,
+      "probability": 0.9980760812759399,
+      "start": 100.0,
+      "word": " the"
+    },
+    {
+      "end": 100.32,
+      "probability": 0.9992446899414062,
+      "start": 100.12,
+      "word": " way"
+    },
+    {
+      "end": 100.52,
+      "probability": 0.9654324650764465,
+      "start": 100.32,
+      "word": " And"
+    },
+    {
+      "end": 100.64,
+      "probability": 0.8449615240097046,
+      "start": 100.52,
+      "word": " neither"
+    },
+    {
+      "end": 100.82,
+      "probability": 0.9961185455322266,
+      "start": 100.64,
+      "word": " one"
+    },
+    {
+      "end": 101.1,
+      "probability": 0.9974452257156372,
+      "start": 100.82,
+      "word": " knows"
+    },
+    {
+      "end": 101.22,
+      "probability": 0.9915798902511597,
+      "start": 101.1,
+      "word": " how"
+    },
+    {
+      "end": 101.34,
+      "probability": 0.998932421207428,
+      "start": 101.22,
+      "word": " to"
+    },
+    {
+      "end": 101.72,
+      "probability": 0.9986090064048767,
+      "start": 101.34,
+      "word": " dance"
+    },
+    {
+      "end": 102.06,
+      "probability": 0.9319021105766296,
+      "start": 101.72,
+      "word": " anyway"
+    },
+    {
+      "end": 102.74,
+      "probability": 0.9710221886634827,
+      "start": 102.06,
+      "word": " So"
+    },
+    {
+      "end": 103.06,
+      "probability": 0.9885977506637573,
+      "start": 102.74,
+      "word": " grab"
+    },
+    {
+      "end": 103.26,
+      "probability": 0.98811274766922,
+      "start": 103.06,
+      "word": " that"
+    },
+    {
+      "end": 104.08,
+      "probability": 0.6882321834564209,
+      "start": 103.26,
+      "word": " sharpie,"
+    },
+    {
+      "end": 104.56,
+      "probability": 0.9840144515037537,
+      "start": 104.08,
+      "word": " come"
+    },
+    {
+      "end": 104.96,
+      "probability": 0.9996404647827148,
+      "start": 104.56,
+      "word": " with"
+    },
+    {
+      "end": 105.34,
+      "probability": 0.9996138215065002,
+      "start": 104.96,
+      "word": " me"
+    },
+    {
+      "end": 106.38,
+      "probability": 0.9777402281761169,
+      "start": 105.89999999999999,
+      "word": " We'll"
+    },
+    {
+      "end": 106.58,
+      "probability": 0.9990528225898743,
+      "start": 106.38,
+      "word": " make"
+    },
+    {
+      "end": 106.76,
+      "probability": 0.999045193195343,
+      "start": 106.58,
+      "word": " some"
+    },
+    {
+      "end": 107.12,
+      "probability": 0.9955933690071106,
+      "start": 106.76,
+      "word": " art"
+    },
+    {
+      "end": 107.84,
+      "probability": 0.9143562912940979,
+      "start": 107.12,
+      "word": " beside"
+    },
+    {
+      "end": 108.54,
+      "probability": 0.9979787468910217,
+      "start": 107.84,
+      "word": " the"
+    },
+    {
+      "end": 108.82,
+      "probability": 0.9577049016952515,
+      "start": 108.54,
+      "word": " sea"
+    },
+    {
+      "end": 109.88,
+      "probability": 0.978949785232544,
+      "start": 109.39999999999999,
+      "word": " The"
+    },
+    {
+      "end": 110.14,
+      "probability": 0.6051326394081116,
+      "start": 109.88,
+      "word": " goals"
+    },
+    {
+      "end": 110.3,
+      "probability": 0.9958170056343079,
+      "start": 110.14,
+      "word": " can"
+    },
+    {
+      "end": 110.64,
+      "probability": 0.9969140291213989,
+      "start": 110.3,
+      "word": " judge"
+    },
+    {
+      "end": 111.14,
+      "probability": 0.9997751116752625,
+      "start": 110.64,
+      "word": " us"
+    },
+    {
+      "end": 111.64,
+      "probability": 0.33356973528862,
+      "start": 111.46,
+      "word": " Let"
+    },
+    {
+      "end": 111.94,
+      "probability": 0.9802572131156921,
+      "start": 111.64,
+      "word": " them"
+    },
+    {
+      "end": 112.3,
+      "probability": 0.9917454123497009,
+      "start": 111.94,
+      "word": " be"
+    },
+    {
+      "end": 113.42,
+      "probability": 0.6854813992977142,
+      "start": 112.3,
+      "word": " We've"
+    },
+    {
+      "end": 113.64,
+      "probability": 0.9927248954772949,
+      "start": 113.42,
+      "word": " got"
+    },
+    {
+      "end": 114.08,
+      "probability": 0.6865593791007996,
+      "start": 113.64,
+      "word": " chips"
+    },
+    {
+      "end": 115.98,
+      "probability": 0.4049490690231323,
+      "start": 115.26,
+      "word": " And"
+    },
+    {
+      "end": 116.7,
+      "probability": 0.5321682095527649,
+      "start": 115.98,
+      "word": " ketchup"
+    },
+    {
+      "end": 117.34,
+      "probability": 0.7172211408615112,
+      "start": 116.7,
+      "word": " for"
+    },
+    {
+      "end": 117.58,
+      "probability": 0.8201481103897095,
+      "start": 117.34,
+      "word": " tea"
+    },
+    {
+      "end": 118.54,
+      "probability": 0.7388724589254707,
+      "start": 117.58,
+      "word": " Donatello's"
+    },
+    {
+      "end": 118.64,
+      "probability": 0.9899375438690186,
+      "start": 118.54,
+      "word": " not"
+    },
+    {
+      "end": 119.06,
+      "probability": 0.9977820515632629,
+      "start": 118.64,
+      "word": " hungry"
+    },
+    {
+      "end": 119.4,
+      "probability": 0.8043513298034668,
+      "start": 119.06,
+      "word": " The"
+    },
+    {
+      "end": 119.86,
+      "probability": 0.44115884229540825,
+      "start": 119.4,
+      "word": " boldplex"
+    },
+    {
+      "end": 120.3,
+      "probability": 0.9818422496318817,
+      "start": 119.86,
+      "word": " can't"
+    },
+    {
+      "end": 120.36,
+      "probability": 0.07497113943099976,
+      "start": 120.3,
+      "word": " go"
+    },
+    {
+      "end": 120.72,
+      "probability": 0.9580881595611572,
+      "start": 120.36,
+      "word": " straight"
+    },
+    {
+      "end": 121.32,
+      "probability": 0.8515537977218628,
+      "start": 120.72,
+      "word": " West"
+    },
+    {
+      "end": 121.68,
+      "probability": 0.5046722888946533,
+      "start": 121.32,
+      "word": " Street"
+    },
+    {
+      "end": 121.9,
+      "probability": 0.0587339848279953,
+      "start": 121.68,
+      "word": " to"
+    },
+    {
+      "end": 122.4,
+      "probability": 0.6050367057323456,
+      "start": 121.9,
+      "word": " lefty"
+    },
+    {
+      "end": 122.78,
+      "probability": 0.9230648875236511,
+      "start": 122.4,
+      "word": " So"
+    },
+    {
+      "end": 123.06,
+      "probability": 0.9521276354789734,
+      "start": 122.78,
+      "word": " where"
+    },
+    {
+      "end": 123.16,
+      "probability": 0.9163739681243896,
+      "start": 123.06,
+      "word": " we"
+    },
+    {
+      "end": 123.44,
+      "probability": 0.7776932120323181,
+      "start": 123.16,
+      "word": " going?"
+    },
+    {
+      "end": 124.0,
+      "probability": 0.975089818239212,
+      "start": 123.62,
+      "word": " Brighton"
+    },
+    {
+      "end": 124.2,
+      "probability": 0.958960771560669,
+      "start": 124.0,
+      "word": " Beach"
+    },
+    {
+      "end": 124.46,
+      "probability": 0.8804574608802795,
+      "start": 124.2,
+      "word": " So"
+    },
+    {
+      "end": 124.68,
+      "probability": 0.9846818447113037,
+      "start": 124.46,
+      "word": " what"
+    },
+    {
+      "end": 125.0,
+      "probability": 0.9659071564674377,
+      "start": 124.68,
+      "word": " shall"
+    },
+    {
+      "end": 125.3,
+      "probability": 0.9992727637290955,
+      "start": 125.0,
+      "word": " we"
+    },
+    {
+      "end": 125.56,
+      "probability": 0.9994753003120422,
+      "start": 125.3,
+      "word": " do?"
+    },
+    {
+      "end": 126.16,
+      "probability": 0.977081835269928,
+      "start": 125.68,
+      "word": " Where"
+    },
+    {
+      "end": 126.74,
+      "probability": 0.9844273924827576,
+      "start": 126.16,
+      "word": " shall"
+    },
+    {
+      "end": 127.04,
+      "probability": 0.9979996085166931,
+      "start": 126.74,
+      "word": " we"
+    },
+    {
+      "end": 127.3,
+      "probability": 0.9989112615585327,
+      "start": 127.04,
+      "word": " be?"
+    },
+    {
+      "end": 127.8,
+      "probability": 0.9529447257518768,
+      "start": 127.5,
+      "word": " Let's"
+    },
+    {
+      "end": 127.92,
+      "probability": 0.9752323031425476,
+      "start": 127.8,
+      "word": " just"
+    },
+    {
+      "end": 128.14,
+      "probability": 0.994520902633667,
+      "start": 127.92,
+      "word": " go"
+    },
+    {
+      "end": 128.38,
+      "probability": 0.9894646406173706,
+      "start": 128.14,
+      "word": " down"
+    },
+    {
+      "end": 128.8,
+      "probability": 0.9885202944278717,
+      "start": 128.38,
+      "word": " Brighton"
+    },
+    {
+      "end": 129.06,
+      "probability": 0.9117193818092346,
+      "start": 128.8,
+      "word": " Beach"
+    },
+    {
+      "end": 129.24,
+      "probability": 0.5815048217773438,
+      "start": 129.06,
+      "word": " And"
+    },
+    {
+      "end": 129.48,
+      "probability": 0.9868805408477783,
+      "start": 129.24,
+      "word": " draw"
+    },
+    {
+      "end": 130.16,
+      "probability": 0.9712033867835999,
+      "start": 129.48,
+      "word": " dicks"
+    },
+    {
+      "end": 130.34,
+      "probability": 0.9911192059516907,
+      "start": 130.16,
+      "word": " on"
+    },
+    {
+      "end": 130.92,
+      "probability": 0.970376044511795,
+      "start": 130.34,
+      "word": " pebbles"
+    },
+    {
+      "end": 131.24,
+      "probability": 0.9586195945739746,
+      "start": 130.92,
+      "word": " Get"
+    },
+    {
+      "end": 131.74,
+      "probability": 0.9795357584953308,
+      "start": 131.24,
+      "word": " chips"
+    },
+    {
+      "end": 132.16,
+      "probability": 0.9703987240791321,
+      "start": 131.74,
+      "word": " and"
+    },
+    {
+      "end": 132.7,
+      "probability": 0.992609441280365,
+      "start": 132.16,
+      "word": " ketchup"
+    },
+    {
+      "end": 133.22,
+      "probability": 0.9605727791786194,
+      "start": 132.7,
+      "word": " for"
+    },
+    {
+      "end": 133.46,
+      "probability": 0.996056318283081,
+      "start": 133.22,
+      "word": " tea"
+    },
+    {
+      "end": 133.94,
+      "probability": 0.9780340790748596,
+      "start": 133.46,
+      "word": " Draw"
+    },
+    {
+      "end": 134.48,
+      "probability": 0.9980355203151703,
+      "start": 133.94,
+      "word": " dicks"
+    },
+    {
+      "end": 134.78,
+      "probability": 0.9976716637611389,
+      "start": 134.48,
+      "word": " on"
+    },
+    {
+      "end": 135.4,
+      "probability": 0.9992292523384094,
+      "start": 134.78,
+      "word": " pebbles"
+    },
+    {
+      "end": 135.9,
+      "probability": 0.9898043870925903,
+      "start": 135.4,
+      "word": " Down"
+    },
+    {
+      "end": 136.24,
+      "probability": 0.9992328882217407,
+      "start": 135.9,
+      "word": " by"
+    },
+    {
+      "end": 136.6,
+      "probability": 0.9988914132118225,
+      "start": 136.24,
+      "word": " the"
+    },
+    {
+      "end": 137.04,
+      "probability": 0.9968968629837036,
+      "start": 136.6,
+      "word": " sea"
+    },
+    {
+      "end": 137.54,
+      "probability": 0.9847409129142761,
+      "start": 137.04,
+      "word": " Draw"
+    },
+    {
+      "end": 138.0,
+      "probability": 0.9991448819637299,
+      "start": 137.54,
+      "word": " dicks"
+    },
+    {
+      "end": 138.24,
+      "probability": 0.998934805393219,
+      "start": 138.0,
+      "word": " on"
+    },
+    {
+      "end": 138.94,
+      "probability": 0.9995213150978088,
+      "start": 138.24,
+      "word": " pebbles"
+    },
+    {
+      "end": 139.48,
+      "probability": 0.9916536211967468,
+      "start": 139.12,
+      "word": " You"
+    },
+    {
+      "end": 140.1,
+      "probability": 0.9955820441246033,
+      "start": 139.48,
+      "word": " and"
+    },
+    {
+      "end": 140.56,
+      "probability": 0.9958592057228088,
+      "start": 140.1,
+      "word": " me"
+    },
+    {
+      "end": 141.64,
+      "probability": 0.5528795570135117,
+      "start": 141.46,
+      "word": " Dicks"
+    },
+    {
+      "end": 141.9,
+      "probability": 0.9394945502281189,
+      "start": 141.64,
+      "word": " on"
+    },
+    {
+      "end": 142.54,
+      "probability": 0.8576026856899261,
+      "start": 141.9,
+      "word": " pebbles"
+    },
+    {
+      "end": 142.8,
+      "probability": 0.010035121813416481,
+      "start": 142.54,
+      "word": " And"
+    },
+    {
+      "end": 143.32,
+      "probability": 0.9577693939208984,
+      "start": 142.8,
+      "word": " chips"
+    },
+    {
+      "end": 143.72,
+      "probability": 0.9552696943283081,
+      "start": 143.32,
+      "word": " for"
+    },
+    {
+      "end": 143.9,
+      "probability": 0.5291402339935303,
+      "start": 143.72,
+      "word": " tea"
+    },
+    {
+      "end": 147.16,
+      "probability": 0.6999050378799438,
+      "start": 146.5,
+      "word": " Let's"
+    },
+    {
+      "end": 147.26,
+      "probability": 0.9865400195121765,
+      "start": 147.16,
+      "word": " just"
+    },
+    {
+      "end": 147.5,
+      "probability": 0.9580148458480835,
+      "start": 147.26,
+      "word": " go"
+    },
+    {
+      "end": 147.72,
+      "probability": 0.9805489182472229,
+      "start": 147.5,
+      "word": " down"
+    },
+    {
+      "end": 148.2,
+      "probability": 0.9593507945537567,
+      "start": 147.72,
+      "word": " Brighton"
+    },
+    {
+      "end": 148.4,
+      "probability": 0.6387774348258972,
+      "start": 148.2,
+      "word": " Beach"
+    },
+    {
+      "end": 148.62,
+      "probability": 0.4405454993247986,
+      "start": 148.4,
+      "word": " And"
+    },
+    {
+      "end": 148.86,
+      "probability": 0.9902297854423523,
+      "start": 148.62,
+      "word": " draw"
+    },
+    {
+      "end": 149.52,
+      "probability": 0.9618957936763763,
+      "start": 148.86,
+      "word": " dicks"
+    },
+    {
+      "end": 149.84,
+      "probability": 0.9854314923286438,
+      "start": 149.52,
+      "word": " on"
+    },
+    {
+      "end": 150.36,
+      "probability": 0.9962781965732574,
+      "start": 149.84,
+      "word": " pebbles"
+    },
+    {
+      "end": 150.66,
+      "probability": 0.9195560812950134,
+      "start": 150.36,
+      "word": " Get"
+    },
+    {
+      "end": 151.12,
+      "probability": 0.9846039414405823,
+      "start": 150.66,
+      "word": " chips"
+    },
+    {
+      "end": 151.62,
+      "probability": 0.9270549416542053,
+      "start": 151.12,
+      "word": " and"
+    },
+    {
+      "end": 152.0,
+      "probability": 0.8661850690841675,
+      "start": 151.62,
+      "word": " ketchup"
+    },
+    {
+      "end": 152.52,
+      "probability": 0.8042686581611633,
+      "start": 152.0,
+      "word": " for"
+    },
+    {
+      "end": 152.86,
+      "probability": 0.9900652766227722,
+      "start": 152.52,
+      "word": " tea"
+    },
+    {
+      "end": 153.26,
+      "probability": 2.235727515653707e-05,
+      "start": 152.86,
+      "word": " Draw"
+    },
+    {
+      "end": 153.52,
+      "probability": 0.818218857049942,
+      "start": 153.26,
+      "word": " dicks"
+    },
+    {
+      "end": 153.74,
+      "probability": 0.9782952666282654,
+      "start": 153.52,
+      "word": " on"
+    },
+    {
+      "end": 153.98,
+      "probability": 0.9932964146137238,
+      "start": 153.74,
+      "word": " pebbles"
+    },
+    {
+      "end": 154.46,
+      "probability": 0.28347039222717285,
+      "start": 153.98,
+      "word": " Get"
+    },
+    {
+      "end": 154.74,
+      "probability": 0.7390894293785095,
+      "start": 154.46,
+      "word": " chips"
+    },
+    {
+      "end": 155.1,
+      "probability": 0.9767603278160095,
+      "start": 154.74,
+      "word": " and"
+    },
+    {
+      "end": 155.1,
+      "probability": 0.9795089960098267,
+      "start": 155.1,
+      "word": " ketchup"
+    },
+    {
+      "end": 155.54,
+      "probability": 0.9676879048347473,
+      "start": 155.1,
+      "word": " for"
+    },
+    {
+      "end": 155.76,
+      "probability": 0.9940487146377563,
+      "start": 155.54,
+      "word": " tea"
+    },
+    {
+      "end": 156.24,
+      "probability": 0.17238301038742065,
+      "start": 155.76,
+      "word": " Draw"
+    },
+    {
+      "end": 157.04,
+      "probability": 0.96095409989357,
+      "start": 156.24,
+      "word": " dicks"
+    },
+    {
+      "end": 157.24,
+      "probability": 0.9930773973464966,
+      "start": 157.04,
+      "word": " on"
+    },
+    {
+      "end": 157.76,
+      "probability": 0.9970493614673615,
+      "start": 157.24,
+      "word": " pebbles"
+    },
+    {
+      "end": 157.96,
+      "probability": 0.7971984148025513,
+      "start": 157.76,
+      "word": " Get"
+    },
+    {
+      "end": 158.24,
+      "probability": 0.8532305955886841,
+      "start": 157.96,
+      "word": " chips"
+    },
+    {
+      "end": 158.7,
+      "probability": 0.9843197464942932,
+      "start": 158.24,
+      "word": " and"
+    },
+    {
+      "end": 158.7,
+      "probability": 0.9947015047073364,
+      "start": 158.7,
+      "word": " ketchup"
+    },
+    {
+      "end": 158.96,
+      "probability": 0.9847742915153503,
+      "start": 158.7,
+      "word": " for"
+    },
+    {
+      "end": 159.46,
+      "probability": 0.9964873790740967,
+      "start": 158.96,
+      "word": " tea"
+    }
+  ]
+}

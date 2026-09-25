@@ -7,15 +7,14 @@ name = "stemlab"
 version = "0.1.0"
 description = "Multi-model PyTorch music stem separation and analysis pipeline"
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
 authors = [{name = "StemLab contributors"}]
 dependencies = [
-  "numpy>=1.26,<2.0",
-  "scipy>=1.12",
+  "numpy",
+  "scipy",
   "torch>=2.4",
   "torchaudio>=2.4",
   "soundfile>=0.12",
-  "matplotlib>=3.8",
+  "matplotlib",
   "typer>=0.12",
   "rich>=13.7",
   "platformdirs>=4.2",
@@ -25,19 +24,17 @@ dependencies = [
 separation = [
   "demucs>=4.0.1",
   "openunmix>=1.3.0",
-  "bs-roformer-infer>=0.1.6",
 ]
-speech = ["faster-whisper>=1.1.0"]
-beats = ["beat-this>=1.1.0", "BeatNet>=1.1.3"]
+speech = ["faster-whisper"]
+beats = ["beat-this>=1.1.0", "BeatNet"]
 dev = ["pytest>=8.0", "ruff>=0.6", "build>=1.2"]
 binary = ["nuitka>=2.7", "ordered-set>=4.1", "zstandard>=0.23"]
 all = [
   "demucs>=4.0.1",
   "openunmix>=1.3.0",
-  "bs-roformer-infer>=0.1.6",
-  "faster-whisper>=1.1.0",
+  "faster-whisper",
   "beat-this>=1.1.0",
-  "BeatNet>=1.1.3",
+  "BeatNet",
 ]
 
 [project.scripts]
