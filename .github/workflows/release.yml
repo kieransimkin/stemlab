@@ -63,7 +63,8 @@ jobs:
           python -m build
           python -m twine check dist/*
 
-      - name: Build self-contained StemLab one-file CLI
+      - name: Build supplemental StemLab one-file CLI
+        continue-on-error: true
         run: |
           python -m nuitka \
             --onefile \
@@ -90,8 +91,15 @@ jobs:
         run: |
           mkdir -p dist-release
           cp dist/* dist-release/
-          cp build/nuitka/stemlab-linux-x86_64 dist-release/
-          chmod +x dist-release/stemlab-linux-x86_64
+          if [[ -f build/nuitka/stemlab-linux-x86_64 ]]; then
+            cp build/nuitka/stemlab-linux-x86_64 dist-release/
+            chmod +x dist-release/stemlab-linux-x86_64
+          else
+            printf '%s\n' \
+              'The optional Linux one-file executable was not produced.' \
+              'Install StemLab from PyPI or use the published container image.' \
+              > dist-release/STEMLAB-BINARY-NOTE.txt
+          fi
           python scripts/release_about.py dist-release/STEMLAB-ABOUT.txt
           python scripts/release_manifest.py dist-release
           cat dist-release/SHA256SUMS
