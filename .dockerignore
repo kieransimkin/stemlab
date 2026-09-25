@@ -1,0 +1,17 @@
+.git
+.venv
+venv
+__pycache__
+.pytest_cache
+*.pyc
+*.pyo
+*.wav
+*.flac
+*.mp3
+*.ogg
+*.aif
+*.aiff
+bar
+barr
+docker-output
+music

@@ -1,0 +1,65 @@
+name: stemlab
+
+services:
+  stemlab:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        STEMLAB_REPO: ${STEMLAB_REPO:-https://github.com/kieransimkin/stemlab.git}
+        STEMLAB_REF: ${STEMLAB_REF:-latest}
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu130}
+        TORCH_VERSION: ${TORCH_VERSION:-2.14.0}
+        TORCHAUDIO_VERSION: ${TORCHAUDIO_VERSION:-2.14.0}
+    gpus: all
+    shm_size: "8gb"
+    environment:
+      STEMLAB_TEST_PROFILE: ${STEMLAB_TEST_PROFILE:-fast}
+      STEMLAB_BOOTSTRAP_MODELS: ${STEMLAB_BOOTSTRAP_MODELS:-1}
+      STEMLAB_AUTO_TEST: ${STEMLAB_AUTO_TEST:-1}
+      STEMLAB_AUDIO_FILE: ${STEMLAB_AUDIO_FILE:-}
+      STEMLAB_DEVICE: ${STEMLAB_DEVICE:-auto}
+      HF_HOME: /root/.cache/huggingface
+      TORCH_HOME: /root/.cache/torch
+    volumes:
+      - ${STEMLAB_MUSIC_DIR:-./music}:/music:ro
+      - ${STEMLAB_OUTPUT_DIR:-./docker-output}:/output
+      - stemlab-cache:/root/.cache/stemlab
+      - hf-cache:/root/.cache/huggingface
+      - torch-cache:/root/.cache/torch
+    restart: "no"
+
+  stemlab-cpu:
+    profiles: ["cpu"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        STEMLAB_REPO: ${STEMLAB_REPO:-https://github.com/kieransimkin/stemlab.git}
+        STEMLAB_REF: ${STEMLAB_REF:-latest}
+        TORCH_INDEX_URL: ${TORCH_CPU_INDEX_URL:-https://download.pytorch.org/whl/cpu}
+        TORCH_VERSION: ${TORCH_VERSION:-2.14.0}
+        TORCHAUDIO_VERSION: ${TORCHAUDIO_VERSION:-2.14.0}
+    shm_size: "8gb"
+    environment:
+      STEMLAB_TEST_PROFILE: ${STEMLAB_TEST_PROFILE:-fast}
+      STEMLAB_BOOTSTRAP_MODELS: ${STEMLAB_BOOTSTRAP_MODELS:-1}
+      STEMLAB_AUTO_TEST: ${STEMLAB_AUTO_TEST:-1}
+      STEMLAB_AUDIO_FILE: ${STEMLAB_AUDIO_FILE:-}
+      STEMLAB_DEVICE: cpu
+      HF_HOME: /root/.cache/huggingface
+      TORCH_HOME: /root/.cache/torch
+    volumes:
+      - ${STEMLAB_MUSIC_DIR:-./music}:/music:ro
+      - ${STEMLAB_OUTPUT_DIR:-./docker-output}:/output
+      - stemlab-cache-cpu:/root/.cache/stemlab
+      - hf-cache:/root/.cache/huggingface
+      - torch-cache-cpu:/root/.cache/torch
+    restart: "no"
+
+volumes:
+  stemlab-cache:
+  stemlab-cache-cpu:
+  hf-cache:
+  torch-cache:
+  torch-cache-cpu:
