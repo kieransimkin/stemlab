@@ -1,0 +1,208 @@
+{
+  "beats": [],
+  "completed_at": "2026-09-25T03:14:58.599283+00:00",
+  "config": {
+    "beat_transformer_ensemble": true,
+    "bootstrap_external": true,
+    "continue_on_error": true,
+    "device": "auto",
+    "input_wav": "Z:\\My Songs\\Releases\\Chips and Ketchup\\Chips and Ketchup.wav",
+    "make_spectrograms": true,
+    "models": [
+      "bs_roformer_sw",
+      "mvsep_mega53",
+      "scnet_xl_ihf",
+      "htdemucs_ft",
+      "openunmix_umxhq"
+    ],
+    "output_dir": "foof",
+    "run_beats": true,
+    "run_whisper": false,
+    "whisper_model": "large-v3"
+  },
+  "errors": [
+    {
+      "message": "[WinError 127] The specified procedure could not be found",
+      "stage": "spectrogram:master",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\pipeline.py\", line 93, in run_pipeline\n    rec = generate_spectrogram(master, spec_dir / \"master.png\", spec_dir / \"master.npz\")\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\spectrogram.py\", line 23, in generate_spectrogram\n    import torchaudio\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\__init__.py\", line 7, in <module>\n    from . import _extension  # noqa  # usort: skip\n    ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\_extension\\__init__.py\", line 30, in <module>\n    _IS_TORCHAUDIO_EXT_AVAILABLE = _load_lib(\"_torchaudio\")\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\_extension\\utils.py\", line 56, in _load_lib\n    torch.ops.load_library(paths[0])\n    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torch\\_ops.py\", line 1357, in load_library\n    ctypes.CDLL(path)\n    ~~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Kieran\\AppData\\Roaming\\uv\\python\\cpython-3.13-windows-x86_64-none\\Lib\\ctypes\\__init__.py\", line 361, in __init__\n    self._handle = self._load_library(name, mode, handle, winmode)\n                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\AppData\\Roaming\\uv\\python\\cpython-3.13-windows-x86_64-none\\Lib\\ctypes\\__init__.py\", line 379, in _load_library\n    return _LoadLibrary(self._name, winmode)\nOSError: [WinError 127] The specified procedure could not be found\n",
+      "type": "OSError"
+    },
+    {
+      "message": "ImportError: cannot import name 'BSRoformerSession' from 'bs_roformer' (C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\bs_roformer\\__init__.py)",
+      "stage": "separation:bs_roformer_sw"
+    },
+    {
+      "message": "ImportError: cannot import name 'BSRoformerSession' from 'bs_roformer' (C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\bs_roformer\\__init__.py)",
+      "stage": "separation:mvsep_mega53"
+    },
+    {
+      "message": "CalledProcessError: Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\venv\\\\Scripts\\\\python.exe', '-m', 'pip', 'install', '-r', 'C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\repo\\\\requirements.txt']' returned non-zero exit status 1.",
+      "stage": "separation:scnet_xl_ihf"
+    },
+    {
+      "message": "OSError: [WinError 127] The specified procedure could not be found",
+      "stage": "separation:htdemucs_ft"
+    },
+    {
+      "message": "OSError: [WinError 127] The specified procedure could not be found",
+      "stage": "separation:openunmix_umxhq"
+    },
+    {
+      "message": "No module named 'madmom'",
+      "stage": "beats:BeatNetBackend",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\pipeline.py\", line 215, in run_pipeline\n    br = backend.analyze(master, beats_dir, all_stems)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\beats\\beatnet.py\", line 14, in analyze\n    from BeatNet.BeatNet import BeatNet\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\BeatNet\\BeatNet.py\", line 8, in <module>\n    from madmom.features import DBNDownBeatTrackingProcessor\nModuleNotFoundError: No module named 'madmom'\n",
+      "type": "ModuleNotFoundError"
+    },
+    {
+      "message": "[WinError 127] The specified procedure could not be found",
+      "stage": "beats:BeatThisBackend",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\pipeline.py\", line 215, in run_pipeline\n    br = backend.analyze(master, beats_dir, all_stems)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\beats\\beatthis.py\", line 13, in analyze\n    from beat_this.inference import File2Beats\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\inference.py\", line 10, in <module>\n    from beat_this.preprocessing import LogMelSpect, load_audio\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\beat_this\\preprocessing.py\", line 3, in <module>\n    import torchaudio\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\__init__.py\", line 7, in <module>\n    from . import _extension  # noqa  # usort: skip\n    ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\_extension\\__init__.py\", line 30, in <module>\n    _IS_TORCHAUDIO_EXT_AVAILABLE = _load_lib(\"_torchaudio\")\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\_extension\\utils.py\", line 56, in _load_lib\n    torch.ops.load_library(paths[0])\n    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torch\\_ops.py\", line 1357, in load_library\n    ctypes.CDLL(path)\n    ~~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Kieran\\AppData\\Roaming\\uv\\python\\cpython-3.13-windows-x86_64-none\\Lib\\ctypes\\__init__.py\", line 361, in __init__\n    self._handle = self._load_library(name, mode, handle, winmode)\n                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\AppData\\Roaming\\uv\\python\\cpython-3.13-windows-x86_64-none\\Lib\\ctypes\\__init__.py\", line 379, in _load_library\n    return _LoadLibrary(self._name, winmode)\nOSError: [WinError 127] The specified procedure could not be found\n",
+      "type": "OSError"
+    },
+    {
+      "message": "[WinError 127] The specified procedure could not be found",
+      "stage": "beats:BeatTransformerBackend",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\pipeline.py\", line 215, in run_pipeline\n    br = backend.analyze(master, beats_dir, all_stems)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\beats\\beattransformer.py\", line 117, in analyze\n    x = self._five_channel_mel(audio_path, stems)\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\src\\stemlab\\beats\\beattransformer.py\", line 38, in _five_channel_mel\n    import torchaudio\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\__init__.py\", line 7, in <module>\n    from . import _extension  # noqa  # usort: skip\n    ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\_extension\\__init__.py\", line 30, in <module>\n    _IS_TORCHAUDIO_EXT_AVAILABLE = _load_lib(\"_torchaudio\")\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torchaudio\\_extension\\utils.py\", line 56, in _load_lib\n    torch.ops.load_library(paths[0])\n    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\torch\\_ops.py\", line 1357, in load_library\n    ctypes.CDLL(path)\n    ~~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\Kieran\\AppData\\Roaming\\uv\\python\\cpython-3.13-windows-x86_64-none\\Lib\\ctypes\\__init__.py\", line 361, in __init__\n    self._handle = self._load_library(name, mode, handle, winmode)\n                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Kieran\\AppData\\Roaming\\uv\\python\\cpython-3.13-windows-x86_64-none\\Lib\\ctypes\\__init__.py\", line 379, in _load_library\n    return _LoadLibrary(self._name, winmode)\nOSError: [WinError 127] The specified procedure could not be found\n",
+      "type": "OSError"
+    }
+  ],
+  "models": [
+    {
+      "elapsed_seconds": 5.416362000047229,
+      "error": "ImportError: cannot import name 'BSRoformerSession' from 'bs_roformer' (C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\bs_roformer\\__init__.py)",
+      "metadata": {},
+      "normalization": [],
+      "spec": {
+        "backend": "bs_roformer",
+        "description": "Recommended modern six-stem BS-RoFormer checkpoint.",
+        "display_name": "BS-RoFormer-SW",
+        "family": "Band-Split RoFormer",
+        "notes": "Registry id: roformer-model-bs-roformer-sw-by-jarredou",
+        "slug": "bs_roformer_sw",
+        "stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "guitar",
+          "piano",
+          "other"
+        ],
+        "tier": "high",
+        "upstream": "https://github.com/openmirlab/bs-roformer-infer"
+      },
+      "stems": []
+    },
+    {
+      "elapsed_seconds": 0.0014400000218302011,
+      "error": "ImportError: cannot import name 'BSRoformerSession' from 'bs_roformer' (C:\\Users\\Kieran\\OneDrive\\Documents\\GitHub\\stemlab\\.venv\\Lib\\site-packages\\bs_roformer\\__init__.py)",
+      "metadata": {},
+      "normalization": [],
+      "spec": {
+        "backend": "bs_roformer",
+        "description": "Very large broad-discovery separator exposing 53 raw stem targets.",
+        "display_name": "MVSep Mega 53",
+        "family": "Band-Split RoFormer",
+        "notes": "Requires substantial VRAM; upstream recommends >=16 GB.",
+        "slug": "mvsep_mega53",
+        "stems": null,
+        "tier": "high",
+        "upstream": "https://github.com/openmirlab/bs-roformer-infer"
+      },
+      "stems": []
+    },
+    {
+      "elapsed_seconds": 3.4166646999074146,
+      "error": "CalledProcessError: Command '['C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\venv\\\\Scripts\\\\python.exe', '-m', 'pip', 'install', '-r', 'C:\\\\Users\\\\Kieran\\\\AppData\\\\Local\\\\stemlab\\\\stemlab\\\\Cache\\\\scnet-xl-ihf\\\\repo\\\\requirements.txt']' returned non-zero exit status 1.",
+      "metadata": {},
+      "normalization": [],
+      "spec": {
+        "backend": "scnet",
+        "description": "Large four-stem SCNet checkpoint from Music-Source-Separation-Training.",
+        "display_name": "SCNet XL IHF",
+        "family": "SCNet",
+        "notes": "Fixed v1.0.15 config/checkpoint URLs are used by bootstrap.",
+        "slug": "scnet_xl_ihf",
+        "stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "tier": "high",
+        "upstream": "https://github.com/ZFTurbo/Music-Source-Separation-Training"
+      },
+      "stems": []
+    },
+    {
+      "elapsed_seconds": 1.5832944000139832,
+      "error": "OSError: [WinError 127] The specified procedure could not be found",
+      "metadata": {},
+      "normalization": [],
+      "spec": {
+        "backend": "demucs",
+        "description": "Fine-tuned four-stem Demucs model bag; strong established baseline.",
+        "display_name": "HTDemucs fine-tuned",
+        "family": "Hybrid Transformer Demucs",
+        "notes": "This is a bag of fine-tuned HTDemucs models rather than a single tiny network.",
+        "slug": "htdemucs_ft",
+        "stems": [
+          "drums",
+          "bass",
+          "other",
+          "vocals"
+        ],
+        "tier": "high",
+        "upstream": "https://github.com/adefossez/demucs"
+      },
+      "stems": []
+    },
+    {
+      "elapsed_seconds": 0.004393999930471182,
+      "error": "OSError: [WinError 127] The specified procedure could not be found",
+      "metadata": {},
+      "normalization": [],
+      "spec": {
+        "backend": "openunmix",
+        "description": "Compact PyTorch baseline selected as the low-latency/realtime candidate.",
+        "display_name": "Open-Unmix UMxHQ",
+        "family": "Open-Unmix",
+        "notes": "Potential realtime candidate depends on hardware/buffering; benchmark locally.",
+        "slug": "openunmix_umxhq",
+        "stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "tier": "fast",
+        "upstream": "https://github.com/sigsep/open-unmix-pytorch"
+      },
+      "stems": []
+    }
+  ],
+  "sonic_visualiser": {
+    "session": "sonic_visualiser\\session.sv",
+    "unix_launcher": "sonic_visualiser\\open_sonic_visualiser.sh",
+    "windows_launcher": "sonic_visualiser\\open_sonic_visualiser.bat",
+    "xml": "sonic_visualiser\\session.xml"
+  },
+  "source": {
+    "audio": {
+      "bits_per_sample": 16,
+      "duration_seconds": 168.00337868480725,
+      "encoding": "PCM_16",
+      "format": "WAV",
+      "num_channels": 2,
+      "num_frames": 7408949,
+      "sample_rate": 44100,
+      "subtype": "PCM_16"
+    },
+    "copied_path": "input\\Chips and Ketchup.wav",
+    "original_path": "Z:\\My Songs\\Releases\\Chips and Ketchup\\Chips and Ketchup.wav",
+    "sha256": "0fed034ebd62e2b334399017e4398b73d109a9916c82801633ab48b9ee3aa32e"
+  },
+  "spectrograms": [],
+  "speech": null,
+  "started_at": "2026-09-25T03:14:47.731151+00:00",
+  "stemlab_version": "0.1.0"
+}

@@ -2,9 +2,9 @@
   "error_count": 6,
   "files": [
     {
-      "bytes": 25047,
+      "bytes": 25043,
       "path": "analysis.json",
-      "sha256": "5d1fde7c4b36262817278deb6509fd06116bb55343a97259cd92697776798643"
+      "sha256": "7932e3bebe979d0ccda8e43b59c6f8a95b756e6dbd29f92d3d6395be32c41124"
     },
     {
       "bytes": 29635840,
@@ -32,44 +32,44 @@
       "sha256": "8307c12376840f1c754b68f2f4dabf9559af5e0f193bcf6bbb964ad0df049740"
     },
     {
-      "bytes": 31868367,
+      "bytes": 31826794,
       "path": "spectrograms/htdemucs_ft/bass.npz",
-      "sha256": "d68e908a5c36b6126831a9abacc79c88e89bd5f9236fc932911c565a93bd1318"
+      "sha256": "20244b2e63aba562e138766aa8844543912a88d5de82b593484f90d32b948df3"
     },
     {
-      "bytes": 984606,
+      "bytes": 984879,
       "path": "spectrograms/htdemucs_ft/bass.png",
-      "sha256": "2230916407850320febf79dba2b725782dc19adf89c855edb57557609675108d"
+      "sha256": "05176265076cc347daa7436789e61c7d41f3726fb11feaae43ad414ec94f9b96"
     },
     {
-      "bytes": 80089567,
+      "bytes": 80155827,
       "path": "spectrograms/htdemucs_ft/drums.npz",
-      "sha256": "74d08c30042963f2c9a4c629ca198bf649873b74ec9bb4109826270920d9fa2a"
+      "sha256": "1d03c35e321bf654e5c3d50f61ef3a6b5c61af42426389ed07141ef0a7bc7c79"
     },
     {
-      "bytes": 1590218,
+      "bytes": 1589681,
       "path": "spectrograms/htdemucs_ft/drums.png",
-      "sha256": "0ffbf97d2876a77f75fe5f485ef0b22ded93d6c6f16c58d81076342a85635b7f"
+      "sha256": "853377d63ac2f02587e199c5e15f1e20d929f71fb97b93a106d2cc394dbad608"
     },
     {
-      "bytes": 87841384,
+      "bytes": 87826428,
       "path": "spectrograms/htdemucs_ft/other.npz",
-      "sha256": "08412d1476f2c90208bb0337b4650270d85bfdb9bbc37f106c48de83c3d26fa2"
+      "sha256": "1d0d34186629e1f9b18e40c57f98832eb5478653299e78b002dbf062a094d08d"
     },
     {
-      "bytes": 1652152,
+      "bytes": 1651656,
       "path": "spectrograms/htdemucs_ft/other.png",
-      "sha256": "bbbfab7775443e55f68ece7f25e60c89a5ba9d66981e163ea373f78cafaabb53"
+      "sha256": "bca0d3def6eb35fd18790e42a6647c75acff7c6ca98eda4eff03e84f9f561ff1"
     },
     {
-      "bytes": 86975175,
+      "bytes": 87105374,
       "path": "spectrograms/htdemucs_ft/vocals.npz",
-      "sha256": "7d482274ef1968591793897edb1a0a3252d383edf6ff8699a8f89d50a7e92033"
+      "sha256": "05d49f183d67c98e61de0bd9797e637064473ade54005df1e54e559cabeac3c3"
     },
     {
-      "bytes": 1644388,
+      "bytes": 1644701,
       "path": "spectrograms/htdemucs_ft/vocals.png",
-      "sha256": "11f7a660b4a1468bd60f60e2015e7257fe966d33cb2f6a72d2cd8af3d6f0f85a"
+      "sha256": "b02a55a4b37b3561bdc0b651e67adae9ead09fd179e315cdd09f744ac4cbd51f"
     },
     {
       "bytes": 88318522,
@@ -134,45 +134,45 @@
     {
       "bytes": 59271680,
       "path": "stems/htdemucs_ft/bass.wav",
-      "sha256": "a3036c9c908902b3df67563633b93f2bf76c0ddebf16d38861dd1dacfd85c5f0"
+      "sha256": "784c02e1c6ec6c2f6f084fe00b5102ec041bf3a5e3ff864c3acfba15d1b42199"
     },
     {
       "bytes": 59271680,
       "path": "stems/htdemucs_ft/drums.wav",
-      "sha256": "903bf644d2dd7347ab83167d44b69e3c2e2d85c3a41fb5fdc16e2885e51411ef"
+      "sha256": "b1215ef7d4b0628e622b470e8018980657f26c738618c6690193c6e44f66c591"
     },
     {
       "bytes": 59271680,
       "path": "stems/htdemucs_ft/other.wav",
-      "sha256": "2e3303f58b178258ed4527179ad8ea41e1d31745c1e273301db9738ce60ffc3d"
+      "sha256": "7d6df205282db7e7ae89339897937a446eedae0edc12276db60dcc1217c7fda5"
     },
     {
       "bytes": 59271680,
       "path": "stems/htdemucs_ft/vocals.wav",
-      "sha256": "584e24fff982a2d94a908a4d9149fdcd84fd8456a57f0ddfaa7af54609984799"
+      "sha256": "3fb19ac259a4f2bb81cd8d11c7e92728200d7a949b4dbba8e2d680248bf197d0"
     },
     {
       "bytes": 59271680,
       "path": "stems/openunmix_umxhq/bass.wav",
-      "sha256": "fda79ed63f3f79559c70c502c4bdb872604ea96d37a19e9f9bc9d46816fb417d"
+      "sha256": "6c0aec49d7d35cb251128e7c9fc4cbbfe5fa7960227d1459d3b7c8e76f1b63f8"
     },
     {
       "bytes": 59271680,
       "path": "stems/openunmix_umxhq/drums.wav",
-      "sha256": "260a10530d44e7c6b79b213bb0081e802ed9de829667da6769a0ff9c3446589c"
+      "sha256": "a2ddc43e6959fc5bbb39373023270eaff8cdd3b5ba4093a3cbc30651ee16809b"
     },
     {
       "bytes": 59271680,
       "path": "stems/openunmix_umxhq/other.wav",
-      "sha256": "df6598703763f430ab81c08a7674f460a6fa417a1227dc2bf6b680ab48ffd8c3"
+      "sha256": "4ff5691e9a232e8886281baf1799915b5b108563f7c6c910e8de3348ee662afc"
     },
     {
       "bytes": 59271680,
       "path": "stems/openunmix_umxhq/vocals.wav",
-      "sha256": "606fa8d6f0405aec023af25ada109bfa5258b4504e6b966643c7cd6de84b10b9"
+      "sha256": "166941182ce7f799e52782cd9967a38699296943083fbb4fd17a2738c1418e2d"
     }
   ],
-  "generated_at": "2026-09-25T02:25:59.955261+00:00",
+  "generated_at": "2026-09-25T02:48:18.880819+00:00",
   "models_requested": [
     "bs_roformer_sw",
     "mvsep_mega53",
