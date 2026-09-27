@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add beat-grid tempo-regime analysis for stable sections, gradual ramps, abrupt changes and persistent same-BPM phase skips.
+- Report fixed-BPM section precision with residual percentiles, RMSE, interval error, end drift and a documented shorthand grade.
+- Make repetition-safe Whisper decoding the default, record the prior-window setting, and flag suspicious repeated-token loops for section-wise recovery.
+
 ## 1.0.0 — 2026-09-25
 
 First stable StemLab release.
