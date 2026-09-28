@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Restrict container image builds and publication to the release workflow, after the GitHub Release has been created; ordinary CI no longer has package-write permission.
 - Extract the browser audio transport, playhead, zoom, seeking and generic lane renderers into the independent `react-timeline-sequence` React package, then consume the public npm package (`^0.1.3`) from StemLab's web client.
 - Add beat-grid tempo-regime analysis for stable sections, gradual ramps, abrupt changes and persistent same-BPM phase skips.
 - Report fixed-BPM section precision with residual percentiles, RMSE, interval error, end drift and a documented shorthand grade.

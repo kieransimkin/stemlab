@@ -30,8 +30,9 @@ A successful version tag such as `v1.0.0` publishes StemLab to:
 - GitHub Container Registry as the `stemlab` image.
 - Docker Hub as the `stemlab` image when the Docker Hub secrets are configured.
 
-The existing CI workflow handles GHCR and Docker Hub. The Release workflow
-handles GitHub Releases and PyPI.
+The Release workflow handles GitHub Releases, PyPI, GHCR and Docker Hub.
+Ordinary CI has read-only repository permission and never builds or publishes
+container images.
 
 ## One-time PyPI Trusted Publisher setup
 
@@ -73,16 +74,18 @@ git push origin v1.0.0
 
 The tag starts:
 
-1. **CI** — tests StemLab and publishes versioned `stemlab` images to GHCR and
-   Docker Hub.
+1. **CI** — tests StemLab without building or publishing container images.
 2. **Release** — tests StemLab again, builds the wheel/sdist and standalone CLI,
-   creates the **StemLab 1.0.0** GitHub Release, and publishes the
-   `danceflow-stemlab` Python distribution to PyPI using OIDC.
+   creates the **StemLab 1.0.0** GitHub Release, publishes the
+   `danceflow-stemlab` Python distribution to PyPI using OIDC, then builds and
+   publishes the versioned `stemlab` images to GHCR and Docker Hub. The image
+   job depends on successful GitHub Release creation, so it cannot run first.
 
 ## Manual workflow runs
 
 `workflow_dispatch` builds and validates the release artifacts, but it does not
-publish to PyPI or create a GitHub Release. Publication requires a `v*` tag.
+publish to PyPI, create a GitHub Release, or build and publish container images.
+Publication requires a `v*` tag.
 
 ## Public attribution
 
