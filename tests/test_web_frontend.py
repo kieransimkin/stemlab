@@ -42,6 +42,11 @@ def test_frontend_assets_are_present():
     web = Path(webui.__file__).with_name("web")
     assert (web / "index.html").is_file()
     assert (web / "style.css").is_file()
+    assert (web / "timeline.css").is_file()
     assert (web / "app.js").is_file()
-    assert (web / "canonical.js").is_file()
+    assert not (web / "canonical.js").exists()
     assert (web / "arcadians-reference.json").is_file()
+
+    index = (web / "index.html").read_text(encoding="utf-8")
+    assert "/assets/timeline.css" in index
+    assert "/assets/canonical.js" not in index

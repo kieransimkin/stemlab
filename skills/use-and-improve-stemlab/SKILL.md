@@ -51,6 +51,30 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 - **Verification:** chosen outputs still cover the question and retain provenance.
 - **Limit:** savings never waive required evidence, validation, licensing, privacy, or listening QA.
 
+### Windows Codex sandbox blocks the web build or local server
+
+- **Symptom:** Vite/esbuild fails with `Error: spawn EPERM`; `stemlab serve` fails during scheduler startup with `PermissionError: [WinError 5] Access is denied` from `multiprocessing.connection.Pipe` / `_winapi.CreateFile`; or pytest cannot scan a workspace-local or profile temp directory with the same Windows access-denied error.
+- **Cause:** the Windows Codex workspace sandbox can deny child-process or named-pipe creation even when the source tree and dependencies are valid. This matches the documented Codex Windows sandbox failure mode; it is not by itself evidence of a StemLab or Vite defect.
+- **Correction:** rerun the exact build, local-server or pytest command through the approved unsandboxed execution route. For pytest, keep `--basetemp` inside the repository as well. Do not change machine security settings or weaken the application to avoid the sandbox boundary.
+- **Verification:** the unchanged command completes, the focused Python tests pass with a workspace-local `--basetemp`, and the browser loads the built timeline without console errors.
+- **Limit:** only use the wider execution permission for the specific trusted local command; it does not justify running unreviewed scripts or dependencies.
+
+### A linked timeline package loads a second React copy
+
+- **Symptom:** the StemLab timeline stays blank and the browser reports `TypeError: Cannot read properties of null (reading 'useRef')` inside the built bundle.
+- **Cause:** a locally linked `react-timeline-sequence` checkout can resolve React from its own development dependencies while StemLab resolves another copy.
+- **Correction:** keep `resolve.dedupe: ["react", "react-dom"]` in the StemLab Vite configuration.
+- **Verification:** rebuild, reload a fresh browser tab, confirm the transport and lanes render, and confirm that the clean tab has no console warning or error.
+- **Limit:** published packages should still declare React and React DOM as peer dependencies; deduplication is a development/bundler safeguard, not a replacement for correct package metadata.
+
+### A GitHub-installed timeline package has no distributable entry
+
+- **Symptom:** StemLab's Vite build fails with `[commonjs--resolver] Failed to resolve entry for package "react-timeline-sequence"`, and the installed package contains its metadata but no `dist/` directory.
+- **Cause:** the Git repository excludes generated `dist/` files and the package did not define a `prepare` lifecycle script, so npm had nothing matching the declared `main`, `module`, or `exports` paths after installing the Git dependency.
+- **Correction:** keep `"prepare": "npm run build"` in `react-timeline-sequence`, publish a new immutable patch tag, update StemLab to that tag, and regenerate its lockfile. npm's documented Git-dependency lifecycle installs development dependencies and runs `prepare` before packing the dependency.
+- **Verification:** run a clean `npm ci` in StemLab, confirm `node_modules/react-timeline-sequence/dist/` exists, then run `npm run build:web` successfully.
+- **Limit:** this remedy is for Git dependencies built from source. A future npm-registry release should still be verified from its packed contents and should not depend on consumers compiling unpublished source.
+
 ### Repository checks try to access the network in a restricted environment
 
 - **Symptom:** `uv run` attempts to resolve build requirements from PyPI even though a populated project environment already exists.

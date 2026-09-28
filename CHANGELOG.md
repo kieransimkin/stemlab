@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Extract the browser audio transport, playhead, zoom, seeking and generic lane renderers into the independent `react-timeline-sequence` React package, then consume its built control from StemLab's web client.
 - Add beat-grid tempo-regime analysis for stable sections, gradual ramps, abrupt changes and persistent same-BPM phase skips.
 - Report fixed-BPM section precision with residual percentiles, RMSE, interval error, end drift and a documented shorthand grade.
 - Make repetition-safe Whisper decoding the default, record the prior-window setting, and flag suspicious repeated-token loops for section-wise recovery.
