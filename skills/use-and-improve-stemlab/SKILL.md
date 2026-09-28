@@ -51,6 +51,38 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 - **Verification:** chosen outputs still cover the question and retain provenance.
 - **Limit:** savings never waive required evidence, validation, licensing, privacy, or listening QA.
 
+### Windows Codex sandbox blocks the web build or local server
+
+- **Symptom:** Vite/esbuild fails with `Error: spawn EPERM`; `stemlab serve` fails during scheduler startup with `PermissionError: [WinError 5] Access is denied` from `multiprocessing.connection.Pipe` / `_winapi.CreateFile`; or pytest cannot scan a workspace-local or profile temp directory with the same Windows access-denied error.
+- **Cause:** the Windows Codex workspace sandbox can deny child-process or named-pipe creation even when the source tree and dependencies are valid. This matches the documented Codex Windows sandbox failure mode; it is not by itself evidence of a StemLab or Vite defect.
+- **Correction:** rerun the exact build, local-server or pytest command through the approved unsandboxed execution route. For pytest, keep `--basetemp` inside the repository as well. Do not change machine security settings or weaken the application to avoid the sandbox boundary.
+- **Verification:** the unchanged command completes, the focused Python tests pass with a workspace-local `--basetemp`, and the browser loads the built timeline without console errors.
+- **Limit:** only use the wider execution permission for the specific trusted local command; it does not justify running unreviewed scripts or dependencies.
+
+### A linked timeline package loads a second React copy
+
+- **Symptom:** the StemLab timeline stays blank and the browser reports `TypeError: Cannot read properties of null (reading 'useRef')` inside the built bundle.
+- **Cause:** a locally linked `react-timeline-sequence` checkout can resolve React from its own development dependencies while StemLab resolves another copy.
+- **Correction:** keep `resolve.dedupe: ["react", "react-dom"]` in the StemLab Vite configuration.
+- **Verification:** rebuild, reload a fresh browser tab, confirm the transport and lanes render, and confirm that the clean tab has no console warning or error.
+- **Limit:** published packages should still declare React and React DOM as peer dependencies; deduplication is a development/bundler safeguard, not a replacement for correct package metadata.
+
+### A GitHub-installed timeline package has no distributable entry
+
+- **Symptom:** StemLab's Vite build fails with `[commonjs--resolver] Failed to resolve entry for package "react-timeline-sequence"`, and the installed package contains its metadata but no `dist/` directory.
+- **Cause:** the Git repository excludes generated `dist/` files and the package did not define a `prepare` lifecycle script, so npm had nothing matching the declared `main`, `module`, or `exports` paths after installing the Git dependency.
+- **Correction:** prefer the published npm dependency (`react-timeline-sequence@^0.1.3` or later compatible release) and regenerate StemLab's lockfile so it records the registry tarball and integrity hash. Keep `"prepare": "npm run build"` in the control repository only as a fallback for deliberate Git-source installs.
+- **Verification:** on 28 September 2026, a clean `npm ci` resolved `react-timeline-sequence@0.1.3` from `registry.npmjs.org`, its installed package contained `dist/`, `npm run build:web` completed, the checked-in browser bundle was unchanged, and StemLab's full 44-test suite passed.
+- **Limit:** the lockfile verifies the selected registry artifact, but a future package upgrade still needs a clean install, frontend rebuild, focused integration test and full StemLab suite before adoption.
+
+### Linux CI rejects a Windows-refreshed lockfile as out of sync
+
+- **Symptom:** GitHub Actions on Ubuntu with npm 11.19.0 fails at `npm ci` with `EUSAGE`, says the manifest and lockfile are not in sync, and lists missing platform packages such as `@esbuild/linux-x64`, `@rollup/rollup-linux-x64-gnu` and `fsevents`, even though `npm ci` succeeds on the Windows development checkout.
+- **Cause:** npm can prune other operating systems' optional packages when a lockfile is refreshed while `node_modules` already exists. The npm CLI maintainers track this cross-platform failure in [npm/cli#4828](https://github.com/npm/cli/issues/4828) and [npm/cli#7961](https://github.com/npm/cli/issues/7961); both were checked on 28 September 2026 and match the observed esbuild/Rollup package omissions.
+- **Correction:** regenerate `package-lock.json` from `package.json` in a genuinely empty temporary directory with the verified project-wide npm 12 CLI, validate representative Windows, Linux and other-platform optional entries, then replace the repository lockfile. Do not regenerate it from the populated Windows `node_modules` tree.
+- **Verification:** npm 12.1.0 then completed a clean `npm ci`, Vite rebuilt the browser bundle without changing the checked-in assets, and all four focused web integration tests passed.
+- **Limit:** this corrects a cross-platform lockfile. It does not make every optional native package installable on every operating system; npm still selects the compatible artifact for the current runner.
+
 ### Repository checks try to access the network in a restricted environment
 
 - **Symptom:** `uv run` attempts to resolve build requirements from PyPI even though a populated project environment already exists.

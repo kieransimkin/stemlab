@@ -93,7 +93,16 @@ main { min-height: 0; }
 .known-info-actions { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
 .known-info-help { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
 
-.timeline-view { height: 100%; min-height: 0; display: grid; grid-template-rows: auto 1fr auto; }
+.timeline-view { height: 100%; min-height: 0; display: block; }
+#timelineRoot { height: 100%; min-height: 0; }
+.stemlab-timeline .rts-footer { min-height: 90px; max-height: 210px; grid-template-columns: 1fr auto; }
+.stemlab-timeline .rts-footer > div:first-child { min-height: 0; overflow: hidden; }
+.stemlab-timeline .stemlab-log { min-height: 0; overflow: hidden; }
+.stemlab-timeline .stemlab-log summary { cursor: pointer; padding: 0 0 8px; color: var(--muted); font-size: 12px; }
+.stemlab-timeline .rts-lane-deep-structure .rts-block { background: rgba(126,231,135,.25); border-color: rgba(126,231,135,.52); color: #eaffee; }
+.stemlab-timeline .rts-lane-deep-harmony .rts-block { background: rgba(242,204,96,.22); border-color: rgba(242,204,96,.5); color: #fff4bf; }
+.stemlab-timeline .rts-lane-deep-lyrics .rts-block,
+.stemlab-timeline .stemlab-canonical-lyric { background: rgba(210,168,255,.22); border-color: rgba(210,168,255,.5); color: #f2e9ff; }
 .session-bar {
   min-height: 58px; display: grid; grid-template-columns: minmax(260px, 1fr) auto minmax(180px, auto);
   align-items: center; gap: 18px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel);

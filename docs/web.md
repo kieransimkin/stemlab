@@ -97,6 +97,17 @@ Waveforms, spectrograms, beats/downbeats, Whisper words, Vamp curves,
 notes/segments and generic artifacts all share the same playhead, seek
 position, horizontal pan and zoom.
 
+The transport, shared playhead, ruler, pan/zoom behaviour and generic lane
+renderers come from the independent React package
+[`react-timeline-sequence`](https://www.npmjs.com/package/react-timeline-sequence),
+installed from the public npm registry. The lockfile records the exact package
+artifact and integrity hash used for reproducible builds.
+StemLab owns the upload, analysis API, live job events and conversion of its
+artifacts into package lane data. To rebuild the checked-in browser bundle,
+install the Node dependencies and run `npm run build:web` from the repository
+root. Python distributions contain the built assets and do not require Node at
+runtime.
+
 The browser listens to the existing Socket.IO room for the uploaded hash.
 `new_file` events add lanes while analysis is still running, while
 `process_output`, `process_history` and `job_status` update the live log and

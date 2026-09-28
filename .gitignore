@@ -17,6 +17,7 @@ results/
 .coverage
 htmlcov/
 .mypy_cache/
+node_modules/
 .DS_Store
 uv.lock
 *.patch
@@ -27,3 +28,5 @@ docker-output/
 music/
 .pytest-tmp*/
 .pytest-all/
+.pytest-rts-*/
+.web-test-results-*/
