@@ -43,6 +43,8 @@ For every successful separator, **every WAV it emits** is retained. Stem names a
 
 The preferred vocal stem is passed through the Silero VAD implementation bundled with `faster-whisper`. Speech regions are used to create a timeline-preserving `spoken_word.wav` (non-speech is zeroed rather than concatenated), then Whisper is run with word timestamps. Outputs include `whisper.json`, `speech_regions.json`, `transcript.txt`, `transcript.srt`, and `words.tsv`.
 
+Whisper runs in repetition-safe mode by default (`condition_on_previous_text=False`) to prevent a repeated syllable in one window contaminating later windows. `whisper.json` records that setting and includes repeated-token diagnostics. Use `--whisper-condition-on-previous-text` only for an explicit comparison run; a flagged transcript remains evidence requiring section-wise recovery or listening QA, not a trustworthy lyric source.
+
 Beat analysis runs:
 
 - **BeatNet** in offline/DBN mode.
@@ -70,6 +72,7 @@ existing low-level outputs. The default deep pass now includes:
 |---|---|---|
 | Sonic profile | `pyloudnorm` BS.1770 + librosa DSP | LUFS, dynamics, true-peak estimate, timbre and stereo |
 | Groove / meter | all successful beat grids + onset analysis | tempo stability, meter, swing, offbeat energy and quantisation error |
+| Tempo regimes | beat-grid BIC models + fixed-grid residuals | stable sections, gradual ramps, abrupt changes, same-BPM phase skips and per-section precision |
 | Harmony | Chordino + NNLS chroma + QM key/tuning | chord progression, harmonic rhythm, key evidence and tonal changes |
 | Functional structure | All-In-One-Infer 3.1 | BPM, beats/downbeats and intro/verse/chorus/bridge/outro-style sections |
 | Rhyme / prosody | CMU Pronouncing Dictionary + timing | rhyme scheme, internal rhyme, syllables, repetitions and delivery rate |
@@ -229,6 +232,14 @@ endpoints, events and the Arcadians reference workflow.
 - [Containers](docs/containers.md)
 - [Publishing and releases](docs/publishing.md)
 - [Changelog](CHANGELOG.md)
+
+## Codex skill
+
+The repository includes a reusable Codex skill at
+[`skills/use-and-improve-stemlab`](skills/use-and-improve-stemlab/SKILL.md).
+It makes StemLab the default analysis engine, selects a proportionate profile,
+preserves evidence boundaries, and routes reusable capability gaps back into
+StemLab with tests instead of creating an undocumented parallel stack.
 
 ## Python API
 

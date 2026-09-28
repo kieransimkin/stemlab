@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import csv
+import re
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +10,45 @@ import numpy as np
 
 from .audio import load_audio, normalize_audio_file, save_audio
 from .util import write_json
+
+
+TOKEN_RE = re.compile(r"[\w']+", re.UNICODE)
+
+
+def repetition_diagnostics(segments: list[dict[str, Any]]) -> dict[str, Any]:
+    """Flag decoder loops without assuming that legitimate chorus repetition is an error."""
+    tokens = [
+        token.casefold()
+        for segment in segments
+        for token in TOKEN_RE.findall(str(segment.get("text") or ""))
+    ]
+    longest = 0
+    longest_token = None
+    current = 0
+    previous = None
+    for token in tokens:
+        if token == previous:
+            current += 1
+        else:
+            previous, current = token, 1
+        if current > longest:
+            longest, longest_token = current, token
+    counts = Counter(tokens)
+    dominant_token, dominant_count = counts.most_common(1)[0] if counts else (None, 0)
+    dominant_fraction = dominant_count / len(tokens) if tokens else 0.0
+    suspicious = longest >= 12 or (len(tokens) >= 30 and dominant_fraction >= 0.55)
+    return {
+        "token_count": len(tokens),
+        "longest_identical_token_run": longest,
+        "longest_run_token": longest_token,
+        "dominant_token": dominant_token,
+        "dominant_token_fraction": round(dominant_fraction, 6),
+        "suspicious_decoder_repetition": suspicious,
+        "policy": (
+            "A run of at least 12 identical tokens, or one token occupying at least 55% "
+            "of a 30-token transcript, is flagged for section-wise recovery and listening QA."
+        ),
+    }
 
 
 def _fmt_srt(t: float) -> str:
@@ -24,6 +65,7 @@ def isolate_and_transcribe(
     *,
     whisper_model: str = "large-v3",
     device: str = "auto",
+    condition_on_previous_text: bool = False,
 ) -> dict[str, Any]:
     """Use faster-whisper's Silero VAD to make a timeline-preserving spoken-word stem,
     then run Whisper with word timestamps over that isolated stem.
@@ -69,7 +111,12 @@ def isolate_and_transcribe(
     compute_type = "float16" if fw_device == "cuda" else "int8"
     model = WhisperModel(whisper_model, device=fw_device, compute_type=compute_type)
     # We already VAD-gated the audio; leave VAD off here so timestamps stay on the master timeline.
-    segments_iter, info = model.transcribe(str(spoken_path), vad_filter=False, word_timestamps=True)
+    segments_iter, info = model.transcribe(
+        str(spoken_path),
+        vad_filter=False,
+        word_timestamps=True,
+        condition_on_previous_text=condition_on_previous_text,
+    )
     segments = []
     words = []
     for s in segments_iter:
@@ -91,10 +138,13 @@ def isolate_and_transcribe(
         "language_probability": float(info.language_probability),
         "duration": float(info.duration),
         "duration_after_vad": float(getattr(info, "duration_after_vad", info.duration)),
+        "condition_on_previous_text": condition_on_previous_text,
+        "repetition_safe_mode": not condition_on_previous_text,
         "regions": regions,
         "segments": segments,
         "words": words,
     }
+    result["repetition_diagnostics"] = repetition_diagnostics(segments)
     write_json(output_dir / "whisper.json", result)
     (output_dir / "transcript.txt").write_text("".join(s["text"] for s in segments).strip() + "\n", encoding="utf-8")
 

@@ -7,6 +7,7 @@ import numpy as np
 
 from stemlab.types import BeatResult
 from stemlab.util import write_json
+from .tempo_regimes import analyze_tempo_regimes
 
 
 def _select_grid(results: Iterable[BeatResult]) -> BeatResult | None:
@@ -217,6 +218,7 @@ def analyze_rhythm(
         "beat_count": len(beats),
         "downbeat_count": len(downbeats),
         "tempo": _tempo_stats(beats),
+        "tempo_regimes": analyze_tempo_regimes(beats),
         "meter": _beats_per_bar(beats, downbeats),
         "groove": groove,
         "detectors": [

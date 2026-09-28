@@ -183,6 +183,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     speech_dir,
                     whisper_model=config.whisper_model,
                     device=config.device,
+                    condition_on_previous_text=config.whisper_condition_on_previous_text,
                 )
                 analysis["speech"] = {
                     "source_vocals": str(Path(whisper_result["source_vocals"]).relative_to(out)),
@@ -194,6 +195,9 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     "segments": len(whisper_result["segments"]),
                     "words": len(whisper_result["words"]),
                     "normalization": whisper_result.get("normalization"),
+                    "condition_on_previous_text": whisper_result["condition_on_previous_text"],
+                    "repetition_safe_mode": whisper_result["repetition_safe_mode"],
+                    "repetition_diagnostics": whisper_result["repetition_diagnostics"],
                 }
                 spoken = Path(whisper_result["spoken_word_wav"])
                 all_stems.append(StemArtifact("speech", "spoken_word", spoken, 16000, 1))

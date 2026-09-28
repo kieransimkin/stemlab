@@ -31,6 +31,13 @@ def analyze(
     model: Annotated[list[str] | None, typer.Option("--model", help="Override profile; repeat for multiple models")] = None,
     device: Annotated[str, typer.Option(help="auto, cpu, cuda, cuda:N or mps where supported")] = "auto",
     whisper_model: Annotated[str, typer.Option(help="faster-whisper model id")] = "large-v3",
+    whisper_condition_on_previous_text: Annotated[
+        bool,
+        typer.Option(
+            "--whisper-condition-on-previous-text",
+            help="Enable Whisper prior-window prompting; disabled by default to avoid decoder repetition cascades",
+        ),
+    ] = False,
     strict: Annotated[bool, typer.Option("--strict", help="Abort on first backend failure")] = False,
     no_bootstrap: Annotated[bool, typer.Option("--no-bootstrap", help="Do not auto-clone/install external research backends")] = False,
     no_spectrograms: Annotated[bool, typer.Option("--no-spectrograms")] = False,
@@ -58,6 +65,7 @@ def analyze(
         models=models,
         device=device,
         whisper_model=whisper_model,
+        whisper_condition_on_previous_text=whisper_condition_on_previous_text,
         continue_on_error=not strict,
         bootstrap_external=not no_bootstrap,
         make_spectrograms=not no_spectrograms,
