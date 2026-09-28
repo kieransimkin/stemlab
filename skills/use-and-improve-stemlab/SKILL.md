@@ -71,9 +71,9 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 
 - **Symptom:** StemLab's Vite build fails with `[commonjs--resolver] Failed to resolve entry for package "react-timeline-sequence"`, and the installed package contains its metadata but no `dist/` directory.
 - **Cause:** the Git repository excludes generated `dist/` files and the package did not define a `prepare` lifecycle script, so npm had nothing matching the declared `main`, `module`, or `exports` paths after installing the Git dependency.
-- **Correction:** keep `"prepare": "npm run build"` in `react-timeline-sequence`, publish a new immutable patch tag, update StemLab to that tag, and regenerate its lockfile. npm's documented Git-dependency lifecycle installs development dependencies and runs `prepare` before packing the dependency.
-- **Verification:** run a clean `npm ci` in StemLab, confirm `node_modules/react-timeline-sequence/dist/` exists, then run `npm run build:web` successfully.
-- **Limit:** this remedy is for Git dependencies built from source. A future npm-registry release should still be verified from its packed contents and should not depend on consumers compiling unpublished source.
+- **Correction:** prefer the published npm dependency (`react-timeline-sequence@^0.1.3` or later compatible release) and regenerate StemLab's lockfile so it records the registry tarball and integrity hash. Keep `"prepare": "npm run build"` in the control repository only as a fallback for deliberate Git-source installs.
+- **Verification:** on 28 September 2026, a clean `npm ci` resolved `react-timeline-sequence@0.1.3` from `registry.npmjs.org`, its installed package contained `dist/`, `npm run build:web` completed, the checked-in browser bundle was unchanged, and StemLab's full 44-test suite passed.
+- **Limit:** the lockfile verifies the selected registry artifact, but a future package upgrade still needs a clean install, frontend rebuild, focused integration test and full StemLab suite before adoption.
 
 ### Repository checks try to access the network in a restricted environment
 

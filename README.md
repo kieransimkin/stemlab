@@ -19,7 +19,7 @@ independently useful and reproducible.
 See [docs/danceflow.md](docs/danceflow.md) for the component boundary.
 
 StemLab's browser workspace imports the reusable
-[`react-timeline-sequence`](https://github.com/kieransimkin/react-timeline-sequence)
+[`react-timeline-sequence`](https://www.npmjs.com/package/react-timeline-sequence)
 control for audio playback, the shared playhead, seeking, zoom and generic
 sequence lanes. StemLab retains the upload and analysis-specific adapters.
 

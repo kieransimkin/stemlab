@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import numpy as np
@@ -50,3 +51,19 @@ def test_frontend_assets_are_present():
     index = (web / "index.html").read_text(encoding="utf-8")
     assert "/assets/timeline.css" in index
     assert "/assets/canonical.js" not in index
+
+
+def test_timeline_control_comes_from_the_public_npm_package():
+    root = Path(__file__).parents[1]
+    package = json.loads((root / "package.json").read_text(encoding="utf-8"))
+    lock = json.loads((root / "package-lock.json").read_text(encoding="utf-8"))
+
+    requested = package["dependencies"]["react-timeline-sequence"]
+    installed = lock["packages"]["node_modules/react-timeline-sequence"]
+
+    assert requested == "^0.1.3"
+    assert installed["version"] == "0.1.3"
+    assert installed["resolved"].startswith(
+        "https://registry.npmjs.org/react-timeline-sequence/-/"
+    )
+    assert installed["integrity"].startswith("sha512-")

@@ -99,7 +99,9 @@ position, horizontal pan and zoom.
 
 The transport, shared playhead, ruler, pan/zoom behaviour and generic lane
 renderers come from the independent React package
-[`react-timeline-sequence`](https://github.com/kieransimkin/react-timeline-sequence).
+[`react-timeline-sequence`](https://www.npmjs.com/package/react-timeline-sequence),
+installed from the public npm registry. The lockfile records the exact package
+artifact and integrity hash used for reproducible builds.
 StemLab owns the upload, analysis API, live job events and conversion of its
 artifacts into package lane data. To rebuild the checked-in browser bundle,
 install the Node dependencies and run `npm run build:web` from the repository
