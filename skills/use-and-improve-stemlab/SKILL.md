@@ -75,6 +75,14 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 - **Verification:** on 28 September 2026, a clean `npm ci` resolved `react-timeline-sequence@0.1.3` from `registry.npmjs.org`, its installed package contained `dist/`, `npm run build:web` completed, the checked-in browser bundle was unchanged, and StemLab's full 44-test suite passed.
 - **Limit:** the lockfile verifies the selected registry artifact, but a future package upgrade still needs a clean install, frontend rebuild, focused integration test and full StemLab suite before adoption.
 
+### Linux CI rejects a Windows-refreshed lockfile as out of sync
+
+- **Symptom:** GitHub Actions on Ubuntu with npm 11.19.0 fails at `npm ci` with `EUSAGE`, says the manifest and lockfile are not in sync, and lists missing platform packages such as `@esbuild/linux-x64`, `@rollup/rollup-linux-x64-gnu` and `fsevents`, even though `npm ci` succeeds on the Windows development checkout.
+- **Cause:** npm can prune other operating systems' optional packages when a lockfile is refreshed while `node_modules` already exists. The npm CLI maintainers track this cross-platform failure in [npm/cli#4828](https://github.com/npm/cli/issues/4828) and [npm/cli#7961](https://github.com/npm/cli/issues/7961); both were checked on 28 September 2026 and match the observed esbuild/Rollup package omissions.
+- **Correction:** regenerate `package-lock.json` from `package.json` in a genuinely empty temporary directory with the verified project-wide npm 12 CLI, validate representative Windows, Linux and other-platform optional entries, then replace the repository lockfile. Do not regenerate it from the populated Windows `node_modules` tree.
+- **Verification:** npm 12.1.0 then completed a clean `npm ci`, Vite rebuilt the browser bundle without changing the checked-in assets, and all four focused web integration tests passed.
+- **Limit:** this corrects a cross-platform lockfile. It does not make every optional native package installable on every operating system; npm still selects the compatible artifact for the current runner.
+
 ### Repository checks try to access the network in a restricted environment
 
 - **Symptom:** `uv run` attempts to resolve build requirements from PyPI even though a populated project environment already exists.
