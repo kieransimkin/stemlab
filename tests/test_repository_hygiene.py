@@ -19,3 +19,18 @@ def test_clear_sonic_module_names():
     assert (root / "src/stemlab/sonic_visualiser.py").is_file()
     assert not (root / "src/stemlab/analysis/audio_features.py").exists()
     assert not (root / "src/stemlab/sonic.py").exists()
+
+
+def test_container_publication_is_release_only():
+    root = Path(__file__).resolve().parents[1]
+    ci = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    release = (root / ".github/workflows/release.yml").read_text(encoding="utf-8")
+
+    assert "docker/build-push-action" not in ci
+    assert "packages: write" not in ci
+
+    container_job = release.split("  container-publish:", maxsplit=1)[1]
+    assert "needs: github-release" in container_job
+    assert "if: startsWith(github.ref, 'refs/tags/v')" in container_job
+    assert "docker/build-push-action@v7" in container_job
+    assert "push: true" in container_job

@@ -83,6 +83,14 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 - **Verification:** npm 12.1.0 then completed a clean `npm ci`, Vite rebuilt the browser bundle without changing the checked-in assets, and all four focused web integration tests passed.
 - **Limit:** this corrects a cross-platform lockfile. It does not make every optional native package installable on every operating system; npm still selects the compatible artifact for the current runner.
 
+### A normal main-branch CI run starts publishing container images
+
+- **Symptom:** merging an ordinary pull request to `main` starts a `Build and publish container` job, logs in to GHCR and Docker Hub, and begins pushing `main`, `edge` and commit tags even though no release was created.
+- **Cause:** the container job lived in `ci.yml` with `if: github.event_name != 'pull_request'`, so every push and manual CI run was eligible and ordinary CI held `packages: write` permission.
+- **Correction:** remove all container steps and package-write permission from `ci.yml`. Keep the image job in `release.yml`, require a `v*` tag, and make it depend on the successful `github-release` job. This same-workflow dependency is deliberate: GitHub documents that most events created with `GITHUB_TOKEN` do not start another workflow, so a separate release-event workflow would be unreliable for the repository's automated release creation (<https://docs.github.com/en/enterprise-cloud@latest/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow>, checked 28 September 2026).
+- **Verification:** the unintended main run was cancelled while its image build/publish step was still running, before its publication summary. Both YAML files parsed successfully; the parsed CI jobs were only `web` and `test`; the parsed release jobs included `container-publish`; the release-only regression test passed; and StemLab's full 45-test suite plus Ruff passed. After merge, confirm the main CI run still contains only web and Python test jobs. A future tagged release must show the image job starting only after `Publish StemLab GitHub Release` succeeds.
+- **Limit:** the release job still publishes to GHCR and optionally Docker Hub. `workflow_dispatch` validates release artifacts but the tag guard prevents it from publishing packages or images.
+
 ### Repository checks try to access the network in a restricted environment
 
 - **Symptom:** `uv run` attempts to resolve build requirements from PyPI even though a populated project environment already exists.

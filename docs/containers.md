@@ -1,26 +1,29 @@
 # StemLab containers
 
-StemLab publishes a tested Linux AMD64 image after the Python CI matrix passes.
+StemLab publishes a tested Linux AMD64 image only after the release workflow
+has successfully created the corresponding GitHub Release.
 
 The image is the container form of **StemLab**, the audio-analysis component of
 the wider DanceFlow BPM and motion-response workflow.
 
 ## GitHub Container Registry
 
-Pushes to `main` publish:
+Ordinary branch pushes, pull requests, manual CI runs and tag CI runs do not
+build or publish container images. A successful versioned GitHub Release
+publishes:
 
 ```text
-ghcr.io/kieransimkin/stemlab:main
-ghcr.io/kieransimkin/stemlab:edge
+ghcr.io/kieransimkin/stemlab:v<version>
+ghcr.io/kieransimkin/stemlab:<version>
+ghcr.io/kieransimkin/stemlab:<major>.<minor>
+ghcr.io/kieransimkin/stemlab:latest
 ghcr.io/kieransimkin/stemlab:sha-<commit>
 ```
 
-Version tags additionally publish semantic-version aliases and `latest`.
-
 ## Docker Hub
 
-When `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are configured, CI publishes
-the same image to:
+When `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are configured, the release
+workflow publishes the same versioned aliases to:
 
 ```text
 <DOCKERHUB_USERNAME>/stemlab
