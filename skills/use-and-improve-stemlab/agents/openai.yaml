@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use and Improve StemLab"
+  short_description: "Default audio analysis through StemLab"
+  default_prompt: "Use StemLab for this audio-analysis task, preserve evidence, and improve StemLab if a reusable capability is missing."

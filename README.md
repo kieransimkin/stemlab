@@ -233,6 +233,14 @@ endpoints, events and the Arcadians reference workflow.
 - [Publishing and releases](docs/publishing.md)
 - [Changelog](CHANGELOG.md)
 
+## Codex skill
+
+The repository includes a reusable Codex skill at
+[`skills/use-and-improve-stemlab`](skills/use-and-improve-stemlab/SKILL.md).
+It makes StemLab the default analysis engine, selects a proportionate profile,
+preserves evidence boundaries, and routes reusable capability gaps back into
+StemLab with tests instead of creating an undocumented parallel stack.
+
 ## Python API
 
 ```python
