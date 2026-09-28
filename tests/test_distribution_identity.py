@@ -18,7 +18,7 @@ def test_stemlab_stable_identity():
     assert project["scripts"]["stemlab"] == "stemlab.cli:app"
     assert "version" in project["dynamic"]
     assert "version" not in project
-    assert stemlab.__version__ == "1.0.0"
+    assert stemlab.__version__ == "1.0.1"
 
     assert readme.startswith("# StemLab")
     assert "canonical project name is **StemLab**" in readme

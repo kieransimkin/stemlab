@@ -91,6 +91,14 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 - **Verification:** the unintended main run was cancelled while its image build/publish step was still running, before its publication summary. Both YAML files parsed successfully; the parsed CI jobs were only `web` and `test`; the parsed release jobs included `container-publish`; the release-only regression test passed; and StemLab's full 45-test suite plus Ruff passed. After merge, confirm the main CI run still contains only web and Python test jobs. A future tagged release must show the image job starting only after `Publish StemLab GitHub Release` succeeds.
 - **Limit:** the release job still publishes to GHCR and optionally Docker Hub. `workflow_dispatch` validates release artifacts but the tag guard prevents it from publishing packages or images.
 
+### The local release smoke test lacks wheel or Twine
+
+- **Symptom:** `python -m build --no-isolation` stops with `ERROR Unmet dependencies` and reports `wheel` as not installed, or the project environment reports `No module named twine` after a successful build.
+- **Cause:** StemLab's retained analysis virtual environment contains the test/build frontend but deliberately does not include every packaging utility. PyPA documents that `--no-isolation` requires callers to preinstall every declared build dependency (<https://build.pypa.io/en/stable/how-to/troubleshooting.html>, checked 28 September 2026).
+- **Correction:** use the default isolated `python -m build` in a version-specific ignored output directory. Verify the wheel and sdist filenames, distribution name, version metadata and bundled web assets locally. Treat Twine validation as unavailable locally unless a verified project-wide Twine installation exists; the release workflow installs Twine and must pass `twine check` before any publication job can start.
+- **Verification:** the isolated build installed `setuptools 84.0.0` and `wheel 0.48.0`, produced the `danceflow_stemlab-1.0.1` wheel and sdist, and the follow-up archive inspection confirmed version `1.0.1` plus the bundled timeline JavaScript and CSS.
+- **Limit:** direct archive inspection is not a substitute for `twine check`; do not tag the release unless the release workflow retains its Twine gate, and verify that gate before treating publication as successful.
+
 ### Repository checks try to access the network in a restricted environment
 
 - **Symptom:** `uv run` attempts to resolve build requirements from PyPI even though a populated project environment already exists.
