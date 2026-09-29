@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="940" viewBox="0 0 1600 940" role="img">
+<title>Harmony, melody and section-level song-map fusion</title>
+<desc>Documentation illustration, not a screenshot. Only explicitly marked Arcadians reference metadata is real; other patterns are schematic.</desc>
+<rect x="0.00" y="0.00" width="1600.00" height="940.00" rx="0" fill="#0b1020" opacity="1"/>
+<text x="38.00" y="43.00" fill="#7cff9d" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">STEMLAB / DANCEFLOW</text>
+<text x="38.00" y="89.00" fill="#e5ecff" font-size="29" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Harmony, melody and section-level song-map fusion</text>
+<text x="38.00" y="122.00" fill="#acbbda" font-size="17" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Generic schematic examples — these chords and note blocks are not measurements of Arcadians.</text>
+<rect x="38.00" y="144.00" width="1524.00" height="48.00" rx="9" fill="#392b18" opacity="1"/>
+<text x="54.00" y="174.00" fill="#ffe0a0" font-size="17" font-weight="normal" font-family="Arial, Helvetica, sans-serif">ILLUSTRATION ONLY — not the React component; no audio analysis or neural inference performed.</text>
+<text x="38.00" y="911.00" fill="#acbbda" font-size="16" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Kieran Simkin · Arcadians reference metadata where labelled · Other data is schematic, not measured.</text>
+<text x="303.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:00</text>
+<path d="M310.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="458.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:04</text>
+<path d="M465.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="613.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:08</text>
+<path d="M620.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="768.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:12</text>
+<path d="M775.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="923.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:16</text>
+<path d="M930.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="1078.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:20</text>
+<path d="M1085.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="1233.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:24</text>
+<path d="M1240.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="1388.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:28</text>
+<path d="M1395.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="1543.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:32</text>
+<path d="M1550.00,237 V670" stroke="#273652" stroke-width="1"/>
+<rect x="38.00" y="254.00" width="250.00" height="74.00" rx="9" fill="#17213b" opacity="1"/>
+<text x="52.00" y="282.00" fill="#e5ecff" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">CHORDS</text>
+<text x="52.00" y="303.00" fill="#acbbda" font-size="13" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Illustrative progression</text>
+<rect x="310.00" y="264.00" width="153.00" height="52.00" rx="5" fill="#8fc7ff" opacity="1"/>
+<text x="317.00" y="293.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Am</text>
+<rect x="465.00" y="264.00" width="153.00" height="52.00" rx="5" fill="#7cff9d" opacity="1"/>
+<text x="472.00" y="293.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">F</text>
+<rect x="620.00" y="264.00" width="153.00" height="52.00" rx="5" fill="#f8c14d" opacity="1"/>
+<text x="627.00" y="293.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">C</text>
+<rect x="775.00" y="264.00" width="153.00" height="52.00" rx="5" fill="#ff9bbb" opacity="1"/>
+<text x="782.00" y="293.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">G</text>
+<rect x="930.00" y="264.00" width="153.00" height="52.00" rx="5" fill="#bba4ff" opacity="1"/>
+<text x="937.00" y="293.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Am</text>
+<rect x="1085.00" y="264.00" width="153.00" height="52.00" rx="5" fill="#8fc7ff" opacity="1"/>
+<text x="1092.00" y="293.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">F</text>
+<rect x="1240.00" y="264.00" width="153.00" height="52.00" rx="5" fill="#7cff9d" opacity="1"/>
+<text x="1247.00" y="293.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">C</text>
+<rect x="1395.00" y="264.00" width="153.00" height="52.00" rx="5" fill="#f8c14d" opacity="1"/>
+<text x="1402.00" y="293.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">G</text>
+<rect x="38.00" y="350.00" width="250.00" height="74.00" rx="9" fill="#17213b" opacity="1"/>
+<text x="52.00" y="378.00" fill="#e5ecff" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">MELODY / NOTES</text>
+<text x="52.00" y="399.00" fill="#acbbda" font-size="13" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Schematic note blocks</text>
+<rect x="310.00" y="344.00" width="1240.00" height="96.00" rx="9" fill="#101a2c" opacity="1"/>
+<rect x="322.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="362.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="402.00" y="376.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="442.00" y="366.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="482.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="522.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="562.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="602.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="642.00" y="376.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="682.00" y="366.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="722.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="762.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="802.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="842.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="882.00" y="376.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="922.00" y="366.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="962.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1002.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1042.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1082.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1122.00" y="376.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1162.00" y="366.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1202.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1242.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1282.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1322.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1362.00" y="376.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1402.00" y="366.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1442.00" y="386.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="1482.00" y="396.00" width="30.00" height="8.00" rx="3" fill="#7cff9d" opacity="1"/>
+<rect x="38.00" y="468.00" width="250.00" height="74.00" rx="9" fill="#17213b" opacity="1"/>
+<text x="52.00" y="496.00" fill="#e5ecff" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">SONG MAP</text>
+<text x="52.00" y="517.00" fill="#acbbda" font-size="13" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Section aggregation concept</text>
+<rect x="310.00" y="480.00" width="308.00" height="52.00" rx="5" fill="#8fc7ff" opacity="1"/>
+<text x="317.00" y="509.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Intro · example</text>
+<rect x="620.00" y="480.00" width="463.00" height="52.00" rx="5" fill="#7cff9d" opacity="1"/>
+<text x="627.00" y="509.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Verse · example</text>
+<rect x="1085.00" y="480.00" width="463.00" height="52.00" rx="5" fill="#f8c14d" opacity="1"/>
+<text x="1092.00" y="509.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Chorus · example</text>
+<rect x="38.00" y="592.00" width="490.00" height="257.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="38.00" y="592.00" width="490.00" height="5.00" rx="2" fill="#bba4ff" opacity="1"/>
+<text x="55.00" y="626.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Harmony</text>
+<text x="55.00" y="654.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Vamp chord, chroma, bass-chroma, tuning and key</text>
+<text x="55.00" y="675.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">evidence.</text>
+<text x="55.00" y="702.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">See vamp/data/ and deep/harmony/.</text>
+<rect x="547.00" y="592.00" width="490.00" height="257.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="547.00" y="592.00" width="490.00" height="5.00" rx="2" fill="#7cff9d" opacity="1"/>
+<text x="564.00" y="626.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Melody and transcription</text>
+<text x="564.00" y="654.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">pYIN F0 / monophonic notes and Silvet polyphonic</text>
+<text x="564.00" y="675.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">notes.</text>
+<text x="564.00" y="702.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Basic Pitch is an optional stem MIDI/note route.</text>
+<rect x="1056.00" y="592.00" width="494.00" height="257.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="1056.00" y="592.00" width="494.00" height="5.00" rx="2" fill="#f8c14d" opacity="1"/>
+<text x="1073.00" y="626.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Song map</text>
+<text x="1073.00" y="654.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Section summaries combine available sonic, rhythm,</text>
+<text x="1073.00" y="675.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">chord and lyric evidence.</text>
+<text x="1073.00" y="702.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">deep/song_map/song_map.json</text>
+</svg>

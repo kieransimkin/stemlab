@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="940" viewBox="0 0 1600 940" role="img">
+<title>Arcadians: canonical lyric timing and transcript comparison</title>
+<desc>Documentation illustration, not a screenshot. Only explicitly marked Arcadians reference metadata is real; other patterns are schematic.</desc>
+<rect x="0.00" y="0.00" width="1600.00" height="940.00" rx="0" fill="#0b1020" opacity="1"/>
+<text x="38.00" y="43.00" fill="#7cff9d" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">STEMLAB / DANCEFLOW</text>
+<text x="38.00" y="89.00" fill="#e5ecff" font-size="29" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Arcadians: canonical lyric timing and transcript comparison</text>
+<text x="38.00" y="122.00" fill="#acbbda" font-size="17" font-weight="normal" font-family="Arial, Helvetica, sans-serif">The lyric text and line times below are real reference metadata; no Whisper transcript has been inferred.</text>
+<rect x="38.00" y="144.00" width="1524.00" height="48.00" rx="9" fill="#392b18" opacity="1"/>
+<text x="54.00" y="174.00" fill="#ffe0a0" font-size="17" font-weight="normal" font-family="Arial, Helvetica, sans-serif">ILLUSTRATION ONLY — not the React component; no audio analysis or neural inference performed.</text>
+<text x="38.00" y="911.00" fill="#acbbda" font-size="16" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Kieran Simkin · Arcadians reference metadata where labelled · Other data is schematic, not measured.</text>
+<text x="303.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:00</text>
+<path d="M310.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="458.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:09</text>
+<path d="M465.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="613.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:18</text>
+<path d="M620.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="768.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:27</text>
+<path d="M775.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="923.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:36</text>
+<path d="M930.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="1078.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:45</text>
+<path d="M1085.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="1233.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">00:54</text>
+<path d="M1240.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="1388.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">01:02</text>
+<path d="M1395.00,237 V670" stroke="#273652" stroke-width="1"/>
+<text x="1543.00" y="227.00" fill="#acbbda" font-size="14" font-weight="normal" font-family="Arial, Helvetica, sans-serif">01:11</text>
+<path d="M1550.00,237 V670" stroke="#273652" stroke-width="1"/>
+<rect x="38.00" y="258.00" width="250.00" height="74.00" rx="9" fill="#17213b" opacity="1"/>
+<text x="52.00" y="286.00" fill="#e5ecff" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">CANONICAL LYRICS</text>
+<text x="52.00" y="307.00" fill="#acbbda" font-size="13" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Artist-supplied line timings</text>
+<rect x="344.96" y="268.00" width="83.14" height="52.00" rx="5" fill="#8fc7ff" opacity="1"/>
+<text x="351.96" y="297.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">No crow…</text>
+<rect x="430.98" y="268.00" width="109.54" height="52.00" rx="5" fill="#7cff9d" opacity="1"/>
+<text x="437.98" y="297.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Just mount…</text>
+<rect x="544.26" y="268.00" width="129.64" height="52.00" rx="5" fill="#f8c14d" opacity="1"/>
+<text x="551.26" y="297.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Arcadia...</text>
+<rect x="676.07" y="268.00" width="146.07" height="52.00" rx="5" fill="#ff9bbb" opacity="1"/>
+<text x="683.07" y="297.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Where the gree…</text>
+<rect x="1298.96" y="268.00" width="56.74" height="52.00" rx="5" fill="#bba4ff" opacity="1"/>
+<text x="1305.96" y="297.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Pan …</text>
+<rect x="1357.70" y="268.00" width="51.49" height="52.00" rx="5" fill="#8fc7ff" opacity="1"/>
+<text x="1364.70" y="297.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Wil…</text>
+<rect x="1411.19" y="268.00" width="54.29" height="52.00" rx="5" fill="#7cff9d" opacity="1"/>
+<text x="1418.19" y="297.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Old…</text>
+<rect x="1467.48" y="268.00" width="63.03" height="52.00" rx="5" fill="#f8c14d" opacity="1"/>
+<text x="1474.48" y="297.00" fill="#101a2c" font-size="14" font-weight="bold" font-family="Arial, Helvetica, sans-serif">One …</text>
+<rect x="1532.52" y="268.00" width="15.48" height="52.00" rx="5" fill="#ff9bbb" opacity="1"/>
+<rect x="38.00" y="350.00" width="250.00" height="74.00" rx="9" fill="#17213b" opacity="1"/>
+<text x="52.00" y="378.00" fill="#e5ecff" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">WHISPER WORDS</text>
+<text x="52.00" y="399.00" fill="#acbbda" font-size="13" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Not generated for this gallery</text>
+<rect x="310.00" y="350.00" width="1240.00" height="74.00" rx="9" fill="#17213b" opacity="1"/>
+<text x="331.00" y="390.00" fill="#acbbda" font-size="17" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Run the speech route to populate the actual word-aligned transcript; reference lines are not word estimates.</text>
+<rect x="38.00" y="442.00" width="250.00" height="74.00" rx="9" fill="#17213b" opacity="1"/>
+<text x="52.00" y="470.00" fill="#e5ecff" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">VOCAL ACTIVITY</text>
+<text x="52.00" y="491.00" fill="#acbbda" font-size="13" font-weight="normal" font-family="Arial, Helvetica, sans-serif">No activity detector run</text>
+<rect x="310.00" y="442.00" width="1240.00" height="74.00" rx="9" fill="#17213b" opacity="1"/>
+<text x="331.00" y="482.00" fill="#acbbda" font-size="17" font-weight="normal" font-family="Arial, Helvetica, sans-serif">No vocal-clear windows claimed. Missing speech detection does not prove the absence of singing.</text>
+<rect x="38.00" y="553.00" width="740.00" height="302.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="38.00" y="553.00" width="740.00" height="5.00" rx="2" fill="#7cff9d" opacity="1"/>
+<text x="55.00" y="587.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Reference excerpt</text>
+<text x="55.00" y="615.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">No crown, no concrete</text>
+<text x="55.00" y="642.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Just mountain breath and moonlit stone</text>
+<text x="55.00" y="669.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Arcadia...</text>
+<text x="55.00" y="696.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Where the green stays gold</text>
+<text x="55.00" y="723.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Pan in the pines, river in the light</text>
+<rect x="804.00" y="553.00" width="746.00" height="302.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="804.00" y="553.00" width="746.00" height="5.00" rx="2" fill="#8fc7ff" opacity="1"/>
+<text x="821.00" y="587.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Analysis and outputs</text>
+<text x="821.00" y="615.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">speech/whisper.json — actual words, segments and diagnostics</text>
+<text x="821.00" y="642.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">speech/transcript.srt and words.tsv — exported timings</text>
+<text x="821.00" y="669.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">deep/lyrics/lyrics.json — rhyme, repetition and delivery metrics</text>
+<text x="821.00" y="696.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Canonical references and inferred timings should remain distinguishable.</text>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="940" viewBox="0 0 1600 940" role="img">
+<title>Sonic profile, rhythm regimes and optional semantics</title>
+<desc>Documentation illustration, not a screenshot. Only explicitly marked Arcadians reference metadata is real; other patterns are schematic.</desc>
+<rect x="0.00" y="0.00" width="1600.00" height="940.00" rx="0" fill="#0b1020" opacity="1"/>
+<text x="38.00" y="43.00" fill="#7cff9d" font-size="17" font-weight="bold" font-family="Arial, Helvetica, sans-serif">STEMLAB / DANCEFLOW</text>
+<text x="38.00" y="89.00" fill="#e5ecff" font-size="29" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Sonic profile, rhythm regimes and optional semantics</text>
+<text x="38.00" y="122.00" fill="#acbbda" font-size="17" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Analysis categories only — no loudness, tempo drift, similarity or stereo measurements are claimed here.</text>
+<rect x="38.00" y="144.00" width="1524.00" height="48.00" rx="9" fill="#392b18" opacity="1"/>
+<text x="54.00" y="174.00" fill="#ffe0a0" font-size="17" font-weight="normal" font-family="Arial, Helvetica, sans-serif">ILLUSTRATION ONLY — not the React component; no audio analysis or neural inference performed.</text>
+<text x="38.00" y="911.00" fill="#acbbda" font-size="16" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Kieran Simkin · Arcadians reference metadata where labelled · Other data is schematic, not measured.</text>
+<rect x="38.00" y="234.00" width="490.00" height="257.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="38.00" y="234.00" width="490.00" height="5.00" rx="2" fill="#8fc7ff" opacity="1"/>
+<text x="55.00" y="268.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Loudness and dynamics</text>
+<text x="55.00" y="296.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Integrated loudness, sample and oversampled peak</text>
+<text x="55.00" y="317.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">estimates, crest factor and short-term range.</text>
+<text x="55.00" y="344.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">deep/sonic/sonic.json</text>
+<rect x="547.00" y="234.00" width="490.00" height="257.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="547.00" y="234.00" width="490.00" height="5.00" rx="2" fill="#7cff9d" opacity="1"/>
+<text x="564.00" y="268.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Timbre and stereo</text>
+<text x="564.00" y="296.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Centroid, bandwidth, rolloff, flatness and contrast.</text>
+<text x="564.00" y="323.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Channel correlation and width evidence; inspect the</text>
+<text x="564.00" y="344.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">actual outputs before interpreting.</text>
+<rect x="1056.00" y="234.00" width="494.00" height="257.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="1056.00" y="234.00" width="494.00" height="5.00" rx="2" fill="#f8c14d" opacity="1"/>
+<text x="1073.00" y="268.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Rhythm and tempo regimes</text>
+<text x="1073.00" y="296.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Meter, tempo stability, onset density, swing and</text>
+<text x="1073.00" y="317.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">syncopation proxies.</text>
+<text x="1073.00" y="344.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Tempo-regime results are embedded in</text>
+<text x="1073.00" y="365.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">deep/rhythm/rhythm.json.</text>
+<rect x="38.00" y="541.00" width="490.00" height="307.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="38.00" y="541.00" width="490.00" height="5.00" rx="2" fill="#bba4ff" opacity="1"/>
+<text x="55.00" y="575.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Lyric semantics</text>
+<text x="55.00" y="603.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Text embedding theme similarities, continuity and</text>
+<text x="55.00" y="624.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">clusters.</text>
+<text x="55.00" y="651.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">deep/semantic_text/semantic_text.json</text>
+<text x="55.00" y="678.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Similarity is not probability.</text>
+<rect x="547.00" y="541.00" width="490.00" height="307.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="547.00" y="541.00" width="490.00" height="5.00" rx="2" fill="#ff9bbb" opacity="1"/>
+<text x="564.00" y="575.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Optional audio semantics</text>
+<text x="564.00" y="603.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">MuQ-MuLan audio/text similarity; explicit opt-in.</text>
+<text x="564.00" y="630.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">deep/semantic_audio/semantic_audio.json</text>
+<text x="564.00" y="657.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Check model licence restrictions before use.</text>
+<rect x="1056.00" y="541.00" width="494.00" height="307.00" rx="9" fill="#17213b" opacity="1"/>
+<rect x="1056.00" y="541.00" width="494.00" height="5.00" rx="2" fill="#8fc7ff" opacity="1"/>
+<text x="1073.00" y="575.00" fill="#e5ecff" font-size="19" font-weight="bold" font-family="Arial, Helvetica, sans-serif">Inspection and provenance</text>
+<text x="1073.00" y="603.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Read deep/summary.json for available actions and</text>
+<text x="1073.00" y="624.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">errors.</text>
+<text x="1073.00" y="651.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">Use --audio-semantics or --basic-pitch only when those</text>
+<text x="1073.00" y="672.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">optional routes are intended.</text>
+<text x="1073.00" y="699.00" fill="#acbbda" font-size="15" font-weight="normal" font-family="Arial, Helvetica, sans-serif">No semantic model was run to create this illustration.</text>
+</svg>
