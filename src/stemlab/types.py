@@ -70,3 +70,5 @@ class PipelineConfig:
     run_audio_semantics: bool = False
     audio_semantic_model: str = "OpenMuQ/MuQ-MuLan-large"
     run_basic_pitch: bool = False
+    run_loops: bool = True
+    export_loops: bool = False

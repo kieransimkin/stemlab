@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createRoot } from "react-dom/client";
 import { TimelineSequence, formatTimelineTime } from "react-timeline-sequence";
 import "react-timeline-sequence/styles.css";
+import { LoopSummary, useAnalysisLoops } from "./loops";
 
 const $ = selector => document.querySelector(selector);
 const uploadView = $("#uploadView");
@@ -133,7 +134,7 @@ async function laneFromFile(hash, file) {
   const path = file.path;
   const id = `file:${path}`;
   const extension = fileExt(path);
-  if (path === "canonical.json") return null;
+  if (path === "canonical.json" || path.startsWith("deep/loops/")) return null;
 
   if (AUDIO_EXTENSIONS.has(extension)) return waveformLane(hash, id, prettyPath(path), "audio waveform", path);
   if (path.startsWith("spectrograms/") && extension === "npz") {
@@ -239,6 +240,7 @@ function Log({ lines }) {
 }
 
 function StemLabTimeline({ hash, filename }) {
+  const loopState = useAnalysisLoops(hash);
   const [lanes, setLanes] = useState([]);
   const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState({ state: "submitted" });
@@ -319,20 +321,25 @@ function StemLabTimeline({ hash, filename }) {
   }, [addFile, appendLog, filename, hash, refresh]);
 
   const references = useMemo(() => canonicalLayers(canonical, anchor, anchorSource, duration), [anchor, anchorSource, canonical, duration]);
-  const allLanes = [...references.lanes, ...lanes];
+  // File discovery is asynchronous. Keep the musical evidence above raw artifacts.
+  const lanePriority = lane => lane.id === "__source__" ? 0
+    : lane.kind === "deep-structure" ? 10 : lane.kind === "events" ? 20
+    : lane.kind === "spectrogram" ? 30 : lane.kind === "waveform" ? 40 : 90;
+  const allLanes = [...references.lanes, ...[...lanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
   const state = status.state || "submitted";
   return <TimelineSequence
     className="stemlab-timeline"
     audioSrc={`/api/${hash}/source`}
     duration={duration}
-    title={filename}
+    title={canonical.title || filename}
     subtitle={hash}
+    loops={loopState.loops}
     lanes={allLanes}
     grid={references.grid}
     onDurationChange={setDuration}
     onPlaybackError={error => appendLog("stderr", error instanceof Error ? error.message : String(error))}
     headerEnd={<><span className={`badge ${state}`}>{state}</span><span className="small">{allLanes.length} lane{allLanes.length === 1 ? "" : "s"}</span></>}
-    footer={<><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
+    footer={<><LoopSummary state={loopState} hash={hash} /><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
   />;
 }
 
@@ -381,7 +388,7 @@ function uploadFile(file) {
 async function openTimeline(hash, filename) {
   uploadView.classList.add("hidden");
   timelineView.classList.remove("hidden");
-  root.render(<StemLabTimeline hash={hash} filename={filename || "uploaded audio"} />);
+  root.render(<StemLabTimeline key={hash} hash={hash} filename={filename || "uploaded audio"} />);
 }
 
 async function startUpload(file) {

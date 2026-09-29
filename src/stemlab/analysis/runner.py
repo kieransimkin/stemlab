@@ -14,6 +14,7 @@ from .harmony import analyze_harmony
 from .lyrics import analyze_lyrics, transcript_to_lyrics
 from .rhythm import analyze_rhythm
 from .song_map import analyze_song_map
+from .loops import analyze_loops
 
 ProgressFn = Callable[[str], None]
 
@@ -54,6 +55,9 @@ def run_comprehensive_analysis(
     run_audio_semantics: bool = False,
     audio_semantic_model: str = "OpenMuQ/MuQ-MuLan-large",
     run_basic_pitch: bool = False,
+    run_loops: bool = True,
+    export_loops: bool = False,
+    normalization_gains: dict[str, float] | None = None,
     device: str = "auto",
 ) -> dict[str, Any]:
     """Run the high-level evidence-fusion analysis suite.
@@ -117,7 +121,7 @@ def run_comprehensive_analysis(
                 )
             run("semantic_text", semantic_text)
 
-    run(
+    song_map_result = run(
         "song_map",
         lambda: analyze_song_map(
             root / "song_map",
@@ -132,6 +136,15 @@ def run_comprehensive_analysis(
             deep_root=root,
         ),
     )
+
+    if run_loops:
+        run("loops", lambda: analyze_loops(
+            master, root / "loops", song_map=song_map_result,
+            beat_results=beat_results, stems=stems,
+            whisper_result=whisper_result, lyrics_result=lyrics_result,
+            canonical=canonical, normalization_gains=normalization_gains,
+            export_audio=export_loops,
+        ))
 
     if run_audio_semantics:
         def semantic_audio():
@@ -173,6 +186,7 @@ def run_comprehensive_analysis(
                     "basic_pitch": "deep/basic_pitch/report.json",
                     "structure": "deep/structure/structure.json",
                     "song_map": "deep/song_map/song_map.json",
+                    "loops": "deep/loops/loops.json",
                 }.get(key),
             }
             for key, value in analyses.items()

@@ -21,6 +21,14 @@ class AnalysisAction:
 
 ACTIONS: tuple[AnalysisAction, ...] = (
     AnalysisAction(
+        "loops", "structural/rhythmic", "Vocal-clear complete-bar loops", True,
+        "numpy + soundfile + existing structure/beat/vocal evidence",
+        "deep/loops/loops.json",
+        "Attempts a loop for every verse/chorus occurrence; checks meter, grid continuity, "
+        "vocal-clear guard windows and multichannel seam continuity. Native sample bounds; "
+        "WAV exports are opt-in with --export-loops.",
+    ),
+    AnalysisAction(
         "sonic",
         "sonic",
         "Loudness, dynamics, timbre and stereo",

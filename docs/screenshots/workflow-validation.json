@@ -1,0 +1,17 @@
+{
+  "fixture": "synthetic audio and supplied beat/section annotations; no learned models",
+  "loop_count": 2,
+  "unresolved_sections": 1,
+  "checks": [
+    "no autoplay",
+    "region selection",
+    "enable and play",
+    "native repeat wrap",
+    "switch while playing",
+    "pause freezes clock",
+    "paused seek",
+    "full-song restore"
+  ],
+  "page_errors": [],
+  "capture_mode": "Real Chromium rendering in an in-memory DOM; fetches bridged to the real local FastAPI fixture because browser HTTP navigation is restricted in the build environment."
+}

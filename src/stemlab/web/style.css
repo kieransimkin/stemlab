@@ -279,3 +279,13 @@ main { min-height: 0; }
   .showcase-actions { align-items: stretch; }
   .showcase-actions > * { flex: 1 1 100%; justify-content: center; text-align: center; }
 }
+
+/* Loop evidence summary in the existing timeline workspace. */
+.stemlab-loop-summary { color: #abb8ce; font-size: 12px; line-height: 1.45; margin: 3px 0 7px; }
+.stemlab-loop-summary summary { cursor: pointer; }
+.stemlab-loop-summary a { color: #79c0ff; }
+.stemlab-loop-summary p { margin: 5px 0; }
+
+.stemlab-timeline .rts-footer { align-items: start; max-height: 220px; }
+.stemlab-timeline .rts-footer > div:first-child { overflow: auto; max-height: 198px; }
+.stemlab-timeline .stemlab-log .log { height: 60px; }

@@ -48,6 +48,8 @@ def _error_record(stage: str, exc: Exception) -> dict:
 
 
 def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> dict:
+    if config.export_loops and (not config.run_loops or not config.run_deep_analysis):
+        raise ValueError("Loop export requires loop discovery and deep analysis")
     progress = progress or (lambda _msg: None)
     src = config.input_wav.expanduser().resolve()
     if not src.is_file():
@@ -353,6 +355,12 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 run_audio_semantics=config.run_audio_semantics,
                 audio_semantic_model=config.audio_semantic_model,
                 run_basic_pitch=config.run_basic_pitch,
+                run_loops=config.run_loops,
+                export_loops=config.export_loops,
+                normalization_gains={
+                    str(out / item["path"]): float(item.get("gain_db", 0.0))
+                    for model in analysis["models"] for item in model.get("normalization", [])
+                },
                 device=config.device,
             )
             analysis["deep_analysis"] = {

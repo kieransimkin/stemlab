@@ -346,6 +346,23 @@ def install_routes(
             "path": f"/{song_hash}/canonical.json",
         }
 
+    @app.get("/api/{song_hash}/loops/{loop_id}/audio")
+    async def loop_preview(song_hash: str, loop_id: str):
+        from .analysis.loops import preview_loop
+
+        try:
+            song_hash = _normalise_hash(song_hash)
+            root = (results_dir_provider() / song_hash).resolve()
+            data, filename = await asyncio.to_thread(preview_loop, root, loop_id)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except (ValueError, KeyError, OSError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return Response(data, media_type="audio/wav", headers={
+            "Cache-Control": "no-cache",
+            "Content-Disposition": f'inline; filename="{filename}"',
+        })
+
     @app.get("/api/{song_hash}/source")
     async def source_audio(song_hash: str):
         try:

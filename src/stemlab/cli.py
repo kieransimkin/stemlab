@@ -45,6 +45,8 @@ def analyze(
     no_beats: Annotated[bool, typer.Option("--no-beats")] = False,
     no_vamp: Annotated[bool, typer.Option("--no-vamp", help="Skip Vamp Plugin Pack melody/harmony analysis")] = False,
     no_deep_analysis: Annotated[bool, typer.Option("--no-deep-analysis", help="Skip derived sonic/harmonic/rhythmic/lyrical analysis")] = False,
+    no_loops: Annotated[bool, typer.Option("--no-loops", help="Skip verse/chorus loop discovery")] = False,
+    export_loops: Annotated[bool, typer.Option("--export-loops", help="Write accepted native-rate loops as WAVs")] = False,
     no_structure: Annotated[bool, typer.Option("--no-structure", help="Skip All-In-One functional section analysis")] = False,
     no_text_semantics: Annotated[bool, typer.Option("--no-text-semantics", help="Skip sentence-embedding analysis of lyrics/transcript")] = False,
     audio_semantics: Annotated[bool, typer.Option("--audio-semantics", help="Enable MuQ-MuLan zero-shot music/text similarity (CC-BY-NC model weights)")] = False,
@@ -55,6 +57,8 @@ def analyze(
     beat_transformer_single_fold: Annotated[bool, typer.Option("--beat-transformer-single-fold", help="Use one released fold instead of all eight")]=False,
 ):
     """Run separation plus sonic, speech, structure, harmony, rhythm and semantic analysis."""
+    if export_loops and (no_loops or no_deep_analysis):
+        raise typer.BadParameter("--export-loops cannot be combined with --no-loops or --no-deep-analysis")
     models = tuple(model) if model else resolve_profile(profile)
     invalid = [m for m in models if m not in MODEL_REGISTRY]
     if invalid:
@@ -81,6 +85,8 @@ def analyze(
         run_audio_semantics=audio_semantics,
         audio_semantic_model=audio_semantic_model,
         run_basic_pitch=basic_pitch,
+        run_loops=not no_loops,
+        export_loops=export_loops,
     )
     console.print(f"[bold]StemLab[/bold] device={device_string(device)} models={', '.join(models)}")
     result = run_pipeline(cfg, progress=lambda m: console.print(f"[cyan]→[/cyan] {m}"))
@@ -92,6 +98,25 @@ def analyze(
         console.print("See analysis.json and deep/summary.json for backend diagnostics.")
         if strict:
             raise typer.Exit(1)
+
+
+@app.command("loops")
+def find_loops(
+    results: Annotated[Path, typer.Argument(exists=True, file_okay=False, help="Existing analysis result directory")],
+    export_loops: Annotated[bool, typer.Option("--export-loops", help="Also write accepted loops as WAVs")] = False,
+    max_bars: Annotated[int, typer.Option("--max-bars", min=1, max=64)] = 16,
+    per_section: Annotated[int, typer.Option("--per-section", min=1, max=8)] = 1,
+):
+    """Find loops in saved evidence without rerunning separation or models."""
+    from .analysis.loops import LoopConfig, analyze_existing_loops
+
+    try:
+        report = analyze_existing_loops(results, export_audio=export_loops,
+            config=LoopConfig(max_bars=max_bars, loops_per_section=per_section))
+    except (ValueError, KeyError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"{report['loop_count']} loop(s); {len(report['unresolved_sections'])} unresolved section(s).")
+    console.print(str(results / "deep/loops/loops.json"))
 
 
 @app.command("models")

@@ -102,6 +102,35 @@ The derived artifacts live under `deep/` (`sonic/`, `rhythm/`, `harmony/`, `stru
 `lyrics/`, `semantic_text/`, optional `semantic_audio/` and `basic_pitch/`, plus
 `song_map/song_map.json` and `summary.json`).
 
+## Loop discovery and playback (unreleased patch)
+
+StemLab now attempts at least one complete-bar loop for every identified verse
+and chorus occurrence. It checks the beat grid, vocal-clear cut neighborhoods
+and every audio channel's waveform seam. Unsafe or unsupported sections are
+reported rather than forced. Start/end sample frames, quality diagnostics and
+provenance are written to `deep/loops/loops.json` and `loops.tsv` by default.
+
+```bash
+# New analysis: loop metadata is included in the default deep pass.
+stemlab analyze master.wav -o analysis-master --profile practical
+
+# Also save exact native-rate WAV slices.
+stemlab analyze master.wav -o analysis-master --profile practical --export-loops
+
+# Reuse existing separation, structure and beat results; no models rerun.
+stemlab loops analysis-master --export-loops
+```
+
+In the existing analysis frontend, choose a highlighted loop region or the Loop
+selector, tick **Enable loop**, then press **Play**. The same playhead, seeking,
+zoom and spectrogram timeline remain in use. Previewing a loop does not require
+exported WAVs and writes no files. **Zoom to loop** focuses the shared timeline.
+
+See [the complete loop workflow](docs/loops.md) for installation of both patches,
+sample indexing, thresholds, limitations and reproducible screenshot examples.
+
+![Loop selection and playback in the existing analysis frontend](docs/screenshots/loops-playing.png)
+
 ## Install
 
 Python 3.10 or 3.11 is recommended because the legacy BeatNet/madmom ecosystem is less predictable on newer Python versions.

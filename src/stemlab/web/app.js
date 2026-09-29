@@ -12152,501 +12152,986 @@ function Fh(r, E) {
     });
   return M;
 }
-function Wh({
-  audioSrc: r,
-  lanes: E,
-  title: d = "Audio timeline",
-  subtitle: s,
-  duration: M = 0,
-  grid: _ = [],
-  headerEnd: D,
-  footer: x,
-  className: Q = "",
-  labelWidth: L = 230,
-  initialZoom: j = 20,
-  followPlayheadByDefault: T = !0,
-  preload: Z = "metadata",
-  crossOrigin: Et,
-  onDurationChange: Dt,
-  onTimeChange: Xt,
-  onWindowChange: ft,
-  onPlaybackError: Mt
-}) {
-  const bt = ut.useRef(null), xt = ut.useRef(null), Qt = ut.useRef(null), [vt, Lt] = ut.useState(Math.max(0, M)), [V, B] = ut.useState(0), [$, _t] = ut.useState(!1), [Vt, nl] = ut.useState(T), [Ql, sa] = ut.useState(j), [Rt, R] = ut.useState(0), [K, J] = ut.useState({ start: 0, end: 0 });
-  ut.useEffect(() => {
-    M > 0 && Lt(M);
-  }, [M]), ut.useEffect(() => {
-    const O = xt.current;
-    if (!O) return;
-    const U = () => R(O.clientWidth);
-    U();
-    const jt = new ResizeObserver(U);
-    return jt.observe(O), () => jt.disconnect();
-  }, []);
-  const mt = vt > 0 ? Math.max(0.4, Math.max(320, Rt - L - 16) / vt) : 0.4, W = Math.max(mt, mt * Math.pow(2, Ql / 18)), Sl = Math.max(1, vt * W), Ll = ut.useMemo(() => Fh(vt, W), [vt, W]), Cl = ut.useCallback(() => {
-    const O = xt.current;
-    if (!O) return;
-    const U = Vh(O.scrollLeft, O.clientWidth, L, W, vt);
-    J(U), ft?.(U);
-  }, [vt, L, ft, W]);
-  ut.useEffect(() => {
-    Cl();
-  }, [Cl, Rt]);
-  const m = ut.useCallback((O) => {
-    B(O), Xt?.(O);
-    const U = xt.current;
-    if (!U || !Vt || bt.current?.paused) return;
-    const jt = L + O * W, Ul = U.scrollLeft + U.clientWidth, il = Math.min(180, U.clientWidth * 0.2);
-    jt > Ul - il && (U.scrollLeft = Math.max(0, jt - U.clientWidth + il));
-  }, [Vt, L, Xt, W]), A = ut.useCallback(() => {
-    Qt.current !== null && cancelAnimationFrame(Qt.current), Qt.current = null;
-  }, []), Y = ut.useCallback(() => {
-    A();
-    const O = () => {
-      const U = bt.current;
-      U && (m(Number(U.currentTime) || 0), !U.paused && !U.ended && (Qt.current = requestAnimationFrame(O)));
-    };
-    Qt.current = requestAnimationFrame(O);
-  }, [m, A]);
-  ut.useEffect(() => A, [A]);
-  const G = async () => {
-    const O = bt.current;
-    if (!(!O || vt <= 0))
-      try {
-        O.paused ? await O.play() : O.pause();
-      } catch (U) {
-        Mt?.(U);
-      }
-  }, nt = (O) => {
-    if (vt <= 0 || O.target.closest(".rts-label, a, button, input")) return;
-    const U = xt.current, jt = bt.current;
-    if (!U || !jt) return;
-    const Ul = U.getBoundingClientRect(), il = O.clientX - Ul.left + U.scrollLeft - L;
-    if (il < 0) return;
-    const cl = yn(il / W, 0, vt);
-    jt.currentTime = cl, m(cl);
-  }, it = (O) => {
-    const U = xt.current, jt = U ? Math.max(0, (U.scrollLeft + U.clientWidth / 2 - L) / W) : 0;
-    sa(O), requestAnimationFrame(() => {
-      const Ul = xt.current;
-      if (!Ul) return;
-      const il = vt > 0 ? Math.max(0.4, Math.max(320, Ul.clientWidth - L - 16) / vt) : 0.4, cl = Math.max(il, il * Math.pow(2, O / 18));
-      Ul.scrollLeft = Math.max(0, L + jt * cl - Ul.clientWidth / 2), Cl();
+
+const React=ut;
+const {useCallback,useEffect,useMemo,useRef,useState}=ut;
+const _jsx=C.jsx, _jsxs=C.jsxs, _Fragment=C.Fragment;
+const createRoot=Lh.createRoot;
+const LaneContent=$h;
+const chooseRulerStep=Zh, clamp=yn, formatTimelineTime=le, visibleTimelineWindow=Vh;
+
+// LoopAudio.ts
+/** Versioned capability check for adapters consuming a locally patched package. */
+const TIMELINE_LOOP_API_VERSION = 1;
+function loopRange(loop) {
+    if (!loop.id || !Number.isSafeInteger(loop.startSample) || !Number.isSafeInteger(loop.endSample)
+        || !Number.isFinite(loop.sampleRate) || loop.sampleRate <= 0
+        || loop.startSample < 0 || loop.endSample <= loop.startSample) {
+        throw new RangeError("A loop needs an id, valid sample rate and increasing integer sample bounds");
+    }
+    return { start: loop.startSample / loop.sampleRate, end: loop.endSample / loop.sampleRate,
+        duration: (loop.endSample - loop.startSample) / loop.sampleRate };
+}
+function validLoops(loops, duration = 0) {
+    const ids = new Set();
+    return loops.filter(loop => {
+        try {
+            const range = loopRange(loop);
+            if (ids.has(loop.id) || (duration > 0 && range.end > duration + 0.02))
+                return false;
+            ids.add(loop.id);
+            return true;
+        }
+        catch {
+            return false;
+        }
     });
-  }, st = () => {
-    const O = Number(bt.current?.duration) || 0;
-    O > 0 && (Lt(O), Dt?.(O));
-  };
-  return /* @__PURE__ */ C.jsxs(
-    "section",
-    {
-      className: `rts-sequence ${Q}`,
-      style: { "--rts-label-width": `${L}px`, "--rts-track-width": `${Sl}px` },
-      children: [
-        /* @__PURE__ */ C.jsxs("header", { className: "rts-toolbar", children: [
-          /* @__PURE__ */ C.jsxs("div", { className: "rts-ident", children: [
-            /* @__PURE__ */ C.jsx("strong", { children: d }),
-            s && /* @__PURE__ */ C.jsx("span", { children: s })
-          ] }),
-          /* @__PURE__ */ C.jsxs("div", { className: "rts-transport", "aria-label": "Timeline playback controls", children: [
-            /* @__PURE__ */ C.jsx("button", { type: "button", className: "rts-button rts-play", onClick: G, "aria-label": $ ? "Pause" : "Play", children: $ ? "❚❚" : "▶" }),
-            /* @__PURE__ */ C.jsxs("output", { className: "rts-time", "aria-live": "off", children: [
-              le(V),
-              " / ",
-              le(vt)
-            ] }),
-            /* @__PURE__ */ C.jsx("button", { type: "button", className: "rts-button", onClick: () => it(0), children: "Fit" }),
-            /* @__PURE__ */ C.jsxs("label", { className: "rts-control", children: [
-              /* @__PURE__ */ C.jsx("span", { children: "Zoom" }),
-              /* @__PURE__ */ C.jsx("input", { "aria-label": "Timeline zoom", type: "range", min: "0", max: "100", value: Ql, onChange: (O) => it(Number(O.target.value)) })
-            ] }),
-            /* @__PURE__ */ C.jsxs("label", { className: "rts-control", children: [
-              /* @__PURE__ */ C.jsx("input", { type: "checkbox", checked: Vt, onChange: (O) => nl(O.target.checked) }),
-              /* @__PURE__ */ C.jsx("span", { children: "Follow" })
-            ] })
-          ] }),
-          /* @__PURE__ */ C.jsx("div", { className: "rts-header-end", children: D })
-        ] }),
-        /* @__PURE__ */ C.jsx(
-          "audio",
-          {
-            ref: bt,
-            src: r,
-            preload: Z,
-            crossOrigin: Et,
-            onLoadedMetadata: st,
-            onPlay: () => {
-              _t(!0), Y();
-            },
-            onPause: () => {
-              _t(!1), A(), m(Number(bt.current?.currentTime) || 0);
-            },
-            onEnded: () => {
-              _t(!1), A(), m(Number(bt.current?.currentTime) || 0);
+}
+function wrapLoopTime(time, start, end) {
+    const length = end - start;
+    if (!Number.isFinite(time) || length <= 0)
+        return start;
+    return start + (((time - start) % length) + length) % length;
+}
+/** Web Audio owns repeat timing; animation frames only READ its audio clock. */
+class LoopAudio {
+    createContext;
+    context = null;
+    node = null;
+    generation = 0;
+    abort = null;
+    cache = null;
+    anchor = 0;
+    offset = 0;
+    start = 0;
+    length = 1;
+    stoppedTime = 0;
+    constructor(createContext = () => new AudioContext()) {
+        this.createContext = createContext;
+    }
+    get playing() { return this.node !== null; }
+    get currentTime() {
+        if (!this.node || !this.context)
+            return this.stoppedTime;
+        const elapsed = Math.max(0, this.context.currentTime - this.anchor);
+        return this.start + (this.offset + elapsed) % this.length;
+    }
+    pause() {
+        this.stoppedTime = this.currentTime;
+        this.generation += 1;
+        this.abort?.abort();
+        this.abort = null;
+        if (this.node) {
+            this.node.stop();
+            this.node.disconnect();
+            this.node = null;
+        }
+        return this.stoppedTime;
+    }
+    async play(loop, masterSrc, time, credentials = "same-origin") {
+        const range = loopRange(loop);
+        this.pause();
+        const generation = this.generation;
+        this.context ??= this.createContext();
+        const context = this.context;
+        // Invoke resume while still on the user-gesture call stack.
+        const resumed = context.resume();
+        void resumed.catch(() => { });
+        const url = loop.audioSrc || masterSrc;
+        const cacheKey = JSON.stringify([url, loop.startSample, loop.endSample, loop.sampleRate]);
+        try {
+            let buffer = this.cache?.url === cacheKey ? this.cache.buffer : null;
+            if (!buffer) {
+                const controller = new AbortController();
+                this.abort = controller;
+                const response = await fetch(url, { signal: controller.signal, credentials });
+                if (!response.ok)
+                    throw new Error(`Could not load loop audio (HTTP ${response.status})`);
+                const limit = 128 * 1024 * 1024;
+                if (Number(response.headers.get("Content-Length")) > limit)
+                    throw new Error("Loop audio exceeds 128 MiB");
+                const bytes = await response.arrayBuffer();
+                if (bytes.byteLength > limit)
+                    throw new Error("Loop audio exceeds 128 MiB");
+                buffer = await context.decodeAudioData(bytes);
+                if (generation !== this.generation)
+                    return false;
+                this.cache = { url: cacheKey, buffer }; // One entry: source changes cannot retain an unbounded cache.
             }
-          }
-        ),
-        /* @__PURE__ */ C.jsx("div", { className: "rts-workspace", children: /* @__PURE__ */ C.jsx("div", { ref: xt, className: "rts-scroller", onScroll: Cl, onClick: nt, children: /* @__PURE__ */ C.jsxs("div", { className: "rts-inner", children: [
-          /* @__PURE__ */ C.jsxs("div", { className: "rts-ruler-row", children: [
-            /* @__PURE__ */ C.jsx("div", { className: "rts-label rts-ruler-label", children: "TIME" }),
-            /* @__PURE__ */ C.jsx("div", { className: "rts-ruler-track", children: Ll.map((O) => /* @__PURE__ */ C.jsx("span", { className: `rts-tick ${O.major ? "rts-tick-major" : ""}`, style: { left: `${O.time * W}px` }, children: O.major && /* @__PURE__ */ C.jsx("span", { className: "rts-tick-label", children: le(O.time).slice(0, -4) }) }, O.time)) })
-          ] }),
-          /* @__PURE__ */ C.jsx("div", { className: "rts-lanes", children: E.map((O) => /* @__PURE__ */ C.jsxs("div", { className: `rts-lane rts-lane-${O.kind ?? "default"} ${O.className ?? ""}`, style: O.height ? { "--rts-lane-height": `${O.height}px` } : void 0, children: [
-            /* @__PURE__ */ C.jsxs("div", { className: "rts-label", children: [
-              /* @__PURE__ */ C.jsx("div", { className: "rts-title", children: O.title }),
-              O.meta && /* @__PURE__ */ C.jsx("div", { className: "rts-meta", children: O.meta })
-            ] }),
-            /* @__PURE__ */ C.jsx("div", { className: "rts-track", children: /* @__PURE__ */ C.jsx($h, { content: O.content, duration: vt }) })
-          ] }, O.id)) }),
-          _.length > 0 && /* @__PURE__ */ C.jsx("div", { className: "rts-grid", "aria-hidden": "true", children: _.map((O, U) => /* @__PURE__ */ C.jsx("span", { className: `rts-grid-line ${O.emphasis ? "rts-grid-line-emphasis" : ""} ${O.className ?? ""}`, style: { left: `${O.time * W}px` } }, `${O.time}-${U}`)) }),
-          /* @__PURE__ */ C.jsx("div", { className: "rts-playhead", style: { left: `${L + V * W}px` }, "aria-hidden": "true" })
-        ] }) }) }),
-        /* @__PURE__ */ C.jsxs("footer", { className: "rts-footer", children: [
-          /* @__PURE__ */ C.jsx("div", { children: x }),
-          /* @__PURE__ */ C.jsxs("output", { className: "rts-window", children: [
-            le(K.start),
-            " — ",
-            le(K.end)
-          ] })
-        ] })
-      ]
+            await resumed;
+            if (generation !== this.generation)
+                return false;
+            const begin = loop.audioSrc ? 0 : range.start;
+            const end = begin + range.duration;
+            const tolerance = Math.max(2 / buffer.sampleRate, 0.002);
+            if (!Number.isFinite(buffer.duration) || buffer.duration <= begin
+                || end > buffer.duration + tolerance
+                || (loop.audioSrc && Math.abs(buffer.duration - range.duration) > tolerance)) {
+                throw new Error("Loop audio duration does not match the reported sample boundaries");
+            }
+            const node = context.createBufferSource();
+            node.buffer = buffer;
+            node.loop = true;
+            node.loopStart = begin;
+            node.loopEnd = Math.min(end, buffer.duration);
+            node.connect(context.destination);
+            this.start = range.start;
+            this.length = node.loopEnd - begin;
+            this.offset = wrapLoopTime(time, range.start, range.start + this.length) - range.start;
+            this.anchor = context.currentTime;
+            node.start(this.anchor, begin + this.offset);
+            this.node = node;
+            return true;
+        }
+        catch (error) {
+            // A paused, switched or unmounted transport must never resurrect a stale request.
+            if (generation !== this.generation)
+                return false;
+            throw error;
+        }
+        finally {
+            // Avoid an unhandled rejection when fetch failed before await resumed.
+            void resumed.catch(() => { });
+        }
     }
-  );
-}
-const ul = (r) => document.querySelector(r), kh = ul("#uploadView"), Zs = ul("#timelineView"), Ae = ul("#dropZone"), hn = ul("#fileInput"), pd = ul("#chooseButton"), Dd = ul("#uploadProgressWrap"), Ji = ul("#uploadProgress"), $i = ul("#uploadLabel"), gu = ul("#connectionBadge"), Cd = ul("#canonicalBpm"), Ud = ul("#canonicalLyrics"), Rd = ul("#canonicalTiming"), Gs = ul("#knownInfoStatus"), Ih = ul("#loadArcadiansReference"), Ph = ul("#loadArcadiansHero"), t1 = Array.from(Zs.children), Vs = document.createElement("div");
-Vs.id = "timelineRoot";
-Zs.replaceChildren(Vs);
-for (const r of t1) r.remove();
-const l1 = Lh.createRoot(Vs), a1 = /* @__PURE__ */ new Set(["wav", "flac", "mp3", "ogg", "opus", "m4a", "aif", "aiff"]);
-let Xs = {};
-function e1(r) {
-  const E = String(r).split("/").pop() || "", d = E.lastIndexOf(".");
-  return d >= 0 ? E.slice(d + 1).toLowerCase() : "";
-}
-function Oa(r) {
-  return String(r).replace(/^stems\//, "").replace(/^spectrograms\//, "").replace(/^vamp\/data\//, "Vamp · ").replace(/^beats\//, "Beats · ").replace(/^speech\//, "Speech · ").replace(/^deep\//, "Deep · ").replace(/[_-]+/g, " ");
-}
-function Ks(r, E) {
-  return `/${r}/${E.split("/").map(encodeURIComponent).join("/")}`;
-}
-function Qs(r, E, d = "Generated analysis artifact") {
-  return { type: "artifact", note: d, href: E === "__source__" ? `/api/${r}/source` : Ks(r, E) };
-}
-async function Fl(r, E) {
-  const d = await fetch(Ks(r, E), { cache: "no-store" });
-  if (!d.ok) throw new Error(`HTTP ${d.status}`);
-  return d.json();
-}
-function Wl(r, E = 2, d = "") {
-  const s = Number(r);
-  return Number.isFinite(s) ? `${s.toFixed(E)}${d}` : "—";
-}
-function Oe(r, E, d, s, M = "feature") {
-  const _ = s.filter(([, D]) => D != null && D !== "");
-  return {
-    id: r,
-    title: E,
-    meta: d,
-    kind: M,
-    content: {
-      type: "summary",
-      items: (_.length ? _ : [["status", "analysis available"]]).map(([D, x]) => ({ label: D, value: x }))
+    dispose() {
+        this.pause();
+        this.cache = null;
+        const context = this.context;
+        this.context = null;
+        if (context)
+            void context.close().catch(() => { });
     }
-  };
 }
-function Fi(r) {
-  return (r || []).flatMap((E) => {
-    const d = Number(E.start);
-    if (!Number.isFinite(d)) return [];
-    const s = Number(E.end);
-    return [{
-      start: d,
-      end: Number.isFinite(s) && s > d ? s : d + 0.5,
-      label: E.label || E.text || E.values?.[0] || ""
-    }];
-  });
+
+// useTimelineTransport.ts
+/** One transport for native full-song audio and buffered loop audio. */
+function useTimelineTransport(audioRef, audioSrc, activeLoop, onError, credentials = "same-origin") {
+    const [time, setTime] = useState(0);
+    const [playing, setPlaying] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const desired = useRef(false);
+    const mode = useRef("media");
+    const engine = useRef(null);
+    const intent = useRef(0);
+    const current = useRef({ audioSrc, activeLoop, onError, credentials });
+    current.current = { audioSrc, activeLoop, onError, credentials };
+    const readTime = useCallback(() => mode.current === "loop"
+        ? (engine.current?.currentTime ?? 0) : (audioRef.current?.currentTime ?? 0), [audioRef]);
+    const pause = useCallback(() => {
+        const next = readTime();
+        intent.current += 1;
+        desired.current = false;
+        engine.current?.pause();
+        audioRef.current?.pause();
+        setLoading(false);
+        setPlaying(false);
+        setTime(next);
+        return next;
+    }, [audioRef, readTime]);
+    const fail = useCallback((cause) => {
+        pause();
+        setError(cause instanceof Error ? cause.message : String(cause));
+        current.current.onError?.(cause);
+    }, [pause]);
+    const playAt = useCallback(async (next) => {
+        pause();
+        const version = intent.current;
+        desired.current = true;
+        setLoading(true);
+        setError("");
+        const { activeLoop: loop, audioSrc: src, credentials: cred } = current.current;
+        try {
+            if (loop) {
+                mode.current = "loop";
+                engine.current ??= new LoopAudio();
+                if (!(await engine.current.play(loop, src, next, cred)))
+                    return;
+            }
+            else {
+                mode.current = "media";
+                const audio = audioRef.current;
+                if (!audio)
+                    return;
+                audio.currentTime = Math.max(0, next);
+                await audio.play();
+            }
+            if (version !== intent.current)
+                return;
+            setTime(readTime());
+            setLoading(false);
+            setPlaying(true);
+        }
+        catch (cause) {
+            if (version === intent.current)
+                fail(cause);
+        }
+    }, [audioRef, fail, pause, readTime]);
+    const seek = useCallback((next) => {
+        const loop = current.current.activeLoop;
+        if (loop) {
+            const range = loopRange(loop);
+            next = wrapLoopTime(next, range.start, range.end);
+        }
+        if (desired.current) {
+            void playAt(next);
+        }
+        else {
+            pause();
+            // A paused seek belongs to the shared timeline, independent of the last backend.
+            mode.current = "media";
+            if (audioRef.current)
+                audioRef.current.currentTime = next;
+            setTime(next);
+        }
+    }, [audioRef, pause, playAt]);
+    const toggle = useCallback(() => {
+        if (desired.current) {
+            pause();
+            return;
+        }
+        let next = readTime();
+        const loop = current.current.activeLoop;
+        if (loop) {
+            const range = loopRange(loop);
+            if (next < range.start || next >= range.end)
+                next = range.start;
+        }
+        void playAt(next);
+    }, [pause, playAt, readTime]);
+    useEffect(() => {
+        pause();
+        mode.current = "media";
+        setTime(0);
+        setError("");
+        engine.current?.dispose();
+        engine.current = null;
+        return () => {
+            intent.current += 1;
+            desired.current = false;
+            engine.current?.dispose();
+            engine.current = null;
+            audioRef.current?.pause();
+        };
+    }, [audioSrc, audioRef, pause]);
+    const key = activeLoop
+        ? JSON.stringify([activeLoop.id, activeLoop.startSample, activeLoop.endSample, activeLoop.sampleRate, activeLoop.audioSrc])
+        : "";
+    useEffect(() => {
+        const resume = desired.current;
+        let next = pause();
+        const loop = current.current.activeLoop;
+        if (loop)
+            next = loopRange(loop).start;
+        mode.current = "media";
+        if (audioRef.current)
+            audioRef.current.currentTime = next;
+        setTime(next);
+        if (resume)
+            void playAt(next);
+    }, [key, audioRef, pause, playAt]);
+    useEffect(() => {
+        if (!playing)
+            return;
+        let frame = 0;
+        const tick = () => {
+            setTime(readTime());
+            frame = requestAnimationFrame(tick);
+        };
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+    }, [playing, readTime]);
+    const ended = useCallback(() => {
+        if (mode.current === "media")
+            pause();
+    }, [pause]);
+    return { time, playing, loading, error, toggle, seek, ended, fail };
 }
-function u1(r) {
-  const E = Array.isArray(r.events) ? r.events : [];
-  switch (String(r.kind || "")) {
-    case "curve":
-      return { type: "curve", points: E.flatMap((d) => {
-        const s = Number(d.start), M = Number(d.values?.[0]);
-        return Number.isFinite(s) && Number.isFinite(M) && M > 0 ? [{ time: s, value: M }] : [];
-      }) };
-    case "matrix":
-      return { type: "matrix", rows: E.map((d) => d.values || []).filter((d) => d.length) };
-    case "notes":
-      return { type: "notes", items: E.flatMap((d) => {
-        const s = Number(d.values?.[0]), M = Number(d.start);
-        if (!Number.isFinite(s) || s <= 0 || !Number.isFinite(M)) return [];
-        const _ = Number(d.end);
-        return [{ start: M, end: Number.isFinite(_) && _ > M ? _ : M + 0.12, value: s, label: d.label }];
-      }) };
-    case "segments":
-      return { type: "blocks", items: Fi(E) };
-    case "events":
-      return { type: "markers", items: E.flatMap((d) => Number.isFinite(Number(d.start)) ? [{ time: Number(d.start) }] : []) };
-    default:
-      return { type: "artifact", note: E[0]?.label || E[0]?.values?.join(", ") || r.title || "analysis" };
-  }
+
+// TimelineSequence.tsx
+function createRulerTicks(duration, pixelsPerSecond) {
+    if (duration <= 0 || pixelsPerSecond <= 0)
+        return [];
+    const step = chooseRulerStep(pixelsPerSecond);
+    const minor = step / 5;
+    const ticks = [];
+    for (let index = 0; index * minor <= duration + 1e-6; index += 1) {
+        ticks.push({
+            time: index * minor,
+            major: index % 5 === 0,
+        });
+    }
+    return ticks;
 }
-async function Hd(r, E, d, s, M) {
-  const _ = new URLSearchParams({ path: M, points: "12000" }), D = await fetch(`/api/${r}/waveform?${_}`);
-  if (!D.ok) return { id: E, title: d, meta: s, kind: "artifact", content: Qs(r, M, `waveform unavailable (${D.status})`) };
-  const x = await D.json();
-  return { id: E, title: d, meta: s, kind: "waveform", content: { type: "waveform", min: x.min || [], max: x.max || [] }, duration: Number(x.duration_seconds) || 0 };
+function rulerLabel(time, pixelsPerSecond) {
+    const milliseconds = Math.round(time * 1000);
+    const seconds = Math.floor(milliseconds / 1000);
+    const whole = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    return chooseRulerStep(pixelsPerSecond) < 1
+        ? `${whole}.${String(milliseconds % 1000).padStart(3, "0")}` : whole;
 }
-async function n1(r, E) {
-  const d = E.path, s = `file:${d}`, M = e1(d);
-  if (d === "canonical.json") return null;
-  if (a1.has(M)) return Hd(r, s, Oa(d), "audio waveform", d);
-  if (d.startsWith("spectrograms/") && M === "npz") {
-    const _ = new URLSearchParams({ path: d, max_width: "8192", max_height: "768" });
-    return { id: s, title: Oa(d), meta: "spectrogram data · exact song timeline", kind: "spectrogram", content: { type: "image", src: `/api/${r}/spectrogram?${_}`, alt: `${Oa(d)} spectrogram` } };
-  }
-  if (d.startsWith("spectrograms/") && M === "png")
-    return { id: s, title: Oa(d), meta: "rendered spectrogram PNG", kind: "image", content: { type: "image", src: Ks(r, d), alt: `${Oa(d)} rendered spectrogram` } };
-  try {
-    if (d.startsWith("beats/") && M === "json") {
-      const _ = await Fl(r, d), D = new Set((_.downbeats || []).map((x) => Number(x).toFixed(3)));
-      return { id: s, title: Oa(d), meta: "beat / downbeat events", kind: "events", content: { type: "markers", items: (_.beats || []).flatMap((x) => {
-        const Q = Number(x);
-        return Number.isFinite(Q) ? [{ time: Q, emphasis: D.has(Q.toFixed(3)), label: D.has(Q.toFixed(3)) ? "Downbeat" : "Beat" }] : [];
-      }) } };
-    }
-    if (d.startsWith("vamp/data/") && M === "json") {
-      const _ = await Fl(r, d);
-      return { id: s, title: Oa(d), meta: "Vamp feature analysis", kind: "feature", content: u1(_) };
-    }
-    if (d === "speech/whisper.json") {
-      const _ = await Fl(r, d);
-      return { id: s, title: "Speech · Whisper words", meta: "word-aligned transcript", kind: "words", content: { type: "blocks", items: (_.words || []).flatMap((D) => {
-        const x = Number(D.start), Q = Number(D.end);
-        return Number.isFinite(x) ? [{ start: x, end: Number.isFinite(Q) ? Math.max(x + 0.03, Q) : x + 0.03, label: String(D.word || "").trim() }] : [];
-      }) } };
-    }
-    if (d === "deep/structure/structure.json" || d === "deep/song_map/song_map.json") {
-      const _ = await Fl(r, d), D = d.includes("song_map");
-      return { id: s, title: D ? "Deep · song map" : "Deep · functional structure", meta: D ? "section-level sonic / rhythm / harmony / lyric fusion" : "All-In-One · functional song sections", kind: "deep-structure", content: { type: "blocks", items: Fi(D ? _.sections : _.segments) } };
-    }
-    if (d === "deep/harmony/harmony.json") {
-      const _ = await Fl(r, d), D = _.chords?.collapsed_progression || [];
-      return D.length ? { id: s, title: "Deep · harmony", meta: "collapsed chord progression + key evidence", kind: "deep-harmony", content: { type: "blocks", items: Fi(D) } } : Oe(s, "Deep · harmony", "collapsed chord progression + key evidence", [["key", _.vamp_key || _.independent_key_candidates_from_nnls_chroma?.[0]?.key || "—"], ["tuning", _.tuning_hz ? `${Number(_.tuning_hz).toFixed(1)} Hz` : "—"]], "deep-harmony");
-    }
-    if (d === "deep/lyrics/lyrics.json") {
-      const _ = await Fl(r, d), D = (_.lines || []).filter((x) => Number.isFinite(Number(x.start)) && Number.isFinite(Number(x.end)));
-      return D.length ? { id: s, title: "Deep · rhyme & prosody", meta: "phonetic rhyme, repetition and delivery", kind: "deep-lyrics", content: { type: "blocks", items: Fi(D) } } : Oe(s, "Deep · rhyme & prosody", "phonetic rhyme, repetition and delivery", [["rhyme scheme", _.rhyme?.scheme || "—"], ["lines", _.line_count ?? "—"], ["words", _.word_count ?? "—"]], "deep-lyrics");
-    }
-    if (d === "deep/sonic/sonic.json") {
-      const _ = await Fl(r, d);
-      return Oe(s, "Deep · sonic profile", "loudness · dynamics · timbre · stereo", [["LUFS", Wl(_.loudness?.integrated_lufs_bs1770, 1)], ["crest", Wl(_.loudness?.crest_factor_db, 1, " dB")], ["RMS range", Wl(_.loudness?.short_term_rms_range_db_p95_p10, 1, " dB")], ["centroid", Wl(_.timbre?.spectral_centroid_hz_mean, 0, " Hz")], ["stereo corr", Wl(_.stereo?.left_right_correlation, 2)]]);
-    }
-    if (d === "deep/rhythm/rhythm.json") {
-      const _ = await Fl(r, d);
-      return Oe(s, "Deep · groove", "meter · stability · swing · syncopation evidence", [["tempo", Wl(_.tempo?.median_bpm, 2, " BPM")], ["meter", _.meter?.estimated_beats_per_bar ? `${_.meter.estimated_beats_per_bar}/4-ish` : "—"], ["swing", Wl(_.groove?.swing_ratio_long_to_short, 2, ":1")], ["offbeat energy", Wl(_.groove?.offbeat_onset_energy_ratio, 3)], ["onsets/s", Wl(_.groove?.onset_density_per_second, 2)]]);
-    }
-    if (d === "deep/semantic_text/semantic_text.json") {
-      const _ = await Fl(r, d);
-      return Oe(s, "Deep · lyric semantics", "sentence embedding theme similarities · not probabilities", (_.theme_similarity || []).slice(0, 7).map((D) => [D.theme, Wl(D.similarity, 3)]));
-    }
-    if (d === "deep/semantic_audio/semantic_audio.json") {
-      const _ = await Fl(r, d), D = Object.entries(_.prompt_sets || {}).flatMap(([x, Q]) => (Q || []).slice(0, 2).map((L) => [`${x}: ${L.prompt}`, Wl(L.similarity, 3)]));
-      return Oe(s, "Deep · audio semantics", "MuQ-MuLan zero-shot similarities · CC-BY-NC weights", D);
-    }
-    if (d === "deep/summary.json") {
-      const _ = await Fl(r, d), D = Object.entries(_.analyses || {}).map(([x, Q]) => [x, Q.available ? "ready" : "unavailable"]);
-      return (_.errors || []).length && D.push(["errors", _.errors.length]), Oe(s, "Deep · analysis summary", "cross-domain action inventory", D);
-    }
-  } catch (_) {
-    return { id: s, title: Oa(d), meta: "analysis artifact", kind: "artifact", content: Qs(r, d, _.message) };
-  }
-  return { id: s, title: Oa(d), meta: `${M || "file"} · ${Number(E.bytes || 0).toLocaleString()} bytes`, kind: "artifact", content: Qs(r, d) };
-}
-function i1(r, E, d, s) {
-  const M = [], _ = Number(r?.bpm);
-  if (Number.isFinite(_) && _ > 0) {
-    const Q = [];
-    if (Number.isFinite(E) && s > 0) {
-      const L = 60 / _;
-      for (let j = E, T = 0; j <= s + 1e-7; j += L, T += 1) Q.push({ time: j, emphasis: T === 0, label: `Canonical beat ${T + 1}` });
-    }
-    M.push({ id: "canonical:bpm", title: "Canonical BPM", meta: Number.isFinite(E) ? `${_} BPM · anchor ${E.toFixed(3)}s · ${d || "detected beat"}` : `${_} BPM · waiting for first detected beat`, kind: "canonical-bpm", height: 104, content: Q.length ? { type: "markers", items: Q } : { type: "artifact", note: `${_} BPM — grid will begin at the first detected beat` } });
-  }
-  r?.lyrics && M.push({ id: "canonical:lyrics", title: "Canonical lyrics", meta: "known reference text", kind: "canonical-lyrics", height: 104, content: { type: "text", text: r.lyrics } });
-  const D = Array.isArray(r?.lyric_timing) ? r.lyric_timing : [];
-  D.length && M.push({ id: "canonical:timing", title: "Canonical lyric timing", meta: `${D.length} timed lyric event${D.length === 1 ? "" : "s"}`, kind: "canonical-timing", height: 104, content: { type: "blocks", items: D.flatMap((Q) => {
-    const L = Number(Q.start), j = Number(Q.end);
-    return Number.isFinite(L) && L >= 0 ? [{ start: L, end: Number.isFinite(j) && j > L ? j : L + 0.75, label: String(Q.text || ""), className: "stemlab-canonical-lyric" }] : [];
-  }) } });
-  const x = M.find((Q) => Q.id === "canonical:bpm")?.content?.items || [];
-  return { lanes: M, grid: x };
-}
-function c1({ lines: r }) {
-  return /* @__PURE__ */ C.jsxs("details", { open: !0, className: "stemlab-log", children: [
-    /* @__PURE__ */ C.jsx("summary", { children: "Analysis log" }),
-    /* @__PURE__ */ C.jsx("div", { className: "log", children: r.map((E, d) => /* @__PURE__ */ C.jsxs("div", { className: E.stream === "stderr" ? "stderr" : "stdout", children: [
-      "[",
-      E.stream,
-      "] ",
-      E.text
-    ] }, d)) })
-  ] });
-}
-function f1({ hash: r, filename: E }) {
-  const [d, s] = ut.useState([]), [M, _] = ut.useState(0), [D, x] = ut.useState({ state: "submitted" }), [Q, L] = ut.useState({ bpm: null, lyrics: null, lyric_timing: [] }), [j, T] = ut.useState(null), [Z, Et] = ut.useState(null), [Dt, Xt] = ut.useState([]), ft = ut.useRef(/* @__PURE__ */ new Set()), Mt = ut.useCallback((V, B) => {
-    B && Xt(($) => [...$.slice(-799), { stream: V === "stderr" ? "stderr" : "stdout", text: B }]);
-  }, []), bt = ut.useCallback(async (V) => {
-    if (!V?.path || ft.current.has(V.path)) return;
-    ft.current.add(V.path);
-    const B = await n1(r, V);
-    B && (B.duration && _(($) => $ || B.duration), s(($) => $.some((_t) => _t.id === B.id) ? $ : [...$, B]));
-  }, [r]), xt = ut.useCallback(async () => {
-    const V = await fetch(`/api/${r}/timeline`, { cache: "no-store" });
-    if (!V.ok) return;
-    const B = await V.json();
-    x(B.status || { state: "submitted" }), B.duration_seconds && _(Number(B.duration_seconds)), B.canonical && L(B.canonical);
-    const $ = B.first_detected_beat == null ? NaN : Number(B.first_detected_beat);
-    Number.isFinite($) && $ >= 0 && (T($), Et(B.first_detected_beat_source || "detected beat"));
-    for (const _t of B.files || []) bt(_t);
-  }, [bt, r]);
-  ut.useEffect(() => {
-    ft.current = /* @__PURE__ */ new Set(), s([]), Hd(r, "__source__", "MASTER · uploaded source", E, "__source__").then(($) => {
-      $.duration && _($.duration), s((_t) => [$, ..._t.filter((Vt) => Vt.id !== $.id)]);
-    }).catch(($) => Mt("stderr", $.message)), xt();
-    const V = window.setInterval(() => {
-      xt();
-    }, 2500);
-    let B = null;
-    return typeof window.io == "function" ? (B = window.io({ path: "/socket.io" }), B.on("connect", () => {
-      gu.textContent = "live", gu.classList.remove("muted"), B.emit("subscribe", { hash: r });
-    }), B.on("disconnect", () => {
-      gu.textContent = "reconnecting", gu.classList.add("muted");
-    }), B.on("process_output", ($) => Mt($.stream || "stdout", $.line || "")), B.on("process_history", ($) => {
-      for (const _t of $.stdout || []) Mt("stdout", _t);
-      for (const _t of $.stderr || []) Mt("stderr", _t);
-    }), B.on("new_file", ($) => {
-      bt($);
-    }), B.on("job_status", ($) => {
-      x($.status || {}), xt();
-    }), B.on("canonical_metadata", ($) => {
-      $?.canonical && L($.canonical);
-    }), B.on("job_timeout", ($) => Mt("stderr", `Job timeout: ${$.message || "analysis exceeded timeout"}`))) : (gu.textContent = "polling", gu.classList.add("muted"), Mt("stderr", "Socket.IO browser client unavailable; timeline inventory polling remains active.")), () => {
-      window.clearInterval(V), B?.disconnect();
+function TimelineSequence({ audioSrc, loops = [], onLoopSelect, onLoopEnabledChange, lanes, title = "Audio timeline", subtitle, duration: durationHint = 0, grid = [], headerEnd, footer, className = "", labelWidth = 230, initialZoom = 20, followPlayheadByDefault = true, preload = "metadata", crossOrigin, onDurationChange, onTimeChange, onWindowChange, onPlaybackError, }) {
+    const audioRef = useRef(null);
+    const scrollerRef = useRef(null);
+    const [duration, setDuration] = useState(Math.max(0, durationHint));
+    const [selectedId, setSelectedId] = useState(null);
+    const [loopEnabled, setLoopEnabled] = useState(false);
+    const availableLoops = useMemo(() => validLoops(loops, duration), [loops, duration]);
+    const selectedLoop = availableLoops.find(loop => loop.id === selectedId) ?? null;
+    const activeLoop = loopEnabled ? selectedLoop : null;
+    const transport = useTimelineTransport(audioRef, audioSrc, activeLoop, onPlaybackError, crossOrigin === "use-credentials" ? "include" : "same-origin");
+    const currentTime = transport.time;
+    const isPlaying = transport.playing;
+    const selectedRange = selectedLoop ? loopRange(selectedLoop) : null;
+    const selectLoop = (id) => {
+        setSelectedId(id);
+        onLoopSelect?.(availableLoops.find(loop => loop.id === id) ?? null);
     };
-  }, [bt, Mt, E, r, xt]);
-  const Qt = ut.useMemo(() => i1(Q, j, Z, M), [j, Z, Q, M]), vt = [...Qt.lanes, ...d], Lt = D.state || "submitted";
-  return /* @__PURE__ */ C.jsx(
-    Wh,
-    {
-      className: "stemlab-timeline",
-      audioSrc: `/api/${r}/source`,
-      duration: M,
-      title: E,
-      subtitle: r,
-      lanes: vt,
-      grid: Qt.grid,
-      onDurationChange: _,
-      onPlaybackError: (V) => Mt("stderr", V instanceof Error ? V.message : String(V)),
-      headerEnd: /* @__PURE__ */ C.jsxs(C.Fragment, { children: [
-        /* @__PURE__ */ C.jsx("span", { className: `badge ${Lt}`, children: Lt }),
-        /* @__PURE__ */ C.jsxs("span", { className: "small", children: [
-          vt.length,
-          " lane",
-          vt.length === 1 ? "" : "s"
-        ] })
-      ] }),
-      footer: /* @__PURE__ */ C.jsxs(C.Fragment, { children: [
-        /* @__PURE__ */ C.jsx(c1, { lines: Dt }),
-        /* @__PURE__ */ C.jsx("span", { className: "dock-links", children: /* @__PURE__ */ C.jsx("a", { href: "https://kieransimkin.co.uk/my-songs/", target: "_blank", rel: "noopener", children: "Kieran Simkin · My Songs ↗" }) })
-      ] })
+    const enableLoop = (enabled) => {
+        setLoopEnabled(enabled);
+        onLoopEnabledChange?.(enabled);
+    };
+    useEffect(() => {
+        if (selectedId && !availableLoops.some(loop => loop.id === selectedId)) {
+            setSelectedId(null);
+            setLoopEnabled(false);
+            onLoopSelect?.(null);
+            onLoopEnabledChange?.(false);
+        }
+    }, [selectedId, availableLoops, onLoopSelect, onLoopEnabledChange]);
+    useEffect(() => {
+        setSelectedId(null);
+        setLoopEnabled(false);
+        setDuration(Math.max(0, durationHint));
+    }, [audioSrc]);
+    const [follow, setFollow] = useState(followPlayheadByDefault);
+    const [zoom, setZoom] = useState(initialZoom);
+    const [viewportWidth, setViewportWidth] = useState(0);
+    const [windowRange, setWindowRange] = useState({ start: 0, end: 0 });
+    useEffect(() => {
+        if (durationHint > 0)
+            setDuration(durationHint);
+    }, [durationHint]);
+    useEffect(() => {
+        const scroller = scrollerRef.current;
+        if (!scroller)
+            return;
+        const update = () => setViewportWidth(scroller.clientWidth);
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(scroller);
+        return () => observer.disconnect();
+    }, []);
+    const fitPixelsPerSecond = duration > 0
+        ? Math.max(0.4, Math.max(320, viewportWidth - labelWidth - 16) / duration)
+        : 0.4;
+    const pixelsPerSecond = Math.max(fitPixelsPerSecond, fitPixelsPerSecond * Math.pow(2, zoom / 18));
+    const trackWidth = Math.max(1, duration * pixelsPerSecond);
+    const rulerTicks = useMemo(() => createRulerTicks(duration, pixelsPerSecond), [duration, pixelsPerSecond]);
+    const updateWindow = useCallback(() => {
+        const scroller = scrollerRef.current;
+        if (!scroller)
+            return;
+        // Sticky labels cover the first labelWidth pixels even after scrolling.
+        const next = visibleTimelineWindow(scroller.scrollLeft + labelWidth, Math.max(0, scroller.clientWidth - labelWidth), labelWidth, pixelsPerSecond, duration);
+        setWindowRange(next);
+        onWindowChange?.(next);
+    }, [duration, labelWidth, onWindowChange, pixelsPerSecond]);
+    useEffect(() => {
+        updateWindow();
+    }, [updateWindow, viewportWidth]);
+    useEffect(() => {
+        onTimeChange?.(currentTime);
+        const scroller = scrollerRef.current;
+        if (!scroller || !follow || !isPlaying)
+            return;
+        const x = labelWidth + currentTime * pixelsPerSecond;
+        const right = scroller.scrollLeft + scroller.clientWidth;
+        const margin = Math.min(180, scroller.clientWidth * 0.2);
+        if (x > right - margin)
+            scroller.scrollLeft = Math.max(0, x - scroller.clientWidth + margin);
+        else if (x < scroller.scrollLeft + labelWidth)
+            scroller.scrollLeft = Math.max(0, x - labelWidth - margin);
+    }, [currentTime, follow, isPlaying, labelWidth, onTimeChange, pixelsPerSecond]);
+    const seek = (event) => {
+        if (duration <= 0 || event.target.closest(".rts-label, a, button, input"))
+            return;
+        const scroller = scrollerRef.current;
+        const audio = audioRef.current;
+        if (!scroller || !audio)
+            return;
+        const rect = scroller.getBoundingClientRect();
+        const contentX = event.clientX - rect.left + scroller.scrollLeft - labelWidth;
+        if (contentX < 0)
+            return;
+        const next = clamp(contentX / pixelsPerSecond, 0, duration);
+        transport.seek(next);
+    };
+    const changeZoom = (next) => {
+        const scroller = scrollerRef.current;
+        const centreTime = scroller
+            ? Math.max(0, (scroller.scrollLeft + (scroller.clientWidth - labelWidth) / 2) / pixelsPerSecond)
+            : 0;
+        setZoom(next);
+        requestAnimationFrame(() => {
+            const updated = scrollerRef.current;
+            if (!updated)
+                return;
+            const nextFit = duration > 0 ? Math.max(0.4, Math.max(320, updated.clientWidth - labelWidth - 16) / duration) : 0.4;
+            const nextPixels = Math.max(nextFit, nextFit * Math.pow(2, next / 18));
+            updated.scrollLeft = Math.max(0, centreTime * nextPixels - (updated.clientWidth - labelWidth) / 2);
+            // The range effect / scroll handler use the NEW scale, not this old closure.
+        });
+    };
+    const focusLoop = () => {
+        if (!selectedRange || !scrollerRef.current)
+            return;
+        const wanted = Math.max(320, viewportWidth - labelWidth - 16) / (selectedRange.duration * 1.1);
+        const nextZoom = clamp(18 * Math.log2(wanted / fitPixelsPerSecond), 0, 100);
+        setZoom(nextZoom);
+        const nextPixels = fitPixelsPerSecond * Math.pow(2, nextZoom / 18);
+        requestAnimationFrame(() => {
+            if (scrollerRef.current)
+                scrollerRef.current.scrollLeft = Math.max(0, (selectedRange.start - selectedRange.duration * .05) * nextPixels);
+        });
+    };
+    const handleMetadata = () => {
+        const mediaDuration = Number(audioRef.current?.duration) || 0;
+        if (Number.isFinite(mediaDuration) && mediaDuration > 0) {
+            setDuration(mediaDuration);
+            onDurationChange?.(mediaDuration);
+        }
+    };
+    return _jsxs("section", { className: `rts-sequence ${className}`, style: { "--rts-label-width": `${labelWidth}px`, "--rts-track-width": `${trackWidth}px` }, children: [_jsxs("header", { className: "rts-toolbar", children: [_jsxs("div", { className: "rts-ident", children: [_jsx("strong", { children: title }), subtitle && _jsx("span", { children: subtitle })] }), _jsxs("div", { className: "rts-transport", "aria-label": "Timeline playback controls", children: [_jsx("button", { type: "button", className: "rts-button rts-play", onClick: transport.toggle, "aria-label": isPlaying || transport.loading ? "Pause" : "Play", children: transport.loading ? "…" : isPlaying ? "❚❚" : "▶" }), _jsxs("output", { className: "rts-time", "aria-live": "off", children: [formatTimelineTime(currentTime), " / ", formatTimelineTime(duration)] }), _jsx("button", { type: "button", className: "rts-button", onClick: () => changeZoom(0), children: "Fit" }), _jsxs("label", { className: "rts-control", children: [_jsx("span", { children: "Zoom" }), _jsx("input", { "aria-label": "Timeline zoom", type: "range", min: "0", max: "100", value: zoom, onChange: event => changeZoom(Number(event.target.value)) })] }), _jsxs("label", { className: "rts-control", children: [_jsx("input", { type: "checkbox", checked: follow, onChange: event => setFollow(event.target.checked) }), _jsx("span", { children: "Follow" })] })] }), _jsx("div", { className: "rts-header-end", children: headerEnd }), availableLoops.length > 0 && _jsxs("div", { className: "rts-loop-controls", "aria-label": "Loop controls", children: [_jsxs("label", { children: ["Loop ", _jsxs("select", { "aria-label": "Select loop", value: selectedId ?? "", onChange: event => selectLoop(event.target.value), children: [_jsx("option", { value: "", children: "Choose a loop\u2026" }), availableLoops.map(loop => _jsx("option", { value: loop.id, children: loop.label || loop.id }, loop.id))] })] }), _jsxs("label", { children: [_jsx("input", { type: "checkbox", "aria-label": "Enable loop", disabled: !selectedLoop, checked: loopEnabled && !!selectedLoop, onChange: event => enableLoop(event.target.checked) }), "Enable loop"] }), _jsx("button", { type: "button", className: "rts-button", disabled: !selectedLoop, onClick: focusLoop, children: "Zoom to loop" }), selectedLoop && _jsxs("output", { children: [selectedLoop.startSample.toLocaleString(), " \u2192 ", selectedLoop.endSample.toLocaleString(), " samples (end exclusive) \u00B7 ", selectedLoop.sampleRate.toLocaleString(), " Hz"] }), selectedLoop?.downloadUrl && _jsx("a", { href: selectedLoop.downloadUrl, download: true, children: "Download loop WAV" }), _jsx("span", { className: "rts-loop-status", role: "status", children: transport.loading ? "Loading loop…" : loopEnabled && selectedLoop ? "Loop enabled · Play repeats selection" : "Full-song playback" })] }), transport.error && _jsx("div", { role: "alert", className: "rts-loop-error", children: transport.error })] }), _jsx("audio", { ref: audioRef, src: audioSrc, preload: preload, crossOrigin: crossOrigin, onLoadedMetadata: handleMetadata, onEnded: transport.ended, onError: () => transport.fail(new Error(audioRef.current?.error?.message || "Audio playback failed")) }), _jsx("div", { className: "rts-workspace", children: _jsx("div", { ref: scrollerRef, className: "rts-scroller", onScroll: updateWindow, onClick: seek, children: _jsxs("div", { className: "rts-inner", children: [_jsxs("div", { className: "rts-ruler-row", children: [_jsx("div", { className: "rts-label rts-ruler-label", children: "TIME" }), _jsx("div", { className: "rts-ruler-track", children: rulerTicks.map(tick => _jsx("span", { className: `rts-tick ${tick.major ? "rts-tick-major" : ""}`, style: { left: `${tick.time * pixelsPerSecond}px` }, children: tick.major && _jsx("span", { className: "rts-tick-label", children: rulerLabel(tick.time, pixelsPerSecond) }) }, tick.time)) })] }), availableLoops.length > 0 && _jsxs("div", { className: "rts-lane rts-lane-loops", children: [_jsxs("div", { className: "rts-label", children: [_jsx("div", { className: "rts-title", children: "LOOPS" }), _jsx("div", { className: "rts-meta", children: "Select a region, enable, then Play" })] }), _jsx("div", { className: "rts-track", children: availableLoops.map(loop => {
+                                            const range = loopRange(loop);
+                                            return _jsx("button", { type: "button", className: "rts-loop-region", "aria-pressed": selectedId === loop.id, "aria-label": `Select ${loop.label || loop.id}`, onClick: () => selectLoop(loop.id), title: `${loop.label || loop.id}: [${loop.startSample}, ${loop.endSample}) at ${loop.sampleRate} Hz`, style: { left: `${range.start * pixelsPerSecond}px`, width: `${range.duration * pixelsPerSecond}px` }, children: loop.label || loop.id }, loop.id);
+                                        }) })] }), selectedRange && _jsx("div", { className: `rts-loop-shade ${loopEnabled ? "" : "is-disabled"}`, "aria-hidden": "true", style: { left: `${labelWidth + selectedRange.start * pixelsPerSecond}px`, width: `${selectedRange.duration * pixelsPerSecond}px` } }), _jsx("div", { className: "rts-lanes", children: lanes.map(lane => _jsxs("div", { className: `rts-lane rts-lane-${lane.kind ?? "default"} ${lane.className ?? ""}`, style: lane.height ? { "--rts-lane-height": `${lane.height}px` } : undefined, children: [_jsxs("div", { className: "rts-label", children: [_jsx("div", { className: "rts-title", children: lane.title }), lane.meta && _jsx("div", { className: "rts-meta", children: lane.meta })] }), _jsx("div", { className: "rts-track", children: _jsx(LaneContent, { content: lane.content, duration: duration }) })] }, lane.id)) }), grid.length > 0 && _jsx("div", { className: "rts-grid", "aria-hidden": "true", children: grid.map((marker, index) => _jsx("span", { className: `rts-grid-line ${marker.emphasis ? "rts-grid-line-emphasis" : ""} ${marker.className ?? ""}`, style: { left: `${marker.time * pixelsPerSecond}px` } }, `${marker.time}-${index}`)) }), _jsx("div", { className: "rts-playhead", style: { left: `${labelWidth + currentTime * pixelsPerSecond}px` }, "aria-hidden": "true" })] }) }) }), _jsxs("footer", { className: "rts-footer", children: [_jsx("div", { children: footer }), _jsxs("output", { className: "rts-window", children: [formatTimelineTime(windowRange.start), " \u2014 ", formatTimelineTime(windowRange.end)] })] })] });
+}
+
+// loops.jsx
+// An older installed timeline must fail the build, not silently ignore the new props.
+if (TIMELINE_LOOP_API_VERSION !== 1)
+    throw new Error("StemLab requires timeline loop API v1; see docs/loops.md");
+function mapAnalysisLoops(report, hash) {
+    if (!report || report.schema !== "stemlab.loops.v1")
+        return [];
+    const sampleRate = report.sample_rate;
+    if (!Number.isSafeInteger(sampleRate) || sampleRate <= 0)
+        return [];
+    return (report.loops || []).flatMap(loop => {
+        if (!/^(verse|chorus)-\d+-\d+$/.test(loop.id)
+            || !Number.isSafeInteger(loop.start_sample) || !Number.isSafeInteger(loop.end_sample)
+            || loop.start_sample < 0 || loop.end_sample <= loop.start_sample
+            || loop.end_sample > report.source_frames)
+            return [];
+        const version = encodeURIComponent(`${report.source_sha256}:${loop.start_sample}:${loop.end_sample}`);
+        return [{
+                id: loop.id,
+                label: `${loop.section_label} · ${loop.bars} bar${loop.bars === 1 ? "" : "s"}`,
+                startSample: loop.start_sample,
+                endSample: loop.end_sample,
+                sampleRate,
+                // Exact native-rate PCM excerpt, computed read-only whether or not --export-loops was used.
+                audioSrc: `/api/${hash}/loops/${encodeURIComponent(loop.id)}/audio?v=${version}`,
+                downloadUrl: loop.file && /^audio\/[a-zA-Z0-9._-]+\.wav$/.test(loop.file)
+                    ? `/${hash}/deep/loops/${loop.file.split("/").map(encodeURIComponent).join("/")}` : undefined,
+            }];
+    });
+}
+function useAnalysisLoops(hash) {
+    const [snapshot, setSnapshot] = useState({ report: null, error: "" });
+    useEffect(() => {
+        let active = true;
+        let timer;
+        let previous = "";
+        const controller = new AbortController();
+        setSnapshot({ report: null, error: "" });
+        const refresh = async () => {
+            try {
+                const response = await fetch(`/${hash}/deep/loops/loops.json`, {
+                    cache: "no-store", signal: controller.signal,
+                });
+                if (!active)
+                    return;
+                if (response.status === 404) {
+                    previous = "";
+                    setSnapshot({ report: null, error: "" });
+                }
+                else {
+                    if (!response.ok)
+                        throw new Error(`Loop report: HTTP ${response.status}`);
+                    const report = await response.json();
+                    if (report.schema !== "stemlab.loops.v1")
+                        throw new Error("Unsupported loop report schema");
+                    const signature = JSON.stringify(report);
+                    if (active && signature !== previous) {
+                        setSnapshot({ report, error: "" });
+                        previous = signature;
+                    }
+                }
+            }
+            catch (error) {
+                if (active && error.name !== "AbortError") {
+                    previous = "";
+                    setSnapshot({ report: null, error: error.message });
+                }
+            }
+            finally {
+                if (active)
+                    timer = window.setTimeout(refresh, 2500);
+            }
+        };
+        void refresh();
+        return () => { active = false; controller.abort(); window.clearTimeout(timer); };
+    }, [hash]);
+    const loops = useMemo(() => mapAnalysisLoops(snapshot.report, hash), [snapshot.report, hash]);
+    return { ...snapshot, loops };
+}
+function LoopSummary({ state, hash }) {
+    const report = state.report;
+    if (state.error)
+        return _jsx("p", { role: "alert", className: "stemlab-loop-summary", children: state.error });
+    if (!report)
+        return _jsxs("p", { className: "stemlab-loop-summary", children: ["No loop report yet. New analyses discover loops automatically; for existing results run ", _jsx("code", { children: "stemlab loops RESULTS_DIR" }), "."] });
+    return _jsxs("details", { className: "stemlab-loop-summary", open: report.unresolved_sections.length > 0, children: [_jsxs("summary", { children: [report.loop_count, " loop(s) \u00B7 ", report.unresolved_sections.length, " unresolved section(s) \u00B7 ", _jsx("a", { href: `/${hash}/deep/loops/loops.json`, target: "_blank", rel: "noopener", children: "Sample report" })] }), _jsx("p", { children: "Choose a loop region or use the Loop selector, tick Enable loop, then press Play. Previewing writes no files." }), report.unresolved_sections.map(section => _jsxs("p", { children: [_jsxs("strong", { children: [section.label, ":"] }), " ", section.reason] }, section.index))] });
+}
+
+// app.jsx
+const $ = selector => document.querySelector(selector);
+const uploadView = $("#uploadView");
+const timelineView = $("#timelineView");
+const dropZone = $("#dropZone");
+const fileInput = $("#fileInput");
+const chooseButton = $("#chooseButton");
+const uploadProgressWrap = $("#uploadProgressWrap");
+const uploadProgress = $("#uploadProgress");
+const uploadLabel = $("#uploadLabel");
+const connectionBadge = $("#connectionBadge");
+const canonicalBpmInput = $("#canonicalBpm");
+const canonicalLyricsInput = $("#canonicalLyrics");
+const canonicalTimingInput = $("#canonicalTiming");
+const knownInfoStatus = $("#knownInfoStatus");
+const loadArcadiansReference = $("#loadArcadiansReference");
+const loadArcadiansHero = $("#loadArcadiansHero");
+const oldTimelineMarkup = Array.from(timelineView.children);
+const timelineRoot = document.createElement("div");
+timelineRoot.id = "timelineRoot";
+timelineView.replaceChildren(timelineRoot);
+for (const node of oldTimelineMarkup)
+    node.remove();
+const root = createRoot(timelineRoot);
+const AUDIO_EXTENSIONS = new Set(["wav", "flac", "mp3", "ogg", "opus", "m4a", "aif", "aiff"]);
+let referenceMetadata = {};
+function fileExt(path) {
+    const base = String(path).split("/").pop() || "";
+    const position = base.lastIndexOf(".");
+    return position >= 0 ? base.slice(position + 1).toLowerCase() : "";
+}
+function prettyPath(path) {
+    return String(path)
+        .replace(/^stems\//, "")
+        .replace(/^spectrograms\//, "")
+        .replace(/^vamp\/data\//, "Vamp · ")
+        .replace(/^beats\//, "Beats · ")
+        .replace(/^speech\//, "Speech · ")
+        .replace(/^deep\//, "Deep · ")
+        .replace(/[_-]+/g, " ");
+}
+function resultUrl(hash, path) {
+    return `/${hash}/${path.split("/").map(encodeURIComponent).join("/")}`;
+}
+function artifact(hash, path, note = "Generated analysis artifact") {
+    return { type: "artifact", note, href: path === "__source__" ? `/api/${hash}/source` : resultUrl(hash, path) };
+}
+async function fetchJson(hash, path) {
+    const response = await fetch(resultUrl(hash, path), { cache: "no-store" });
+    if (!response.ok)
+        throw new Error(`HTTP ${response.status}`);
+    return response.json();
+}
+function number(value, digits = 2, suffix = "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? `${parsed.toFixed(digits)}${suffix}` : "—";
+}
+function summaryLane(id, title, meta, items, kind = "feature") {
+    const available = items.filter(([, value]) => value !== undefined && value !== null && value !== "");
+    return {
+        id,
+        title,
+        meta,
+        kind,
+        content: {
+            type: "summary",
+            items: (available.length ? available : [["status", "analysis available"]]).map(([label, value]) => ({ label, value })),
+        },
+    };
+}
+function segmentBlocks(events) {
+    return (events || []).flatMap(event => {
+        const start = Number(event.start);
+        if (!Number.isFinite(start))
+            return [];
+        const end = Number(event.end);
+        return [{
+                start,
+                end: Number.isFinite(end) && end > start ? end : start + 0.5,
+                label: event.label || event.text || event.values?.[0] || "",
+            }];
+    });
+}
+function vampContent(data) {
+    const events = Array.isArray(data.events) ? data.events : [];
+    switch (String(data.kind || "")) {
+        case "curve":
+            return { type: "curve", points: events.flatMap(event => {
+                    const time = Number(event.start);
+                    const value = Number(event.values?.[0]);
+                    return Number.isFinite(time) && Number.isFinite(value) && value > 0 ? [{ time, value }] : [];
+                }) };
+        case "matrix":
+            return { type: "matrix", rows: events.map(event => event.values || []).filter(values => values.length) };
+        case "notes":
+            return { type: "notes", items: events.flatMap(event => {
+                    const value = Number(event.values?.[0]);
+                    const start = Number(event.start);
+                    if (!Number.isFinite(value) || value <= 0 || !Number.isFinite(start))
+                        return [];
+                    const end = Number(event.end);
+                    return [{ start, end: Number.isFinite(end) && end > start ? end : start + 0.12, value, label: event.label }];
+                }) };
+        case "segments":
+            return { type: "blocks", items: segmentBlocks(events) };
+        case "events":
+            return { type: "markers", items: events.flatMap(event => Number.isFinite(Number(event.start)) ? [{ time: Number(event.start) }] : []) };
+        default:
+            return { type: "artifact", note: events[0]?.label || events[0]?.values?.join(", ") || data.title || "analysis" };
     }
-  );
 }
-function s1() {
-  const r = Cd?.value?.trim() || "", E = Ud?.value || "", d = Rd?.value || "";
-  return { ...Xs, bpm: r ? Number(r) : null, lyrics: E.trim() || null, lyric_timing: d.trim() || [] };
+async function waveformLane(hash, id, title, meta, path) {
+    const parameters = new URLSearchParams({ path, points: "12000" });
+    const response = await fetch(`/api/${hash}/waveform?${parameters}`);
+    if (!response.ok)
+        return { id, title, meta, kind: "artifact", content: artifact(hash, path, `waveform unavailable (${response.status})`) };
+    const data = await response.json();
+    return { id, title, meta, kind: "waveform", content: { type: "waveform", min: data.min || [], max: data.max || [] }, duration: Number(data.duration_seconds) || 0 };
 }
-function o1(r) {
-  return Number.isFinite(Number(r.bpm)) || !!r.lyrics || !!(typeof r.lyric_timing == "string" && r.lyric_timing.trim()) || !!(Array.isArray(r.lyric_timing) && r.lyric_timing.length);
-}
-async function r1(r) {
-  const E = s1();
-  if (!o1(E)) return;
-  const d = await fetch(`/api/${r}/canonical`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(E) }), s = await d.json().catch(() => ({}));
-  if (!d.ok) throw new Error(s.detail || `Could not save canonical metadata (${d.status})`);
-  Gs.textContent = "Known information saved with this song hash.";
-}
-function m1(r) {
-  return new Promise((E, d) => {
-    const s = new XMLHttpRequest();
-    s.open("PUT", `/upload/${encodeURIComponent(r.name)}`), s.setRequestHeader("Content-Type", r.type || "application/octet-stream"), s.upload.onprogress = (M) => {
-      Dd.classList.remove("hidden");
-      const _ = M.lengthComputable ? M.loaded / M.total : 0;
-      Ji.style.width = `${Math.round(_ * 100)}%`, $i.textContent = M.lengthComputable ? `${Math.round(_ * 100)}% · ${(M.loaded / 1048576).toFixed(1)} / ${(M.total / 1048576).toFixed(1)} MiB` : `${(M.loaded / 1048576).toFixed(1)} MiB uploaded`;
-    }, s.onerror = () => d(new Error("Upload failed")), s.onload = () => {
-      let M = {};
-      try {
-        M = JSON.parse(s.responseText);
-      } catch {
-      }
-      s.status < 200 || s.status >= 300 ? d(new Error(M.detail || `Upload failed (${s.status})`)) : E(M);
-    }, s.send(r);
-  });
-}
-async function xd(r, E) {
-  kh.classList.add("hidden"), Zs.classList.remove("hidden"), l1.render(/* @__PURE__ */ C.jsx(f1, { hash: r, filename: E || "uploaded audio" }));
-}
-async function jd(r) {
-  if (r) {
-    Ji.style.width = "0%", $i.textContent = `Uploading ${r.name}`, Dd.classList.remove("hidden");
+async function laneFromFile(hash, file) {
+    const path = file.path;
+    const id = `file:${path}`;
+    const extension = fileExt(path);
+    if (path === "canonical.json" || path.startsWith("deep/loops/"))
+        return null;
+    if (AUDIO_EXTENSIONS.has(extension))
+        return waveformLane(hash, id, prettyPath(path), "audio waveform", path);
+    if (path.startsWith("spectrograms/") && extension === "npz") {
+        const parameters = new URLSearchParams({ path, max_width: "8192", max_height: "768" });
+        return { id, title: prettyPath(path), meta: "spectrogram data · exact song timeline", kind: "spectrogram", content: { type: "image", src: `/api/${hash}/spectrogram?${parameters}`, alt: `${prettyPath(path)} spectrogram` } };
+    }
+    if (path.startsWith("spectrograms/") && extension === "png") {
+        return { id, title: prettyPath(path), meta: "rendered spectrogram PNG", kind: "image", content: { type: "image", src: resultUrl(hash, path), alt: `${prettyPath(path)} rendered spectrogram` } };
+    }
     try {
-      const E = await m1(r);
-      Ji.style.width = "100%", $i.textContent = "Upload complete · attaching to analysis", await r1(E.hash), await xd(E.hash, E.filename || r.name);
-    } catch (E) {
-      $i.textContent = E.message, Ji.style.width = "0%";
+        if (path.startsWith("beats/") && extension === "json") {
+            const data = await fetchJson(hash, path);
+            const downbeats = new Set((data.downbeats || []).map(value => Number(value).toFixed(3)));
+            return { id, title: prettyPath(path), meta: "beat / downbeat events", kind: "events", content: { type: "markers", items: (data.beats || []).flatMap(value => {
+                        const time = Number(value);
+                        return Number.isFinite(time) ? [{ time, emphasis: downbeats.has(time.toFixed(3)), label: downbeats.has(time.toFixed(3)) ? "Downbeat" : "Beat" }] : [];
+                    }) } };
+        }
+        if (path.startsWith("vamp/data/") && extension === "json") {
+            const data = await fetchJson(hash, path);
+            return { id, title: prettyPath(path), meta: "Vamp feature analysis", kind: "feature", content: vampContent(data) };
+        }
+        if (path === "speech/whisper.json") {
+            const data = await fetchJson(hash, path);
+            return { id, title: "Speech · Whisper words", meta: "word-aligned transcript", kind: "words", content: { type: "blocks", items: (data.words || []).flatMap(word => {
+                        const start = Number(word.start);
+                        const end = Number(word.end);
+                        return Number.isFinite(start) ? [{ start, end: Number.isFinite(end) ? Math.max(start + 0.03, end) : start + 0.03, label: String(word.word || "").trim() }] : [];
+                    }) } };
+        }
+        if (path === "deep/structure/structure.json" || path === "deep/song_map/song_map.json") {
+            const data = await fetchJson(hash, path);
+            const songMap = path.includes("song_map");
+            return { id, title: songMap ? "Deep · song map" : "Deep · functional structure", meta: songMap ? "section-level sonic / rhythm / harmony / lyric fusion" : "All-In-One · functional song sections", kind: "deep-structure", content: { type: "blocks", items: segmentBlocks(songMap ? data.sections : data.segments) } };
+        }
+        if (path === "deep/harmony/harmony.json") {
+            const data = await fetchJson(hash, path);
+            const chords = data.chords?.collapsed_progression || [];
+            if (chords.length)
+                return { id, title: "Deep · harmony", meta: "collapsed chord progression + key evidence", kind: "deep-harmony", content: { type: "blocks", items: segmentBlocks(chords) } };
+            return summaryLane(id, "Deep · harmony", "collapsed chord progression + key evidence", [["key", data.vamp_key || data.independent_key_candidates_from_nnls_chroma?.[0]?.key || "—"], ["tuning", data.tuning_hz ? `${Number(data.tuning_hz).toFixed(1)} Hz` : "—"]], "deep-harmony");
+        }
+        if (path === "deep/lyrics/lyrics.json") {
+            const data = await fetchJson(hash, path);
+            const timed = (data.lines || []).filter(item => Number.isFinite(Number(item.start)) && Number.isFinite(Number(item.end)));
+            if (timed.length)
+                return { id, title: "Deep · rhyme & prosody", meta: "phonetic rhyme, repetition and delivery", kind: "deep-lyrics", content: { type: "blocks", items: segmentBlocks(timed) } };
+            return summaryLane(id, "Deep · rhyme & prosody", "phonetic rhyme, repetition and delivery", [["rhyme scheme", data.rhyme?.scheme || "—"], ["lines", data.line_count ?? "—"], ["words", data.word_count ?? "—"]], "deep-lyrics");
+        }
+        if (path === "deep/sonic/sonic.json") {
+            const data = await fetchJson(hash, path);
+            return summaryLane(id, "Deep · sonic profile", "loudness · dynamics · timbre · stereo", [["LUFS", number(data.loudness?.integrated_lufs_bs1770, 1)], ["crest", number(data.loudness?.crest_factor_db, 1, " dB")], ["RMS range", number(data.loudness?.short_term_rms_range_db_p95_p10, 1, " dB")], ["centroid", number(data.timbre?.spectral_centroid_hz_mean, 0, " Hz")], ["stereo corr", number(data.stereo?.left_right_correlation, 2)]]);
+        }
+        if (path === "deep/rhythm/rhythm.json") {
+            const data = await fetchJson(hash, path);
+            return summaryLane(id, "Deep · groove", "meter · stability · swing · syncopation evidence", [["tempo", number(data.tempo?.median_bpm, 2, " BPM")], ["meter", data.meter?.estimated_beats_per_bar ? `${data.meter.estimated_beats_per_bar}/4-ish` : "—"], ["swing", number(data.groove?.swing_ratio_long_to_short, 2, ":1")], ["offbeat energy", number(data.groove?.offbeat_onset_energy_ratio, 3)], ["onsets/s", number(data.groove?.onset_density_per_second, 2)]]);
+        }
+        if (path === "deep/semantic_text/semantic_text.json") {
+            const data = await fetchJson(hash, path);
+            return summaryLane(id, "Deep · lyric semantics", "sentence embedding theme similarities · not probabilities", (data.theme_similarity || []).slice(0, 7).map(item => [item.theme, number(item.similarity, 3)]));
+        }
+        if (path === "deep/semantic_audio/semantic_audio.json") {
+            const data = await fetchJson(hash, path);
+            const items = Object.entries(data.prompt_sets || {}).flatMap(([category, values]) => (values || []).slice(0, 2).map(item => [`${category}: ${item.prompt}`, number(item.similarity, 3)]));
+            return summaryLane(id, "Deep · audio semantics", "MuQ-MuLan zero-shot similarities · CC-BY-NC weights", items);
+        }
+        if (path === "deep/summary.json") {
+            const data = await fetchJson(hash, path);
+            const items = Object.entries(data.analyses || {}).map(([name, record]) => [name, record.available ? "ready" : "unavailable"]);
+            if ((data.errors || []).length)
+                items.push(["errors", data.errors.length]);
+            return summaryLane(id, "Deep · analysis summary", "cross-domain action inventory", items);
+        }
     }
-  }
+    catch (error) {
+        return { id, title: prettyPath(path), meta: "analysis artifact", kind: "artifact", content: artifact(hash, path, error.message) };
+    }
+    return { id, title: prettyPath(path), meta: `${extension || "file"} · ${Number(file.bytes || 0).toLocaleString()} bytes`, kind: "artifact", content: artifact(hash, path) };
 }
-async function Bd(r) {
-  r?.preventDefault(), r?.stopPropagation();
-  try {
-    const E = await fetch("/assets/arcadians-reference.json", { cache: "no-store" });
-    if (!E.ok) throw new Error(`Could not load Arcadians reference (${E.status})`);
-    const d = await E.json();
-    Xs = {};
-    for (const s of ["title", "artist", "release_date", "isrc", "upc", "website", "my_songs_url", "epk_url", "cover_art_url", "source_url", "sections"])
-      d[s] !== void 0 && d[s] !== null && (Xs[s] = d[s]);
-    Cd.value = d.bpm ?? "", Ud.value = d.lyrics ?? "", Rd.value = Array.isArray(d.lyric_timing) && d.lyric_timing.length ? JSON.stringify(d.lyric_timing, null, 2) : "", ul(".known-info").open = !0, Gs.textContent = d.lyric_timing?.length ? `Loaded ${d.title || "Arcadians"}: canonical release metadata, sections, ${d.bpm} BPM, lyrics and timing.` : `Loaded ${d.title || "Arcadians"} canonical reference metadata.`;
-  } catch (E) {
-    Gs.textContent = E.message;
-  }
+function canonicalLayers(canonical, anchor, anchorSource, duration) {
+    const lanes = [];
+    const bpm = Number(canonical?.bpm);
+    if (Number.isFinite(bpm) && bpm > 0) {
+        const markers = [];
+        if (Number.isFinite(anchor) && duration > 0) {
+            const interval = 60 / bpm;
+            for (let time = anchor, index = 0; time <= duration + 1e-7; time += interval, index += 1)
+                markers.push({ time, emphasis: index === 0, label: `Canonical beat ${index + 1}` });
+        }
+        lanes.push({ id: "canonical:bpm", title: "Canonical BPM", meta: Number.isFinite(anchor) ? `${bpm} BPM · anchor ${anchor.toFixed(3)}s · ${anchorSource || "detected beat"}` : `${bpm} BPM · waiting for first detected beat`, kind: "canonical-bpm", height: 104, content: markers.length ? { type: "markers", items: markers } : { type: "artifact", note: `${bpm} BPM — grid will begin at the first detected beat` } });
+    }
+    if (canonical?.lyrics)
+        lanes.push({ id: "canonical:lyrics", title: "Canonical lyrics", meta: "known reference text", kind: "canonical-lyrics", height: 104, content: { type: "text", text: canonical.lyrics } });
+    const timing = Array.isArray(canonical?.lyric_timing) ? canonical.lyric_timing : [];
+    if (timing.length)
+        lanes.push({ id: "canonical:timing", title: "Canonical lyric timing", meta: `${timing.length} timed lyric event${timing.length === 1 ? "" : "s"}`, kind: "canonical-timing", height: 104, content: { type: "blocks", items: timing.flatMap(event => {
+                    const start = Number(event.start);
+                    const end = Number(event.end);
+                    return Number.isFinite(start) && start >= 0 ? [{ start, end: Number.isFinite(end) && end > start ? end : start + 0.75, label: String(event.text || ""), className: "stemlab-canonical-lyric" }] : [];
+                }) } });
+    const grid = lanes.find(lane => lane.id === "canonical:bpm")?.content?.items || [];
+    return { lanes, grid };
 }
-pd.addEventListener("click", (r) => {
-  r.stopPropagation(), hn.click();
-});
-hn.addEventListener("change", () => {
-  jd(hn.files?.[0]);
-});
-Ae.addEventListener("click", (r) => {
-  r.target !== pd && !r.target.closest(".known-info") && hn.click();
-});
-Ae.addEventListener("keydown", (r) => {
-  (r.key === "Enter" || r.key === " ") && hn.click();
-});
-for (const r of ["dragenter", "dragover"]) Ae.addEventListener(r, (E) => {
-  E.preventDefault(), Ae.classList.add("dragging");
-});
-for (const r of ["dragleave", "drop"]) Ae.addEventListener(r, (E) => {
-  E.preventDefault(), Ae.classList.remove("dragging");
-});
-Ae.addEventListener("drop", (r) => {
-  jd(r.dataTransfer?.files?.[0]);
-});
-Ih?.addEventListener("click", Bd);
-Ph?.addEventListener("click", Bd);
-const qs = new URLSearchParams(location.search).get("hash");
-qs && /^[0-9a-f]{64}$/i.test(qs) && xd(qs.toLowerCase(), "Existing analysis");
-export {
-  le as formatTimelineTime
-};
+function Log({ lines }) {
+    return _jsxs("details", { open: true, className: "stemlab-log", children: [_jsx("summary", { children: "Analysis log" }), _jsx("div", { className: "log", children: lines.map((line, index) => _jsxs("div", { className: line.stream === "stderr" ? "stderr" : "stdout", children: ["[", line.stream, "] ", line.text] }, index)) })] });
+}
+function StemLabTimeline({ hash, filename }) {
+    const loopState = useAnalysisLoops(hash);
+    const [lanes, setLanes] = useState([]);
+    const [duration, setDuration] = useState(0);
+    const [status, setStatus] = useState({ state: "submitted" });
+    const [canonical, setCanonical] = useState({ bpm: null, lyrics: null, lyric_timing: [] });
+    const [anchor, setAnchor] = useState(null);
+    const [anchorSource, setAnchorSource] = useState(null);
+    const [logs, setLogs] = useState([]);
+    const filesSeen = useRef(new Set());
+    const appendLog = useCallback((stream, text) => {
+        if (!text)
+            return;
+        setLogs(previous => [...previous.slice(-799), { stream: stream === "stderr" ? "stderr" : "stdout", text }]);
+    }, []);
+    const addFile = useCallback(async (file) => {
+        if (!file?.path || filesSeen.current.has(file.path))
+            return;
+        filesSeen.current.add(file.path);
+        const lane = await laneFromFile(hash, file);
+        if (!lane)
+            return;
+        if (lane.duration)
+            setDuration(current => current || lane.duration);
+        setLanes(previous => previous.some(item => item.id === lane.id) ? previous : [...previous, lane]);
+    }, [hash]);
+    const refresh = useCallback(async () => {
+        const response = await fetch(`/api/${hash}/timeline`, { cache: "no-store" });
+        if (!response.ok)
+            return;
+        const state = await response.json();
+        setStatus(state.status || { state: "submitted" });
+        if (state.duration_seconds)
+            setDuration(Number(state.duration_seconds));
+        if (state.canonical)
+            setCanonical(state.canonical);
+        const nextAnchor = state.first_detected_beat == null ? NaN : Number(state.first_detected_beat);
+        if (Number.isFinite(nextAnchor) && nextAnchor >= 0) {
+            setAnchor(nextAnchor);
+            setAnchorSource(state.first_detected_beat_source || "detected beat");
+        }
+        for (const file of state.files || [])
+            void addFile(file);
+    }, [addFile, hash]);
+    useEffect(() => {
+        filesSeen.current = new Set();
+        setLanes([]);
+        waveformLane(hash, "__source__", "MASTER · uploaded source", filename, "__source__").then(lane => {
+            if (lane.duration)
+                setDuration(lane.duration);
+            setLanes(previous => [lane, ...previous.filter(item => item.id !== lane.id)]);
+        }).catch(error => appendLog("stderr", error.message));
+        void refresh();
+        const interval = window.setInterval(() => void refresh(), 2500);
+        let socket = null;
+        if (typeof window.io === "function") {
+            socket = window.io({ path: "/socket.io" });
+            socket.on("connect", () => {
+                connectionBadge.textContent = "live";
+                connectionBadge.classList.remove("muted");
+                socket.emit("subscribe", { hash });
+            });
+            socket.on("disconnect", () => {
+                connectionBadge.textContent = "reconnecting";
+                connectionBadge.classList.add("muted");
+            });
+            socket.on("process_output", event => appendLog(event.stream || "stdout", event.line || ""));
+            socket.on("process_history", event => {
+                for (const line of event.stdout || [])
+                    appendLog("stdout", line);
+                for (const line of event.stderr || [])
+                    appendLog("stderr", line);
+            });
+            socket.on("new_file", event => void addFile(event));
+            socket.on("job_status", event => { setStatus(event.status || {}); void refresh(); });
+            socket.on("canonical_metadata", event => { if (event?.canonical)
+                setCanonical(event.canonical); });
+            socket.on("job_timeout", event => appendLog("stderr", `Job timeout: ${event.message || "analysis exceeded timeout"}`));
+        }
+        else {
+            connectionBadge.textContent = "polling";
+            connectionBadge.classList.add("muted");
+            appendLog("stderr", "Socket.IO browser client unavailable; timeline inventory polling remains active.");
+        }
+        return () => {
+            window.clearInterval(interval);
+            socket?.disconnect();
+        };
+    }, [addFile, appendLog, filename, hash, refresh]);
+    const references = useMemo(() => canonicalLayers(canonical, anchor, anchorSource, duration), [anchor, anchorSource, canonical, duration]);
+    // File discovery is asynchronous. Keep the musical evidence above raw artifacts.
+    const lanePriority = lane => lane.id === "__source__" ? 0
+        : lane.kind === "deep-structure" ? 10 : lane.kind === "events" ? 20
+            : lane.kind === "spectrogram" ? 30 : lane.kind === "waveform" ? 40 : 90;
+    const allLanes = [...references.lanes, ...[...lanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
+    const state = status.state || "submitted";
+    return _jsx(TimelineSequence, { className: "stemlab-timeline", audioSrc: `/api/${hash}/source`, duration: duration, title: canonical.title || filename, subtitle: hash, loops: loopState.loops, lanes: allLanes, grid: references.grid, onDurationChange: setDuration, onPlaybackError: error => appendLog("stderr", error instanceof Error ? error.message : String(error)), headerEnd: _jsxs(_Fragment, { children: [_jsx("span", { className: `badge ${state}`, children: state }), _jsxs("span", { className: "small", children: [allLanes.length, " lane", allLanes.length === 1 ? "" : "s"] })] }), footer: _jsxs(_Fragment, { children: [_jsx(LoopSummary, { state: loopState, hash: hash }), _jsx(Log, { lines: logs }), _jsx("span", { className: "dock-links", children: _jsx("a", { href: "https://kieransimkin.co.uk/my-songs/", target: "_blank", rel: "noopener", children: "Kieran Simkin \u00B7 My Songs \u2197" }) })] }) });
+}
+function canonicalPayloadFromForm() {
+    const bpm = canonicalBpmInput?.value?.trim() || "";
+    const lyrics = canonicalLyricsInput?.value || "";
+    const timing = canonicalTimingInput?.value || "";
+    return { ...referenceMetadata, bpm: bpm ? Number(bpm) : null, lyrics: lyrics.trim() || null, lyric_timing: timing.trim() || [] };
+}
+function hasCanonicalInput(payload) {
+    return Number.isFinite(Number(payload.bpm)) || Boolean(payload.lyrics) || Boolean(typeof payload.lyric_timing === "string" && payload.lyric_timing.trim()) || Boolean(Array.isArray(payload.lyric_timing) && payload.lyric_timing.length);
+}
+async function saveCanonical(hash) {
+    const payload = canonicalPayloadFromForm();
+    if (!hasCanonicalInput(payload))
+        return;
+    const response = await fetch(`/api/${hash}/canonical`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok)
+        throw new Error(result.detail || `Could not save canonical metadata (${response.status})`);
+    knownInfoStatus.textContent = "Known information saved with this song hash.";
+}
+function uploadFile(file) {
+    return new Promise((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        request.open("PUT", `/upload/${encodeURIComponent(file.name)}`);
+        request.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+        request.upload.onprogress = event => {
+            uploadProgressWrap.classList.remove("hidden");
+            const ratio = event.lengthComputable ? event.loaded / event.total : 0;
+            uploadProgress.style.width = `${Math.round(ratio * 100)}%`;
+            uploadLabel.textContent = event.lengthComputable ? `${Math.round(ratio * 100)}% · ${(event.loaded / 1048576).toFixed(1)} / ${(event.total / 1048576).toFixed(1)} MiB` : `${(event.loaded / 1048576).toFixed(1)} MiB uploaded`;
+        };
+        request.onerror = () => reject(new Error("Upload failed"));
+        request.onload = () => {
+            let payload = {};
+            try {
+                payload = JSON.parse(request.responseText);
+            }
+            catch { }
+            if (request.status < 200 || request.status >= 300)
+                reject(new Error(payload.detail || `Upload failed (${request.status})`));
+            else
+                resolve(payload);
+        };
+        request.send(file);
+    });
+}
+async function openTimeline(hash, filename) {
+    uploadView.classList.add("hidden");
+    timelineView.classList.remove("hidden");
+    root.render(_jsx(StemLabTimeline, { hash: hash, filename: filename || "uploaded audio" }, hash));
+}
+async function startUpload(file) {
+    if (!file)
+        return;
+    uploadProgress.style.width = "0%";
+    uploadLabel.textContent = `Uploading ${file.name}`;
+    uploadProgressWrap.classList.remove("hidden");
+    try {
+        const response = await uploadFile(file);
+        uploadProgress.style.width = "100%";
+        uploadLabel.textContent = "Upload complete · attaching to analysis";
+        await saveCanonical(response.hash);
+        await openTimeline(response.hash, response.filename || file.name);
+    }
+    catch (error) {
+        uploadLabel.textContent = error.message;
+        uploadProgress.style.width = "0%";
+    }
+}
+async function loadArcadiansFixture(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    try {
+        const response = await fetch("/assets/arcadians-reference.json", { cache: "no-store" });
+        if (!response.ok)
+            throw new Error(`Could not load Arcadians reference (${response.status})`);
+        const reference = await response.json();
+        referenceMetadata = {};
+        for (const field of ["title", "artist", "release_date", "isrc", "upc", "website", "my_songs_url", "epk_url", "cover_art_url", "source_url", "sections"]) {
+            if (reference[field] !== undefined && reference[field] !== null)
+                referenceMetadata[field] = reference[field];
+        }
+        canonicalBpmInput.value = reference.bpm ?? "";
+        canonicalLyricsInput.value = reference.lyrics ?? "";
+        canonicalTimingInput.value = Array.isArray(reference.lyric_timing) && reference.lyric_timing.length ? JSON.stringify(reference.lyric_timing, null, 2) : "";
+        $(".known-info").open = true;
+        knownInfoStatus.textContent = reference.lyric_timing?.length ? `Loaded ${reference.title || "Arcadians"}: canonical release metadata, sections, ${reference.bpm} BPM, lyrics and timing.` : `Loaded ${reference.title || "Arcadians"} canonical reference metadata.`;
+    }
+    catch (error) {
+        knownInfoStatus.textContent = error.message;
+    }
+}
+chooseButton.addEventListener("click", event => { event.stopPropagation(); fileInput.click(); });
+fileInput.addEventListener("change", () => void startUpload(fileInput.files?.[0]));
+dropZone.addEventListener("click", event => { if (event.target !== chooseButton && !event.target.closest(".known-info"))
+    fileInput.click(); });
+dropZone.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ")
+    fileInput.click(); });
+for (const name of ["dragenter", "dragover"])
+    dropZone.addEventListener(name, event => { event.preventDefault(); dropZone.classList.add("dragging"); });
+for (const name of ["dragleave", "drop"])
+    dropZone.addEventListener(name, event => { event.preventDefault(); dropZone.classList.remove("dragging"); });
+dropZone.addEventListener("drop", event => void startUpload(event.dataTransfer?.files?.[0]));
+loadArcadiansReference?.addEventListener("click", loadArcadiansFixture);
+loadArcadiansHero?.addEventListener("click", loadArcadiansFixture);
+const hashFromLocation = new URLSearchParams(location.search).get("hash");
+if (hashFromLocation && /^[0-9a-f]{64}$/i.test(hashFromLocation))
+    void openTimeline(hashFromLocation.toLowerCase(), "Existing analysis");
+
+export { formatTimelineTime };
