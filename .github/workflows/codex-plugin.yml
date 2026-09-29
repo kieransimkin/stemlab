@@ -1,0 +1,67 @@
+name: Codex plugin validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      release_tag:
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  plugin:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install -e ".[dev,server,codex]"
+      - name: Require the actual MCP v2 runtime (do not silently skip protocol tests)
+        run: python -c "from mcp.server import MCPServer; print(MCPServer.__name__)"
+      - run: python -m compileall -q src/stemlab/codex
+      - run: python -m pytest tests/test_codex_bridge.py tests/test_codex_jobs.py tests/test_codex_package.py tests/test_codex_protocol.py tests/test_codex_release.py tests/test_codex_timeline.py
+      - run: ruff check src/stemlab/codex scripts/build_codex_plugin.py scripts/check_codex_timeline.py scripts/prepare_codex_marketplace.py scripts/publish_mcp_registry.py tests/test_codex_*.py
+      - name: Install the real browser test runtime
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Verify React timeline inspection and actual loop transport
+        if: runner.os == 'Linux'
+        run: python scripts/check_codex_timeline.py --output build/codex-timeline-qa
+      - name: Retain actual synthetic-workflow browser captures
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v7
+        with:
+          name: stemlab-codex-timeline-qa
+          path: build/codex-timeline-qa/*
+          if-no-files-found: warn
+      - run: python scripts/build_codex_plugin.py --check
+      - name: Build versioned plugin and MCP Registry metadata
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python scripts/build_codex_plugin.py --release-tag "$env:RELEASE_TAG"
+        if: runner.os == 'Windows'
+      - name: Build versioned plugin and MCP Registry metadata (POSIX)
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python scripts/build_codex_plugin.py --release-tag "$RELEASE_TAG"
+        if: runner.os != 'Windows'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: stemlab-codex-plugin-${{ matrix.os }}
+          path: dist/codex/*

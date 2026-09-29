@@ -1,0 +1,15 @@
+include .agents/plugins/marketplace.json
+recursive-include plugins/stemlab *.json *.md
+include plugins/stemlab/.mcp.json
+include plugins/stemlab/.codex-plugin/plugin.json
+include scripts/build_codex_plugin.py
+include docs/codex-plugin.md
+include docs/codex-publishing.md
+include mcp-registry/server.json
+include scripts/prepare_codex_marketplace.py
+include scripts/publish_mcp_registry.py
+include .github/workflows/codex-plugin.yml
+include .github/workflows/release.yml
+include scripts/check_codex_timeline.py
+include scripts/loop_demo.py
+include scripts/capture_loop_workflow.py

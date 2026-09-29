@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "danceflow-stemlab"
 dynamic = ["version"]
-description = "StemLab audio analysis for DanceFlow BPM and motion-response workflows, including WordPress DanceMoves"
+description = "StemLab audio timing analysis and loopable sections for creating Shorts videos; DanceFlow and WordPress DanceMoves"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Kieran Simkin"}]
@@ -49,6 +49,9 @@ Changelog = "https://github.com/kieransimkin/stemlab/blob/main/CHANGELOG.md"
 Contact = "https://kieransimkin.co.uk/contact/"
 
 [project.optional-dependencies]
+# Local MCP transport and read-only viewer for the existing React timeline.
+# Model backends remain separately selected; no duplicate React bundle is shipped.
+codex = ["mcp>=2.2,<3", "fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
 separation = [
   "demucs>=4.0.1",
   "openunmix>=1.3.0",
@@ -91,6 +94,9 @@ all = [
 
 [project.scripts]
 stemlab = "stemlab.cli:app"
+stemlab-codex = "stemlab.codex.__main__:main"
+# Distribution-name alias lets generic MCP registry clients launch the PyPI package.
+danceflow-stemlab = "stemlab.codex.__main__:main"
 
 [tool.setuptools.dynamic]
 version = {attr = "stemlab.__version__"}

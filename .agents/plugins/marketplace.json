@@ -1,0 +1,20 @@
+{
+  "name": "stemlab-local",
+  "interface": {
+    "displayName": "StemLab · DanceFlow"
+  },
+  "plugins": [
+    {
+      "name": "stemlab",
+      "source": {
+        "source": "local",
+        "path": "./plugins/stemlab"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

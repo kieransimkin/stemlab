@@ -30,3 +30,4 @@ music/
 .pytest-all/
 .pytest-rts-*/
 .web-test-results-*/
+stemlab-codex-results/

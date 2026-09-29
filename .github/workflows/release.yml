@@ -9,7 +9,16 @@ permissions:
   contents: read
 
 jobs:
+  codex-package:
+    name: Validate and package Codex plugin
+    uses: ./.github/workflows/codex-plugin.yml
+    with:
+      release_tag: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+    permissions:
+      contents: read
+
   release-build:
+    needs: codex-package
     name: Build and validate StemLab release
     runs-on: ubuntu-22.04
     steps:
@@ -89,10 +98,17 @@ jobs:
             --include-package-data=faster_whisper \
             src/stemlab/__main__.py
 
+      - name: Retrieve validated Codex plugin assets
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-codex-plugin-ubuntu-latest
+          path: codex-release
+
       - name: Assemble StemLab release directory and manifest
         run: |
           mkdir -p dist-release
           cp dist/* dist-release/
+          cp codex-release/* dist-release/
           if [[ -f build/nuitka/stemlab-linux-x86_64 ]]; then
             cp build/nuitka/stemlab-linux-x86_64 dist-release/
             chmod +x dist-release/stemlab-linux-x86_64
@@ -125,7 +141,7 @@ jobs:
   github-release:
     name: Publish StemLab GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: release-build
+    needs: [release-build, codex-package]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -261,7 +277,7 @@ jobs:
   pypi-publish:
     name: Publish StemLab to PyPI
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: release-build
+    needs: [release-build, codex-package]
     runs-on: ubuntu-24.04
     environment:
       name: pypi
@@ -277,3 +293,84 @@ jobs:
 
       - name: Publish danceflow-stemlab distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  codex-marketplace:
+    name: Publish Codex Git marketplace release channel
+    if: startsWith(github.ref, 'refs/tags/v') && vars.CODEX_MARKETPLACE_PUBLISH != 'false'
+    needs: [github-release, pypi-publish, codex-package]
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: stemlab-codex-marketplace
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v5
+        with:
+          name: stemlab-codex-plugin-ubuntu-latest
+          path: dist/codex
+      - uses: actions/checkout@v7
+        with:
+          path: marketplace-stage
+          fetch-depth: 1
+      - name: Prepare the dedicated channel branch (never change main)
+        working-directory: marketplace-stage
+        shell: bash
+        run: |
+          if git ls-remote --exit-code --heads origin codex-plugins; then
+            git fetch origin codex-plugins:refs/remotes/origin/codex-plugins
+            git switch -c codex-plugins --track origin/codex-plugins
+          else
+            git switch --orphan codex-plugins
+          fi
+      - name: Verify package and update the marketplace contents
+        env:
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          python scripts/prepare_codex_marketplace.py \
+            --archive "dist/codex/stemlab-codex-plugin-${TAG#v}.zip" \
+            --checkout marketplace-stage --tag "$TAG"
+      - name: Push release channel without force
+        working-directory: marketplace-stage
+        env:
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .agents/plugins/marketplace.json plugins/stemlab README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish StemLab Codex plugin $TAG"
+            git push origin HEAD:codex-plugins
+          fi
+          echo 'Codex Git marketplace updated; this is not OpenAI public-directory publication.' >> "$GITHUB_STEP_SUMMARY"
+
+  mcp-registry:
+    name: Publish to official MCP Registry (opt-in)
+    if: startsWith(github.ref, 'refs/tags/v') && vars.MCP_REGISTRY_PUBLISH == 'true' && github.repository == 'kieransimkin/stemlab'
+    needs: [github-release, pypi-publish, codex-package]
+    runs-on: ubuntu-24.04
+    environment: mcp-registry
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v5
+        with:
+          name: stemlab-codex-plugin-ubuntu-latest
+          path: dist/codex
+      - name: Verify PyPI release, authenticate with OIDC and publish metadata
+        env:
+          TAG: ${{ github.ref_name }}
+          MCP_PUBLISHER_VERSION: ${{ vars.MCP_PUBLISHER_VERSION }}
+          MCP_PUBLISHER_SHA256: ${{ vars.MCP_PUBLISHER_SHA256 }}
+        run: python scripts/publish_mcp_registry.py --metadata dist/codex/stemlab-mcp-server.json --tag "$TAG"

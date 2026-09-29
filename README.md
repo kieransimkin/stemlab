@@ -1,10 +1,12 @@
 # StemLab
 
+<!-- mcp-name: io.github.kieransimkin/stemlab -->
+
 > **StemLab by [Kieran Simkin](https://kieransimkin.co.uk/)** · [My Songs](https://kieransimkin.co.uk/my-songs/) · [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) · [Source](https://github.com/kieransimkin/stemlab)
 
 > **Packaging identity:** the canonical project name is **StemLab**. StemLab is part of the **Dance Flow** project. The PyPI distribution is named `danceflow-stemlab` solely because Python package-registry names are globally unique. The Python import, CLI, GitHub repository and container image remain `stemlab`.
 
-StemLab is the audio-analysis engine in Kieran Simkin's **DanceFlow** BPM and motion-response workflow. It separates and interprets a master track into synchronised stem, BPM/beat, structure, harmony, timbre, speech/lyric and semantic data. Those outputs can drive downstream motion-aware experiences, including the WordPress **DanceMoves** plugin, while StemLab remains usable as a standalone CLI, Python library, web service and container.
+StemLab provides **audio timing analysis and finds loopable sections for creating Shorts and other short-form videos**. It is the audio-analysis engine in Kieran Simkin's **DanceFlow** BPM and motion-response workflow. It separates and interprets a master track into synchronised stem, BPM/beat, structure, harmony, timbre, speech/lyric and semantic data. Those outputs can drive downstream motion-aware experiences, including the WordPress **DanceMoves** plugin, while StemLab remains usable as a standalone CLI, Python library, web service and container.
 
 > **Model weights are not redistributed by this project.** They are fetched from their upstream registries/releases on first use. This avoids silently republishing checkpoints whose licensing may differ from the source code license, and lets upstream integrity metadata be used where available.
 
@@ -344,6 +346,41 @@ endpoints, events and the Arcadians reference workflow.
 - [Containers](docs/containers.md)
 - [Publishing and releases](docs/publishing.md)
 - [Changelog](CHANGELOG.md)
+
+## Codex plugin and MCP server
+
+**Inspect through the real React timeline first.** The Codex plugin now exposes
+`stemlab_open_timeline` to serve saved results in StemLab's bundled
+`react-timeline-sequence` frontend. Use an available local browser to compare
+waveform, spectrogram, beat and section lanes, select/enable loops, zoom and audition
+the repeat. Exact JSON reports support numerical claims; saved PNGs are a fallback
+when browser access is unavailable. Screenshots must come from the rendered
+component, never a redraw. `stemlab_close_timeline` closes the private, read-only
+viewer without changing results. See [the inspection workflow](docs/codex-plugin.md#preferred-inspection-existing-react-timeline).
+
+Use StemLab from Codex to analyse timing, inspect real evidence and find/export
+loopable music sections for Shorts videos. This is a local stdio MCP server plus
+an installable skill bundle, not a remote audio-upload service or a video editor.
+It reuses the existing pipeline and preserves prior result folders.
+
+```bash
+# From this patched checkout, in an activated environment:
+python -m pip install -e ".[codex]"
+stemlab-codex configure --workspace "/absolute/path/to/music-workspace"
+stemlab-codex doctor
+codex plugin marketplace add .
+```
+
+Install StemLab from the local plugin directory on a supported Codex host; for
+CLI-only use, register the MCP command directly. See [setup and tools](docs/codex-plugin.md)
+for Windows paths, model extras, consent, polling and exact sample conventions.
+
+Release builds validate the MCP integration and attach a versioned plugin ZIP,
+checksums and MCP Registry metadata to the GitHub release. A release-only
+`codex-plugins` branch provides a marketplace channel after PyPI publication.
+This does **not** automatically submit to OpenAI's public Plugins Directory.
+[Distribution and optional MCP Registry publishing](docs/codex-publishing.md)
+explains the separate channels and approval requirements.
 
 ## Codex skill
 

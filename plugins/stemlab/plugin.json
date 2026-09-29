@@ -1,0 +1,45 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "stemlab",
+  "version": "0.1.0",
+  "description": "Audio timing analysis and loopable sections for creating Shorts videos; local StemLab / DanceFlow MCP.",
+  "author": {
+    "name": "Kieran Simkin",
+    "url": "https://kieransimkin.co.uk/"
+  },
+  "homepage": "https://kieransimkin.co.uk/my-songs/",
+  "repository": "https://github.com/kieransimkin/stemlab",
+  "license": "MIT",
+  "keywords": [
+    "audio",
+    "music",
+    "stems",
+    "beats",
+    "loops",
+    "DanceFlow",
+    "timing-analysis",
+    "shorts",
+    "short-form-video"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "StemLab",
+        "shortDescription": "Audio timing and loops for Shorts videos",
+        "longDescription": "StemLab analyses musical timing and finds loopable sections for creating Shorts and other short-form videos. Inspect beat/downbeat grids, native-sample loop boundaries, stems, spectrograms, structure, harmony, vocals and sonic features. Part of Kieran Simkin's DanceFlow workflow, related to the WordPress DanceMoves plugin. Audio analysis runs locally. Prefer the real React timeline for visual inspection and loop audition, with exact reports as supporting evidence.",
+        "developerName": "Kieran Simkin",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://kieransimkin.co.uk/my-songs/",
+        "defaultPrompt": [
+          "Inspect this song in StemLab’s React timeline and find loopable sections for a Shorts video.",
+          "Open my existing StemLab results in the timeline and audition the accepted verse and chorus loops.",
+          "Compare the beat grid, vocal evidence and loop boundaries in the shared timeline, then report exact sample numbers."
+        ]
+      }
+    }
+  }
+}

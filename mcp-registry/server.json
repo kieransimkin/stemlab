@@ -1,0 +1,45 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.kieransimkin/stemlab",
+  "title": "StemLab \u2014 timing and loops for Shorts",
+  "description": "Audio timing analysis and loopable sections for creating Shorts videos; local StemLab / DanceFlow MCP.",
+  "version": "1.0.1",
+  "websiteUrl": "https://kieransimkin.co.uk/my-songs/",
+  "repository": {
+    "url": "https://github.com/kieransimkin/stemlab",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "danceflow-stemlab",
+      "version": "1.0.1",
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "--with",
+          "value": "mcp>=2.2,<3"
+        }
+      ],
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "serve"
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "STEMLAB_CODEX_WORKSPACE",
+          "description": "Absolute, existing local directory containing authorised audio and results. Never use a filesystem root.",
+          "isRequired": true,
+          "isSecret": false,
+          "format": "filepath"
+        }
+      ]
+    }
+  ]
+}
