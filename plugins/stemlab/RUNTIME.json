@@ -1,0 +1,11 @@
+{
+  "distribution": "danceflow-stemlab",
+  "version": "1.1.0",
+  "extra": "codex",
+  "requirement": "danceflow-stemlab[codex]==1.1.0",
+  "command": "stemlab-codex",
+  "args": [
+    "serve"
+  ],
+  "note": "Preinstall the matching runtime. No lifecycle installer is run by this plugin."
+}

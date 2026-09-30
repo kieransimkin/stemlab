@@ -1,0 +1,20 @@
+{
+  "name": "stemlab-releases",
+  "interface": {
+    "displayName": "StemLab releases \u00b7 timing and loops for Shorts"
+  },
+  "plugins": [
+    {
+      "name": "stemlab",
+      "source": {
+        "source": "local",
+        "path": "./plugins/stemlab"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
