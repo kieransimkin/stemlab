@@ -136,3 +136,11 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 - **Correction:** assert the exact reviewed commit and lockfile integrity, and specify UTF-8 for public-description checks. Keep documentation explicit that the source pin remains until the same loop API is published and verified on npm.
 - **Verification:** clean `npm ci`, the production Vite build, Ruff and the complete Python suite passed; the bundled frontend rebuilt successfully.
 - **Limit:** a future return to an npm release must update the manifest, lockfile, documentation and assertion together, then repeat the clean build.
+
+### Windows MCP protocol assertion compares an escaped JSON envelope
+
+- **Symptom (30 September 2026):** the Windows Codex-plugin matrix failed because the literal workspace path was not a substring of `json.dumps(response)`, while the same test passed on POSIX.
+- **Cause:** Windows backslashes are escaped again when the outer MCP response is serialised for comparison. The assertion inspected transport encoding rather than the returned capability value.
+- **Correction:** select the MCP text content block, parse its JSON payload, convert the returned workspace to `Path`, and compare it with the resolved expected path.
+- **Verification:** require both read-only and writable stdio protocol variants to pass on Windows and Linux before release.
+- **Limit:** this corrects a cross-platform assertion; it does not relax workspace confinement or path validation.

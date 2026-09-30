@@ -7,6 +7,7 @@ import queue
 import subprocess
 import sys
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -58,7 +59,8 @@ def test_stdio_discovery_tools_errors_and_resources(tmp_path, monkeypatch, read_
         assert ("stemlab_start_analysis" in names) is (not read_only)
         response = request("tools/call", {"name": "stemlab_capabilities", "arguments": {}})
         assert not response.get("isError")
-        assert str(tmp_path) in json.dumps(response)
+        content = next(item["text"] for item in response["content"] if item.get("type") == "text")
+        assert Path(json.loads(content)["workspace"]) == tmp_path.resolve()
         denied = request("tools/call", {"name": "stemlab_inspect_audio", "arguments": {"path": "../outside.wav"}})
         assert denied["isError"] is True
         resources = request("resources/list", {})["resources"]
