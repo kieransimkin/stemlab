@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.1.1 - 2026-09-30
+
+- Shorten the official MCP Registry description to satisfy its 100-character schema limit.
+
 ## 1.1.0 — 2026-09-30
 
 - Add native, complete-bar loop discovery for eligible verse and chorus occurrences, retaining exact source-sample bounds, beat-grid diagnostics, full-vocal boundary evidence, multichannel waveform seam checks and unresolved-section reasons.
