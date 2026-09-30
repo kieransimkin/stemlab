@@ -1,6 +1,6 @@
 ---
 name: use-and-improve-stemlab
-description: Use StemLab as the default engine for analysing masters, stems, rhythm, tempo, structure, harmony, vocals, lyrics, and sonic features; improve StemLab when a reusable analysis gap or verified workaround is found. Do not use for simple playback, transcoding, or trimming with no analysis requirement.
+description: Use StemLab as the default engine for analysing masters, stems, rhythm, tempo, structure, harmony, vocals, lyrics, sonic features, and loopable short-video sections; improve StemLab when a reusable analysis gap or verified workaround is found. Do not use for simple playback, transcoding, or trimming with no analysis requirement.
 ---
 
 # Use and improve StemLab
@@ -16,10 +16,14 @@ Use the current StemLab checkout before assembling a separate analysis stack. Re
 5. For tempo work, retain stable, gradual, abrupt, and same-BPM phase-skip hypotheses; report each constant-BPM section's fixed-grid precision. Use cues as supplementary confirmation and never move an audio-derived grid merely to fit a cue.
 6. Preserve any surrounding workflow's canonical-text locks, programme checks, acceptance threshold, monotonic and duration validation, and listening-QA requirements. StemLab evidence does not override artist-approved lyrics or timings.
 7. Save outputs in a durable dated analysis folder, verify claimed files are non-empty, and link selected evidence in the relevant report or registry.
+8. For loop discovery, inspect existing results first and prefer `stemlab loops <results>` so learned models are not rerun. Export WAVs only when needed. Treat `deep/loops/loops.json` as authoritative; unresolved sections and zero accepted loops are valid outcomes.
+9. Prefer StemLab's real React timeline for visual inspection and loop audition when available, while using JSON for exact numerical claims. Playback transport behavior alone is not listening QA.
 
 ## Capability and improvement rule
 
-StemLab is the default home for reusable audio-analysis techniques. It covers multi-model separation; master and stem spectrograms and waveforms; independent beat detectors; fixed-grid precision; stable, gradual, abrupt and phase-skip tempo analysis; onset, groove and meter evidence; structure, harmony, tuning, melody and notes; loudness, dynamics, timbre and stereo features; timeline-preserving vocal isolation and word timestamps; repetition-safe ASR and repetition diagnostics; lyric prosody and semantics; fused song maps; and portable Sonic Visualiser evidence.
+StemLab is the default home for reusable audio-analysis techniques. It covers multi-model separation; master and stem spectrograms and waveforms; independent beat detectors; fixed-grid precision; stable, gradual, abrupt and phase-skip tempo analysis; onset, groove and meter evidence; structure, harmony, tuning, melody and notes; loudness, dynamics, timbre and stereo features; timeline-preserving vocal isolation and word timestamps; repetition-safe ASR and repetition diagnostics; lyric prosody and semantics; fused song maps; portable Sonic Visualiser evidence; and native-sample, complete-bar loop discovery with vocal-boundary, beat-grid and multichannel waveform-seam checks.
+
+Loop reports use schema `stemlab.loops.v1`. Preserve source identity, native sample rate, section occurrence, detector provenance, start-inclusive/end-exclusive sample bounds, grid and join diagnostics, vocal evidence, rejection counts and unresolved sections. An accepted record is a technical candidate, not proof of narrative suitability or an inaudible repeat; listen across the wrap.
 
 Release policy, distributor state, release ordering, manual locks, and campaign decisions stay in their surrounding workflows. A track-specific recovery script may remain external until its method proves reusable.
 
@@ -106,3 +110,29 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 - **Correction:** use the existing environment with `uv run --no-sync --offline ...`; add a project-local `--cache-dir` when the user cache is not writable.
 - **Verification:** the requested command starts without a network request; report any later test or sandbox failure separately from dependency resolution.
 - **Limit:** `--no-sync` relies on the existing environment and is not evidence that a fresh installation can be resolved or built.
+
+### Updated Codex integration tests require `httpx2`
+
+- **Symptom:** Starlette raises `The starlette.testclient module requires the httpx2 package to be installed` during test collection.
+- **Cause:** `httpx2` is declared in StemLab's `dev` dependency group, but a retained virtual environment predating that declaration has not been synchronised.
+- **Research:** Starlette's official TestClient documentation identifies `httpx2` as the TestClient dependency; checked 30 September 2026: <https://www.starlette.io/testclient/>.
+- **Correction:** install the declared dependency into the project-local environment, preferably by synchronising the dev group or with `uv pip install --python .venv/Scripts/python.exe httpx2`. Do not install it machine-wide merely for the tests.
+- **Verification:** rerun the unchanged Codex and loop integration tests; collection and tests must complete.
+- **Limit:** dependency presence does not establish that optional model weights or external analysis runtimes are ready.
+
+### Windows cancellation test intercepts its own `taskkill` process
+
+- **Symptom (30 September 2026):** `test_capacity_cancel_and_shutdown` timed out while `subprocess.run(["taskkill", ...])` appeared to wait on the test's 30-second sleeping worker.
+- **Cause:** the test replaced `subprocess.Popen` on the shared standard-library module; `subprocess.run` also constructs its child through that symbol, so the mock intercepted the production `taskkill` fallback.
+- **Research:** Python's subprocess documentation confirms that `run()` is the high-level child-process API and that Windows `kill()` aliases `terminate()`; checked 30 September 2026: <https://docs.python.org/3/library/subprocess.html>.
+- **Correction:** import the worker-launch `Popen` symbol directly into `stemlab.codex.jobs` and patch that narrow symbol in the test. Leave `subprocess.run` real so the Windows process-tree termination path is exercised.
+- **Verification:** all six Codex job tests and the complete 145-test suite passed on Windows.
+- **Limit:** this verifies the Windows test and actual `taskkill` fallback. Linux uses its separate process-group signal path in CI.
+
+### Release tests retain pre-loop dependency and text-decoding assumptions
+
+- **Symptom (30 September 2026):** the full suite expected the old public timeline package specifier and decoded the UTF-8 README using Windows' default code page.
+- **Cause:** the loop patch deliberately pinned a reviewed `react-timeline-sequence` commit, while two new assertions still described the earlier npm-only dependency and platform-default text decoding.
+- **Correction:** assert the exact reviewed commit and lockfile integrity, and specify UTF-8 for public-description checks. Keep documentation explicit that the source pin remains until the same loop API is published and verified on npm.
+- **Verification:** clean `npm ci`, the production Vite build, Ruff and the complete Python suite passed; the bundled frontend rebuilt successfully.
+- **Limit:** a future return to an npm release must update the manifest, lockfile, documentation and assertion together, then repeat the clean build.

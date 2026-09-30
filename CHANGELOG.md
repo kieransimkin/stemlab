@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 1.1.0 — 2026-09-30
+
+- Add native, complete-bar loop discovery for eligible verse and chorus occurrences, retaining exact source-sample bounds, beat-grid diagnostics, full-vocal boundary evidence, multichannel waveform seam checks and unresolved-section reasons.
+- Add optional exact WAV loop export and loop-only rescanning of saved analyses without rerunning separation or learned models.
+- Add loop selection, audition and zoom support to the shared React timeline.
+- Add the local StemLab Codex plugin and MCP server for bounded analysis jobs, saved-artifact inspection and private timeline viewing.
+- Add release-gated Codex marketplace and opt-in official MCP Registry publication, tied to the matching PyPI version and GitHub OIDC ownership.
+- Include the My Songs portfolio in README, Python package and plugin metadata.
+
 ## 1.0.1 — 2026-09-28
 
 - Restrict container image builds and publication to the release workflow, after the GitHub Release has been created; ordinary CI no longer has package-write permission.

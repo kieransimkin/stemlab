@@ -18,10 +18,12 @@ def test_stemlab_stable_identity():
     assert project["scripts"]["stemlab"] == "stemlab.cli:app"
     assert "version" in project["dynamic"]
     assert "version" not in project
-    assert stemlab.__version__ == "1.0.1"
+    assert stemlab.__version__ == "1.1.0"
 
     assert readme.startswith("# StemLab")
     assert "canonical project name is **StemLab**" in readme
     assert "pip install danceflow-stemlab" in readme
     assert "DanceFlow" in readme
     assert "DanceMoves" in readme
+    assert "https://kieransimkin.co.uk/my-songs/" in readme
+    assert pyproject["project"]["urls"]["My Songs portfolio"] == "https://kieransimkin.co.uk/my-songs/"

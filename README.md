@@ -2,7 +2,7 @@
 
 <!-- mcp-name: io.github.kieransimkin/stemlab -->
 
-> **StemLab by [Kieran Simkin](https://kieransimkin.co.uk/)** · [My Songs](https://kieransimkin.co.uk/my-songs/) · [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) · [Source](https://github.com/kieransimkin/stemlab)
+> **StemLab by [Kieran Simkin](https://kieransimkin.co.uk/)** · [My Songs portfolio](https://kieransimkin.co.uk/my-songs/) · [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) · [Source](https://github.com/kieransimkin/stemlab)
 
 > **Packaging identity:** the canonical project name is **StemLab**. StemLab is part of the **Dance Flow** project. The PyPI distribution is named `danceflow-stemlab` solely because Python package-registry names are globally unique. The Python import, CLI, GitHub repository and container image remain `stemlab`.
 
@@ -182,7 +182,7 @@ The loop-discovery patch does not replace the earlier analyses; it depends on th
 
 That means the loop lane is best understood as an *applied synthesis* of the structure, rhythm and vocal analyses already present in StemLab.
 
-## Loop discovery and playback (unreleased patch)
+## Loop discovery and playback
 
 StemLab now attempts at least one complete-bar loop for every identified verse
 and chorus occurrence. It checks the beat grid, vocal-clear cut neighborhoods

@@ -16,6 +16,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from subprocess import Popen
+
 from .paths import inside, read_json, workspace_path, write_json
 
 JOB_ID = re.compile(r"^[0-9a-f]{32}$")
@@ -33,7 +35,7 @@ class JobManager:
         self.max_jobs = max_jobs
         self.timeout = timeout_seconds
         self._lock = threading.RLock()
-        self._children: dict[str, subprocess.Popen] = {}
+        self._children: dict[str, Popen] = {}
         self._threads: list[threading.Thread] = []
         self._reasons: dict[str, str] = {}
         self._lease = None
@@ -106,9 +108,9 @@ class JobManager:
                 "creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
             try:
                 with (folder / "worker.log").open("xb") as log:
-                    proc = subprocess.Popen(command, cwd=self.workspace, env=env,
-                                            stdin=subprocess.DEVNULL, stdout=log,
-                                            stderr=subprocess.STDOUT, shell=False, **kwargs)
+                    proc = Popen(command, cwd=self.workspace, env=env,
+                                 stdin=subprocess.DEVNULL, stdout=log,
+                                 stderr=subprocess.STDOUT, shell=False, **kwargs)
             except Exception as exc:
                 state.update(state="failed", message=str(exc), finished_at_unix=time.time())
                 write_json(folder / "status.json", state)
@@ -120,7 +122,7 @@ class JobManager:
             return dict(state)
 
     @staticmethod
-    def _terminate(proc: subprocess.Popen) -> None:
+    def _terminate(proc: Popen) -> None:
         if proc.poll() is not None:
             return
         if os.name == "nt":
@@ -141,7 +143,7 @@ class JobManager:
             proc.kill()
             proc.wait(timeout=5)
 
-    def _watch(self, job_id: str, proc: subprocess.Popen) -> None:
+    def _watch(self, job_id: str, proc: Popen) -> None:
         folder = self._folder(job_id)
         started = time.monotonic()
         try:

@@ -39,7 +39,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://kieransimkin.co.uk/"
-"My Songs" = "https://kieransimkin.co.uk/my-songs/"
+"My Songs portfolio" = "https://kieransimkin.co.uk/my-songs/"
 "Arcadians showcase" = "https://kieransimkin.co.uk/arcadians/"
 Repository = "https://github.com/kieransimkin/stemlab"
 Issues = "https://github.com/kieransimkin/stemlab/issues"

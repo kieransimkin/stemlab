@@ -61,9 +61,8 @@ def test_timeline_control_comes_from_the_public_npm_package():
     requested = package["dependencies"]["react-timeline-sequence"]
     installed = lock["packages"]["node_modules/react-timeline-sequence"]
 
-    assert requested == "^0.1.3"
+    commit = "b02d66063a67e048a9238da10d7e002dc69d81c8"
+    assert requested == f"github:kieransimkin/react-timeline-sequence#{commit}"
     assert installed["version"] == "0.1.3"
-    assert installed["resolved"].startswith(
-        "https://registry.npmjs.org/react-timeline-sequence/-/"
-    )
+    assert installed["resolved"].endswith(f"react-timeline-sequence.git#{commit}")
     assert installed["integrity"].startswith("sha512-")

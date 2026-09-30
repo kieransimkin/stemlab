@@ -8,6 +8,7 @@ import pytest
 import soundfile as sf
 
 from stemlab.codex.jobs import JobManager
+from stemlab.codex import jobs
 from stemlab.codex.paths import write_json
 
 
@@ -55,7 +56,7 @@ def sleeping_worker(monkeypatch):
     def launch(command, **kwargs):
         seen.append(command)
         return real([sys.executable, "-I", "-c", "import time; time.sleep(30)"], **kwargs)
-    monkeypatch.setattr(subprocess, "Popen", launch)
+    monkeypatch.setattr(jobs, "Popen", launch)
     return seen
 
 

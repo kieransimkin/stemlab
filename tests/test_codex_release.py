@@ -107,7 +107,7 @@ def test_short_video_purpose_is_in_all_public_descriptions():
     for name in ("README.md", "pyproject.toml", "src/stemlab/branding.py",
                  "plugins/stemlab/plugin.json", "plugins/stemlab/.codex-plugin/plugin.json",
                  "mcp-registry/server.json"):
-        text = (ROOT / name).read_text().lower()
+        text = (ROOT / name).read_text(encoding="utf-8").lower()
         assert "timing" in text and "loopable" in text and "shorts" in text
 
 

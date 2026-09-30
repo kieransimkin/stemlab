@@ -5,9 +5,9 @@
 - StemLab: `0c1c918ed0e8b4355040e0bfe99c2eff64cde22c` (1.0.1).
 - react-timeline-sequence: `ff693db4888427eb541f45b7a992c771393516ef` (0.1.3).
 
-The patches are coordinated, unreleased changes. No remote writes or publication
-were performed. Generated screenshots belong to the StemLab patch, and reusable
-transport/UI source belongs to the React component patch.
+These were the coordinated development baselines used before the feature entered
+StemLab 1.1.0. Generated screenshots belong to the StemLab validation fixture,
+and reusable transport/UI source belongs to the React component.
 
 ## Checks executed
 

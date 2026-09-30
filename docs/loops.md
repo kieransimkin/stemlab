@@ -1,19 +1,14 @@
 # Discover, audition and export loops
 
-An unreleased coordinated feature for **StemLab** and **react-timeline-sequence**.
-No version, tag, registry or remote repository is changed by applying these patches.
+Released in StemLab 1.1.0 as a coordinated feature with the compatible
+`react-timeline-sequence` dependency.
 
 ## Quick start
 
-Apply `react-timeline-sequence-loops.patch` in that repository and
-`stemlab-loop-sections.patch` in StemLab. Run `git apply --check` first in each
-checkout. The patches target StemLab `0c1c918ed0e8b4355040e0bfe99c2eff64cde22c`
-and the React component `ff693db4888427eb541f45b7a992c771393516ef`.
-
-The StemLab patch includes updated bundled frontend JavaScript/CSS. With an
-existing working Python environment, reinstall the checkout as editable if needed
-(`python -m pip install --no-deps -e .`), restart the server and hard-refresh the
-browser. No GPU or new model is required by loop discovery itself.
+Install StemLab 1.1.0 or later, or use a matching source checkout. The package
+includes the compatible bundled frontend JavaScript/CSS. After updating an
+editable installation, restart the server and hard-refresh the browser. No GPU
+or new model is required by loop discovery itself.
 
 ```bash
 # Default deep analysis includes loop metadata, but does NOT export loop audio.
