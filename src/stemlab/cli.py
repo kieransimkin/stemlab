@@ -152,7 +152,7 @@ def list_analysis_actions():
 
 @app.command()
 def bootstrap(
-    target: Annotated[str, typer.Argument(help="scnet, beat-transformer, vamp, or all")] = "all",
+    target: Annotated[str, typer.Argument(help="scnet, beatnet, beat-transformer, vamp, or all")] = "all",
 ):
     """Install/cache external runtimes, including Sonic Annotator + the Vamp Plugin Pack."""
     result = do_bootstrap(target)
@@ -195,7 +195,16 @@ def doctor():
     ]
     table = Table("component", "status")
     for p in packages:
-        status = "installed" if importlib.util.find_spec(p) else "missing"
+        if p == "BeatNet":
+            try:
+                from .bootstrap import ensure_beatnet_runtime
+
+                ensure_beatnet_runtime(install=False)
+                status = "ready (installed or verified StemLab cache)"
+            except Exception:
+                status = "missing (run `stemlab bootstrap beatnet`)"
+        else:
+            status = "installed" if importlib.util.find_spec(p) else "missing"
         if p == "allin1_infer" and status == "missing":
             status = "missing (install the deep/all extra)"
         if p == "basic_pitch" and sys.version_info >= (3, 12) and status == "missing":

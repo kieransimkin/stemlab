@@ -54,7 +54,7 @@ Whisper runs in repetition-safe mode by default (`condition_on_previous_text=Fal
 
 Beat analysis runs:
 
-- **BeatNet** in offline/DBN mode when a compatible legacy environment is separately provisioned; it is not included in the current installable extras because its pinned NumPy/Numba requirements conflict with StemLab's core.
+- **BeatNet** in offline/DBN mode through StemLab's checksum-verified runtime bootstrap. StemLab uses the maintained `madmom-prebuilt` wheel and bypasses only BeatNet 1.1.3's obsolete NumPy/Numba package metadata.
 - **Beat This!** using the `final0` checkpoint and its minimal postprocessor.
 - **Beat Transformer**, using the original released model code/checkpoints. The model was trained on five demixed mel streams, so StemLab maps BS-RoFormer-SW to vocals, drums, bass, piano, and `other + guitar`, makes 128-bin mel-power spectrograms at the original 44.1 kHz / 4096 FFT / 1024-hop settings, and averages all eight released fold checkpoints by default. It uses the original madmom DBN decoder if madmom is importable, otherwise a documented SciPy peak-picking fallback.
 
@@ -213,7 +213,7 @@ sample indexing, thresholds, limitations and reproducible screenshot examples.
 
 ## Install
 
-Python 3.10 or 3.11 is recommended for the broad optional-model ecosystem. The `beats` and `all` extras install Beat This! but not BeatNet: BeatNet's current published NumPy/Numba pins conflict with StemLab's core Librosa requirement. The BeatNet adapter is retained for separately provisioned compatible legacy setups; a missing BeatNet result must not be mistaken for a successful detector run.
+Python 3.11 is recommended for the broad optional-model ecosystem. The `beats` and `all` extras install Beat This! plus the compatible `madmom-prebuilt` decoder. BeatNet 1.1.3 itself still publishes obsolete NumPy/Numba dependency pins, so StemLab downloads its official pure-Python wheel separately, verifies the published SHA-256, and exposes only the BeatNet code and bundled model weights from its cache. This route is supported on Python 3.11-3.13; a missing BeatNet result must not be mistaken for a successful detector run.
 
 From PyPI, install the released StemLab distribution with:
 
@@ -235,6 +235,18 @@ SCNet and Beat Transformer are research repositories rather than stable pip infe
 ```bash
 stemlab bootstrap all
 ```
+
+For BeatNet alone:
+
+```bash
+pip install "danceflow-stemlab[beats]"
+stemlab bootstrap beatnet
+stemlab doctor
+```
+
+`stemlab doctor` reports BeatNet as ready only when the normal package or the
+verified StemLab cache can actually be found. `analyze --no-bootstrap` never
+downloads BeatNet and records the unavailable backend instead.
 
 For only the Vamp analysis stack:
 
@@ -345,6 +357,7 @@ endpoints, events and the Arcadians reference workflow.
 - [Web service](docs/web.md)
 - [Containers](docs/containers.md)
 - [Publishing and releases](docs/publishing.md)
+- [BeatNet compatibility](docs/beatnet.md)
 - [Changelog](CHANGELOG.md)
 
 ## Codex plugin and MCP server

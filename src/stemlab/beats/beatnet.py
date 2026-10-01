@@ -10,6 +10,7 @@ from typing import Any
 import numpy as np
 
 from stemlab.types import BeatResult, StemArtifact
+from stemlab.bootstrap import ensure_beatnet_runtime
 from .base import BeatBackend
 from .common import save_result, tempo_from_beats
 
@@ -40,7 +41,7 @@ def _install_pyaudio_stub() -> bool:
     return True
 
 
-def _load_beatnet_class() -> Any:
+def _load_beatnet_class(bootstrap_external: bool = True) -> Any:
     """Import BeatNet with the compatibility required by madmom-prebuilt.
 
     madmom-prebuilt exposes the ``madmom`` module but its installed distribution
@@ -49,6 +50,7 @@ def _load_beatnet_class() -> Any:
     BeatNet also imports PyAudio unconditionally even though offline analysis
     does not use it.
     """
+    ensure_beatnet_runtime(install=bootstrap_external)
     _ensure_numpy_legacy_aliases()
     installed_pyaudio_stub = _install_pyaudio_stub()
     original_distribution = importlib.metadata.distribution
@@ -63,7 +65,15 @@ def _load_beatnet_class() -> Any:
 
     importlib.metadata.distribution = compatible_distribution
     try:
-        from BeatNet.BeatNet import BeatNet
+        try:
+            from BeatNet.BeatNet import BeatNet
+        except ModuleNotFoundError as exc:
+            if exc.name == "madmom":
+                raise RuntimeError(
+                    "BeatNet offline DBN mode requires madmom-prebuilt. "
+                    "Install StemLab with the `beats` or `all` extra."
+                ) from exc
+            raise
 
         return BeatNet
     finally:
@@ -73,13 +83,16 @@ def _load_beatnet_class() -> Any:
 
 
 class BeatNetBackend(BeatBackend):
+    def __init__(self, bootstrap_external: bool = True):
+        self.bootstrap_external = bootstrap_external
+
     def analyze(
         self,
         audio_path: Path,
         output_dir: Path,
         stems: list[StemArtifact] | None = None,
     ) -> BeatResult:
-        BeatNet = _load_beatnet_class()
+        BeatNet = _load_beatnet_class(self.bootstrap_external)
 
         estimator = BeatNet(1, mode="offline", inference_model="DBN", plot=[], thread=False)
         events = np.asarray(estimator.process(str(audio_path)))

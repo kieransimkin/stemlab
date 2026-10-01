@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Restore BeatNet offline/DBN analysis on modern Python with an explicit `madmom-prebuilt` dependency and a SHA-256-verified bootstrap of BeatNet's official 1.1.3 wheel that bypasses its unsatisfiable legacy dependency metadata. Honour `--no-bootstrap`, report cached readiness in `stemlab doctor`, and verify real 120 BPM inference plus JSON/TSV output on Python 3.13.
 ## 1.1.2 - 2026-10-01
 
 - Fix the Sonic Annotator CSV invocation to use its supported `--csv-omit-filename` option, restoring Vamp analysis in the pinned 1.7 runtime.

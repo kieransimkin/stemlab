@@ -2,7 +2,6 @@
 # torch/torchaudio are installed separately in Docker so a CUDA or CPU wheel
 # index can be selected while preserving the captured version numbers.
 beat-this==1.1.0
-beatnet==1.1.1
 bs-roformer==1.2.4
 bs-roformer-infer==0.1.5
 cmudict==1.1.3

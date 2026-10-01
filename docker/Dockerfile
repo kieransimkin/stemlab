@@ -91,6 +91,7 @@ RUN /opt/stemlab-docker/install-sonic-annotator.sh \
 # exactly the source that actions/checkout supplied, without re-cloning GitHub.
 COPY . /opt/stemlab
 RUN python -m pip install --no-deps -e /opt/stemlab \
+    && stemlab bootstrap beatnet \
     && printf '%s\n' "${STEMLAB_BUILD_REF}" > /opt/stemlab-installed-ref.txt \
     && stemlab --help >/dev/null \
     && /opt/stemlab-docker/verify-environment.sh --build

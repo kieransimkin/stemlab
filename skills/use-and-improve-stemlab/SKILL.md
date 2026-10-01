@@ -63,6 +63,14 @@ Do not silently replace StemLab with a one-off script. A cheaper diagnostic scri
 - **Verification:** the unchanged command completes, the focused Python tests pass with a workspace-local `--basetemp`, and the browser loads the built timeline without console errors.
 - **Limit:** only use the wider execution permission for the specific trusted local command; it does not justify running unreviewed scripts or dependencies.
 
+### BeatNet's released dependency metadata cannot resolve on modern Python
+
+- **Symptom (1 October 2026):** uv reports that BeatNet 1.1.3 requires `numba==0.54.1` and NumPy below 1.21 while `madmom-prebuilt` requires NumPy 1.22.4 or newer; a normal install has no solution.
+- **Cause:** BeatNet's PyPI wheel has obsolete dependency metadata. Upstream issue [#35](https://github.com/mjhydri/BeatNet/issues/35) records the Numba failure, while the unreleased upstream source has relaxed NumPy/Numba but still declares historical `madmom`.
+- **Correction:** install StemLab's `beats` extra and run `stemlab bootstrap beatnet`. StemLab verifies the official BeatNet 1.1.3 wheel SHA-256, exposes only its package and bundled weights from the platform cache, uses `madmom-prebuilt` for offline DBN decoding, and honours `--no-bootstrap`.
+- **Verification:** on CPython 3.13.14, a real 16-second 120 BPM synthetic click-track run returned 120.0 BPM, 32 beats and 16 downbeats and wrote `beatnet.json` plus `beatnet.tsv`; focused bootstrap, loader and distribution tests passed.
+- **Limit:** the smoke test proves runtime integration and deterministic serialization, not accuracy on every song. Streaming mode still requires PyAudio and is outside StemLab's offline analysis route.
+
 ### A linked timeline package loads a second React copy
 
 - **Symptom:** the StemLab timeline stays blank and the browser reports `TypeError: Cannot read properties of null (reading 'useRef')` inside the built bundle.

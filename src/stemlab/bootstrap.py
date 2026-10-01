@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import os
+import importlib
+import importlib.util
 import shutil
 import subprocess
+import sys
 import urllib.request
 import venv
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,6 +25,19 @@ SCNET_CHECKPOINT_URL = "https://github.com/ZFTurbo/Music-Source-Separation-Train
 
 BEAT_TRANSFORMER_REPO = "https://github.com/zhaojw1998/Beat-Transformer.git"
 BEAT_TRANSFORMER_REF = "master"
+
+# BeatNet 1.1.3's wheel contains usable modern-Python inference code and model
+# weights, but its published metadata hard-pins NumPy <1.21 / Numba 0.54.1.
+# Those pins cannot coexist with the maintained madmom-prebuilt wheels. Fetch
+# and verify the official pure-Python wheel, then expose only its BeatNet package
+# from StemLab's cache so obsolete dependency metadata never reaches a resolver.
+BEATNET_VERSION = "1.1.3"
+BEATNET_WHEEL_URL = (
+    "https://files.pythonhosted.org/packages/67/c7/"
+    "3ece1b101a1f841655b76322ea9fafe64591a711cb3d99dc52ded06eaa11/"
+    "BeatNet-1.1.3-py3-none-any.whl"
+)
+BEATNET_WHEEL_SHA256 = "1ecfa17bdcbe899975a88bdb6efebd6970d846a4f3b6cfd5c6f320647c641c7e"
 
 
 @dataclass(frozen=True)
@@ -111,6 +128,60 @@ def ensure_beat_transformer_repo(install: bool = True) -> Path:
     return repo
 
 
+def ensure_beatnet_runtime(install: bool = True) -> Path:
+    """Expose BeatNet without resolving its obsolete published dependencies."""
+    installed = importlib.util.find_spec("BeatNet")
+    if installed is not None:
+        locations = installed.submodule_search_locations
+        return Path(next(iter(locations))).parent if locations else Path(installed.origin).parent
+
+    root = CACHE_ROOT / "beatnet" / BEATNET_VERSION
+    package = root / "BeatNet"
+    marker = root / ".stemlab_ready"
+    if not ((package / "BeatNet.py").is_file() and marker.is_file()):
+        if not install:
+            raise RuntimeError(
+                "BeatNet runtime is not bootstrapped. Install StemLab's beats extra, then run "
+                "`stemlab bootstrap beatnet`."
+            )
+        wheel = CACHE_ROOT / "downloads" / f"BeatNet-{BEATNET_VERSION}-py3-none-any.whl"
+        _download(BEATNET_WHEEL_URL, wheel)
+        actual_sha256 = sha256_file(wheel)
+        if actual_sha256 != BEATNET_WHEEL_SHA256:
+            wheel.unlink(missing_ok=True)
+            raise RuntimeError(
+                "BeatNet wheel checksum mismatch: "
+                f"expected {BEATNET_WHEEL_SHA256}, got {actual_sha256}; removed cached file"
+            )
+
+        root.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(wheel) as archive:
+            members = [m for m in archive.infolist() if m.filename.startswith("BeatNet/")]
+            if not any(m.filename == "BeatNet/BeatNet.py" for m in members):
+                raise RuntimeError("Verified BeatNet wheel does not contain BeatNet/BeatNet.py")
+            for member in members:
+                relative = Path(*member.filename.split("/"))
+                target = (root / relative).resolve()
+                if root.resolve() not in target.parents and target != root.resolve():
+                    raise RuntimeError(f"Unsafe path in BeatNet wheel: {member.filename}")
+                if member.is_dir():
+                    target.mkdir(parents=True, exist_ok=True)
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with archive.open(member) as source, target.open("wb") as destination:
+                    shutil.copyfileobj(source, destination)
+        marker.write_text(
+            f"version={BEATNET_VERSION}\nurl={BEATNET_WHEEL_URL}\nsha256={actual_sha256}\n",
+            encoding="utf-8",
+        )
+
+    root_text = str(root)
+    if root_text not in sys.path:
+        sys.path.insert(0, root_text)
+        importlib.invalidate_caches()
+    return root
+
+
 def bootstrap(name: str) -> dict:
     if name == "scnet":
         r = ensure_scnet_runtime(True)
@@ -118,6 +189,14 @@ def bootstrap(name: str) -> dict:
     if name in {"beat-transformer", "beat_transformer"}:
         repo = ensure_beat_transformer_repo(True)
         return {"repo": str(repo)}
+    if name in {"beatnet", "beat-net"}:
+        runtime = ensure_beatnet_runtime(True)
+        return {
+            "runtime": str(runtime),
+            "version": BEATNET_VERSION,
+            "source": BEATNET_WHEEL_URL,
+            "sha256": BEATNET_WHEEL_SHA256,
+        }
     if name in {"vamp", "vamp-pack", "vamp_plugin_pack"}:
         # Import lazily so the Vamp runtime can reuse CACHE_ROOT/_download from
         # this module without creating a module-import cycle.
@@ -127,6 +206,7 @@ def bootstrap(name: str) -> dict:
     if name == "all":
         return {
             "scnet": bootstrap("scnet"),
+            "beatnet": bootstrap("beatnet"),
             "beat_transformer": bootstrap("beat-transformer"),
             "vamp": bootstrap("vamp"),
         }

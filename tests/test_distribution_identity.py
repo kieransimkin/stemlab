@@ -20,6 +20,7 @@ def test_stemlab_stable_identity():
     assert "version" not in project
     assert stemlab.__version__ == "1.1.2"
     assert "beat-this>=1.1.0" in project["optional-dependencies"]["beats"]
+    assert any(dep.startswith("madmom-prebuilt==0.17.post1") for dep in project["optional-dependencies"]["beats"])
     assert "BeatNet" not in project["optional-dependencies"]["beats"]
     assert "BeatNet" not in project["optional-dependencies"]["all"]
 

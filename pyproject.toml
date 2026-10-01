@@ -58,10 +58,10 @@ separation = [
   "bs-roformer-infer>=0.1.5",
 ]
 speech = ["faster-whisper"]
-# BeatNet pins numba 0.54.1 / NumPy <1.21, which conflicts with the current
-# StemLab core (librosa >=0.11 / NumPy >=1.22.3). Keep its adapter available
-# for separately provisioned legacy environments, not in installable extras.
-beats = ["beat-this>=1.1.0"]
+# BeatNet's published wheel has obsolete NumPy/Numba metadata. StemLab's
+# checksum-verified bootstrap exposes its code without resolving those pins;
+# this maintained binary supplies the compatible offline DBN decoder.
+beats = ["beat-this>=1.1.0", "madmom-prebuilt==0.17.post1; python_version >= '3.11'", "mido>=1.2.6"]
 # Modern functional structure + lyric semantic embeddings. all-in-one-infer
 # 3.1.0 now declares Python >=3.9 and uses pure-PyTorch compatibility layers.
 deep = [
@@ -87,6 +87,8 @@ all = [
   "bs-roformer-infer>=0.1.5",
   "faster-whisper",
   "beat-this>=1.1.0",
+  "madmom-prebuilt==0.17.post1; python_version >= '3.11'",
+  "mido>=1.2.6",
   "sentence-transformers>=6.1,<7",
   "all-in-one-infer>=3.1",
   "fastapi>=0.115,<1",
