@@ -47,6 +47,7 @@ def analyze(
     no_deep_analysis: Annotated[bool, typer.Option("--no-deep-analysis", help="Skip derived sonic/harmonic/rhythmic/lyrical analysis")] = False,
     no_loops: Annotated[bool, typer.Option("--no-loops", help="Skip verse/chorus loop discovery")] = False,
     export_loops: Annotated[bool, typer.Option("--export-loops", help="Write accepted native-rate loops as WAVs")] = False,
+    max_loop_seconds: Annotated[float | None, typer.Option("--max-loop-seconds", min=0.001, help="Maximum discovered loop duration in seconds")] = None,
     no_structure: Annotated[bool, typer.Option("--no-structure", help="Skip All-In-One functional section analysis")] = False,
     no_text_semantics: Annotated[bool, typer.Option("--no-text-semantics", help="Skip sentence-embedding analysis of lyrics/transcript")] = False,
     audio_semantics: Annotated[bool, typer.Option("--audio-semantics", help="Enable MuQ-MuLan zero-shot music/text similarity (CC-BY-NC model weights)")] = False,
@@ -87,6 +88,7 @@ def analyze(
         run_basic_pitch=basic_pitch,
         run_loops=not no_loops,
         export_loops=export_loops,
+        loop_max_seconds=max_loop_seconds,
     )
     console.print(f"[bold]StemLab[/bold] device={device_string(device)} models={', '.join(models)}")
     result = run_pipeline(cfg, progress=lambda m: console.print(f"[cyan]→[/cyan] {m}"))
@@ -103,19 +105,26 @@ def analyze(
 @app.command("loops")
 def find_loops(
     results: Annotated[Path, typer.Argument(exists=True, file_okay=False, help="Existing analysis result directory")],
-    export_loops: Annotated[bool, typer.Option("--export-loops", help="Also write accepted loops as WAVs")] = False,
+    export_loops: Annotated[bool, typer.Option("--export-loops", help="Write accepted loops and exploratory audition slices as WAVs")] = False,
     max_bars: Annotated[int, typer.Option("--max-bars", min=1, max=64)] = 16,
-    per_section: Annotated[int, typer.Option("--per-section", min=1, max=8)] = 1,
+    max_seconds: Annotated[float | None, typer.Option("--max-seconds", min=0.001, help="Maximum loop duration in seconds (no limit by default)")] = None,
+    per_section: Annotated[int, typer.Option("--per-section", min=1, max=64)] = 1,
+    mode: Annotated[str, typer.Option("--mode", help="strict or exploratory; exploratory near-misses are not accepted loops")] = "strict",
+    exploratory_algorithm: Annotated[str, typer.Option("--exploratory-algorithm", help="waveform or spectral_context ranking")] = "spectral_context",
+    search_scope: Annotated[str, typer.Option("--search-scope", help="sections or whole_song (exploratory only)")] = "sections",
 ):
     """Find loops in saved evidence without rerunning separation or models."""
     from .analysis.loops import LoopConfig, analyze_existing_loops
 
     try:
         report = analyze_existing_loops(results, export_audio=export_loops,
-            config=LoopConfig(max_bars=max_bars, loops_per_section=per_section))
+            config=LoopConfig(max_bars=max_bars, max_seconds=max_seconds,
+                              loops_per_section=per_section, mode=mode,
+                              exploratory_algorithm=exploratory_algorithm, search_scope=search_scope))
     except (ValueError, KeyError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    console.print(f"{report['loop_count']} loop(s); {len(report['unresolved_sections'])} unresolved section(s).")
+    console.print(f"{report['loop_count']} accepted loop(s); {report['exploratory_count']} audition candidate(s); "
+                  f"{len(report['unresolved_sections'])} unresolved search window(s).")
     console.print(str(results / "deep/loops/loops.json"))
 
 

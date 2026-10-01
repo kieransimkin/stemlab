@@ -1,6 +1,7 @@
 import io
 import json
 import numpy as np
+import pytest
 import soundfile as sf
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -11,7 +12,8 @@ from stemlab.types import BeatResult, StemArtifact
 from stemlab.util import sha256_file
 from stemlab.webui import install_routes
 
-def test_runner_registers_loop_report_and_defaults(tmp_path, monkeypatch):
+@pytest.mark.parametrize('max_seconds', [None, 2.0])
+def test_runner_registers_loop_report_and_defaults(tmp_path, monkeypatch, max_seconds):
     sr = 8000
     master = tmp_path / 'master.wav'
     vocal = tmp_path / 'vocals.wav'
@@ -21,10 +23,13 @@ def test_runner_registers_loop_report_and_defaults(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, 'analyze_rhythm', lambda *a: {})
     monkeypatch.setattr(runner, 'analyze_harmony', lambda *a: {})
     monkeypatch.setattr(runner, 'analyze_song_map', lambda *a, **kw: {'sections': [{'start': 0, 'end': 8, 'label': 'Verse'}]})
-    report = runner.run_comprehensive_analysis(master, tmp_path, beat_results=[BeatResult('test', list(np.arange(0, 8.01, 0.5)), [0, 2, 4, 6, 8], 120)], stems=[StemArtifact('test', 'vocals', vocal)], vamp_result=None, whisper_result=None, run_text_semantics=False)
+    report = runner.run_comprehensive_analysis(master, tmp_path, beat_results=[BeatResult('test', list(np.arange(0, 8.01, 0.5)), [0, 2, 4, 6, 8], 120)], stems=[StemArtifact('test', 'vocals', vocal)], vamp_result=None, whisper_result=None, run_text_semantics=False, loop_max_seconds=max_seconds)
     assert report['analyses']['loops']['available']
     loop_report = json.loads((tmp_path / 'deep/loops/loops.json').read_text())
     assert loop_report['loop_count'] == 1
+    assert loop_report['config']['max_seconds'] == max_seconds
+    if max_seconds is not None:
+        assert loop_report['loops'][0]['duration_seconds'] <= max_seconds
     assert not list((tmp_path / 'deep/loops').rglob('*.wav'))
 
 def test_export_flag_conflicts_are_not_silent(tmp_path):

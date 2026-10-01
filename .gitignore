@@ -26,6 +26,7 @@ uv.lock
 environment-snapshot/
 docker-output/
 music/
+models/
 .pytest-tmp*/
 .pytest-all/
 .pytest-rts-*/

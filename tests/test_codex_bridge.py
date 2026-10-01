@@ -106,6 +106,7 @@ def test_reject_heavy_profile_without_extra_consent():
 @pytest.mark.parametrize("options", [
     {"device": "cpu; rm -rf /"}, {"models": ["not-a-model"]}, {"profile": "unknown"},
     {"arbitrary_command": "echo bad"}, {"export_loops": "true"},
+    {"max_loop_seconds": 0}, {"max_loop_seconds": "30"},
 ])
 def test_reject_unsupported_options(options):
     with pytest.raises(ValueError):
@@ -114,8 +115,10 @@ def test_reject_unsupported_options(options):
 
 def test_model_override_and_deduplication():
     result = analysis_options({"allow_model_downloads": True, "profile": "full",
-                               "models": ["htdemucs_ft", "htdemucs_ft"]})
+                               "models": ["htdemucs_ft", "htdemucs_ft"],
+                               "max_loop_seconds": 30.0})
     assert result["models"] == ["htdemucs_ft"]
+    assert result["max_loop_seconds"] == 30.0
 
 
 def test_reports_are_paginated_and_bounded(bridge, tmp_path):
@@ -159,15 +162,32 @@ def test_native_loop_limits(bridge, bars, per):
         bridge.start_loop_scan("not-needed", max_bars=bars, per_section=per)
 
 
+@pytest.mark.parametrize("limit", [0, -2, float("nan"), float("inf"), True, "15"])
+def test_native_loop_duration_limit(bridge, limit):
+    with pytest.raises(ValueError, match="max_seconds"):
+        bridge.start_loop_scan("not-needed", max_seconds=limit)
+
+
+@pytest.mark.parametrize("options", [{"mode": "loose"}, {"exploratory_algorithm": "magic"},
+                                    {"search_scope": "whole_song"},
+                                    {"mode": "exploratory", "per_section": 65}])
+def test_native_exploratory_options_are_validated(bridge, options):
+    with pytest.raises(ValueError):
+        bridge.start_loop_scan("not-needed", **options)
+
+
 def test_loop_scan_preserves_old_evidence_and_exact_audio(bridge, tmp_path):
     old = make_results(tmp_path / "prior")
     before = tree_hashes(old)
     output = tmp_path / "new"
     output.mkdir()
-    result = run_loop_scan(tmp_path, output, {"results_path": "prior", "export_audio": True})
+    result = run_loop_scan(tmp_path, output, {"results_path": "prior", "export_audio": True,
+                                                "max_seconds": 2.0})
     assert result["state"] == "completed" and result["loop_count"] == 2
     assert tree_hashes(old) == before
     report = read_json(output / "deep/loops/loops.json")
+    assert report["config"]["max_seconds"] == 2.0
+    assert all(loop["duration_seconds"] <= 2.0 for loop in report["loops"])
     full, sr = sf.read(old / "input/master.wav", dtype="float32", always_2d=True)
     for loop in report["loops"]:
         clip, rate = sf.read(output / "deep/loops" / loop["file"], dtype="float32", always_2d=True)
@@ -186,6 +206,24 @@ def test_loop_scan_without_export_and_no_vocals(bridge, tmp_path):
     result = run_loop_scan(tmp_path, output, {"results_path": "prior"})
     assert result["loop_count"] == 0 and result["unresolved_sections"] == 2
     assert not (output / "deep/loops/audio").exists()
+
+
+def test_codex_exploratory_whole_master_reports_near_misses(tmp_path):
+    old = make_results(tmp_path / "prior")
+    report = read_json(old / "analysis.json")
+    report["models"] = []
+    write_json(old / "analysis.json", report)
+    output = tmp_path / "new"
+    output.mkdir()
+    result = run_loop_scan(tmp_path, output, {"results_path": "prior", "mode": "exploratory",
+                                                "search_scope": "whole_song", "max_seconds": 4,
+                                                "per_section": 10})
+    assert result["loop_count"] == 0
+    scan = read_json(output / "deep/loops/loops.json")
+    assert scan["exploratory_count"] > 0
+    assert scan["section_source"] == "whole_master_search_window"
+    assert all("full_vocal_evidence_missing" in item["failed_gates"]
+               for item in scan["exploratory_candidates"])
 
 
 def test_loop_scan_rejects_stale_master(tmp_path):

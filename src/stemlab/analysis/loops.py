@@ -26,6 +26,10 @@ from stemlab.util import sha256_file
 @dataclass(frozen=True)
 class LoopConfig:
     max_bars: int = 16
+    max_seconds: float | None = None
+    mode: str = "strict"
+    exploratory_algorithm: str = "spectral_context"
+    search_scope: str = "sections"
     loops_per_section: int = 1
     snap_ms: float = 5.0
     vocal_guard_ms: float = 80.0
@@ -39,12 +43,27 @@ class LoopConfig:
 
     def __post_init__(self):
         for name, value in asdict(self).items():
+            if name in {"mode", "exploratory_algorithm", "search_scope"}:
+                continue
+            if name == "max_seconds" and value is None:
+                continue
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
                 raise ValueError(f"{name} must be finite")
         if not isinstance(self.max_bars, int) or not 1 <= self.max_bars <= 64:
             raise ValueError("max_bars must be an integer in 1..64")
-        if not isinstance(self.loops_per_section, int) or not 1 <= self.loops_per_section <= 8:
-            raise ValueError("loops_per_section must be an integer in 1..8")
+        if self.max_seconds is not None and self.max_seconds <= 0:
+            raise ValueError("max_seconds must be positive")
+        if self.mode not in {"strict", "exploratory"}:
+            raise ValueError("mode must be strict or exploratory")
+        if self.exploratory_algorithm not in {"waveform", "spectral_context"}:
+            raise ValueError("exploratory_algorithm must be waveform or spectral_context")
+        if self.search_scope not in {"sections", "whole_song"}:
+            raise ValueError("search_scope must be sections or whole_song")
+        if self.search_scope == "whole_song" and self.mode != "exploratory":
+            raise ValueError("whole_song scope requires exploratory mode")
+        max_results = 64 if self.mode == "exploratory" else 8
+        if not isinstance(self.loops_per_section, int) or not 1 <= self.loops_per_section <= max_results:
+            raise ValueError(f"loops_per_section must be an integer in 1..{max_results}")
         if not 0 <= self.snap_ms <= 20 or not 0 <= self.vocal_guard_ms <= 1000:
             raise ValueError("snap_ms must be in 0..20 and vocal_guard_ms in 0..1000")
         if self.vocal_threshold_dbfs >= 0 or self.vocal_relative_db >= 0:
@@ -67,7 +86,7 @@ def _kind(label: str) -> str | None:
     words = re.findall(r"[a-z]+", label.lower())
     if any(x in words for x in ("pre", "post", "prechorus", "postchorus")):
         return None
-    return next((kind for kind in ("verse", "chorus") if kind in words), None)
+    return next((kind for kind in ("verse", "chorus", "hook") if kind in words), None)
 
 
 def _sections(song_map: dict | None, duration: float) -> list[dict]:
@@ -246,7 +265,7 @@ def grid_metrics(beats: np.ndarray, down_indices: np.ndarray, first: int, last: 
 
 
 def optimize_join(audio: np.ndarray, sr: int, start: int, end: int,
-                  lower: int, upper: int, cfg: LoopConfig) -> dict | None:
+                  lower: int, upper: int, cfg: LoopConfig, *, allow_failed: bool = False) -> dict | None:
     """Same offset at both cuts keeps length fixed. Score every channel."""
     radius = round(cfg.snap_ms * sr / 1000)
     lo = max(-radius, lower - start, -start)
@@ -258,16 +277,56 @@ def optimize_join(audio: np.ndarray, sr: int, start: int, end: int,
     jump = np.max(np.abs(audio[a] - audio[b - 1]), axis=1)
     slope = np.max(np.abs((audio[a + 1] - audio[a]) - (audio[b - 1] - audio[b - 2])), axis=1)
     valid = (jump <= cfg.max_join_step) & (slope <= cfg.max_join_slope_error)
-    if not valid.any():
+    if not valid.any() and not allow_failed:
         return None
     cost = jump / cfg.max_join_step + 0.3 * slope / cfg.max_join_slope_error
     cost += 0.02 * np.abs(offsets) / max(1, radius)
-    cost[~valid] = np.inf
+    if not allow_failed:
+        cost[~valid] = np.inf
     best = int(np.argmin(cost))
     return dict(start_sample=int(a[best]), end_sample=int(b[best]),
                 common_offset_samples=int(offsets[best]),
                 max_channel_step=float(jump[best]),
-                max_channel_slope_error=float(slope[best]), cost=float(cost[best]))
+                max_channel_slope_error=float(slope[best]), cost=float(cost[best]),
+                passes_waveform_join=bool(valid[best]))
+
+
+def spectral_context(audio: np.ndarray, sr: int, start: int, end: int) -> dict:
+    """Compare local spectral envelopes at two cut neighborhoods; not a seam test.
+
+    This is an inexpensive feature-similarity ranking inspired by recurrence
+    methods, not an implementation of a published loop detector.
+    """
+    size = max(32, round(0.35 * sr))
+    envelopes, chroma_vectors = [], []
+    levels = []
+    for lo, hi in ((end - size, end), (start, start + size)):
+        block = np.zeros((size, audio.shape[1]), dtype=np.float64)
+        a, b = max(0, lo), min(len(audio), hi)
+        block[a - lo:b - lo] = audio[a:b]
+        levels.append(float(np.sqrt(np.mean(block ** 2))))
+        spectrum = np.mean(np.abs(np.fft.rfft(block * np.hanning(len(block))[:, None], axis=0)), axis=1)
+        frequencies = np.fft.rfftfreq(len(block), 1 / sr)
+        edges = np.geomspace(50, min(16000, sr / 2), 25)
+        bands = np.array([np.sum(spectrum[(frequencies >= left) & (frequencies < right)])
+                          for left, right in zip(edges[:-1], edges[1:])])
+        envelopes.append(np.log1p(bands))
+        usable = (frequencies >= 80) & (frequencies <= min(5000, sr / 2))
+        pitch_classes = np.mod(np.rint(69 + 12 * np.log2(frequencies[usable] / 440)).astype(int), 12)
+        chroma_vectors.append(np.bincount(pitch_classes, weights=spectrum[usable], minlength=12))
+
+    def cosine(left: np.ndarray, right: np.ndarray) -> float:
+        denominator = np.linalg.norm(left) * np.linalg.norm(right)
+        return float(np.dot(left, right) / denominator) if denominator > 0 else 0.0
+
+    envelope_similarity = cosine(*envelopes)
+    chroma_similarity = cosine(*chroma_vectors)
+    similarity = 0.5 * (envelope_similarity + chroma_similarity)
+    level_difference = float(abs(20 * np.log10(max(levels[0], 1e-8) / max(levels[1], 1e-8))))
+    return {"feature_similarity": max(0.0, min(1.0, similarity)),
+            "log_band_cosine_similarity": max(0.0, min(1.0, envelope_similarity)),
+            "chroma_cosine_similarity": max(0.0, min(1.0, chroma_similarity)),
+            "rms_difference_db": level_difference, "window_ms": size * 1000 / sr}
 
 
 def analyze_loops(audio_path: Path, output_dir: Path, *, song_map: dict | None,
@@ -282,7 +341,9 @@ def analyze_loops(audio_path: Path, output_dir: Path, *, song_map: dict | None,
     if not len(audio) or not np.isfinite(audio).all():
         raise ValueError("Master must contain finite audio samples")
     duration = len(audio) / sr
-    sections = _sections(song_map, duration)
+    sections = (_sections(song_map, duration) if cfg.search_scope == "sections" else
+                [dict(index=-1, kind="whole", occurrence=1, label="Whole master search",
+                      start=0.0, end=duration)])
     model, beats, down, grid_errors = _grid(beat_results, duration)
     intervals, timing_sources = _vocal_intervals(whisper_result, lyrics_result, canonical)
     gates, vocal_errors = _gates(stems, duration, cfg, normalization_gains or {})
@@ -290,60 +351,128 @@ def analyze_loops(audio_path: Path, output_dir: Path, *, song_map: dict | None,
     guard = cfg.vocal_guard_ms / 1000
     safety_cache: dict[int, bool] = {}
 
+    def acoustic_clear(t: float, margin: float) -> bool:
+        return bool(gates) and all(g.clear(t, margin) for g in gates)
+
+    def timing_clear(t: float, margin: float) -> bool:
+        return not any(a - margin <= t <= b + margin for a, b in intervals)
+
     def clear(t: float, margin: float) -> bool:
-        return bool(gates) and all(g.clear(t, margin) for g in gates) and not any(
-            a - margin <= t <= b + margin for a, b in intervals)
+        return acoustic_clear(t, margin) and timing_clear(t, margin)
 
     def boundary_clear(index: int) -> bool:
         if index not in safety_cache:
             safety_cache[index] = clear(float(beats[down[index]]), guard + cfg.snap_ms / 1000)
         return safety_cache[index]
 
-    loops, unresolved = [], []
+    loops, exploratory, unresolved, section_diagnostics = [], [], [], []
     for section in sections:
         reason = None
         rejected: Counter = Counter()
-        candidates = []
+        candidates, near_misses = [], []
+        boundary_counts = None
         if model is None:
             reason = "No usable beat/downbeat grid; bar starts are unknown."
-        elif not gates:
+        elif not gates and cfg.mode == "strict":
             reason = "No valid full-vocal stem; transcript gaps alone cannot prove silence."
         else:
             lower = max(0, math.ceil(section["start"] * sr - 1e-7))
             upper = min(len(audio), math.floor(section["end"] * sr + 1e-7))
             indices = [i for i, b in enumerate(down) if lower <= round(beats[b] * sr) <= upper]
+            margin = guard + cfg.snap_ms / 1000
+            boundary_counts = {
+                "downbeats_in_section": len(indices),
+                "acoustically_clear_downbeats": sum(
+                    acoustic_clear(float(beats[down[i]]), margin) for i in indices),
+                "timing_clear_downbeats": sum(
+                    timing_clear(float(beats[down[i]]), margin) for i in indices),
+                "fully_clear_downbeats": sum(boundary_clear(i) for i in indices),
+            }
+            max_frames = None if cfg.max_seconds is None else math.floor(cfg.max_seconds * sr)
             for i in indices:
                 for j in range(i + 1, min(len(down), i + cfg.max_bars + 1)):
                     a, b = round(beats[down[i]] * sr), round(beats[down[j]] * sr)
                     if b > upper:
                         break
-                    if not boundary_clear(i) or not boundary_clear(j):
+                    # The shared boundary offset preserves duration exactly.
+                    # Once a later downbeat is too long, all following ones are too.
+                    if max_frames is not None and b - a > max_frames:
+                        rejected["max_seconds"] += 1
+                        break
+                    vocal_ok = boundary_clear(i) and boundary_clear(j)
+                    if not vocal_ok and cfg.mode == "strict":
                         rejected["vocal_boundary"] += 1
                         continue
                     metrics = grid_metrics(beats, down, i, j, cfg)
                     if metrics is None:
                         rejected["unstable_grid_or_meter"] += 1
                         continue
-                    join = optimize_join(audio, sr, a, b, lower, upper, cfg)
+                    join = optimize_join(audio, sr, a, b, lower, upper, cfg,
+                                         allow_failed=cfg.mode == "exploratory")
                     if join is None:
                         rejected["waveform_join"] += 1
                         continue
                     s, e = join["start_sample"], join["end_sample"]
-                    if not clear(s / sr, guard) or not clear(e / sr, guard):
-                        rejected["vocal_boundary"] += 1
-                        continue
+                    snapped_vocal_ok = clear(s / sr, guard) and clear(e / sr, guard)
+                    passes = vocal_ok and snapped_vocal_ok and join["passes_waveform_join"]
                     bars = j - i
-                    # Rank only candidates which already passed every gate.
                     preference = {8: 0, 4: 0.06, 16: 0.12, 2: 0.25, 1: 0.45}.get(bars, 0.20)
                     cost = preference + 0.25 * join["cost"]
                     cost += metrics["maximum_grid_residual_ms"] / (10 * cfg.max_grid_residual_ms)
-                    candidates.append(dict(start_sample=s, end_sample=e, duration_samples=e - s,
-                                           start_seconds=s / sr, end_seconds=e / sr,
-                                           duration_seconds=(e - s) / sr, bars=bars,
-                                           grid_start_sample=a, grid_end_sample=b,
-                                           grid=metrics, join=join, ranking_cost=cost))
+                    item = dict(start_sample=s, end_sample=e, duration_samples=e - s,
+                                start_seconds=s / sr, end_seconds=e / sr,
+                                duration_seconds=(e - s) / sr, bars=bars,
+                                grid_start_sample=a, grid_end_sample=b,
+                                grid=metrics, join=join, ranking_cost=cost)
+                    if passes:
+                        candidates.append(item)
+                    elif cfg.mode == "exploratory":
+                        failed = []
+                        if not gates:
+                            failed.append("full_vocal_evidence_missing")
+                        elif not vocal_ok or not snapped_vocal_ok:
+                            failed.append("vocal_boundary")
+                        if not join["passes_waveform_join"]:
+                            failed.append("waveform_join")
+                        context = spectral_context(audio, sr, s, e)
+                        # Feature similarity can suggest an audition, but is
+                        # not a substitute for vocal, grid or seam clearance.
+                        if cfg.exploratory_algorithm == "spectral_context":
+                            rank = (1 - context["feature_similarity"]
+                                    + min(1.0, context["rms_difference_db"] / 24)
+                                    + preference + metrics["maximum_grid_residual_ms"] / 200)
+                        else:
+                            rank = cost
+                        near_misses.append({**item, "spectral_context": context,
+                                            "failed_gates": failed,
+                                            "status": "requires_listening_or_edit",
+                                            "exploratory_ranking_cost": rank})
+                        for gate in failed:
+                            rejected[gate] += 1
+                    elif not snapped_vocal_ok:
+                        rejected["vocal_boundary"] += 1
             if not candidates:
-                reason = "No candidate met all complete-bar, vocal-clear, grid and join checks."
+                reason = "No candidate met all duration, complete-bar, vocal-clear, grid and join checks."
+        section_diagnostics.append({"section_index": section["index"], "label": section["label"],
+                                    "boundary_counts": boundary_counts,
+                                    "rejected_candidates": dict(rejected)})
+        near_misses.sort(key=lambda x: (x["exploratory_ranking_cost"], x["start_sample"], x["end_sample"]))
+        for rank, item in enumerate(near_misses[:cfg.loops_per_section], 1):
+            candidate_id = f"{section['kind']}-{section['occurrence']:02d}-x{rank:02d}"
+            record = {"id": candidate_id, "section_index": section["index"],
+                      "section_label": section["label"], "section_kind": section["kind"],
+                      **item, "file": None, "vocal_clear": "vocal_boundary" not in item["failed_gates"]
+                      and "full_vocal_evidence_missing" not in item["failed_gates"]}
+            if export_audio:
+                name = f"exploratory-audio/{candidate_id}-{item['start_sample']}-{item['end_sample']}.wav"
+                path = output_dir / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                temporary = path.with_suffix(".tmp")
+                sf.write(temporary, audio[item["start_sample"]:item["end_sample"]], sr,
+                         subtype="FLOAT", format="WAV")
+                temporary.replace(path)
+                record["file"] = name
+            exploratory.append(record)
         if reason:
             unresolved.append({**section, "reason": reason, "rejected_candidates": dict(rejected)})
             continue
@@ -368,9 +497,13 @@ def analyze_loops(audio_path: Path, output_dir: Path, *, song_map: dict | None,
     result = dict(schema="stemlab.loops.v1", attribution=attribution(),
                   source_name=Path(audio_path).name, source_sha256=sha256_file(audio_path),
                   sample_rate=int(sr), source_frames=len(audio), channels=audio.shape[1],
-                  section_source=(song_map or {}).get("section_source"),
+                  section_source=(song_map or {}).get("section_source") if cfg.search_scope == "sections"
+                  else "whole_master_search_window",
                   grid_source=model, config=asdict(cfg), loop_count=len(loops),
-                  target_section_count=len(sections), loops=loops, unresolved_sections=unresolved,
+                  target_section_count=len(sections), loops=loops,
+                  exploratory_count=len(exploratory), exploratory_candidates=exploratory,
+                  unresolved_sections=unresolved,
+                  section_diagnostics=section_diagnostics,
                   export_audio=bool(export_audio), grid_diagnostics=grid_errors,
                   vocal_diagnostics=vocal_errors, vocal_timing_sources=timing_sources,
                   vocal_sources=[dict(name=g.path.name, threshold_amplitude=g.threshold) for g in gates],
@@ -382,6 +515,7 @@ def analyze_loops(audio_path: Path, output_dir: Path, *, song_map: dict | None,
                       "Acoustic silence and seam checks are heuristics, not proof of inaudibility. Audition loops.",
                       "Loops may contain vocals inside; only the cut neighborhoods must be vocal-clear.",
                       "Native source sample rate and channels are preserved. No resampling or normalization.",
+                      "Exploratory candidates are near-misses only; spectral context ranks them but does not establish a clean edit.",
                   ])
     tsv = output_dir / "loops.tsv"
     with tsv.open("w", newline="", encoding="utf-8") as f:
@@ -389,6 +523,14 @@ def analyze_loops(audio_path: Path, output_dir: Path, *, song_map: dict | None,
         writer.writerow(["id", "section", "start_sample", "end_sample_exclusive", "sample_rate", "bars"])
         for loop in loops:
             writer.writerow([loop["id"], loop["section_label"], loop["start_sample"], loop["end_sample"], sr, loop["bars"]])
+    with (output_dir / "exploratory.tsv").open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(["id", "section", "start_sample", "end_sample_exclusive", "sample_rate",
+                         "bars", "failed_gates", "ranking_cost"])
+        for item in exploratory:
+            writer.writerow([item["id"], item["section_label"], item["start_sample"],
+                             item["end_sample"], sr, item["bars"], ",".join(item["failed_gates"]),
+                             item["exploratory_ranking_cost"]])
     _write_json(output_dir / "loops.json", result)
     return result
 
@@ -455,11 +597,12 @@ def analyze_existing_loops(root: Path, *, export_audio: bool = False,
 
 def preview_loop(root: Path, loop_id: str) -> tuple[bytes, str]:
     """Read-only exact slice; never create files merely to audition a loop."""
-    if not re.fullmatch(r"(?:verse|chorus)-\d+-\d+", loop_id):
+    if not re.fullmatch(r"(?:verse|chorus|hook|whole)-\d+-(?:\d+|x\d+)", loop_id):
         raise ValueError("Invalid loop id")
     root = root.resolve()
     report = _read(root / "deep/loops/loops.json")
-    item = next((x for x in report.get("loops", []) if x.get("id") == loop_id), None)
+    item = next((x for x in report.get("loops", []) + report.get("exploratory_candidates", [])
+                 if x.get("id") == loop_id), None)
     if item is None:
         raise FileNotFoundError("Loop not found; run stemlab loops on this result directory")
     analysis = _read(root / "analysis.json")

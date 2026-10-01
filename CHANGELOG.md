@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.0 - 2026-10-01
+
+- Add an explicitly exploratory whole-master cut-point search for new potential loops, with separate waveform and spectral-context rankings, per-candidate failed-gate evidence, and no relaxation of accepted-loop status.
+- Add an optional native-sample loop-duration limit to new analyses, rescans, the Python finder and Codex tools, with boundary validation and per-section rejection evidence for short-video planning.
+- Add section-level acoustic-versus-timing boundary counts to explain unresolved scans without weakening safety gates, and allow explicitly labelled hook search windows.
+
 ## 1.1.2 - 2026-10-01
 
 - Fix the Sonic Annotator CSV invocation to use its supported `--csv-omit-filename` option, restoring Vamp analysis in the pinned 1.7 runtime.

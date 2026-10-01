@@ -48,6 +48,8 @@ def _error_record(stage: str, exc: Exception) -> dict:
 
 
 def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> dict:
+    from .analysis.loops import LoopConfig
+    LoopConfig(max_seconds=config.loop_max_seconds)
     if config.export_loops and (not config.run_loops or not config.run_deep_analysis):
         raise ValueError("Loop export requires loop discovery and deep analysis")
     progress = progress or (lambda _msg: None)
@@ -357,6 +359,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 run_basic_pitch=config.run_basic_pitch,
                 run_loops=config.run_loops,
                 export_loops=config.export_loops,
+                loop_max_seconds=config.loop_max_seconds,
                 normalization_gains={
                     str(out / item["path"]): float(item.get("gain_db", 0.0))
                     for model in analysis["models"] for item in model.get("normalization", [])

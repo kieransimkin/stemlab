@@ -32,7 +32,7 @@ def analysis_options(options: dict[str, Any]) -> dict[str, Any]:
     allowed = {"profile", "models", "device", "allow_model_downloads", "allow_expensive",
                "allow_external_bootstrap", "export_loops", "run_whisper", "run_beats",
                "run_vamp", "run_structure", "run_text_semantics", "run_basic_pitch",
-               "noncommercial_audio_semantics"}
+               "noncommercial_audio_semantics", "max_loop_seconds"}
     if set(options) - allowed:
         raise ValueError("Unknown analysis option")
     selected = options.get("profile", "practical")
@@ -51,7 +51,9 @@ def analysis_options(options: dict[str, Any]) -> dict[str, Any]:
     import re
     if not isinstance(device, str) or not re.fullmatch(r"auto|cpu|mps|cuda(?::\d+)?", device):
         raise ValueError("Invalid device")
-    booleans = allowed - {"models", "profile", "device"}
+    from stemlab.analysis.loops import LoopConfig
+    LoopConfig(max_seconds=options.get("max_loop_seconds"))
+    booleans = allowed - {"models", "profile", "device", "max_loop_seconds"}
     if any(k in options and type(options[k]) is not bool for k in booleans):
         raise ValueError("Boolean options must be true or false")
     return {**options, "profile": selected, "models": list(dict.fromkeys(models)), "device": device}
@@ -74,6 +76,7 @@ def run_analysis(workspace: Path, output: Path, task: dict[str, Any]) -> dict[st
         input_wav=source, output_dir=output, models=tuple(options["models"]),
         device=options["device"], bootstrap_external=options.get("allow_external_bootstrap", False),
         export_loops=options.get("export_loops", False),
+        loop_max_seconds=options.get("max_loop_seconds"),
         run_whisper=options.get("run_whisper", True), run_beats=options.get("run_beats", True),
         run_vamp=options.get("run_vamp", True), run_structure=options.get("run_structure", True),
         run_text_semantics=options.get("run_text_semantics", False),
@@ -131,7 +134,11 @@ def run_loop_scan(workspace: Path, output: Path, task: dict[str, Any]) -> dict[s
     copied = output / "input" / master.name
     shutil.copyfile(master, copied)
     config = LoopConfig(max_bars=task.get("max_bars", 16),
-                        loops_per_section=task.get("per_section", 1))
+                        max_seconds=task.get("max_seconds"),
+                        loops_per_section=task.get("per_section", 1),
+                        mode=task.get("mode", "strict"),
+                        exploratory_algorithm=task.get("exploratory_algorithm", "spectral_context"),
+                        search_scope=task.get("search_scope", "sections"))
     report = analyze_loops(copied, output / "deep/loops", song_map=song_map, beat_results=beats,
                            stems=stems, canonical=canonical, normalization_gains=gains,
                            whisper_result=load("speech/whisper.json"),

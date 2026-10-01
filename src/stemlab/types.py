@@ -72,3 +72,4 @@ class PipelineConfig:
     run_basic_pitch: bool = False
     run_loops: bool = True
     export_loops: bool = False
+    loop_max_seconds: float | None = None
