@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.1.2 - 2026-10-01
+
+- Fix the Sonic Annotator CSV invocation to use its supported `--csv-omit-filename` option, restoring Vamp analysis in the pinned 1.7 runtime.
+- Make the `beats` and `all` extras installable with the current StemLab core by excluding BeatNet's incompatible legacy NumPy/Numba pin. BeatNet remains an explicitly unavailable adapter unless separately provisioned; Beat This! and the Vamp beat tracker remain usable.
+
 ## 1.1.1 - 2026-09-30
 
 - Shorten the official MCP Registry description to satisfy its 100-character schema limit.

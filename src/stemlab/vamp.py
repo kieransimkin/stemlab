@@ -196,7 +196,7 @@ def _run_annotator(
             "-w",
             "csv",
             "--csv-stdout",
-            "--csv-omit-filenames",
+            "--csv-omit-filename",
             "--csv-end-times",
             "--csv-fill-ends",
             str(source),

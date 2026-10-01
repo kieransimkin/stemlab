@@ -18,7 +18,10 @@ def test_stemlab_stable_identity():
     assert project["scripts"]["stemlab"] == "stemlab.cli:app"
     assert "version" in project["dynamic"]
     assert "version" not in project
-    assert stemlab.__version__ == "1.1.1"
+    assert stemlab.__version__ == "1.1.2"
+    assert "beat-this>=1.1.0" in project["optional-dependencies"]["beats"]
+    assert "BeatNet" not in project["optional-dependencies"]["beats"]
+    assert "BeatNet" not in project["optional-dependencies"]["all"]
 
     assert readme.startswith("# StemLab")
     assert "canonical project name is **StemLab**" in readme

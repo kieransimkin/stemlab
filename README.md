@@ -54,7 +54,7 @@ Whisper runs in repetition-safe mode by default (`condition_on_previous_text=Fal
 
 Beat analysis runs:
 
-- **BeatNet** in offline/DBN mode.
+- **BeatNet** in offline/DBN mode when a compatible legacy environment is separately provisioned; it is not included in the current installable extras because its pinned NumPy/Numba requirements conflict with StemLab's core.
 - **Beat This!** using the `final0` checkpoint and its minimal postprocessor.
 - **Beat Transformer**, using the original released model code/checkpoints. The model was trained on five demixed mel streams, so StemLab maps BS-RoFormer-SW to vocals, drums, bass, piano, and `other + guitar`, makes 128-bin mel-power spectrograms at the original 44.1 kHz / 4096 FFT / 1024-hop settings, and averages all eight released fold checkpoints by default. It uses the original madmom DBN decoder if madmom is importable, otherwise a documented SciPy peak-picking fallback.
 
@@ -213,7 +213,7 @@ sample indexing, thresholds, limitations and reproducible screenshot examples.
 
 ## Install
 
-Python 3.10 or 3.11 is recommended because the legacy BeatNet/madmom ecosystem is less predictable on newer Python versions.
+Python 3.10 or 3.11 is recommended for the broad optional-model ecosystem. The `beats` and `all` extras install Beat This! but not BeatNet: BeatNet's current published NumPy/Numba pins conflict with StemLab's core Librosa requirement. The BeatNet adapter is retained for separately provisioned compatible legacy setups; a missing BeatNet result must not be mistaken for a successful detector run.
 
 From PyPI, install the released StemLab distribution with:
 
