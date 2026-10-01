@@ -199,6 +199,14 @@ stemlab analyze master.wav -o analysis-master --profile practical --export-loops
 
 # Reuse existing separation, structure and beat results; no models rerun.
 stemlab loops analysis-master --export-loops
+
+# Keep all candidates within a chosen short-video edit budget, in seconds.
+stemlab loops analysis-master --max-seconds 30 --per-section 3
+
+# Audition possible new cut pairs anywhere in the song, even where the passage
+# does not already repeat. These near-misses are NOT accepted seamless loops.
+stemlab loops analysis-master --mode exploratory --search-scope whole_song \
+  --max-seconds 30 --per-section 20 --exploratory-algorithm spectral_context
 ```
 
 In the existing analysis frontend, choose a highlighted loop region or the Loop
