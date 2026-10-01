@@ -110,16 +110,23 @@ class StemLabBridge:
                                  "options": options, "canonical_path": canonical_path})
 
     def start_loop_scan(self, results_path: str, *, export_audio: bool = False,
-                        max_bars: int = 16, per_section: int = 1) -> dict[str, Any]:
+                        max_bars: int = 16, max_seconds: float | None = None,
+                        per_section: int = 1, mode: str = "strict",
+                        exploratory_algorithm: str = "spectral_context",
+                        search_scope: str = "sections") -> dict[str, Any]:
         self._writable()
         if type(export_audio) is not bool or type(max_bars) is not int or type(per_section) is not int:
             raise ValueError("Invalid loop option types")
-        if not 1 <= max_bars <= 64 or not 1 <= per_section <= 8:
-            raise ValueError("max_bars must be 1..64; per_section 1..8")
+        from stemlab.analysis.loops import LoopConfig
+        LoopConfig(max_bars=max_bars, max_seconds=max_seconds, loops_per_section=per_section,
+                   mode=mode, exploratory_algorithm=exploratory_algorithm, search_scope=search_scope)
         root = result_root(self.workspace, results_path)
         return self.jobs.submit({"kind": "loops", "results_path": str(root.relative_to(self.workspace)),
                                  "export_audio": export_audio, "max_bars": max_bars,
-                                 "per_section": per_section})
+                                 "max_seconds": max_seconds,
+                                 "per_section": per_section, "mode": mode,
+                                 "exploratory_algorithm": exploratory_algorithm,
+                                 "search_scope": search_scope})
 
     def list_artifacts(self, results_path: str, *, prefix: str = "", offset: int = 0,
                        limit: int = 100) -> dict[str, Any]:

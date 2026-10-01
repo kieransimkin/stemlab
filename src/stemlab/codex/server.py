@@ -106,7 +106,8 @@ def create_server(bridge: StemLabBridge) -> MCPServer:
             models: list[str] | None = None, device: str = "auto",
             canonical_path: str | None = None, allow_model_downloads: bool = False,
             allow_expensive: bool = False, allow_external_bootstrap: bool = False,
-            export_loops: bool = False, run_whisper: bool = True, run_beats: bool = True,
+            export_loops: bool = False, max_loop_seconds: float | None = None,
+            run_whisper: bool = True, run_beats: bool = True,
             run_vamp: bool = True, run_structure: bool = True, run_text_semantics: bool = False,
             run_basic_pitch: bool = False, noncommercial_audio_semantics: bool = False,
         ) -> dict:
@@ -120,6 +121,7 @@ def create_server(bridge: StemLabBridge) -> MCPServer:
             options = {"profile": profile, "models": models, "device": device,
                        "allow_model_downloads": allow_model_downloads, "allow_expensive": allow_expensive,
                        "allow_external_bootstrap": allow_external_bootstrap, "export_loops": export_loops,
+                       "max_loop_seconds": max_loop_seconds,
                        "run_whisper": run_whisper, "run_beats": run_beats, "run_vamp": run_vamp,
                        "run_structure": run_structure, "run_text_semantics": run_text_semantics,
                        "run_basic_pitch": run_basic_pitch,
@@ -128,14 +130,22 @@ def create_server(bridge: StemLabBridge) -> MCPServer:
 
         @server.tool(annotations=write)
         def stemlab_start_loop_scan(results_path: str, export_audio: bool = False,
-                                     max_bars: int = 16, per_section: int = 1) -> dict:
-            """Reuse saved evidence, scan verse/chorus loops, optionally export WAVs to a NEW job.
+                                     max_bars: int = 16, max_seconds: float | None = None,
+                                     per_section: int = 1, mode: str = "strict",
+                                     exploratory_algorithm: str = "spectral_context",
+                                     search_scope: str = "sections") -> dict:
+            """Reuse saved evidence to scan loop cut points in a NEW job.
 
             No models rerun, no downloads and no modification of the input results directory.
-            Returns a job ID; poll status. max_bars 1..64, per_section 1..8.
+            Returns a job ID; poll status. max_bars 1..64, optional positive
+            max_seconds, per_section 1..8 strict or 1..64 exploratory.
+            whole_song scope is exploratory only; near-misses are not accepted loops.
             """
             return bridge.start_loop_scan(results_path, export_audio=export_audio,
-                                           max_bars=max_bars, per_section=per_section)
+                                           max_bars=max_bars, max_seconds=max_seconds,
+                                           per_section=per_section, mode=mode,
+                                           exploratory_algorithm=exploratory_algorithm,
+                                           search_scope=search_scope)
 
         @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=True,
                                                 idempotent_hint=True, open_world_hint=False))

@@ -14,7 +14,7 @@ from .harmony import analyze_harmony
 from .lyrics import analyze_lyrics, transcript_to_lyrics
 from .rhythm import analyze_rhythm
 from .song_map import analyze_song_map
-from .loops import analyze_loops
+from .loops import LoopConfig, analyze_loops
 
 ProgressFn = Callable[[str], None]
 
@@ -57,6 +57,7 @@ def run_comprehensive_analysis(
     run_basic_pitch: bool = False,
     run_loops: bool = True,
     export_loops: bool = False,
+    loop_max_seconds: float | None = None,
     normalization_gains: dict[str, float] | None = None,
     device: str = "auto",
 ) -> dict[str, Any]:
@@ -143,7 +144,7 @@ def run_comprehensive_analysis(
             beat_results=beat_results, stems=stems,
             whisper_result=whisper_result, lyrics_result=lyrics_result,
             canonical=canonical, normalization_gains=normalization_gains,
-            export_audio=export_loops,
+            export_audio=export_loops, config=LoopConfig(max_seconds=loop_max_seconds),
         ))
 
     if run_audio_semantics:

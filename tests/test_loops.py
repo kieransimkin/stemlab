@@ -45,11 +45,32 @@ def test_default_does_not_write_audio(tmp_path):
     assert not list((tmp_path / 'deep/loops').rglob('*.wav'))
     assert all((x['file'] is None for x in report['loops']))
 
+def test_max_seconds_caps_exact_native_duration(tmp_path):
+    report, _, _ = run(tmp_path, config=LoopConfig(max_seconds=2.0))
+    assert report['loop_count'] == 2
+    assert report['config']['max_seconds'] == 2.0
+    assert all(loop['duration_samples'] == 2 * report['sample_rate'] for loop in report['loops'])
+    assert all(loop['duration_seconds'] <= 2.0 for loop in report['loops'])
+
+    too_short, _, _ = run(tmp_path, config=LoopConfig(max_seconds=1.999))
+    assert too_short['loop_count'] == 0
+    assert all(section['rejected_candidates']['max_seconds'] > 0
+               for section in too_short['unresolved_sections'])
+
 def test_no_vocal_evidence_is_not_safe(tmp_path):
     master, _, beats, sections, _ = fixture(tmp_path)
     report = analyze_loops(master, tmp_path / 'out', song_map=sections, beat_results=[beats], stems=[], whisper_result={'words': [{'start': 3, 'end': 4}]})
     assert not report['loops']
     assert len(report['unresolved_sections']) == 2
+    assert all(x['boundary_counts'] is None for x in report['section_diagnostics'])
+
+def test_section_boundary_diagnostics_separate_acoustic_and_timing_evidence(tmp_path):
+    report, _, _ = run(tmp_path, lyrics_result={'lines': [{'start': 0, 'end': 1}]})
+    first = report['section_diagnostics'][0]['boundary_counts']
+    assert first['downbeats_in_section'] == 5
+    assert first['acoustically_clear_downbeats'] == 5
+    assert first['timing_clear_downbeats'] < 5
+    assert first['fully_clear_downbeats'] == first['timing_clear_downbeats']
 
 @pytest.mark.parametrize('mode', ['stereo_antiphase', 'right_only', 'continuous'])
 def test_vocals_veto_cut_even_when_mono_average_would_hide_them(tmp_path, mode):
@@ -117,12 +138,53 @@ def test_no_sections_no_invented_verse(tmp_path):
     report = analyze_loops(master, tmp_path / 'out', song_map=sections, beat_results=[beats], stems=stems)
     assert report['target_section_count'] == 0 and (not report['loops'])
 
+def test_exploratory_whole_song_finds_new_cut_pairs_without_existing_repeats(tmp_path):
+    master, _, beats, _, stems = fixture(tmp_path)
+    sf.write(stems[0].path, np.full(8000 * 20, 0.1, dtype='float32'), 8000, subtype='FLOAT')
+    config = LoopConfig(mode='exploratory', search_scope='whole_song',
+                        max_seconds=4, loops_per_section=10)
+    report = analyze_loops(master, tmp_path / 'out', song_map={'sections': []},
+                           beat_results=[beats], stems=stems, config=config)
+    assert report['target_section_count'] == 1
+    assert report['section_source'] == 'whole_master_search_window'
+    assert report['loop_count'] == 0
+    assert report['exploratory_count'] > 0
+    assert all(candidate['status'] == 'requires_listening_or_edit'
+               and 'vocal_boundary' in candidate['failed_gates']
+               and candidate['duration_seconds'] <= 4
+               for candidate in report['exploratory_candidates'])
+    assert (tmp_path / 'out/exploratory.tsv').is_file()
+
+def test_exploratory_spectral_and_waveform_rankers_are_labelled(tmp_path):
+    master, _, beats, sections, _ = fixture(tmp_path)
+    for algorithm in ('spectral_context', 'waveform'):
+        report = analyze_loops(master, tmp_path / algorithm, song_map=sections,
+                               beat_results=[beats], stems=[],
+                               config=LoopConfig(mode='exploratory',
+                                                 exploratory_algorithm=algorithm))
+        assert report['loop_count'] == 0
+        assert report['exploratory_candidates']
+        item = report['exploratory_candidates'][0]
+        assert 'full_vocal_evidence_missing' in item['failed_gates']
+        assert 0 <= item['spectral_context']['log_band_cosine_similarity'] <= 1
+        assert not item['vocal_clear']
+
+
+def test_supplied_hook_section_can_be_scanned_without_inventing_it(tmp_path):
+    master, _, beats, _, stems = fixture(tmp_path)
+    sections = {'section_source': 'user-supplied hook window',
+                'sections': [{'start': 0, 'end': 8, 'label': 'Outro Hook'}]}
+    report = analyze_loops(master, tmp_path / 'out', song_map=sections,
+                           beat_results=[beats], stems=stems)
+    assert report['target_section_count'] == 1
+    assert report['loops'][0]['section_kind'] == 'hook'
+
 def test_join_checks_worst_channel_and_constant_length():
     y = np.zeros((1000, 2), dtype='float32')
     y[600:800, 1] = 0.5
     assert optimize_join(y, 1000, 0, 800, 0, 800, LoopConfig(snap_ms=0)) is None
 
-@pytest.mark.parametrize('options', [{'snap_ms': float('nan')}, {'max_bars': 0}, {'max_join_step': 0}, {'max_bars': 16.0}, {'loops_per_section': 1.0}, {'snap_ms': '5'}, {'loops_per_section': True}])
+@pytest.mark.parametrize('options', [{'snap_ms': float('nan')}, {'max_bars': 0}, {'max_join_step': 0}, {'max_bars': 16.0}, {'loops_per_section': 1.0}, {'snap_ms': '5'}, {'loops_per_section': True}, {'max_seconds': 0}, {'max_seconds': -1}, {'max_seconds': float('inf')}, {'max_seconds': float('nan')}, {'max_seconds': True}, {'mode': 'loose'}, {'exploratory_algorithm': 'magic'}, {'search_scope': 'undefined'}, {'search_scope': 'whole_song'}, {'loops_per_section': 9}])
 def test_bad_config(options):
     with pytest.raises(ValueError):
         LoopConfig(**options)

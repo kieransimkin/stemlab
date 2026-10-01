@@ -17,6 +17,9 @@ stemlab analyze master.wav -o analysis-master --profile practical
 # Optional explicit audio export:
 stemlab analyze master.wav -o analysis-master --profile practical --export-loops
 
+# Apply the same duration budget during a new analysis:
+stemlab analyze master.wav -o analysis-master --profile practical --max-loop-seconds 30
+
 # Skip loop discovery:
 stemlab analyze master.wav -o analysis-master --profile practical --no-loops
 
@@ -26,12 +29,87 @@ stemlab loops analysis-master --export-loops
 
 # More alternatives / longer candidates:
 stemlab loops analysis-master --max-bars 32 --per-section 2 --export-loops
+
+# Keep candidates within a short-video edit budget (seconds):
+stemlab loops analysis-master --max-seconds 30 --per-section 3
+
+# Find possible NEW cut pairs anywhere in the master, even if the passage
+# does not repeat elsewhere. These are audition/edit candidates, not safe loops:
+stemlab loops analysis-master --mode exploratory --search-scope whole_song \
+  --max-seconds 30 --per-section 20 --exploratory-algorithm spectral_context
+
+# Compare a waveform-join-first ranking of the same candidate pool:
+stemlab loops analysis-master --mode exploratory --search-scope whole_song \
+  --max-seconds 30 --per-section 20 --exploratory-algorithm waveform
 ```
 
 `--export-loops` conflicts with `--no-loops` and `--no-deep-analysis`; StemLab
 rejects that combination instead of silently failing to export. Disabling the
 deep pass also disables its automatic loop stage. `stemlab loops` operates on
 saved evidence independently of the deep-pass switch.
+Explicitly labelled verse, chorus and hook windows are eligible; StemLab does
+not infer an unlabelled hook or silently expand a window across other sections.
+An analyst-supplied cross-section search window must retain its own source and
+still pass every acoustic, grid and seam gate.
+
+`--max-seconds` is optional and applies alongside `--max-bars`: a candidate
+must satisfy both. It measures the exact native-sample loop duration, including
+the final beat up to the following downbeat. A loop equal to the limit is kept;
+one over it is rejected before vocal and seam checks. The report retains the
+setting and a `max_seconds` rejected-candidate count for sections with no
+eligible result. No platform limit or mandatory intro/outro margin is assumed:
+use a user-chosen budget or verify the specific destination's current rules.
+When a section is unresolved, `section_diagnostics` distinguishes the number of
+detected downbeats, downbeats quiet in the complete-vocal stem, downbeats clear
+of explicit lyric timings, and downbeats satisfying both. These counts explain
+which evidence gate is holding a section; they are not a reason to bypass it.
+
+## Exploratory cut-point search
+
+`--mode strict` remains the default and unchanged: only complete-bar pairs with
+verified vocal-clear cut neighborhoods, stable detector grid and a low-step
+waveform join enter `loops`. `--mode exploratory` evaluates beat-aligned cut
+pairs even when vocal or sample-continuity checks fail, and writes the ranked
+near-misses to `exploratory_candidates` in `loops.json` and to
+`exploratory.tsv`. It does **not** turn those near-misses into accepted loops.
+Each candidate carries exact native-sample bounds, `failed_gates`, a separate
+`requires_listening_or_edit` status, and spectral-context measurements. If a
+complete-vocal estimate is missing, it says `full_vocal_evidence_missing`;
+transcript gaps never become proof of silence.
+
+`--search-scope whole_song` searches start/end downbeat pairs across the whole
+master instead of restricting both cuts to an existing section label. The
+"Whole master search" label describes a search window, not a repeated song
+section or a proposed song map. It is available only in exploratory mode.
+`--max-seconds` and `--max-bars` still bound each pair, and `--per-section` may
+be up to 64 in exploratory mode (8 in strict mode). No audio is exported unless
+`--export-loops` is explicit; when set, near-miss slices go in
+`exploratory-audio/`, separate from accepted `audio/`. They are raw auditions,
+not repaired, crossfaded or release-ready loops. The frontend's existing loop
+lane shows accepted loops only; inspect exploratory JSON/TSV or exported local
+auditions for near-misses.
+
+The two exploratory rankers inspect the *same* beat-aligned candidate pool.
+`waveform` favours the lowest worst-channel sample step and slope around a
+shared offset. `spectral_context` compares the last 350 ms before the end cut
+with the first 350 ms after the start cut using 24 log-frequency energy bands,
+12 pitch-class bands, cosine similarity and RMS difference; it can notice
+similar tonal/timbral context even where the
+literal sample join is poor. This is StemLab's lightweight adaptation of
+feature self-similarity, not a claim to reproduce another project's detector.
+Neither score proves that a vocal phrase, reverb tail, harmony or rhythmic
+accent will survive a wrap. Listen to repeated unfaded playback, then produce
+and verify a separately labelled edit if a crossfade or source change is needed.
+
+Research basis (accessed 2026-10-01): [librosa's recurrence tutorial](https://librosa.org/doc/main/auto_tutorials/03-advanced/plot_segmentation.html)
+uses beat-synchronous spectral features and a self-similarity matrix for
+structural repetition; [Essentia's loop descriptors](https://essentia.upf.edu/freesound_extractor.html)
+estimate a loop's tempo/confidence, not a guaranteed seam; [Pleco-Xa's loop
+API](https://plecoxa.com/api-by-category/) exposes multiple detection
+strategies including recurrence and zero-crossing approaches. Those methods
+suggest future plugin candidates, but repetition detection and loop-point
+selection are different questions. StemLab currently proposes new cut points
+within the master rather than looking only for passages already repeated.
 
 For a server-managed song, substitute its actual result directory:
 
@@ -182,7 +260,8 @@ from stemlab.analysis.loops import LoopConfig, analyze_existing_loops
 report = analyze_existing_loops(
     Path("analysis-master"),
     export_audio=True,
-    config=LoopConfig(max_bars=16, loops_per_section=2, snap_ms=3.0, vocal_guard_ms=100.0),
+    config=LoopConfig(max_bars=16, max_seconds=30, loops_per_section=2,
+                      snap_ms=3.0, vocal_guard_ms=100.0),
 )
 ```
 
