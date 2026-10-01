@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "stemlab",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Audio timing analysis and loopable sections for creating Shorts videos; local StemLab / DanceFlow MCP.",
   "author": {
     "name": "Kieran Simkin",
