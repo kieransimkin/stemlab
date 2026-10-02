@@ -5,6 +5,7 @@ from decimal import Decimal
 import numpy as np
 import pytest
 import soundfile as sf
+from rich.text import Text
 from typer.testing import CliRunner
 
 from stemlab import cli, pipeline
@@ -22,11 +23,25 @@ def fixture(tmp_path):
     return root, cues
 
 
-def test_cli_help():
-    for command in [['snap-cues', '--help'], ['analyze', '--help']]:
-        result = CliRunner().invoke(cli.app, command)
-        assert result.exit_code == 0, result.output
-        assert ('--force-snap' in result.output if command[0] == 'snap-cues' else '--snap-cues' in result.output)
+@pytest.mark.parametrize(
+    'command, expected_option',
+    [('snap-cues', '--force-snap'), ('analyze', '--snap-cues')],
+)
+@pytest.mark.parametrize('force_color', [False, True], ids=['plain', 'ansi'])
+def test_cli_help(command, expected_option, force_color, monkeypatch):
+    # CI may force Rich colour even when CliRunner is capturing help. ANSI
+    # sequences can occur inside an option name, so inspect the rendered text.
+    monkeypatch.setenv('COLUMNS', '160')
+    monkeypatch.delenv('FORCE_COLOR', raising=False)
+    monkeypatch.delenv('NO_COLOR', raising=False)
+    if force_color:
+        monkeypatch.setenv('FORCE_COLOR', '1')
+    result = CliRunner().invoke(
+        cli.app, [command, '--help'], color=force_color, terminal_width=160,
+    )
+    assert result.exit_code == 0, result.output
+    plain_help = Text.from_ansi(result.output).plain
+    assert expected_option in plain_help, plain_help
 
 
 def test_cli_default_output_reports_distant_cue(tmp_path):
@@ -120,7 +135,8 @@ def stub_detectors(monkeypatch, beats):
         monkeypatch.setattr(pipeline, name, Detector)
     def build_session(directory, *a, **kw):
         a, b = directory / 'session.sv', directory / 'session.xml'
-        a.write_text('Test session'); b.write_text('Test session')
+        a.write_text('Test session')
+        b.write_text('Test session')
         return a, b
     monkeypatch.setattr(pipeline, 'build_session', build_session)
 
