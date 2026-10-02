@@ -62,6 +62,19 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
         MidiConfig(models=tuple(config.midi_models), target=config.midi_target,
                    allow_downloads=config.midi_allow_downloads, max_stems=config.midi_max_stems,
                    timeout_seconds=config.midi_timeout_seconds, device=config.device)
+    if config.evidence_models:
+        from .analysis.evidence import EvidenceConfig
+        if not config.run_deep_analysis:
+            raise ValueError("Evidence models in analyze require deep analysis; use stemlab evidence independently")
+        EvidenceConfig(models=tuple(config.evidence_models), device=config.device,
+                       allow_downloads=config.evidence_allow_downloads,
+                       timeout_seconds=config.evidence_timeout_seconds,
+                       model_paths=dict(config.evidence_model_paths),
+                       backend_pythons=dict(config.evidence_backend_pythons),
+                       canonical_text=config.evidence_canonical_text,
+                       language=config.evidence_language,
+                       chord_dictionary=config.evidence_chord_dictionary,
+                       prompt=config.evidence_prompt).validate_paths()
     cue_config = None
     if config.cue_file is not None:
         from .cues import CueSnapConfig, read_lrc
@@ -412,6 +425,15 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 midi_allow_downloads=config.midi_allow_downloads,
                 midi_max_stems=config.midi_max_stems,
                 midi_timeout_seconds=config.midi_timeout_seconds,
+                evidence_models=config.evidence_models,
+                evidence_allow_downloads=config.evidence_allow_downloads,
+                evidence_timeout_seconds=config.evidence_timeout_seconds,
+                evidence_model_paths=config.evidence_model_paths,
+                evidence_backend_pythons=config.evidence_backend_pythons,
+                evidence_canonical_text=config.evidence_canonical_text,
+                evidence_language=config.evidence_language,
+                evidence_chord_dictionary=config.evidence_chord_dictionary,
+                evidence_prompt=config.evidence_prompt,
                 run_loops=config.run_loops,
                 export_loops=config.export_loops,
                 loop_max_seconds=config.loop_max_seconds,

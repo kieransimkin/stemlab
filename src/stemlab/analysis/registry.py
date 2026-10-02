@@ -131,4 +131,14 @@ ACTIONS: tuple[AnalysisAction, ...] = (
         "https://github.com/spotify/basic-pitch",
         "Apache-2.0 code/model project; runtime compatibility is the reason it is opt-in.",
     ),
+    AnalysisAction(
+        "evidence_models", "cross-domain", "Complementary independent evidence models", False,
+        "Optional evidence/evidence-* extras plus separately provisioned research runtimes",
+        "deep/evidence_models/report.json",
+        "FireRed singing/speech/music intervals, Heart singing lyrics, Qwen forced alignment, "
+        "SwiftF0 pitch, SongFormer structure, lv-chordia harmony and ADTOF drum events. "
+        "Outputs remain independent and are never silently converted to ground truth.",
+        licence_note="Several research backends/checkpoints have separate or non-commercial terms; see docs/evidence-models.md.",
+    ),
+
 )

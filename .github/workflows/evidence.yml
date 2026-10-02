@@ -1,0 +1,29 @@
+name: Complementary evidence model integration tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install -e ".[dev,server,evidence]"
+      - name: Registry, routing, CLI and Codex integration tests
+        run: python -m pytest tests/test_evidence_models.py
+      - run: ruff check src/stemlab/analysis/evidence src/stemlab/cli.py src/stemlab/pipeline.py src/stemlab/codex tests/test_evidence_models.py scripts/benchmark_evidence_corpus.py
+      - run: python -m compileall -q src tests scripts

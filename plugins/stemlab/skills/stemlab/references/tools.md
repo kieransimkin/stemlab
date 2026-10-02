@@ -10,6 +10,7 @@ All paths refer to the explicitly configured server workspace, not the plugin ca
 | `stemlab_inspect_audio` | Native rate, frame count, channels, duration and SHA-256. |
 | `stemlab_start_analysis` | Starts the existing pipeline with typed options in a new output directory. |
 | `stemlab_start_midi_scan` | Audio-to-MIDI from a local file or saved stems in a new job; inspect `deep/midi/report.json`, native MIDI and note/piano-roll artifacts. |
+| `stemlab_start_evidence_scan` | Run optional independent vocal/pitch/structure/harmony/drum evidence in a new job; inspect `deep/evidence_models/report.json` and per-model artifacts. |
 | `stemlab_start_loop_scan` | Reuses prior evidence; optionally exports WAVs in a new directory. |
 | `stemlab_job_status` | Returns current or retained terminal state and backend error count. |
 | `stemlab_job_logs` | Bounded log pages; byte offsets and next offset. |

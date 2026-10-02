@@ -60,6 +60,15 @@ def run_comprehensive_analysis(
     midi_allow_downloads: bool = False,
     midi_max_stems: int = 6,
     midi_timeout_seconds: float = 1800,
+    evidence_models: tuple[str, ...] = (),
+    evidence_allow_downloads: bool = False,
+    evidence_timeout_seconds: float = 1800,
+    evidence_model_paths: dict[str, str] | None = None,
+    evidence_backend_pythons: dict[str, str] | None = None,
+    evidence_canonical_text: str | None = None,
+    evidence_language: str = "English",
+    evidence_chord_dictionary: str = "submission",
+    evidence_prompt: str | None = None,
     run_loops: bool = True,
     export_loops: bool = False,
     loop_max_seconds: float | None = None,
@@ -190,6 +199,32 @@ def run_comprehensive_analysis(
             if not continue_on_error and midi_result["status"] != "completed":
                 raise RuntimeError("Requested MIDI transcription did not fully complete; see deep/midi/report.json")
 
+
+    if evidence_models:
+        def evidence_models_run():
+            from .evidence import EvidenceConfig, analyze_evidence
+            text = evidence_canonical_text or (lyrics_text if lyrics_text else None)
+            return analyze_evidence(
+                master, root / "evidence_models", stems=stems, progress=progress,
+                config=EvidenceConfig(
+                    models=tuple(evidence_models), device=device,
+                    allow_downloads=evidence_allow_downloads,
+                    timeout_seconds=evidence_timeout_seconds,
+                    continue_on_error=continue_on_error,
+                    model_paths=dict(evidence_model_paths or {}),
+                    backend_pythons=dict(evidence_backend_pythons or {}),
+                    canonical_text=text, language=evidence_language,
+                    chord_dictionary=evidence_chord_dictionary, prompt=evidence_prompt,
+                ),
+            )
+        evidence_result = run("evidence_models", evidence_models_run)
+        if evidence_result:
+            for error in evidence_result.get("errors", []):
+                errors.append({"stage": "evidence:" + error["model"], **error})
+            for skipped in evidence_result.get("skipped", []):
+                errors.append({"stage": "evidence:" + skipped["model"],
+                               "type": "NoMatchingSource", "message": skipped["reason"]})
+
     if structure_result is not None:
         analyses["structure"] = structure_result
 
@@ -211,6 +246,7 @@ def run_comprehensive_analysis(
                     "semantic_audio": "deep/semantic_audio/semantic_audio.json",
                     "basic_pitch": "deep/basic_pitch/report.json",
                     "midi": "deep/midi/report.json",
+                    "evidence_models": "deep/evidence_models/report.json",
                     "structure": "deep/structure/structure.json",
                     "song_map": "deep/song_map/song_map.json",
                     "loops": "deep/loops/loops.json",

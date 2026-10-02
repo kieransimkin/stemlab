@@ -57,6 +57,14 @@ def analyze(
     midi_model: Annotated[list[str] | None, typer.Option("--midi-model", help="Optional MIDI model; repeat (see midi-models)")] = None,
     midi_target: Annotated[str, typer.Option("--midi-target", help="auto: mix for MT3, appropriate stems for specialists; or master/stems")] = "auto",
     midi_allow_downloads: Annotated[bool, typer.Option("--midi-allow-downloads", help="Permit missing MIDI checkpoints to be downloaded")] = False,
+    evidence_model: Annotated[list[str] | None, typer.Option("--evidence-model", help="Optional complementary evidence model; repeat (see evidence-models)")] = None,
+    evidence_allow_downloads: Annotated[bool, typer.Option("--evidence-allow-downloads", help="Permit selected evidence backends to download missing checkpoints")] = False,
+    evidence_model_path: Annotated[list[str] | None, typer.Option("--evidence-model-path", help="MODEL=/trusted/checkpoint/or/model-dir; repeat")] = None,
+    evidence_backend_python: Annotated[list[str] | None, typer.Option("--evidence-backend-python", help="MODEL=/absolute/path/to/python; repeat for isolated runtimes")] = None,
+    evidence_canonical_text: Annotated[Path | None, typer.Option("--evidence-canonical-text", exists=True, dir_okay=False, help="Approved lyrics/text for forced alignment")] = None,
+    evidence_language: Annotated[str, typer.Option("--evidence-language", help="Language label passed to forced alignment")] = "English",
+    evidence_chord_dictionary: Annotated[str, typer.Option("--evidence-chord-dictionary", help="submission, ismir2017 or full for lv-chordia")] = "submission",
+    evidence_prompt: Annotated[str | None, typer.Option("--evidence-prompt", help="Prompt/question for prompted separation or music-language backends")] = None,
     all_in_one_embeddings: Annotated[bool, typer.Option("--all-in-one-embeddings", help="Retain frame-level All-In-One structure embeddings (large output)")] = False,
     text_semantic_model: Annotated[str, typer.Option("--text-semantic-model", help="SentenceTransformer model id for lyric semantics")] = "sentence-transformers/all-MiniLM-L6-v2",
     audio_semantic_model: Annotated[str, typer.Option("--audio-semantic-model", help="MuQ-MuLan model id")] = "OpenMuQ/MuQ-MuLan-large",
@@ -89,6 +97,24 @@ def analyze(
                        allow_downloads=midi_allow_downloads, device=device)
         except ValueError as exc:
             raise typer.BadParameter(str(exc)) from exc
+    evidence_paths = {}
+    evidence_pythons = {}
+    if evidence_model_path or evidence_backend_python:
+        from .analysis.midi.registry import parse_overrides
+        evidence_paths = parse_overrides(evidence_model_path)
+        evidence_pythons = parse_overrides(evidence_backend_python)
+    evidence_text = evidence_canonical_text.read_text(encoding="utf-8") if evidence_canonical_text else None
+    if evidence_model:
+        from .analysis.evidence import EvidenceConfig
+        try:
+            ecfg = EvidenceConfig(models=tuple(evidence_model), device=device,
+                                  allow_downloads=evidence_allow_downloads,
+                                  model_paths=evidence_paths, backend_pythons=evidence_pythons,
+                                  canonical_text=evidence_text, language=evidence_language,
+                                  chord_dictionary=evidence_chord_dictionary, prompt=evidence_prompt)
+            ecfg.validate_paths()
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
     models = tuple(model) if model else resolve_profile(profile)
     invalid = [m for m in models if m not in MODEL_REGISTRY]
     if invalid:
@@ -118,6 +144,14 @@ def analyze(
         midi_models=tuple(midi_model or ()),
         midi_target=midi_target,
         midi_allow_downloads=midi_allow_downloads,
+        evidence_models=tuple(evidence_model or ()),
+        evidence_allow_downloads=evidence_allow_downloads,
+        evidence_model_paths=evidence_paths,
+        evidence_backend_pythons=evidence_pythons,
+        evidence_canonical_text=evidence_text,
+        evidence_language=evidence_language,
+        evidence_chord_dictionary=evidence_chord_dictionary,
+        evidence_prompt=evidence_prompt,
         run_loops=not no_loops,
         export_loops=export_loops,
         loop_max_seconds=max_loop_seconds,
@@ -222,6 +256,62 @@ def extract_midi(
                   f"{len(report['errors'])} failure(s), {len(report['skipped'])} skipped model(s).")
     console.print(str((output or source / "deep/midi").resolve() / "report.json"))
     if report["status"] != "completed":
+        raise typer.Exit(1)
+
+
+@app.command("evidence-models")
+def list_evidence_models():
+    """List optional complementary evidence models without importing their runtimes."""
+    from .analysis.evidence import EVIDENCE_MODELS
+    table = Table("model", "category", "target", "extra", "commercial", "package present", "description")
+    for spec in EVIDENCE_MODELS.values():
+        present = importlib.util.find_spec(spec.module) is not None
+        table.add_row(spec.slug, spec.category, spec.target, spec.extra,
+                      "yes" if spec.commercial_safe else "restricted/review",
+                      "yes" if present else "no", spec.description)
+    console.print(table)
+    console.print("Availability does not imply checkpoint readiness or validated musical accuracy.")
+
+
+@app.command("evidence")
+def extract_evidence(
+    source: Annotated[Path, typer.Argument(exists=True, help="Audio file or existing StemLab result folder")],
+    output: Annotated[Path | None, typer.Option("--output", "-o", help="New/empty destination; defaults to RESULTS/deep/evidence_models")] = None,
+    model: Annotated[list[str] | None, typer.Option("--model", help="Evidence backend; repeat")] = None,
+    target: Annotated[str, typer.Option(help="auto, master, vocals or stems")] = "auto",
+    device: Annotated[str, typer.Option(help="auto, cpu, cuda or cuda:N")] = "auto",
+    allow_model_downloads: Annotated[bool, typer.Option("--allow-model-downloads")] = False,
+    model_path: Annotated[list[str] | None, typer.Option("--model-path", help="MODEL=/trusted/checkpoint/or/model-dir; repeat")] = None,
+    backend_python: Annotated[list[str] | None, typer.Option("--backend-python", help="MODEL=/absolute/path/to/python; repeat")] = None,
+    canonical_text: Annotated[Path | None, typer.Option("--canonical-text", exists=True, dir_okay=False, help="Approved lyrics/text for forced alignment")] = None,
+    language: Annotated[str, typer.Option(help="Language label for forced alignment")] = "English",
+    chord_dictionary: Annotated[str, typer.Option("--chord-dictionary", help="submission, ismir2017 or full")] = "submission",
+    prompt: Annotated[str | None, typer.Option("--prompt", help="Prompt/question passed to external prompted-separation or music-language models")] = None,
+    timeout: Annotated[float, typer.Option("--timeout", min=1, max=86400, help="Per-model/per-source timeout seconds")] = 1800,
+    strict: Annotated[bool, typer.Option("--strict", help="Stop at first backend failure")] = False,
+):
+    """Run optional independent evidence models without rerunning separation unless needed."""
+    from .analysis.evidence import EvidenceConfig, analyze_path
+    from .analysis.midi.registry import parse_overrides
+    try:
+        cfg = EvidenceConfig(models=tuple(model or ("firered_aed", "swift_f0")), target=target,
+                             device=device, allow_downloads=allow_model_downloads,
+                             timeout_seconds=timeout, continue_on_error=not strict,
+                             model_paths=parse_overrides(model_path),
+                             backend_pythons=parse_overrides(backend_python),
+                             canonical_text=canonical_text.read_text(encoding="utf-8") if canonical_text else None,
+                             language=language, chord_dictionary=chord_dictionary, prompt=prompt)
+        cfg.validate_paths()
+        if source.is_file() and output is None:
+            raise ValueError("--output is required for an audio file")
+        report = analyze_path(source, output, config=cfg,
+                              progress=lambda message: console.print(message, markup=False))
+    except (ValueError, OSError, RuntimeError, KeyError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"Evidence status: {report['status']}; {report.get('completed_count', 0)} completed; "
+                  f"{len(report['errors'])} failure(s); {len(report['skipped'])} skipped.")
+    console.print(str((output or source / "deep/evidence_models").resolve() / "report.json"))
+    if report["status"] == "failed":
         raise typer.Exit(1)
 
 

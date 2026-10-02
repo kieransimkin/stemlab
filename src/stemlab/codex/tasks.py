@@ -213,3 +213,70 @@ def run_midi_scan(workspace: Path, output: Path, task: dict[str, Any]) -> dict[s
             "message": "MIDI extraction: " + report["status"], "report_path": "deep/midi/report.json",
             "completed_count": report["completed_count"], "error_count": len(report["errors"]),
             "skipped_count": len(report["skipped"]), "note_count": report["note_count"]}
+
+
+def evidence_options(*, models: list[str] | None = None, target: str = "auto",
+                     device: str = "auto", allow_model_downloads: bool = False,
+                     language: str = "English", chord_dictionary: str = "submission",
+                     prompt: str | None = None) -> dict[str, Any]:
+    from stemlab.analysis.evidence import EvidenceConfig
+    if models is not None and not isinstance(models, list):
+        raise ValueError("Evidence models must be a list")
+    selected = ["firered_aed", "swift_f0"] if models is None else models
+    # MCP deliberately does not accept model paths/backend interpreters. Those
+    # are host provisioning concerns and avoid arbitrary executable paths.
+    EvidenceConfig(models=tuple(selected), target=target, device=device,
+                   allow_downloads=allow_model_downloads, language=language,
+                   chord_dictionary=chord_dictionary, prompt=prompt)
+    return {"models": selected, "target": target, "device": device,
+            "allow_model_downloads": allow_model_downloads, "language": language,
+            "chord_dictionary": chord_dictionary, "prompt": prompt}
+
+
+def run_evidence_scan(workspace: Path, output: Path, task: dict[str, Any]) -> dict[str, Any]:
+    from stemlab.analysis.evidence import EvidenceConfig, analyze_evidence
+    from stemlab.analysis.evidence.runner import saved_sources
+    from stemlab.manifest import write_manifest
+    from stemlab.util import sha256_file
+    source = inside(workspace, task["source_path"])
+    options = dict(task.get("options", {}))
+    canonical_text_path = options.pop("canonical_text_path", None)
+    canonical_text = None
+    if canonical_text_path:
+        text_file = inside(workspace, canonical_text_path)
+        canonical_text = text_file.read_text(encoding="utf-8")
+    options = evidence_options(**options)
+    is_file = source.is_file()
+    if is_file:
+        master, stems = audio_path(workspace, task["source_path"]), []
+    else:
+        master, stems, _ = saved_sources(source)
+        inside(workspace, master)
+        for stem in stems:
+            inside(workspace, stem.path)
+    (output / "input").mkdir()
+    copied = output / "input" / master.name
+    shutil.copyfile(master, copied)
+    report = analyze_evidence(
+        copied, output / "deep/evidence_models", stems=stems, explicit_audio=is_file,
+        config=EvidenceConfig(models=tuple(options["models"]), target=options["target"],
+                              device=options["device"],
+                              allow_downloads=options["allow_model_downloads"],
+                              canonical_text=canonical_text, language=options["language"],
+                              chord_dictionary=options["chord_dictionary"], prompt=options["prompt"]),
+        progress=lambda message: print(message, flush=True),
+    )
+    write_json(output / "analysis.json", {
+        "source": {"original_path": str(master), "copied_path": f"input/{master.name}",
+                   "sha256": sha256_file(copied)}, "models": [],
+        "codex_provenance": {"operation": "evidence_scan", "evidence_directory": str(source),
+                             "prior_evidence_modified": False},
+        "deep_analysis": {"analyses": {"evidence_models": {
+            "available": bool(report.get("completed_count")),
+            "path": "deep/evidence_models/report.json"}}, "errors": report["errors"]}})
+    write_manifest(output)
+    return {"state": "failed" if report["status"] in {"failed", "no_matching_sources"} else report["status"],
+            "message": "Evidence scan: " + report["status"],
+            "report_path": "deep/evidence_models/report.json",
+            "completed_count": report.get("completed_count", 0),
+            "error_count": len(report["errors"]), "skipped_count": len(report["skipped"])}

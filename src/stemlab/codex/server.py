@@ -147,6 +147,27 @@ def create_server(bridge: StemLabBridge) -> MCPServer:
                                            allow_model_downloads=allow_model_downloads,
                                            max_stems=max_stems, make_plots=make_plots)
 
+        @server.tool(annotations=network)
+        def stemlab_start_evidence_scan(source_path: str, models: list[str] | None = None,
+                                        target: str = "auto", device: str = "auto",
+                                        allow_model_downloads: bool = False,
+                                        canonical_text_path: str | None = None,
+                                        language: str = "English",
+                                        chord_dictionary: str = "submission",
+                                        prompt: str | None = None) -> dict:
+            """Run optional complementary music evidence in a NEW job.
+
+            Defaults are FireRed AED and SwiftF0. Other model ids are exposed in
+            capabilities. Restricted models stay opt-in. Model paths and arbitrary
+            executables are not accepted over MCP; provision trusted runtimes on
+            the host and restart the plugin. Poll job status before claiming results.
+            """
+            return bridge.start_evidence_scan(
+                source_path, models=models, target=target, device=device,
+                allow_model_downloads=allow_model_downloads,
+                canonical_text_path=canonical_text_path, language=language,
+                chord_dictionary=chord_dictionary, prompt=prompt)
+
         @server.tool(annotations=write)
         def stemlab_start_loop_scan(results_path: str, export_audio: bool = False,
                                      max_bars: int = 16, max_seconds: float | None = None,

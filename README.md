@@ -291,6 +291,45 @@ For a new analysis, add `--snap-cues "musical cues.lrc"` and optionally
 in `analysis.json`. See [the cue alignment guide](docs/cue-alignment.md) for exact
 precision, offsets, all switches, safety rules and interpretation of warnings.
 
+## Complementary evidence models
+
+StemLab now has an optional **evidence-model layer** for models that add a different
+kind of musical evidence instead of duplicating the normal separation or MIDI
+backends. Nothing in this layer is enabled by a normal profile.
+
+```bash
+stemlab evidence-models
+
+# Singing/speech/music activity + continuous pitch on saved vocals.
+stemlab evidence analysis-master -o evidence-vocals \
+  --model firered_aed --model swift_f0 \
+  --model-path firered_aed=/models/FireRedVAD/AED
+
+# Align approved lyrics without replacing them.
+stemlab evidence analysis-master -o evidence-align \
+  --model qwen_forced_aligner --canonical-text lyrics.txt --allow-model-downloads
+
+# Independent harmony evidence.
+stemlab evidence analysis-master -o evidence-chords --model lv_chordia
+```
+
+The built-in registry covers **FireRed AED**, **HeartTranscriptor**, **Qwen3
+ForcedAligner**, **SwiftF0**, **SongFormer**, **lv-chordia** and **ADTOF PyTorch**.
+It also exposes explicit external-runtime bridges for **GAME**, **SheetSage2**,
+**MOSS-Music** and **AudioSep** so large or restricted research dependencies never
+get silently bundled into StemLab. Outputs stay independent: singing activity,
+forced alignment, pitch, structure, chords and drum hits are review evidence, not
+a hidden combined ground-truth score.
+
+Saved analyses automatically route vocal models to a preferred full vocal stem,
+drum transcription to a drum stem, continuous pitch to pitched stems, and
+structure/harmony models to the master. Missing specialist stems are reported.
+Use `--backend-python MODEL=/path/to/python` for conflicting research environments.
+
+See [the evidence-model guide](docs/evidence-models.md) for model terms, routing,
+external bridges and interpretation rules. `scripts/benchmark_evidence_corpus.py`
+probes an authorised evaluation collection without copying audio into the repo.
+
 ## Install
 
 Python 3.10 or 3.11 is recommended for the broad optional-model ecosystem. The `beats` and `all` extras install Beat This! but not BeatNet: BeatNet's current published NumPy/Numba pins conflict with StemLab's core Librosa requirement. The BeatNet adapter is retained for separately provisioned compatible legacy setups; a missing BeatNet result must not be mistaken for a successful detector run.
