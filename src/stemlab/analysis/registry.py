@@ -21,6 +21,14 @@ class AnalysisAction:
 
 ACTIONS: tuple[AnalysisAction, ...] = (
     AnalysisAction(
+        "cue_alignment", "rhythmic", "Snap LRC cues and highlight missing nearby beats", False,
+        "Python standard library + existing detected beat/downbeat timestamps",
+        "cues/<cue-file-stem>/report.json",
+        "Timestamp-only LRC rewriting on a selected detected grid. Nearby-beat tolerance, "
+        "distant-cue REVIEW warnings, exact decimal timing, optional forced snapping and "
+        "non-destructive output. Use snap-cues or analyze --snap-cues.",
+    ),
+    AnalysisAction(
         "loops", "structural/rhythmic", "Vocal-clear complete-bar loops", True,
         "numpy + soundfile + existing structure/beat/vocal evidence",
         "deep/loops/loops.json",
@@ -106,6 +114,13 @@ ACTIONS: tuple[AnalysisAction, ...] = (
         "Released model weights are CC-BY-NC 4.0; opt-in only.",
     ),
     AnalysisAction(
+        "midi", "melodic/harmonic", "Multi-model audio-to-MIDI extraction", False,
+        "Optional midi/amt/midi-piano/midi-transkun/midi-mt3 extras", "deep/midi/report.json",
+        "Basic Pitch, high-resolution piano + pedals, Transkun V2, MR-MT3 and YourMT3; "
+        "independent MIDI, native-sample note timing, controller/pitch-bend metadata and piano-roll PNGs.",
+        licence_note="Each backend has separate code/model terms; no weights or third-party code bundled.",
+    ),
+    AnalysisAction(
         "basic_pitch",
         "melodic/harmonic",
         "Basic Pitch stem transcription",
@@ -116,4 +131,14 @@ ACTIONS: tuple[AnalysisAction, ...] = (
         "https://github.com/spotify/basic-pitch",
         "Apache-2.0 code/model project; runtime compatibility is the reason it is opt-in.",
     ),
+    AnalysisAction(
+        "evidence_models", "cross-domain", "Complementary independent evidence models", False,
+        "Optional evidence/evidence-* extras plus separately provisioned research runtimes",
+        "deep/evidence_models/report.json",
+        "FireRed singing/speech/music intervals, Heart singing lyrics, Qwen forced alignment, "
+        "SwiftF0 pitch, SongFormer structure, lv-chordia harmony and ADTOF drum events. "
+        "Outputs remain independent and are never silently converted to ground truth.",
+        licence_note="Several research backends/checkpoints have separate or non-commercial terms; see docs/evidence-models.md.",
+    ),
+
 )

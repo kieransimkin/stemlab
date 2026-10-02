@@ -32,9 +32,13 @@ class StemLabBridge:
         from stemlab.analysis.registry import ACTIONS
         from stemlab.branding import attribution
         from stemlab.models import MODEL_REGISTRY
+        from stemlab.analysis.midi import MIDI_MODELS
+        from stemlab.analysis.evidence import EVIDENCE_MODELS
         packages = ["mcp", "soundfile", "torch", "torchaudio", "librosa", "demucs", "openunmix",
                     "bs_roformer", "faster_whisper", "allin1_infer", "beat_this", "BeatNet",
-                    "sentence_transformers", "muq", "basic_pitch", "fastapi", "uvicorn"]
+                    "sentence_transformers", "muq", "basic_pitch", "fastapi", "uvicorn",
+                    "fireredvad", "heartlib", "qwen_asr", "swift_f0", "lv_chordia",
+                    "adtof_pytorch", "SongFormer"]
         return {"stemlab_version": __version__, "attribution": attribution(),
                 "workspace": str(self.workspace), "read_only": self.read_only,
                 "output_root": str(self.jobs.root), "max_concurrent_jobs": self.jobs.max_jobs,
@@ -45,6 +49,8 @@ class StemLabBridge:
                                "browser_control": "Use an available host browser tool or open the returned URL locally",
                                "fallback": "Read reports and saved PNGs when no browser is available; state the limitation"},
                 "models": [m.to_dict() for m in MODEL_REGISTRY.values()],
+                "midi_models": [m.to_dict() for m in MIDI_MODELS.values()],
+                "evidence_models": [m.to_dict() for m in EVIDENCE_MODELS.values()],
                 "analysis_actions": [a.to_dict() for a in ACTIONS],
                 "packages_present": {p: importlib.util.find_spec(p) is not None for p in packages},
                 "notes": ["Package presence is not a GPU, model-weight or runtime readiness test.",
@@ -108,6 +114,54 @@ class StemLabBridge:
             canonical_path = str(canonical_file.relative_to(self.workspace))
         return self.jobs.submit({"kind": "analyze", "audio_path": str(source.relative_to(self.workspace)),
                                  "options": options, "canonical_path": canonical_path})
+
+    def start_midi_scan(self, source_path: str, *, models: list[str] | None = None,
+                        target: str = "auto", stem_names: list[str] | None = None,
+                        device: str = "auto", allow_model_downloads: bool = False,
+                        max_stems: int = 6, make_plots: bool = True) -> dict[str, Any]:
+        """Write a new MIDI-only job. No arbitrary commands or checkpoint paths."""
+        self._writable()
+        from .tasks import midi_options
+        options = midi_options(models=models, target=target, stem_names=stem_names,
+                               device=device, allow_model_downloads=allow_model_downloads,
+                               max_stems=max_stems, make_plots=make_plots)
+        source = inside(self.workspace, source_path)
+        if source.is_dir():
+            result_root(self.workspace, source_path)
+        else:
+            audio_path(self.workspace, source_path)
+        return self.jobs.submit({"kind": "midi", "source_path": str(source.relative_to(self.workspace)),
+                                 "options": options})
+
+    def start_evidence_scan(self, source_path: str, *, models: list[str] | None = None,
+                            target: str = "auto", device: str = "auto",
+                            allow_model_downloads: bool = False, canonical_text_path: str | None = None,
+                            language: str = "English", chord_dictionary: str = "submission",
+                            prompt: str | None = None) -> dict[str, Any]:
+        """Run complementary evidence in a fresh owned job.
+
+        Model/checkpoint paths and arbitrary command templates are intentionally
+        not exposed over MCP; provision trusted runtimes on the host first.
+        """
+        self._writable()
+        from .tasks import evidence_options
+        options = evidence_options(models=models, target=target, device=device,
+                                   allow_model_downloads=allow_model_downloads,
+                                   language=language, chord_dictionary=chord_dictionary,
+                                   prompt=prompt)
+        if canonical_text_path:
+            text_file = inside(self.workspace, canonical_text_path)
+            if not text_file.is_file() or text_file.suffix.lower() not in {".txt", ".lrc"}:
+                raise ValueError("Canonical evidence text must be a workspace .txt or .lrc file")
+            options["canonical_text_path"] = str(text_file.relative_to(self.workspace))
+        source = inside(self.workspace, source_path)
+        if source.is_dir():
+            result_root(self.workspace, source_path)
+        else:
+            audio_path(self.workspace, source_path)
+        return self.jobs.submit({"kind": "evidence",
+                                 "source_path": str(source.relative_to(self.workspace)),
+                                 "options": options})
 
     def start_loop_scan(self, results_path: str, *, export_audio: bool = False,
                         max_bars: int = 16, max_seconds: float | None = None,

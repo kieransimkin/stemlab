@@ -70,6 +70,30 @@ class PipelineConfig:
     run_audio_semantics: bool = False
     audio_semantic_model: str = "OpenMuQ/MuQ-MuLan-large"
     run_basic_pitch: bool = False
+    # Optional transcription; not implied by a separation profile or `all`.
+    midi_models: tuple[str, ...] = ()
+    midi_target: str = "auto"
+    midi_allow_downloads: bool = False
+    midi_max_stems: int = 6
+    midi_timeout_seconds: float = 1800
+    # Optional complementary evidence models; never enabled by a normal profile.
+    evidence_models: tuple[str, ...] = ()
+    evidence_allow_downloads: bool = False
+    evidence_timeout_seconds: float = 1800
+    evidence_model_paths: dict[str, str] = field(default_factory=dict)
+    evidence_backend_pythons: dict[str, str] = field(default_factory=dict)
+    evidence_canonical_text: str | None = None
+    evidence_language: str = "English"
+    evidence_chord_dictionary: str = "submission"
+    evidence_prompt: str | None = None
     run_loops: bool = True
     export_loops: bool = False
     loop_max_seconds: float | None = None
+
+    # Optional timestamp-only post-processing; cues never influence beat detection.
+    cue_file: Path | None = None
+    cue_tolerance_ms: float = 150.0
+    cue_beat_model: str = "auto"
+    cue_downbeats_only: bool = False
+    cue_force_snap: bool = False
+    cue_precision: str = "exact"

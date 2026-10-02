@@ -16,7 +16,7 @@ Use the current StemLab checkout before assembling a separate analysis stack. Re
 5. For tempo work, retain stable, gradual, abrupt, and same-BPM phase-skip hypotheses; report each constant-BPM section's fixed-grid precision. Use cues as supplementary confirmation and never move an audio-derived grid merely to fit a cue.
 6. Preserve any surrounding workflow's canonical-text locks, programme checks, acceptance threshold, monotonic and duration validation, and listening-QA requirements. StemLab evidence does not override artist-approved lyrics or timings.
 7. Save outputs in a durable dated analysis folder, verify claimed files are non-empty, and link selected evidence in the relevant report or registry.
-8. For loop discovery, inspect existing results first and prefer `stemlab loops <results>` so learned models are not rerun. Export WAVs only when needed. Treat `deep/loops/loops.json` as authoritative; unresolved sections and zero accepted loops are valid outcomes.
+8. For loop discovery, inspect existing results first and prefer `stemlab loops <results>` so learned models are not rerun. Set `--max-seconds` only to a user-chosen or destination-verified duration budget while retaining the independent complete-bar `--max-bars` gate; never invent a smaller platform cap or mandatory intro/outro margin. Verify the actual publishing route's current limit when needed. Export WAVs only when needed. Treat `deep/loops/loops.json` as authoritative; unresolved sections and zero accepted loops are valid outcomes.
 9. Prefer StemLab's real React timeline for visual inspection and loop audition when available, while using JSON for exact numerical claims. Playback transport behavior alone is not listening QA.
 
 ## Capability and improvement rule
@@ -38,7 +38,31 @@ When a reusable technique is missing:
 
 Do not silently replace StemLab with a one-off script. A cheaper diagnostic script is acceptable, but if its method enters a retained analysis result, integrate it into StemLab or record why it remains track-specific.
 
+For loop-point discovery, distinguish an already repeated musical passage from
+two candidate cut points that could make a new loop. Preserve strict accepted
+loops, but use `stemlab loops --mode exploratory --search-scope whole_song`
+to inspect labelled near-misses anywhere in the master. Compare waveform and
+spectral-context rankings under the same bar/seconds cap; neither ranking
+waives vocal, grid, sample-join or repeated-playback QA. Treat exploratory
+audio as private raw auditions, never as finished seamless edits.
+
 ## Potential problems
+
+### A rerendered loop WAV no longer matches its old whole-file hash
+
+- **Symptom:** on 1 October 2026, regenerating the same named Silly Sausage Britain loop and three-repeat audition changed both files' SHA-256 values, while the decoded samples compared exactly with the intended master slice and three-repeat concatenation.
+- **Research and cause boundary:** searches of the [python-soundfile project and issues](https://github.com/bastibe/python-soundfile) found no credible exact-match explanation for this particular byte change. Different container headers are possible, but unverified; do not present that as the cause.
+- **Corrective action that succeeded:** verify native sample rate, frame count and decoded-sample equality against the master; refresh the manifest with the newly observed whole-file hashes; keep the old hashes out of current identity claims.
+- **Verification:** the release-local script passed its exact sample-array checks and the current files' hashes were read back into `candidate-manifest.json`.
+- **Limits:** sample equality establishes the decoded export content, not why byte hashes changed, listening quality or public-use approval. Rehash after every rerender.
+
+### Official Demucs model fetch stalls at zero bytes
+
+- **Symptom:** on 1 October 2026, Python's model fetch remained at a zero-byte partial file while CPU separation waited for `htdemucs_ft` weights; the upstream model URL itself returned HTTP 200.
+- **Research and cause boundary:** the [official Demucs project](https://github.com/facebookresearch/demucs) and [PyTorch Hub model-cache documentation](https://docs.pytorch.org/docs/stable/hub.html) confirm the model-cache location and download mechanism. The exact Python-network stall cause was not established, so do not label it a corrupted model or failed permission.
+- **Corrective action that succeeded:** keep `TORCH_HOME` under `Z:\My Songs\Tools\stemlab\models\torch`, fetch the four official `htdemucs_ft` checkpoint files from `https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/` with the approved `curl.exe` route, then verify each SHA-256 against the publisher's embedded filename digest before rerunning the same backend call. The full hashes and filenames are in `Z:\My Songs\Tools\README.md`; keep the cache out of Git and do not redistribute weights.
+- **Verification:** the unchanged CPU separation completed and produced bass, drums, other and complete-vocals tracks matching the master duration and 44.1 kHz sample rate. The full-vocal gate then ran on the saved release-local stem.
+- **Limits:** this remedies only an accessible official model fetch. It does not prove the separated vocals are perfect, clear sample rights, validate loop audibility or authorise public audio upload.
 
 ### A prior timing utility appears more capable than the StemLab summary
 

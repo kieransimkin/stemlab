@@ -81,7 +81,7 @@ class JobManager:
         return folder
 
     def submit(self, task: dict[str, Any]) -> dict[str, Any]:
-        if task.get("kind") not in {"analyze", "loops", "inspect"}:
+        if task.get("kind") not in {"analyze", "loops", "inspect", "midi", "evidence"}:
             raise ValueError("Unsupported worker operation")
         with self._lock:
             if self._closed:

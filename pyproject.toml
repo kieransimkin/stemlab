@@ -74,6 +74,25 @@ semantic-nc = ["muq"]
 # Basic Pitch is valuable on isolated guitar/piano/bass/vocal stems, but its
 # current runtime matrix is safest on Python 3.10/3.11.
 amt = ["basic-pitch>=0.4,<0.5; python_version < '3.12'"]
+# MIDI infrastructure is light; install heavy/incompatible model extras separately.
+midi = ["pretty-midi>=0.2.10,<0.3", "mido>=1.3,<2", "psutil>=5.9"]
+midi-piano = ["pretty-midi>=0.2.10,<0.3", "mido>=1.3,<2", "psutil>=5.9",
+              "piano-transcription-inference==0.0.6"]
+midi-transkun = ["pretty-midi>=0.2.10,<0.3", "mido>=1.3,<2", "psutil>=5.9",
+                "transkun==2.0.1", "setuptools<81"]
+# Explicit opt-in: the upstream wrapper contains third-party source with mixed
+# licence status. Only mr_mt3/yourmt3 are selectable here; see docs/midi.md.
+midi-mt3 = ["pretty-midi>=0.2.10,<0.3", "mido>=1.3,<2", "psutil>=5.9",
+            "mt3-infer[torch]==0.2.0"]
+# Complementary evidence backends remain opt-in and independent.
+evidence = ["psutil>=5.9"]
+evidence-vocals = ["psutil>=5.9", "fireredvad>=0.0.2,<0.1"]
+evidence-pitch = ["psutil>=5.9", "swift-f0[audio]>=0.3,<0.4"]
+evidence-align = ["psutil>=5.9", "qwen-asr"]
+evidence-chords = ["psutil>=5.9", "lv-chordia"]
+# HeartTranscriptor, SongFormer and ADTOF-pytorch are installed from their
+# upstream research repositories/environments; do not hide that provenance in
+# the normal StemLab dependency graph.
 server = [
   "fastapi>=0.115,<1",
   "uvicorn[standard]>=0.34,<1",

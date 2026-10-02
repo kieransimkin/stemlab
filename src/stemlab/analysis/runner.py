@@ -55,6 +55,20 @@ def run_comprehensive_analysis(
     run_audio_semantics: bool = False,
     audio_semantic_model: str = "OpenMuQ/MuQ-MuLan-large",
     run_basic_pitch: bool = False,
+    midi_models: tuple[str, ...] = (),
+    midi_target: str = "auto",
+    midi_allow_downloads: bool = False,
+    midi_max_stems: int = 6,
+    midi_timeout_seconds: float = 1800,
+    evidence_models: tuple[str, ...] = (),
+    evidence_allow_downloads: bool = False,
+    evidence_timeout_seconds: float = 1800,
+    evidence_model_paths: dict[str, str] | None = None,
+    evidence_backend_pythons: dict[str, str] | None = None,
+    evidence_canonical_text: str | None = None,
+    evidence_language: str = "English",
+    evidence_chord_dictionary: str = "submission",
+    evidence_prompt: str | None = None,
     run_loops: bool = True,
     export_loops: bool = False,
     loop_max_seconds: float | None = None,
@@ -166,6 +180,51 @@ def run_comprehensive_analysis(
             return analyze_basic_pitch(stems, root / "basic_pitch")
         run("basic_pitch", basic_pitch)
 
+    if midi_models:
+        def midi():
+            from .midi import MidiConfig, analyze_midi
+            return analyze_midi(master, root / "midi", stems=stems, progress=progress,
+                                config=MidiConfig(models=tuple(midi_models), target=midi_target,
+                                                  allow_downloads=midi_allow_downloads,
+                                                  max_stems=midi_max_stems, device=device,
+                                                  timeout_seconds=midi_timeout_seconds,
+                                                  continue_on_error=continue_on_error))
+        midi_result = run("midi", midi)
+        if midi_result:
+            for error in midi_result["errors"]:
+                errors.append({"stage": "midi:" + error["model"], **error})
+            for skipped in midi_result["skipped"]:
+                errors.append({"stage": "midi:" + skipped["model"], "type": "NoMatchingSource",
+                               "message": skipped["reason"]})
+            if not continue_on_error and midi_result["status"] != "completed":
+                raise RuntimeError("Requested MIDI transcription did not fully complete; see deep/midi/report.json")
+
+
+    if evidence_models:
+        def evidence_models_run():
+            from .evidence import EvidenceConfig, analyze_evidence
+            text = evidence_canonical_text or (lyrics_text if lyrics_text else None)
+            return analyze_evidence(
+                master, root / "evidence_models", stems=stems, progress=progress,
+                config=EvidenceConfig(
+                    models=tuple(evidence_models), device=device,
+                    allow_downloads=evidence_allow_downloads,
+                    timeout_seconds=evidence_timeout_seconds,
+                    continue_on_error=continue_on_error,
+                    model_paths=dict(evidence_model_paths or {}),
+                    backend_pythons=dict(evidence_backend_pythons or {}),
+                    canonical_text=text, language=evidence_language,
+                    chord_dictionary=evidence_chord_dictionary, prompt=evidence_prompt,
+                ),
+            )
+        evidence_result = run("evidence_models", evidence_models_run)
+        if evidence_result:
+            for error in evidence_result.get("errors", []):
+                errors.append({"stage": "evidence:" + error["model"], **error})
+            for skipped in evidence_result.get("skipped", []):
+                errors.append({"stage": "evidence:" + skipped["model"],
+                               "type": "NoMatchingSource", "message": skipped["reason"]})
+
     if structure_result is not None:
         analyses["structure"] = structure_result
 
@@ -176,7 +235,8 @@ def run_comprehensive_analysis(
         "canonical_present": canonical is not None,
         "analyses": {
             key: {
-                "available": value is not None,
+                "available": (bool(value.get("completed_count")) if key == "midi"
+                              else value is not None),
                 "path": {
                     "sonic": "deep/sonic/sonic.json",
                     "rhythm": "deep/rhythm/rhythm.json",
@@ -185,6 +245,8 @@ def run_comprehensive_analysis(
                     "semantic_text": "deep/semantic_text/semantic_text.json",
                     "semantic_audio": "deep/semantic_audio/semantic_audio.json",
                     "basic_pitch": "deep/basic_pitch/report.json",
+                    "midi": "deep/midi/report.json",
+                    "evidence_models": "deep/evidence_models/report.json",
                     "structure": "deep/structure/structure.json",
                     "song_map": "deep/song_map/song_map.json",
                     "loops": "deep/loops/loops.json",

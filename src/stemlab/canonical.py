@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import tempfile
 from pathlib import Path
 from typing import Any
 
-_LRC_TIMESTAMP_RE = re.compile(r"\[(\d{1,3}):(\d{2}(?:\.\d{1,3})?)\]")
 _REFERENCE_TEXT_FIELDS = (
     "title",
     "artist",
@@ -23,16 +21,11 @@ _REFERENCE_TEXT_FIELDS = (
 
 
 def _parse_lrc(text: str) -> list[dict[str, Any]]:
-    cues: list[dict[str, Any]] = []
-    for raw_line in str(text).splitlines():
-        matches = list(_LRC_TIMESTAMP_RE.finditer(raw_line))
-        if not matches:
-            continue
-        lyric = _LRC_TIMESTAMP_RE.sub("", raw_line).strip()
-        for match in matches:
-            minutes = int(match.group(1))
-            seconds = float(match.group(2))
-            cues.append({"time": minutes * 60.0 + seconds, "text": lyric})
+    from .cues import parse_lrc
+
+    document = parse_lrc(str(text))
+    cues = [{"time": float(document.effective_time(cue)), "text": cue.label.strip()}
+            for cue in document.cues]
     cues.sort(key=lambda item: item["time"])
     events: list[dict[str, Any]] = []
     for index, cue in enumerate(cues):

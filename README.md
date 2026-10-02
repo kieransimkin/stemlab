@@ -199,6 +199,14 @@ stemlab analyze master.wav -o analysis-master --profile practical --export-loops
 
 # Reuse existing separation, structure and beat results; no models rerun.
 stemlab loops analysis-master --export-loops
+
+# Keep all candidates within a chosen short-video edit budget, in seconds.
+stemlab loops analysis-master --max-seconds 30 --per-section 3
+
+# Audition possible new cut pairs anywhere in the song, even where the passage
+# does not already repeat. These near-misses are NOT accepted seamless loops.
+stemlab loops analysis-master --mode exploratory --search-scope whole_song \
+  --max-seconds 30 --per-section 20 --exploratory-algorithm spectral_context
 ```
 
 In the existing analysis frontend, choose a highlighted loop region or the Loop
@@ -210,6 +218,117 @@ See [the complete loop workflow](docs/loops.md) for installation of both patches
 sample indexing, thresholds, limitations and reproducible screenshot examples.
 
 ![Loop selection and playback in the existing analysis frontend](docs/screenshots/loops-playing.png)
+
+## Audio-to-MIDI model comparison
+
+MIDI extraction is an **optional, independent model pass**. It adds Transkun V2
+and high-resolution note/pedal piano transcription, plus MR-MT3 and YourMT3
+multi-instrument transcription, alongside Spotify Basic Pitch. Automatic source
+selection uses piano/keyboard stems for the piano specialists, pitched stems for
+Basic Pitch and the mix for MT3-family models. Missing stems are reported, never
+silently substituted. The legacy `--basic-pitch` command remains supported.
+
+```bash
+# Install the chosen runtime; the standard profiles do not install MIDI models.
+python -m pip install -e ".[midi-transkun]"
+stemlab midi-models
+
+# Use an existing separated piano, without rerunning any earlier analysis.
+stemlab midi analysis-master --model transkun
+
+# Or transcribe a directly supplied piano recording to a new folder.
+stemlab midi piano.wav -o midi-piano --model transkun
+
+# Full mix comparison requires the separately installed midi-mt3 extra.
+# Both requested checkpoints need explicit first-use download consent.
+stemlab midi mix.wav -o midi-comparison --model mr_mt3 --model yourmt3 --allow-model-downloads
+```
+
+Each model/source gets its original `.mid`, tempo-aware `notes.json` and
+`notes.csv`, an optional real note `piano-roll.png`, source/checkpoint hashes,
+package versions and a worker log. Native MIDI controllers, pitch bends, tempo
+changes and drums are preserved. Note sample numbers are original-rate
+**estimates**, not a claim that the transcription is sample-accurate ground truth.
+The MIDI clock is not used to overwrite StemLab's measured beat grid.
+
+New analyses can opt in with repeated `--midi-model` switches and
+`--midi-allow-downloads`. Existing Codex installations gain a workspace-scoped
+`stemlab_start_midi_scan` job tool after updating the Python installation and
+restarting the session. Models remain optional and no Python dependencies are
+automatically installed. Incompatible research runtimes can use separate
+`--backend-python MODEL=PATH` interpreters.
+
+See [the MIDI guide](docs/midi.md) for all models, installation choices, checkpoint
+and licensing caveats, saved-stem targeting, Codex usage, exact output semantics,
+real-inference smoke commands and test limitations. The React timeline remains
+the analysis inspector; this patch adds no MIDI synthesizer or new interactive
+piano-roll lane. Static note plots are not frontend screenshots.
+
+## Align timed musical cues to detected beats
+
+Use saved analysis to snap an LRC cue file without rerunning models or editing audio:
+
+```bash
+stemlab snap-cues analysis-master "musical cues.lrc" -o cue-review
+stemlab snap-cues analysis-master "musical cues.lrc" -o cue-review-100ms --tolerance-ms 100
+```
+
+Only timestamps change: bracketed labels such as `[DROP: CHORUS 1]`, metadata,
+encoding and line layout are preserved. A cue with **no detected beat within
+±150 ms** is highlighted as **REVIEW**, with its nearest-beat gap, and kept unchanged
+by default. `--force-snap` moves distant cues too but retains their warnings.
+`--downbeats` restricts targets to reported bar starts; `--beat-model` selects a
+specific detector. No constant-tempo beats are invented to fill detection gaps.
+
+Each new output folder contains the rewritten `.beat-snapped.lrc`, `report.json`,
+a colour-coded `review.html`, and `review.txt`. Exact mode preserves the stored
+beat timestamp; explicit millisecond/centisecond compatibility modes report
+rounding. Source-rate sample-frame estimates are included when the rate is known.
+Use `--fail-on-review` to write results and exit 2 when review is needed.
+
+For a new analysis, add `--snap-cues "musical cues.lrc"` and optionally
+`--cue-tolerance-ms 100`. Cue alignment uses that run's detected events and appears
+in `analysis.json`. See [the cue alignment guide](docs/cue-alignment.md) for exact
+precision, offsets, all switches, safety rules and interpretation of warnings.
+
+## Complementary evidence models
+
+StemLab now has an optional **evidence-model layer** for models that add a different
+kind of musical evidence instead of duplicating the normal separation or MIDI
+backends. Nothing in this layer is enabled by a normal profile.
+
+```bash
+stemlab evidence-models
+
+# Singing/speech/music activity + continuous pitch on saved vocals.
+stemlab evidence analysis-master -o evidence-vocals \
+  --model firered_aed --model swift_f0 \
+  --model-path firered_aed=/models/FireRedVAD/AED
+
+# Align approved lyrics without replacing them.
+stemlab evidence analysis-master -o evidence-align \
+  --model qwen_forced_aligner --canonical-text lyrics.txt --allow-model-downloads
+
+# Independent harmony evidence.
+stemlab evidence analysis-master -o evidence-chords --model lv_chordia
+```
+
+The built-in registry covers **FireRed AED**, **HeartTranscriptor**, **Qwen3
+ForcedAligner**, **SwiftF0**, **SongFormer**, **lv-chordia** and **ADTOF PyTorch**.
+It also exposes explicit external-runtime bridges for **GAME**, **SheetSage2**,
+**MOSS-Music** and **AudioSep** so large or restricted research dependencies never
+get silently bundled into StemLab. Outputs stay independent: singing activity,
+forced alignment, pitch, structure, chords and drum hits are review evidence, not
+a hidden combined ground-truth score.
+
+Saved analyses automatically route vocal models to a preferred full vocal stem,
+drum transcription to a drum stem, continuous pitch to pitched stems, and
+structure/harmony models to the master. Missing specialist stems are reported.
+Use `--backend-python MODEL=/path/to/python` for conflicting research environments.
+
+See [the evidence-model guide](docs/evidence-models.md) for model terms, routing,
+external bridges and interpretation rules. `scripts/benchmark_evidence_corpus.py`
+probes an authorised evaluation collection without copying audio into the repo.
 
 ## Install
 

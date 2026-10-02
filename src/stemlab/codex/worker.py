@@ -18,7 +18,7 @@ def execute(workspace: Path, job_id: str) -> None:
         raise ValueError("Refusing symlinked job state")
     output = inside(root, job_id)
     task = read_json(control / "request.json")
-    from .tasks import inspect_audio, run_analysis, run_loop_scan
+    from .tasks import inspect_audio, run_analysis, run_loop_scan, run_midi_scan, run_evidence_scan
     try:
         if task["kind"] == "inspect":
             report = inspect_audio(workspace, task["audio_path"])
@@ -26,6 +26,10 @@ def execute(workspace: Path, job_id: str) -> None:
             result = {"state": "completed", "message": "Audio metadata inspected", "audio": report}
         elif task["kind"] == "analyze":
             result = run_analysis(workspace, output, task)
+        elif task["kind"] == "midi":
+            result = run_midi_scan(workspace, output, task)
+        elif task["kind"] == "evidence":
+            result = run_evidence_scan(workspace, output, task)
         elif task["kind"] == "loops":
             result = run_loop_scan(workspace, output, task)
         else:

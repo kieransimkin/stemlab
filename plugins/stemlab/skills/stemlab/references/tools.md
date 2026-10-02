@@ -9,6 +9,8 @@ All paths refer to the explicitly configured server workspace, not the plugin ca
 | `stemlab_close_timeline` | Stop the local viewer; no saved data changes. |
 | `stemlab_inspect_audio` | Native rate, frame count, channels, duration and SHA-256. |
 | `stemlab_start_analysis` | Starts the existing pipeline with typed options in a new output directory. |
+| `stemlab_start_midi_scan` | Audio-to-MIDI from a local file or saved stems in a new job; inspect `deep/midi/report.json`, native MIDI and note/piano-roll artifacts. |
+| `stemlab_start_evidence_scan` | Run optional independent vocal/pitch/structure/harmony/drum evidence in a new job; inspect `deep/evidence_models/report.json` and per-model artifacts. |
 | `stemlab_start_loop_scan` | Reuses prior evidence; optionally exports WAVs in a new directory. |
 | `stemlab_job_status` | Returns current or retained terminal state and backend error count. |
 | `stemlab_job_logs` | Bounded log pages; byte offsets and next offset. |
@@ -20,7 +22,7 @@ All paths refer to the explicitly configured server workspace, not the plugin ca
 | `stemlab_read_loops` | Sample bounds, provenance, loop count and unresolved count. |
 
 A `stemlab://guide` resource and `analyze_song` prompt provide the workflow conventions.
-Read-only mode omits the three analysis/scan/cancel tools, while retaining read-only
+Read-only mode omits the analysis, loop-scan, MIDI-scan and cancel tools, while retaining read-only
 viewer sessions. Viewer open/close tools have side-effect annotations because they
 manage a loopback listener, even though they never write analysis data.
 

@@ -53,6 +53,40 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
     if config.export_loops and (not config.run_loops or not config.run_deep_analysis):
         raise ValueError("Loop export requires loop discovery and deep analysis")
     progress = progress or (lambda _msg: None)
+    if config.midi_models:
+        from .analysis.midi import MidiConfig
+        if not config.run_deep_analysis:
+            raise ValueError("MIDI extraction in analyze requires deep analysis; use stemlab midi independently")
+        if config.run_basic_pitch and "basic_pitch" in config.midi_models:
+            raise ValueError("Choose --basic-pitch or --midi-model basic_pitch, not both")
+        MidiConfig(models=tuple(config.midi_models), target=config.midi_target,
+                   allow_downloads=config.midi_allow_downloads, max_stems=config.midi_max_stems,
+                   timeout_seconds=config.midi_timeout_seconds, device=config.device)
+    if config.evidence_models:
+        from .analysis.evidence import EvidenceConfig
+        if not config.run_deep_analysis:
+            raise ValueError("Evidence models in analyze require deep analysis; use stemlab evidence independently")
+        EvidenceConfig(models=tuple(config.evidence_models), device=config.device,
+                       allow_downloads=config.evidence_allow_downloads,
+                       timeout_seconds=config.evidence_timeout_seconds,
+                       model_paths=dict(config.evidence_model_paths),
+                       backend_pythons=dict(config.evidence_backend_pythons),
+                       canonical_text=config.evidence_canonical_text,
+                       language=config.evidence_language,
+                       chord_dictionary=config.evidence_chord_dictionary,
+                       prompt=config.evidence_prompt).validate_paths()
+    cue_config = None
+    if config.cue_file is not None:
+        from .cues import CueSnapConfig, read_lrc
+        cue_config = CueSnapConfig(config.cue_tolerance_ms, config.cue_beat_model,
+                                   config.cue_downbeats_only, config.cue_force_snap,
+                                   config.cue_precision)
+        read_lrc(Path(config.cue_file))
+        if not config.run_beats and not config.run_structure:
+            raise ValueError("Cue snapping needs beat or structure detection")
+        cue_destination = config.output_dir.expanduser().resolve() / "cues" / Path(config.cue_file).stem
+        if cue_destination.exists() or cue_destination.is_symlink():
+            raise FileExistsError(f"Cue output already exists: {cue_destination}")
     src = config.input_wav.expanduser().resolve()
     if not src.is_file():
         raise FileNotFoundError(src)
@@ -340,6 +374,35 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 "metadata": consensus.metadata,
             })
 
+    if cue_config is not None:
+        progress("cue alignment: snap to this run's detected events and flag missing nearby beats")
+        try:
+            import hashlib
+            import json
+            from decimal import Decimal
+            from .cues import select_grid, snap_cue_file
+
+            records = []
+            # Use only this run's successful detectors, not stale JSON in a reused output directory.
+            for result in beat_results:
+                payload = {"model": result.model, "beats": result.beats,
+                           "downbeats": result.downbeats}
+                records.append((result.model, payload, None, hashlib.sha256(
+                    json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()))
+            grid = select_grid(records, config=cue_config,
+                               sample_rate=analysis["source"]["audio"]["sample_rate"],
+                               duration=Decimal(str(analysis["source"]["audio"]["duration_seconds"])),
+                               source_sha256=analysis["source"]["sha256"])
+            report = snap_cue_file(config.cue_file, cue_destination, grid=grid, config=cue_config)
+            report["report_path"] = str((cue_destination / "report.json").relative_to(out))
+            analysis["cue_alignment"] = report
+            progress(f"cue alignment: {report['review_count']} cue(s) need review; "
+                     f"{report['without_nearby_beat_count']} without a nearby beat")
+        except Exception as exc:
+            analysis["errors"].append(_error_record("cue_alignment", exc))
+            if not config.continue_on_error:
+                raise
+
     if config.run_deep_analysis:
         try:
             deep_report = run_comprehensive_analysis(
@@ -357,6 +420,20 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 run_audio_semantics=config.run_audio_semantics,
                 audio_semantic_model=config.audio_semantic_model,
                 run_basic_pitch=config.run_basic_pitch,
+                midi_models=config.midi_models,
+                midi_target=config.midi_target,
+                midi_allow_downloads=config.midi_allow_downloads,
+                midi_max_stems=config.midi_max_stems,
+                midi_timeout_seconds=config.midi_timeout_seconds,
+                evidence_models=config.evidence_models,
+                evidence_allow_downloads=config.evidence_allow_downloads,
+                evidence_timeout_seconds=config.evidence_timeout_seconds,
+                evidence_model_paths=config.evidence_model_paths,
+                evidence_backend_pythons=config.evidence_backend_pythons,
+                evidence_canonical_text=config.evidence_canonical_text,
+                evidence_language=config.evidence_language,
+                evidence_chord_dictionary=config.evidence_chord_dictionary,
+                evidence_prompt=config.evidence_prompt,
                 run_loops=config.run_loops,
                 export_loops=config.export_loops,
                 loop_max_seconds=config.loop_max_seconds,
