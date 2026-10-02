@@ -70,6 +70,12 @@ class PipelineConfig:
     run_audio_semantics: bool = False
     audio_semantic_model: str = "OpenMuQ/MuQ-MuLan-large"
     run_basic_pitch: bool = False
+    # Optional transcription; not implied by a separation profile or `all`.
+    midi_models: tuple[str, ...] = ()
+    midi_target: str = "auto"
+    midi_allow_downloads: bool = False
+    midi_max_stems: int = 6
+    midi_timeout_seconds: float = 1800
     run_loops: bool = True
     export_loops: bool = False
     loop_max_seconds: float | None = None

@@ -219,6 +219,51 @@ sample indexing, thresholds, limitations and reproducible screenshot examples.
 
 ![Loop selection and playback in the existing analysis frontend](docs/screenshots/loops-playing.png)
 
+## Audio-to-MIDI model comparison
+
+MIDI extraction is an **optional, independent model pass**. It adds Transkun V2
+and high-resolution note/pedal piano transcription, plus MR-MT3 and YourMT3
+multi-instrument transcription, alongside Spotify Basic Pitch. Automatic source
+selection uses piano/keyboard stems for the piano specialists, pitched stems for
+Basic Pitch and the mix for MT3-family models. Missing stems are reported, never
+silently substituted. The legacy `--basic-pitch` command remains supported.
+
+```bash
+# Install the chosen runtime; the standard profiles do not install MIDI models.
+python -m pip install -e ".[midi-transkun]"
+stemlab midi-models
+
+# Use an existing separated piano, without rerunning any earlier analysis.
+stemlab midi analysis-master --model transkun
+
+# Or transcribe a directly supplied piano recording to a new folder.
+stemlab midi piano.wav -o midi-piano --model transkun
+
+# Full mix comparison requires the separately installed midi-mt3 extra.
+# Both requested checkpoints need explicit first-use download consent.
+stemlab midi mix.wav -o midi-comparison --model mr_mt3 --model yourmt3 --allow-model-downloads
+```
+
+Each model/source gets its original `.mid`, tempo-aware `notes.json` and
+`notes.csv`, an optional real note `piano-roll.png`, source/checkpoint hashes,
+package versions and a worker log. Native MIDI controllers, pitch bends, tempo
+changes and drums are preserved. Note sample numbers are original-rate
+**estimates**, not a claim that the transcription is sample-accurate ground truth.
+The MIDI clock is not used to overwrite StemLab's measured beat grid.
+
+New analyses can opt in with repeated `--midi-model` switches and
+`--midi-allow-downloads`. Existing Codex installations gain a workspace-scoped
+`stemlab_start_midi_scan` job tool after updating the Python installation and
+restarting the session. Models remain optional and no Python dependencies are
+automatically installed. Incompatible research runtimes can use separate
+`--backend-python MODEL=PATH` interpreters.
+
+See [the MIDI guide](docs/midi.md) for all models, installation choices, checkpoint
+and licensing caveats, saved-stem targeting, Codex usage, exact output semantics,
+real-inference smoke commands and test limitations. The React timeline remains
+the analysis inspector; this patch adds no MIDI synthesizer or new interactive
+piano-roll lane. Static note plots are not frontend screenshots.
+
 ## Install
 
 Python 3.10 or 3.11 is recommended for the broad optional-model ecosystem. The `beats` and `all` extras install Beat This! but not BeatNet: BeatNet's current published NumPy/Numba pins conflict with StemLab's core Librosa requirement. The BeatNet adapter is retained for separately provisioned compatible legacy setups; a missing BeatNet result must not be mistaken for a successful detector run.

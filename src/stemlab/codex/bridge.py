@@ -32,6 +32,7 @@ class StemLabBridge:
         from stemlab.analysis.registry import ACTIONS
         from stemlab.branding import attribution
         from stemlab.models import MODEL_REGISTRY
+        from stemlab.analysis.midi import MIDI_MODELS
         packages = ["mcp", "soundfile", "torch", "torchaudio", "librosa", "demucs", "openunmix",
                     "bs_roformer", "faster_whisper", "allin1_infer", "beat_this", "BeatNet",
                     "sentence_transformers", "muq", "basic_pitch", "fastapi", "uvicorn"]
@@ -45,6 +46,7 @@ class StemLabBridge:
                                "browser_control": "Use an available host browser tool or open the returned URL locally",
                                "fallback": "Read reports and saved PNGs when no browser is available; state the limitation"},
                 "models": [m.to_dict() for m in MODEL_REGISTRY.values()],
+                "midi_models": [m.to_dict() for m in MIDI_MODELS.values()],
                 "analysis_actions": [a.to_dict() for a in ACTIONS],
                 "packages_present": {p: importlib.util.find_spec(p) is not None for p in packages},
                 "notes": ["Package presence is not a GPU, model-weight or runtime readiness test.",
@@ -108,6 +110,24 @@ class StemLabBridge:
             canonical_path = str(canonical_file.relative_to(self.workspace))
         return self.jobs.submit({"kind": "analyze", "audio_path": str(source.relative_to(self.workspace)),
                                  "options": options, "canonical_path": canonical_path})
+
+    def start_midi_scan(self, source_path: str, *, models: list[str] | None = None,
+                        target: str = "auto", stem_names: list[str] | None = None,
+                        device: str = "auto", allow_model_downloads: bool = False,
+                        max_stems: int = 6, make_plots: bool = True) -> dict[str, Any]:
+        """Write a new MIDI-only job. No arbitrary commands or checkpoint paths."""
+        self._writable()
+        from .tasks import midi_options
+        options = midi_options(models=models, target=target, stem_names=stem_names,
+                               device=device, allow_model_downloads=allow_model_downloads,
+                               max_stems=max_stems, make_plots=make_plots)
+        source = inside(self.workspace, source_path)
+        if source.is_dir():
+            result_root(self.workspace, source_path)
+        else:
+            audio_path(self.workspace, source_path)
+        return self.jobs.submit({"kind": "midi", "source_path": str(source.relative_to(self.workspace)),
+                                 "options": options})
 
     def start_loop_scan(self, results_path: str, *, export_audio: bool = False,
                         max_bars: int = 16, max_seconds: float | None = None,

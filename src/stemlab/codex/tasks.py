@@ -155,3 +155,61 @@ def run_loop_scan(workspace: Path, output: Path, task: dict[str, Any]) -> dict[s
     return {"state": "completed", "message": "Loop scan complete; prior results untouched",
             "loop_count": report["loop_count"], "unresolved_sections": len(report["unresolved_sections"]),
             "report_path": "deep/loops/loops.json"}
+
+
+def midi_options(*, models: list[str] | None = None, target: str = "auto",
+                 stem_names: list[str] | None = None, device: str = "auto",
+                 allow_model_downloads: bool = False, max_stems: int = 6,
+                 make_plots: bool = True) -> dict[str, Any]:
+    from stemlab.analysis.midi import MidiConfig
+    if models is not None and not isinstance(models, list):
+        raise ValueError("MIDI models must be a list")
+    if stem_names is not None and not isinstance(stem_names, list):
+        raise ValueError("MIDI stem_names must be a list")
+    selected = ["basic_pitch"] if models is None else models
+    MidiConfig(models=tuple(selected), target=target, stem_names=tuple(stem_names or ()),
+               device=device, allow_downloads=allow_model_downloads, max_stems=max_stems,
+               make_plots=make_plots)
+    return {"models": selected, "target": target, "stem_names": stem_names or [],
+            "device": device, "allow_model_downloads": allow_model_downloads,
+            "max_stems": max_stems, "make_plots": make_plots}
+
+
+def run_midi_scan(workspace: Path, output: Path, task: dict[str, Any]) -> dict[str, Any]:
+    from stemlab.analysis.midi import MidiConfig, analyze_midi
+    from stemlab.analysis.midi.runner import saved_sources
+    from stemlab.manifest import write_manifest
+    from stemlab.util import sha256_file
+    source = inside(workspace, task["source_path"])
+    options = midi_options(**task.get("options", {}))
+    is_file = source.is_file()
+    if is_file:
+        master, stems = audio_path(workspace, task["source_path"]), []
+    else:
+        master, stems = saved_sources(source)
+        # Apply the bridge's stricter link policy to all manifest-derived paths.
+        inside(workspace, master)
+        for stem in stems:
+            inside(workspace, stem.path)
+    (output / "input").mkdir()
+    copied = output / "input" / master.name
+    shutil.copyfile(master, copied)
+    report = analyze_midi(copied, output / "deep/midi", stems=stems, explicit_audio=is_file,
+                          config=MidiConfig(models=tuple(options["models"]), target=options["target"],
+                                            stem_names=tuple(options["stem_names"]), device=options["device"],
+                                            allow_downloads=options["allow_model_downloads"],
+                                            max_stems=options["max_stems"], make_plots=options["make_plots"]),
+                          progress=lambda message: print(message, flush=True))
+    write_json(output / "analysis.json", {
+        "source": {"original_path": str(master), "copied_path": f"input/{master.name}",
+                   "sha256": sha256_file(copied)}, "models": [],
+        "codex_provenance": {"operation": "midi_scan", "evidence_directory": str(source),
+                             "prior_evidence_modified": False},
+        "deep_analysis": {"analyses": {"midi": {"available": bool(report["completed_count"]),
+                                               "path": "deep/midi/report.json"}},
+                          "errors": report["errors"]}})
+    write_manifest(output)
+    return {"state": "failed" if report["status"] == "no_matching_sources" else report["status"],
+            "message": "MIDI extraction: " + report["status"], "report_path": "deep/midi/report.json",
+            "completed_count": report["completed_count"], "error_count": len(report["errors"]),
+            "skipped_count": len(report["skipped"]), "note_count": report["note_count"]}

@@ -52,6 +52,9 @@ def analyze(
     no_text_semantics: Annotated[bool, typer.Option("--no-text-semantics", help="Skip sentence-embedding analysis of lyrics/transcript")] = False,
     audio_semantics: Annotated[bool, typer.Option("--audio-semantics", help="Enable MuQ-MuLan zero-shot music/text similarity (CC-BY-NC model weights)")] = False,
     basic_pitch: Annotated[bool, typer.Option("--basic-pitch", help="Enable Basic Pitch MIDI/note transcription on isolated stems")] = False,
+    midi_model: Annotated[list[str] | None, typer.Option("--midi-model", help="Optional MIDI model; repeat (see midi-models)")] = None,
+    midi_target: Annotated[str, typer.Option("--midi-target", help="auto: mix for MT3, appropriate stems for specialists; or master/stems")] = "auto",
+    midi_allow_downloads: Annotated[bool, typer.Option("--midi-allow-downloads", help="Permit missing MIDI checkpoints to be downloaded")] = False,
     all_in_one_embeddings: Annotated[bool, typer.Option("--all-in-one-embeddings", help="Retain frame-level All-In-One structure embeddings (large output)")] = False,
     text_semantic_model: Annotated[str, typer.Option("--text-semantic-model", help="SentenceTransformer model id for lyric semantics")] = "sentence-transformers/all-MiniLM-L6-v2",
     audio_semantic_model: Annotated[str, typer.Option("--audio-semantic-model", help="MuQ-MuLan model id")] = "OpenMuQ/MuQ-MuLan-large",
@@ -60,6 +63,15 @@ def analyze(
     """Run separation plus sonic, speech, structure, harmony, rhythm and semantic analysis."""
     if export_loops and (no_loops or no_deep_analysis):
         raise typer.BadParameter("--export-loops cannot be combined with --no-loops or --no-deep-analysis")
+    if midi_model:
+        from .analysis.midi import MidiConfig
+        if no_deep_analysis or (basic_pitch and "basic_pitch" in midi_model):
+            raise typer.BadParameter("MIDI needs deep analysis; do not request Basic Pitch twice")
+        try:
+            MidiConfig(models=tuple(midi_model), target=midi_target,
+                       allow_downloads=midi_allow_downloads, device=device)
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
     models = tuple(model) if model else resolve_profile(profile)
     invalid = [m for m in models if m not in MODEL_REGISTRY]
     if invalid:
@@ -86,6 +98,9 @@ def analyze(
         run_audio_semantics=audio_semantics,
         audio_semantic_model=audio_semantic_model,
         run_basic_pitch=basic_pitch,
+        midi_models=tuple(midi_model or ()),
+        midi_target=midi_target,
+        midi_allow_downloads=midi_allow_downloads,
         run_loops=not no_loops,
         export_loops=export_loops,
         loop_max_seconds=max_loop_seconds,
@@ -126,6 +141,63 @@ def find_loops(
     console.print(f"{report['loop_count']} accepted loop(s); {report['exploratory_count']} audition candidate(s); "
                   f"{len(report['unresolved_sections'])} unresolved search window(s).")
     console.print(str(results / "deep/loops/loops.json"))
+
+
+@app.command("midi-models")
+def list_midi_models():
+    """List MIDI backends without importing model runtimes or downloading weights."""
+    from .analysis.midi import MIDI_MODELS
+    table = Table("model", "target", "extra", "package present", "notes")
+    for spec in MIDI_MODELS.values():
+        present = importlib.util.find_spec(spec.module) is not None
+        table.add_row(spec.slug, spec.target, spec.extra, "yes" if present else "no", spec.notes)
+    console.print(table)
+    console.print("Package presence is not model/GPU readiness; inference is optional and separately tested.")
+
+
+@app.command("midi")
+def extract_midi(
+    source: Annotated[Path, typer.Argument(exists=True, help="Audio file or existing StemLab result folder")],
+    output: Annotated[Path | None, typer.Option("--output", "-o", help="New/empty output directory; defaults to RESULTS/deep/midi")] = None,
+    model: Annotated[list[str] | None, typer.Option("--model", "--midi-model", help="Repeat to compare models; default basic_pitch")] = None,
+    target: Annotated[str, typer.Option(help="auto, master or stems")] = "auto",
+    stem: Annotated[list[str] | None, typer.Option("--stem", help="Restrict saved stems by name; repeat")] = None,
+    max_stems: Annotated[int, typer.Option("--max-stems", min=1, max=64)] = 6,
+    device: Annotated[str, typer.Option(help="auto, cpu, cuda or cuda:N; PyTorch models")] = "auto",
+    allow_model_downloads: Annotated[bool, typer.Option("--allow-model-downloads")] = False,
+    checkpoint: Annotated[list[str] | None, typer.Option("--checkpoint", help="MODEL=trusted checkpoint file; repeat")] = None,
+    transkun_config: Annotated[Path | None, typer.Option("--transkun-config", exists=True, dir_okay=False)] = None,
+    backend_python: Annotated[list[str] | None, typer.Option("--backend-python", help="MODEL=/absolute/path/to/python; repeat for isolated environments")] = None,
+    timeout: Annotated[float, typer.Option("--timeout", min=1, max=86400, help="Per-model/per-source timeout in seconds")] = 1800,
+    no_plots: Annotated[bool, typer.Option("--no-plots")] = False,
+    strict: Annotated[bool, typer.Option("--strict", help="Stop at first failure; retain diagnostics")] = False,
+):
+    """Extract MIDI without rerunning separation, beats, lyrics or other analyses."""
+    from .analysis.midi import MidiConfig, transcribe_path
+    from .analysis.midi.registry import parse_overrides
+    try:
+        config = MidiConfig(models=tuple(model or ["basic_pitch"]), target=target,
+                            stem_names=tuple(stem or ()), max_stems=max_stems, device=device,
+                            allow_downloads=allow_model_downloads, checkpoints=parse_overrides(checkpoint),
+                            transkun_config=str(transkun_config.resolve()) if transkun_config else None,
+                            backend_pythons=parse_overrides(backend_python), timeout_seconds=timeout,
+                            make_plots=not no_plots, continue_on_error=not strict)
+        config.validate_paths()
+        if source.is_file() and output is None:
+            raise ValueError("--output is required for an audio file")
+    except (ValueError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    try:
+        report = transcribe_path(source, output, config=config,
+                                 progress=lambda message: console.print(message, markup=False))
+    except (ValueError, OSError, RuntimeError, KeyError) as exc:
+        console.print(str(exc), markup=False)
+        raise typer.Exit(1) from exc
+    console.print(f"MIDI status: {report['status']}; {report['completed_count']} successful extraction(s), "
+                  f"{len(report['errors'])} failure(s), {len(report['skipped'])} skipped model(s).")
+    console.print(str((output or source / "deep/midi").resolve() / "report.json"))
+    if report["status"] != "completed":
+        raise typer.Exit(1)
 
 
 @app.command("models")

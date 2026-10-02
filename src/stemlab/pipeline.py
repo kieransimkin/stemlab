@@ -53,6 +53,15 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
     if config.export_loops and (not config.run_loops or not config.run_deep_analysis):
         raise ValueError("Loop export requires loop discovery and deep analysis")
     progress = progress or (lambda _msg: None)
+    if config.midi_models:
+        from .analysis.midi import MidiConfig
+        if not config.run_deep_analysis:
+            raise ValueError("MIDI extraction in analyze requires deep analysis; use stemlab midi independently")
+        if config.run_basic_pitch and "basic_pitch" in config.midi_models:
+            raise ValueError("Choose --basic-pitch or --midi-model basic_pitch, not both")
+        MidiConfig(models=tuple(config.midi_models), target=config.midi_target,
+                   allow_downloads=config.midi_allow_downloads, max_stems=config.midi_max_stems,
+                   timeout_seconds=config.midi_timeout_seconds, device=config.device)
     src = config.input_wav.expanduser().resolve()
     if not src.is_file():
         raise FileNotFoundError(src)
@@ -357,6 +366,11 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 run_audio_semantics=config.run_audio_semantics,
                 audio_semantic_model=config.audio_semantic_model,
                 run_basic_pitch=config.run_basic_pitch,
+                midi_models=config.midi_models,
+                midi_target=config.midi_target,
+                midi_allow_downloads=config.midi_allow_downloads,
+                midi_max_stems=config.midi_max_stems,
+                midi_timeout_seconds=config.midi_timeout_seconds,
                 run_loops=config.run_loops,
                 export_loops=config.export_loops,
                 loop_max_seconds=config.loop_max_seconds,

@@ -57,6 +57,7 @@ def test_stdio_discovery_tools_errors_and_resources(tmp_path, monkeypatch, read_
         assert {"stemlab_read_image", "stemlab_capabilities", "stemlab_open_timeline",
                 "stemlab_close_timeline"} <= names
         assert ("stemlab_start_analysis" in names) is (not read_only)
+        assert ("stemlab_start_midi_scan" in names) is (not read_only)
         response = request("tools/call", {"name": "stemlab_capabilities", "arguments": {}})
         assert not response.get("isError")
         content = next(item["text"] for item in response["content"] if item.get("type") == "text")

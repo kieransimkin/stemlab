@@ -101,3 +101,17 @@ Loop-only rescans contain the copied master, loop report and any requested expor
 not a duplicate of every earlier analysis lane. Inspect the prior evidence directory
 separately when more stem/beat/harmonic context is needed. Do not mislabel missing
 lanes as successful model output or silently associate data from a different master.
+
+
+## Audio-to-MIDI extraction
+
+Use `stemlab_start_midi_scan` instead of rerunning separation for a saved analysis.
+Read `midi_models` in capabilities. Select Basic Pitch for isolated pitched stems,
+Transkun or high-resolution piano transcription for piano, and MR-MT3/YourMT3 for
+multi-instrument masters. Do not pass drums to a piano-only model. Download consent
+is explicit; optional runtime installation requires a separate user-approved action.
+The original MIDI is not recoverable as ground truth from audio: report inferred
+notes and instruments as estimates. Preserve model-generated tempo, pedal and pitch
+bend events; do not equate that tempo map with StemLab's measured audio beat grid.
+Prefer the existing timeline for source inspection. MIDI outputs are downloadable
+artifacts; piano-roll PNGs are supporting note plots, not timeline screenshots.

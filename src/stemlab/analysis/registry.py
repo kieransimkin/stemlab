@@ -106,6 +106,13 @@ ACTIONS: tuple[AnalysisAction, ...] = (
         "Released model weights are CC-BY-NC 4.0; opt-in only.",
     ),
     AnalysisAction(
+        "midi", "melodic/harmonic", "Multi-model audio-to-MIDI extraction", False,
+        "Optional midi/amt/midi-piano/midi-transkun/midi-mt3 extras", "deep/midi/report.json",
+        "Basic Pitch, high-resolution piano + pedals, Transkun V2, MR-MT3 and YourMT3; "
+        "independent MIDI, native-sample note timing, controller/pitch-bend metadata and piano-roll PNGs.",
+        licence_note="Each backend has separate code/model terms; no weights or third-party code bundled.",
+    ),
+    AnalysisAction(
         "basic_pitch",
         "melodic/harmonic",
         "Basic Pitch stem transcription",
