@@ -21,6 +21,14 @@ class AnalysisAction:
 
 ACTIONS: tuple[AnalysisAction, ...] = (
     AnalysisAction(
+        "cue_alignment", "rhythmic", "Snap LRC cues and highlight missing nearby beats", False,
+        "Python standard library + existing detected beat/downbeat timestamps",
+        "cues/<cue-file-stem>/report.json",
+        "Timestamp-only LRC rewriting on a selected detected grid. Nearby-beat tolerance, "
+        "distant-cue REVIEW warnings, exact decimal timing, optional forced snapping and "
+        "non-destructive output. Use snap-cues or analyze --snap-cues.",
+    ),
+    AnalysisAction(
         "loops", "structural/rhythmic", "Vocal-clear complete-bar loops", True,
         "numpy + soundfile + existing structure/beat/vocal evidence",
         "deep/loops/loops.json",

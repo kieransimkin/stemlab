@@ -14,6 +14,7 @@ from rich.table import Table
 from .analysis.registry import ACTIONS
 from .bootstrap import bootstrap as do_bootstrap
 from .branding import AUTHOR_NAME, AUTHOR_SITE, MY_SONGS_URL, PROJECT_DESCRIPTION, REPOSITORY_URL
+from .cue_cli import print_cue_review, register_cue_commands
 from .models import MODEL_REGISTRY, profile as resolve_profile
 from .pipeline import run_pipeline
 from .types import PipelineConfig
@@ -21,6 +22,7 @@ from .util import device_string
 
 app = typer.Typer(no_args_is_help=True, pretty_exceptions_show_locals=False, help=PROJECT_DESCRIPTION)
 console = Console()
+register_cue_commands(app, console)
 
 
 @app.command()
@@ -58,9 +60,24 @@ def analyze(
     all_in_one_embeddings: Annotated[bool, typer.Option("--all-in-one-embeddings", help="Retain frame-level All-In-One structure embeddings (large output)")] = False,
     text_semantic_model: Annotated[str, typer.Option("--text-semantic-model", help="SentenceTransformer model id for lyric semantics")] = "sentence-transformers/all-MiniLM-L6-v2",
     audio_semantic_model: Annotated[str, typer.Option("--audio-semantic-model", help="MuQ-MuLan model id")] = "OpenMuQ/MuQ-MuLan-large",
+    snap_cues: Annotated[Path | None, typer.Option("--snap-cues", exists=True, dir_okay=False, help="Snap this LRC cue file after beat detection; never overwrite it")] = None,
+    cue_tolerance_ms: Annotated[float, typer.Option("--cue-tolerance-ms", min=0, max=60000, help="Flag cues with no detected beat within this gap")] = 150,
+    cue_beat_model: Annotated[str, typer.Option("--cue-beat-model", help="auto or a detector id")] = "auto",
+    cue_downbeats: Annotated[bool, typer.Option("--cue-downbeats", help="Snap only to detected downbeats")] = False,
+    cue_force_snap: Annotated[bool, typer.Option("--cue-force-snap", help="Snap distant cues but retain REVIEW warnings")] = False,
+    cue_precision: Annotated[str, typer.Option("--cue-precision", help="exact, milliseconds or centiseconds")] = "exact",
     beat_transformer_single_fold: Annotated[bool, typer.Option("--beat-transformer-single-fold", help="Use one released fold instead of all eight")]=False,
 ):
     """Run separation plus sonic, speech, structure, harmony, rhythm and semantic analysis."""
+    if snap_cues is not None:
+        from .cues import CueSnapConfig, read_lrc
+        try:
+            CueSnapConfig(cue_tolerance_ms, cue_beat_model, cue_downbeats, cue_force_snap, cue_precision)
+            read_lrc(snap_cues)
+            if no_beats and no_structure:
+                raise ValueError("--snap-cues needs beat or structure detection; use snap-cues for saved results")
+        except (ValueError, OSError) as exc:
+            raise typer.BadParameter(str(exc)) from exc
     if export_loops and (no_loops or no_deep_analysis):
         raise typer.BadParameter("--export-loops cannot be combined with --no-loops or --no-deep-analysis")
     if midi_model:
@@ -104,9 +121,17 @@ def analyze(
         run_loops=not no_loops,
         export_loops=export_loops,
         loop_max_seconds=max_loop_seconds,
+        cue_file=snap_cues,
+        cue_tolerance_ms=cue_tolerance_ms,
+        cue_beat_model=cue_beat_model,
+        cue_downbeats_only=cue_downbeats,
+        cue_force_snap=cue_force_snap,
+        cue_precision=cue_precision,
     )
     console.print(f"[bold]StemLab[/bold] device={device_string(device)} models={', '.join(models)}")
     result = run_pipeline(cfg, progress=lambda m: console.print(f"[cyan]→[/cyan] {m}"))
+    if result.get("cue_alignment"):
+        print_cue_review(result["cue_alignment"], console)
     errors = result.get("errors", [])
     deep_errors = (result.get("deep_analysis") or {}).get("errors", [])
     console.print(f"[green]Output:[/green] {output.resolve()}")

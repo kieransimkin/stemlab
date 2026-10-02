@@ -15,3 +15,4 @@ include scripts/loop_demo.py
 include scripts/capture_loop_workflow.py
 include docs/midi.md
 include scripts/smoke_midi.py
+include docs/cue-alignment.md

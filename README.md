@@ -264,6 +264,33 @@ real-inference smoke commands and test limitations. The React timeline remains
 the analysis inspector; this patch adds no MIDI synthesizer or new interactive
 piano-roll lane. Static note plots are not frontend screenshots.
 
+## Align timed musical cues to detected beats
+
+Use saved analysis to snap an LRC cue file without rerunning models or editing audio:
+
+```bash
+stemlab snap-cues analysis-master "musical cues.lrc" -o cue-review
+stemlab snap-cues analysis-master "musical cues.lrc" -o cue-review-100ms --tolerance-ms 100
+```
+
+Only timestamps change: bracketed labels such as `[DROP: CHORUS 1]`, metadata,
+encoding and line layout are preserved. A cue with **no detected beat within
+±150 ms** is highlighted as **REVIEW**, with its nearest-beat gap, and kept unchanged
+by default. `--force-snap` moves distant cues too but retains their warnings.
+`--downbeats` restricts targets to reported bar starts; `--beat-model` selects a
+specific detector. No constant-tempo beats are invented to fill detection gaps.
+
+Each new output folder contains the rewritten `.beat-snapped.lrc`, `report.json`,
+a colour-coded `review.html`, and `review.txt`. Exact mode preserves the stored
+beat timestamp; explicit millisecond/centisecond compatibility modes report
+rounding. Source-rate sample-frame estimates are included when the rate is known.
+Use `--fail-on-review` to write results and exit 2 when review is needed.
+
+For a new analysis, add `--snap-cues "musical cues.lrc"` and optionally
+`--cue-tolerance-ms 100`. Cue alignment uses that run's detected events and appears
+in `analysis.json`. See [the cue alignment guide](docs/cue-alignment.md) for exact
+precision, offsets, all switches, safety rules and interpretation of warnings.
+
 ## Install
 
 Python 3.10 or 3.11 is recommended for the broad optional-model ecosystem. The `beats` and `all` extras install Beat This! but not BeatNet: BeatNet's current published NumPy/Numba pins conflict with StemLab's core Librosa requirement. The BeatNet adapter is retained for separately provisioned compatible legacy setups; a missing BeatNet result must not be mistaken for a successful detector run.

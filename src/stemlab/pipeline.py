@@ -62,6 +62,18 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
         MidiConfig(models=tuple(config.midi_models), target=config.midi_target,
                    allow_downloads=config.midi_allow_downloads, max_stems=config.midi_max_stems,
                    timeout_seconds=config.midi_timeout_seconds, device=config.device)
+    cue_config = None
+    if config.cue_file is not None:
+        from .cues import CueSnapConfig, read_lrc
+        cue_config = CueSnapConfig(config.cue_tolerance_ms, config.cue_beat_model,
+                                   config.cue_downbeats_only, config.cue_force_snap,
+                                   config.cue_precision)
+        read_lrc(Path(config.cue_file))
+        if not config.run_beats and not config.run_structure:
+            raise ValueError("Cue snapping needs beat or structure detection")
+        cue_destination = config.output_dir.expanduser().resolve() / "cues" / Path(config.cue_file).stem
+        if cue_destination.exists() or cue_destination.is_symlink():
+            raise FileExistsError(f"Cue output already exists: {cue_destination}")
     src = config.input_wav.expanduser().resolve()
     if not src.is_file():
         raise FileNotFoundError(src)
@@ -348,6 +360,35 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 "tempo_bpm": consensus.tempo_bpm,
                 "metadata": consensus.metadata,
             })
+
+    if cue_config is not None:
+        progress("cue alignment: snap to this run's detected events and flag missing nearby beats")
+        try:
+            import hashlib
+            import json
+            from decimal import Decimal
+            from .cues import select_grid, snap_cue_file
+
+            records = []
+            # Use only this run's successful detectors, not stale JSON in a reused output directory.
+            for result in beat_results:
+                payload = {"model": result.model, "beats": result.beats,
+                           "downbeats": result.downbeats}
+                records.append((result.model, payload, None, hashlib.sha256(
+                    json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()))
+            grid = select_grid(records, config=cue_config,
+                               sample_rate=analysis["source"]["audio"]["sample_rate"],
+                               duration=Decimal(str(analysis["source"]["audio"]["duration_seconds"])),
+                               source_sha256=analysis["source"]["sha256"])
+            report = snap_cue_file(config.cue_file, cue_destination, grid=grid, config=cue_config)
+            report["report_path"] = str((cue_destination / "report.json").relative_to(out))
+            analysis["cue_alignment"] = report
+            progress(f"cue alignment: {report['review_count']} cue(s) need review; "
+                     f"{report['without_nearby_beat_count']} without a nearby beat")
+        except Exception as exc:
+            analysis["errors"].append(_error_record("cue_alignment", exc))
+            if not config.continue_on_error:
+                raise
 
     if config.run_deep_analysis:
         try:

@@ -79,3 +79,11 @@ class PipelineConfig:
     run_loops: bool = True
     export_loops: bool = False
     loop_max_seconds: float | None = None
+
+    # Optional timestamp-only post-processing; cues never influence beat detection.
+    cue_file: Path | None = None
+    cue_tolerance_ms: float = 150.0
+    cue_beat_model: str = "auto"
+    cue_downbeats_only: bool = False
+    cue_force_snap: bool = False
+    cue_precision: str = "exact"
