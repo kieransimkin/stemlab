@@ -115,3 +115,18 @@ notes and instruments as estimates. Preserve model-generated tempo, pedal and pi
 bend events; do not equate that tempo map with StemLab's measured audio beat grid.
 Prefer the existing timeline for source inspection. MIDI outputs are downloadable
 artifacts; piano-roll PNGs are supporting note plots, not timeline screenshots.
+
+## Cue review and optional evidence models
+
+Use the CLI `stemlab snap-cues` on saved results when an LRC cue sheet needs
+comparison with an existing beat grid. It writes a separate candidate and review
+report; distant and forced snaps remain flagged, and no result replaces canonical
+timing automatically. Exact cue serialization and later video-frame quantisation
+are separate concerns.
+
+The optional evidence registry adds specialist vocal-activity, forced-alignment,
+pitch, structure, harmony and drum hypotheses. Inspect `stemlab evidence-models`,
+select only a model that answers an unresolved question, and reuse saved stems with
+`stemlab evidence`. Use an isolated `--backend-python MODEL=PATH` when research
+dependencies conflict. Package presence is not checkpoint, licence or runtime
+readiness, and these outputs never rewrite canonical lyrics, sections or beat grids.

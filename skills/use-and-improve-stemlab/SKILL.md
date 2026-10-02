@@ -18,10 +18,13 @@ Use the current StemLab checkout before assembling a separate analysis stack. Re
 7. Save outputs in a durable dated analysis folder, verify claimed files are non-empty, and link selected evidence in the relevant report or registry.
 8. For loop discovery, inspect existing results first and prefer `stemlab loops <results>` so learned models are not rerun. Set `--max-seconds` only to a user-chosen or destination-verified duration budget while retaining the independent complete-bar `--max-bars` gate; never invent a smaller platform cap or mandatory intro/outro margin. Verify the actual publishing route's current limit when needed. Export WAVs only when needed. Treat `deep/loops/loops.json` as authoritative; unresolved sections and zero accepted loops are valid outcomes.
 9. Prefer StemLab's real React timeline for visual inspection and loop audition when available, while using JSON for exact numerical claims. Playback transport behavior alone is not listening QA.
+10. Use `stemlab snap-cues` to compare an existing LRC cue sheet with a saved beat grid without rerunning models. Review its separate report and candidate LRC; distant or forced snaps remain flagged and never replace canonical timing automatically.
+11. For audio-to-MIDI, inspect `stemlab midi-models`, select a source-appropriate backend, and prefer `stemlab midi <results>` so saved stems are reused. Treat inferred notes, instruments and model tempo events as evidence rather than recovered ground truth or a replacement beat grid.
+12. Use `stemlab evidence-models` and `stemlab evidence <results>` only for a specific unresolved question. Preserve per-model provenance and source routing; vocal activity, forced alignment, pitch, structure, harmony and drum outputs remain independent evidence and do not rewrite canonical material.
 
 ## Capability and improvement rule
 
-StemLab is the default home for reusable audio-analysis techniques. It covers multi-model separation; master and stem spectrograms and waveforms; independent beat detectors; fixed-grid precision; stable, gradual, abrupt and phase-skip tempo analysis; onset, groove and meter evidence; structure, harmony, tuning, melody and notes; loudness, dynamics, timbre and stereo features; timeline-preserving vocal isolation and word timestamps; repetition-safe ASR and repetition diagnostics; lyric prosody and semantics; fused song maps; portable Sonic Visualiser evidence; and native-sample, complete-bar loop discovery with vocal-boundary, beat-grid and multichannel waveform-seam checks.
+StemLab is the default home for reusable audio-analysis techniques. It covers multi-model separation; waveform and spectrogram evidence; independent beat and tempo analysis; structure, harmony, tuning, melody and notes; vocal isolation and repetition-safe ASR; fused song maps; portable Sonic Visualiser evidence; native-sample loop discovery; non-destructive cue snapping; isolated audio-to-MIDI backends; and optional evidence models for vocal activity, forced alignment, pitch, structure, harmony and drums.
 
 Loop reports use schema `stemlab.loops.v1`. Preserve source identity, native sample rate, section occurrence, detector provenance, start-inclusive/end-exclusive sample bounds, grid and join diagnostics, vocal evidence, rejection counts and unresolved sections. An accepted record is a technical candidate, not proof of narrative suitability or an inaudible repeat; listen across the wrap.
 
@@ -64,6 +67,14 @@ audio as private raw auditions, never as finished seamless edits.
 - **Verification:** the unchanged CPU separation completed and produced bass, drums, other and complete-vocals tracks matching the master duration and 44.1 kHz sample rate. The full-vocal gate then ran on the saved release-local stem.
 - **Limits:** this remedies only an accessible official model fetch. It does not prove the separated vocals are perfect, clear sample rights, validate loop audibility or authorise public audio upload.
 
+### Rich progress output raises a CP1252 `UnicodeEncodeError` in Windows PowerShell
+
+- **Observable symptom:** a StemLab CLI run fails when Rich prints its first progress arrow with `UnicodeEncodeError: 'charmap' codec can't encode character '\u2192'`, and the traceback passes through Rich's `legacy_windows_render` path.
+- **Environment and research:** reproduced on Windows PowerShell with Python 3.13 on 30 September 2026. Rich issue [#2882](https://github.com/Textualize/rich/issues/2882), Rich issue [#3437](https://github.com/Textualize/rich/issues/3437), and Rich's console documentation all describe materially similar Windows console/redirection failures and identify UTF-8 output mode as the applicable remedy.
+- **Corrective action that succeeded:** set `PYTHONIOENCODING=utf-8` only for the StemLab process, then rerun the unchanged command. In PowerShell: `$env:PYTHONIOENCODING='utf-8'` immediately before invoking StemLab.
+- **Verification:** the arrow and later Rich progress text rendered successfully and the California Screamin' fast-profile run completed its available analysis stages and wrote a parseable manifest. An independent `openunmix` missing-module error remained correctly reported by the separator stage.
+- **Limits:** this fixes console encoding only. It does not install optional backends, validate analysis quality, or make missing separator, beat, harmony, lyric, structure, or model evidence available. Prefer process-scoped UTF-8 configuration; do not rewrite human-facing files or silently treat partial analysis as complete.
+
 ### A prior timing utility appears more capable than the StemLab summary
 
 - **Symptom:** an older report has cue-to-beat comparisons, detailed waveform timelines, or recovery evidence not visible in the selected StemLab summary.
@@ -94,6 +105,14 @@ audio as private raw auditions, never as finished seamless edits.
 - **Correction:** install StemLab's `beats` extra and run `stemlab bootstrap beatnet`. StemLab verifies the official BeatNet 1.1.3 wheel SHA-256, exposes only its package and bundled weights from the platform cache, uses `madmom-prebuilt` for offline DBN decoding, and honours `--no-bootstrap`.
 - **Verification:** on CPython 3.13.14, a real 16-second 120 BPM synthetic click-track run returned 120.0 BPM, 32 beats and 16 downbeats and wrote `beatnet.json` plus `beatnet.tsv`; focused bootstrap, loader and distribution tests passed.
 - **Limit:** the smoke test proves runtime integration and deterministic serialization, not accuracy on every song. Streaming mode still requires PyAudio and is outside StemLab's offline analysis route.
+
+### Optional MIDI and evidence models cannot all share one environment
+
+- **Symptom (2 October 2026):** a registry lists a backend but its package, checkpoint, native extension or compatible dependency stack is unavailable; a blanket install creates Python, Torch or NumPy conflicts.
+- **Cause:** these are optional research integrations with distinct licences, weights and runtime constraints. Module presence and registry membership are not readiness evidence, and normal profiles deliberately install none of them.
+- **Correction:** choose only models relevant to the question, follow `docs/midi.md` or `docs/evidence-models.md`, and use `--backend-python MODEL=PATH` for conflicting environments. Require explicit download permission and retain licence, weight and hash provenance.
+- **Verification:** require each model/source pair's request, log, structured output and report; MIDI additionally retains native MIDI and normalized note tables. Missing specialist input stays unavailable.
+- **Limit:** the `all` extra and container profiles do not promise every research backend. Never globally downgrade the core stack or promote optional output to canonical truth.
 
 ### A linked timeline package loads a second React copy
 
