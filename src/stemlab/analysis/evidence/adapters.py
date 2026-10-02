@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import soundfile as sf
 
 
 def _pkg(name: str) -> str | None:
@@ -108,8 +107,8 @@ def run_swift(request: dict, out: Path) -> dict:
     pitch = np.asarray(result.pitch_hz, dtype=float)
     confidence = np.asarray(result.confidence, dtype=float)
     loudness = np.asarray(result.loudness_db, dtype=float)
-    rows = [{"time": float(t), "pitch_hz": float(p), "confidence": float(c), "loudness_db": float(l)}
-            for t, p, c, l in zip(timestamps, pitch, confidence, loudness)]
+    rows = [{"time": float(t), "pitch_hz": float(p), "confidence": float(c), "loudness_db": float(level)}
+            for t, p, c, level in zip(timestamps, pitch, confidence, loudness)]
     voiced = confidence >= 0.5
     payload = {"model": "swift_f0", "frame_period_seconds": 0.016, "frames": len(rows),
                "voiced_frames": int(voiced.sum()),
