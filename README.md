@@ -1,5 +1,12 @@
 # StemLab
 
+[![StemLab logo](https://raw.githubusercontent.com/kieransimkin/stemlab/v1.3.1/docs/branding/logo.png)](https://kieransimkin.co.uk/danceflow/)
+
+By **[Kieran Simkin](https://kieransimkin.co.uk/)** · [DanceFlow ecosystem](https://kieransimkin.co.uk/danceflow/) · [Vector logo and usage guide](docs/branding/README.md).
+
+Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/
+
+
 <!-- mcp-name: io.github.kieransimkin/stemlab -->
 
 > **StemLab by [Kieran Simkin](https://kieransimkin.co.uk/)** · [My Songs portfolio](https://kieransimkin.co.uk/my-songs/) · [Arcadians EPK](https://kieransimkin.co.uk/arcadians/) · [Source](https://github.com/kieransimkin/stemlab)

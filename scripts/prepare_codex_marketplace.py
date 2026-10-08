@@ -30,7 +30,8 @@ def verified_files(archive: Path) -> dict[str, bytes]:
             p = PurePosixPath(name)
             allowed = name in {"SHA256SUMS", ".agents/plugins/marketplace.json"} or (
                 name.startswith("plugins/stemlab/") and
-                (p.suffix in {".json", ".md"} or p.name == "LICENSE"))
+                (p.suffix in {".json", ".md"} or p.name == "LICENSE" or
+                 (p.parent.name == "branding" and p.suffix in {".svg", ".png"})))
             if not allowed or ".." in p.parts or p.is_absolute() or "\\" in name:
                 raise ValueError("Unexpected archive path")
         files = {name: z.read(name) for name in names}

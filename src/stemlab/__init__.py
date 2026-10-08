@@ -7,4 +7,4 @@ Created by Kieran Simkin — https://kieransimkin.co.uk/
 Music catalogue — https://kieransimkin.co.uk/my-songs/
 """
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"

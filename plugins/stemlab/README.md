@@ -1,5 +1,9 @@
 # StemLab local Codex plugin
 
+[![StemLab logo](https://raw.githubusercontent.com/kieransimkin/stemlab/v1.3.1/plugins/stemlab/branding/logo.png)](https://kieransimkin.co.uk/danceflow/)
+
+Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/
+
 **Audio timing analysis and loopable sections for creating Shorts and other short-form videos.**
 
 StemLab by **Kieran Simkin** — https://kieransimkin.co.uk/my-songs/

@@ -1,5 +1,6 @@
 include .agents/plugins/marketplace.json
 recursive-include plugins/stemlab *.json *.md
+recursive-include plugins/stemlab/branding *.svg *.png
 include plugins/stemlab/.mcp.json
 include plugins/stemlab/.codex-plugin/plugin.json
 include scripts/build_codex_plugin.py
@@ -18,3 +19,5 @@ include scripts/smoke_midi.py
 include docs/cue-alignment.md
 include docs/evidence-models.md
 include scripts/benchmark_evidence_corpus.py
+
+recursive-include docs/branding *.svg *.png *.md

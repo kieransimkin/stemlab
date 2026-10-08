@@ -1,6 +1,6 @@
 {
   "name": "stemlab-web-client",
-  "description": "StemLab's React workspace for inspecting music timing, analysis evidence and loopable sections for Shorts",
+  "description": "Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,5 +18,6 @@
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "homepage": "https://kieransimkin.co.uk/danceflow/"
 }

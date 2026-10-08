@@ -73,7 +73,8 @@ def build(root: Path, output: Path, release_tag: str | None = None) -> Path:
     version = package_version(root, release_tag)
     files = {p.relative_to(root).as_posix(): p.read_bytes()
              for p in (root / "plugins/stemlab").rglob("*")
-             if p.is_file() and p.suffix in {".json", ".md"}}
+             if p.is_file() and (p.suffix in {".json", ".md"} or
+                                (p.parent.name == "branding" and p.suffix in {".svg", ".png"}))}
     files[".agents/plugins/marketplace.json"] = (root / ".agents/plugins/marketplace.json").read_bytes()
     files["plugins/stemlab/LICENSE"] = (root / "LICENSE").read_bytes()
     files["plugins/stemlab/TECHNICAL-GUIDE.md"] = (root / "docs/codex-plugin.md").read_bytes()

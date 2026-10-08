@@ -34,6 +34,9 @@ def test_archive_is_reproducible_and_has_verified_hashes(tmp_path):
         assert "plugins/stemlab/plugin.json" in z.namelist()
         assert ".agents/plugins/marketplace.json" in z.namelist()
         assert "plugins/stemlab/.codex-plugin/plugin.json" in z.namelist()
+        for name in ("logo.svg", "logo-monochrome.svg", "logo.png"):
+            member = "plugins/stemlab/branding/" + name
+            assert z.read(member) == (ROOT / member).read_bytes()
         for line in z.read("SHA256SUMS").decode().splitlines():
             digest, path = line.split("  ", 1)
             assert hashlib.sha256(z.read(path)).hexdigest() == digest

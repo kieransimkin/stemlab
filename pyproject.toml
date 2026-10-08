@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "danceflow-stemlab"
 dynamic = ["version"]
-description = "Local, evidence-led music analysis for stems, timing, structure, harmony, lyrics, and loopable sections for Shorts"
+description = "Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Kieran Simkin"}]
@@ -38,6 +38,7 @@ dependencies = [
 ]
 
 [project.urls]
+"DanceFlow ecosystem" = "https://kieransimkin.co.uk/danceflow/"
 Homepage = "https://kieransimkin.co.uk/"
 "My Songs portfolio" = "https://kieransimkin.co.uk/my-songs/"
 "Arcadians showcase" = "https://kieransimkin.co.uk/arcadians/"
@@ -140,3 +141,6 @@ select = ["E4", "E7", "E9", "F"]
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["src"]
+
+[tool.setuptools.data-files]
+"share/stemlab/branding" = ["docs/branding/logo.svg", "docs/branding/logo-monochrome.svg", "docs/branding/logo.png", "docs/branding/README.md"]

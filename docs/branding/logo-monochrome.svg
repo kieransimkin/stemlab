@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">StemLab logo</title>
+  <desc id="desc">Split waveforms: inspectable music and stem analysis. Original DanceFlow family mark by Kieran Simkin.</desc>
+  
+  <g fill="none" stroke="#171124" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M29 44h9l5-12 8 24 7-12h12M29 64h13l6-8 7 16 6-8h9M29 84h10l7-5 8 10 7-5h9"/><path d="M80 42v44m0-22h12" stroke="#171124"/><circle cx="94" cy="64" r="5" fill="#171124" stroke="none"/></g>
+</svg>
