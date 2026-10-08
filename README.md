@@ -1,10 +1,10 @@
 # StemLab Codex release channel
 
-Release: **v1.3.3**
+Release: **v1.3.4**
 
 Audio timing analysis and loopable sections for creating Shorts videos.
 
-Install the matching Python runtime first: `pip install 'danceflow-stemlab[codex]==1.3.3'`.
+Install the matching Python runtime first: `pip install 'danceflow-stemlab[codex]==1.3.4'`.
 Configure an explicit workspace with `stemlab-codex configure --workspace ABSOLUTE_PATH`.
 
 Add this marketplace using `codex plugin marketplace add kieransimkin/stemlab --ref codex-plugins`.
