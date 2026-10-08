@@ -3,7 +3,7 @@
   "name": "io.github.kieransimkin/stemlab",
   "title": "StemLab \u2014 timing and loops for Shorts",
   "description": "Music and stem analysis, timing and loopable Shorts. https://kieransimkin.co.uk/",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "websiteUrl": "https://kieransimkin.co.uk/my-songs/",
   "repository": {
     "url": "https://github.com/kieransimkin/stemlab",
@@ -13,7 +13,7 @@
     {
       "registryType": "pypi",
       "identifier": "danceflow-stemlab",
-      "version": "1.3.3",
+      "version": "1.3.4",
       "runtimeHint": "uvx",
       "runtimeArguments": [
         {

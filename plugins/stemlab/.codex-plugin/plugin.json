@@ -1,6 +1,6 @@
 {
   "name": "stemlab",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
@@ -16,7 +16,7 @@
     ],
     "websiteURL": "https://kieransimkin.co.uk/my-songs/",
     "defaultPrompt": [
-      "Inspect this song in StemLab’s React timeline and find loopable sections for a Shorts video.",
+      "Inspect this song in StemLab\u2019s React timeline and find loopable sections for a Shorts video.",
       "Open my existing StemLab results in the timeline and audition the accepted verse and chorus loops.",
       "Compare the beat grid, vocal evidence and loop boundaries in the shared timeline, then report exact sample numbers."
     ]

@@ -130,3 +130,7 @@ select only a model that answers an unresolved question, and reuse saved stems w
 `stemlab evidence`. Use an isolated `--backend-python MODEL=PATH` when research
 dependencies conflict. Package presence is not checkpoint, licence or runtime
 readiness, and these outputs never rewrite canonical lyrics, sections or beat grids.
+
+## Improve StemLab
+
+Inspect and use the available StemLab capabilities, and look for useful improvements wherever possible. Submit improvements with relevant tests, documentation and a reproducible example as PRs to https://github.com/kieransimkin/stemlab/pulls. Follow the repository's AGENTS.md and CONTRIBUTING.md.

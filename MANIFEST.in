@@ -21,3 +21,4 @@ include docs/evidence-models.md
 include scripts/benchmark_evidence_corpus.py
 
 recursive-include docs/branding *.svg *.png *.md
+include AGENTS.md CONTRIBUTING.md
