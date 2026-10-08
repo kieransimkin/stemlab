@@ -6,7 +6,11 @@
 
 > **Packaging identity:** the canonical project name is **StemLab**. StemLab is part of the **Dance Flow** project. The PyPI distribution is named `danceflow-stemlab` solely because Python package-registry names are globally unique. The Python import, CLI, GitHub repository and container image remain `stemlab`.
 
-StemLab provides **audio timing analysis and finds loopable sections for creating Shorts and other short-form videos**. It is the audio-analysis engine in Kieran Simkin's **DanceFlow** BPM and motion-response workflow. It separates and interprets a master track into synchronised stem, BPM/beat, structure, harmony, timbre, speech/lyric and semantic data. Those outputs can drive downstream motion-aware experiences, including the WordPress **DanceMoves** plugin, while StemLab remains usable as a standalone CLI, Python library, web service and container.
+## Synopsis
+
+**StemLab is a local, evidence-led music analysis toolkit that turns a master recording into inspectable stems, timing, structure, harmony, lyric and sonic evidence, then finds complete-bar loopable sections for Shorts and other short-form videos.**
+
+It combines independent separation and music-information-retrieval routes rather than treating any single model as the answer. Results remain traceable through source hashes, manifests, JSON/TSV/NPZ artefacts, portable Sonic Visualiser sessions and a shared React timeline for playback and comparison. StemLab can run as a CLI, Python library, web service, container or local Codex MCP plugin. It is the music-understanding layer of Kieran Simkin's **DanceFlow** workflow and can supply downstream motion systems such as the WordPress **DanceMoves** plugin, while remaining useful on its own.
 
 > **Model weights are not redistributed by this project.** They are fetched from their upstream registries/releases on first use. This avoids silently republishing checkpoints whose licensing may differ from the source code license, and lets upstream integrity metadata be used where available.
 
@@ -47,6 +51,12 @@ Relevant upstreams:
 ## Analysis performed
 
 For every successful separator, **every WAV it emits** is retained. Stem names are discovered from files rather than truncated to a hard-coded four-stem schema, which is important for MVSep Mega 53. For the master and every stem, StemLab writes both a PNG spectrogram and compressed `.npz` spectrogram data (time axis, frequency axis, dB matrix, FFT metadata).
+
+Full-resolution spectrogram evidence stays in the `.npz`; the PNG renderer is bounded to 8,192 time frames so long tracks cannot expand into multi-gigabyte Matplotlib RGBA buffers. If an older run retained the NPZ but failed while drawing the PNG, repair it in place without rerunning models:
+
+```powershell
+stemlab repair-spectrograms "path\to\analysis-results"
+```
 
 The preferred vocal stem is passed through the Silero VAD implementation bundled with `faster-whisper`. Speech regions are used to create a timeline-preserving `spoken_word.wav` (non-speech is zeroed rather than concatenated), then Whisper is run with word timestamps. Outputs include `whisper.json`, `speech_regions.json`, `transcript.txt`, `transcript.srt`, and `words.tsv`.
 
@@ -271,6 +281,7 @@ Use saved analysis to snap an LRC cue file without rerunning models or editing a
 ```bash
 stemlab snap-cues analysis-master "musical cues.lrc" -o cue-review
 stemlab snap-cues analysis-master "musical cues.lrc" -o cue-review-100ms --tolerance-ms 100
+stemlab generate-cues analysis-master -o generated-cues --title "Song title"
 ```
 
 Only timestamps change: bracketed labels such as `[DROP: CHORUS 1]`, metadata,
@@ -285,6 +296,13 @@ a colour-coded `review.html`, and `review.txt`. Exact mode preserves the stored
 beat timestamp; explicit millisecond/centisecond compatibility modes report
 rounding. Source-rate sample-frame estimates are included when the rate is known.
 Use `--fail-on-review` to write results and exit 2 when review is needed.
+Generated section-cue files use a title-specific, WordPress-safe filename so
+multiple releases can be uploaded and mapped without ambiguous duplicate names.
+For the retained 3 October 2026 future-release batch,
+`scripts/run-upcoming-full-cues.ps1` resumes full analyses without overwriting an
+incomplete directory, and `scripts/summarize-upcoming-cues.ps1` reads each closed
+manifest/report to produce one reproducible hash, cue-action and error-count row
+per release. The summary script refuses missing or ambiguous generated LRCs.
 
 For a new analysis, add `--snap-cues "musical cues.lrc"` and optionally
 `--cue-tolerance-ms 100`. Cue alignment uses that run's detected events and appears

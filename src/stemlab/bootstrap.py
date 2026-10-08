@@ -39,6 +39,12 @@ BEATNET_WHEEL_URL = (
 )
 BEATNET_WHEEL_SHA256 = "1ecfa17bdcbe899975a88bdb6efebd6970d846a4f3b6cfd5c6f320647c641c7e"
 
+BEAT_THIS_VERSION = "1.1.0"
+BEAT_THIS_CHECKPOINT_URL = (
+    "https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt"
+)
+BEAT_THIS_CHECKPOINT_SHA256 = "8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331"
+
 
 @dataclass(frozen=True)
 class SCNetRuntime:
@@ -182,6 +188,27 @@ def ensure_beatnet_runtime(install: bool = True) -> Path:
     return root
 
 
+def ensure_beat_this_checkpoint(install: bool = True) -> Path:
+    """Return the verified official Beat This! final0 checkpoint."""
+    checkpoint = CACHE_ROOT / "beat-this" / BEAT_THIS_VERSION / "beat_this-final0.ckpt"
+    if not checkpoint.is_file():
+        if not install:
+            raise RuntimeError(
+                "Beat This! checkpoint is not bootstrapped. Run "
+                "`stemlab bootstrap beat-this`."
+            )
+        _download(BEAT_THIS_CHECKPOINT_URL, checkpoint)
+    actual_sha256 = sha256_file(checkpoint)
+    if actual_sha256 != BEAT_THIS_CHECKPOINT_SHA256:
+        checkpoint.unlink(missing_ok=True)
+        raise RuntimeError(
+            "Beat This! checkpoint checksum mismatch: "
+            f"expected {BEAT_THIS_CHECKPOINT_SHA256}, got {actual_sha256}; "
+            "removed cached file"
+        )
+    return checkpoint
+
+
 def bootstrap(name: str) -> dict:
     if name == "scnet":
         r = ensure_scnet_runtime(True)
@@ -197,6 +224,14 @@ def bootstrap(name: str) -> dict:
             "source": BEATNET_WHEEL_URL,
             "sha256": BEATNET_WHEEL_SHA256,
         }
+    if name in {"beat-this", "beat_this"}:
+        checkpoint = ensure_beat_this_checkpoint(True)
+        return {
+            "checkpoint": str(checkpoint),
+            "version": BEAT_THIS_VERSION,
+            "source": BEAT_THIS_CHECKPOINT_URL,
+            "sha256": BEAT_THIS_CHECKPOINT_SHA256,
+        }
     if name in {"vamp", "vamp-pack", "vamp_plugin_pack"}:
         # Import lazily so the Vamp runtime can reuse CACHE_ROOT/_download from
         # this module without creating a module-import cycle.
@@ -207,6 +242,7 @@ def bootstrap(name: str) -> dict:
         return {
             "scnet": bootstrap("scnet"),
             "beatnet": bootstrap("beatnet"),
+            "beat_this": bootstrap("beat-this"),
             "beat_transformer": bootstrap("beat-transformer"),
             "vamp": bootstrap("vamp"),
         }

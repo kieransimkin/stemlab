@@ -39,7 +39,23 @@ The Docker build uses the exact checkout supplied by GitHub Actions and records
 StemLab during the build.
 
 The Docker-specific Python dependency set is pinned in
-`docker/requirements.lock.txt`; Torch/TorchAudio are installed separately so
+`docker/requirements.lock.txt`; Torch/TorchAudio/TorchVision are installed together so
 the CUDA or CPU wheel index can be selected explicitly.
+
+The image uses Python 3.11 so its verified dependency set can include Spotify
+Basic Pitch as well as every standard StemLab backend. It also installs MuQ for
+the opt-in MuQ-MuLan audio-semantic route. MuQ's released model weights are
+CC-BY-NC 4.0 and are never fetched merely by building the image; use
+`--audio-semantics` only when that licence is suitable. The environment verifier
+imports both optional runtimes and reconciles every registered separation model
+to a supported container backend.
+
+The CLI also exposes the 1.2 MIDI and complementary-evidence registries. Those
+research integrations are intentionally not all baked into one image: several
+need incompatible environments, explicit upstream repositories, restricted
+weights or case-specific licence review. Use a separately provisioned
+`--backend-python MODEL=PATH` for the selected backend. The container's verified
+full feature set means StemLab's standard analysis profiles plus Basic Pitch and
+opt-in MuQ-MuLan; it does not mean every registry entry is inference-ready.
 
 For local validation, see `docker/README.md`.

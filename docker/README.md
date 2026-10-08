@@ -3,7 +3,22 @@
 > **Kieran Simkin** · https://kieransimkin.co.uk/ · My Songs: https://kieransimkin.co.uk/my-songs/ · Arcadians: https://kieransimkin.co.uk/arcadians/ · Source: https://github.com/kieransimkin/stemlab
 
 
-The container is a deterministic StemLab runtime for the DanceFlow audio-analysis component. It uses Python 3.13, pinned runtime dependencies, Sonic Annotator and the Vamp Plugin Pack. The image is built from the current repository checkout, so local Docker builds test the exact source tree you are about to commit.
+The container is a deterministic StemLab runtime for the DanceFlow audio-analysis component. It uses Python 3.11, pinned runtime dependencies, Sonic Annotator and the Vamp Plugin Pack. Python 3.11 keeps Spotify Basic Pitch available while retaining current wheels for the rest of the analysis stack. The image is built from the current repository checkout, so local Docker builds test the exact source tree you are about to commit.
+
+The image includes the dependency path for every registered separation model,
+all beat backends, Faster Whisper, All-In-One structure analysis, lyric semantic
+embeddings, Spotify Basic Pitch and MuQ-MuLan audio semantics. Model weights are
+still fetched from their authoritative upstream locations on first use. MuQ's
+released weights are CC-BY-NC 4.0, remain opt-in through `--audio-semantics`,
+and are not downloaded during the image build.
+
+StemLab 1.2's MIDI and evidence registries are available through the CLI, but
+the image does not preinstall every research backend. Piano Transcription,
+Transkun, MR-MT3, YourMT3, FireRedAED, HEART, Qwen forced alignment, SwiftF0,
+SongFormer, LVChordia and ADTOF have separate dependency, checkpoint or licence
+requirements and may conflict with the core environment. Provision only the
+needed backend and pass `--backend-python MODEL=PATH`; a registry listing is not
+evidence that its runtime and weights are ready.
 
 ## Validate the CI container locally
 
@@ -37,8 +52,18 @@ STEMLAB_TEST_PROFILE=full docker compose run --rm stemlab
 ```
 
 The full profile may require substantially more VRAM than an RTX 4060 Ti 8 GB,
-particularly for Mega-53. Backend failures are still written to
-`analysis.json`, consistent with normal StemLab behaviour.
+particularly for Mega-53. It contains the five main separation routes. The
+registered experimental six-source Demucs route remains available explicitly
+with `--model htdemucs_6s`; its piano stem is not silently promoted into the
+default full profile. Backend failures are still written to `analysis.json`,
+consistent with normal StemLab behaviour.
+
+Enable the two opt-in analysis routes explicitly:
+
+```bash
+stemlab analyze /music/song.wav --output /output/song \
+  --profile full --basic-pitch --audio-semantics
+```
 
 ## CPU run
 

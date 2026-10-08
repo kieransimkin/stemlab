@@ -10,6 +10,15 @@ It reads an existing detector/consensus grid; it does not run models, synthesize
 beats from a BPM value, change the detected grid to fit cues, quantise audio, or
 alter source audio or canonical metadata.
 
+`stemlab generate-cues` exports All-In-One functional section starts (or the
+selected song-map source) as a new provisional LRC and applies the same nearby
+beat policy. Model labels are retained verbatim, distant boundaries are not
+forced, provenance hashes are recorded, and listening review remains required.
+
+```bash
+stemlab generate-cues analysis-master -o generated-cues --title "Song title"
+```
+
 ## Reuse saved analysis
 
 ```bash

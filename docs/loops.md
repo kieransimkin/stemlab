@@ -289,7 +289,7 @@ npm pack --ignore-scripts
 
 # In the sibling stemlab checkout:
 npm ci
-npm install --no-save --package-lock=false ../react-timeline-sequence/react-timeline-sequence-0.1.3.tgz
+npm install --no-save --package-lock=false ../react-timeline-sequence/react-timeline-sequence-0.2.0.tgz
 npm run build:web
 ```
 

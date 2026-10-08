@@ -1,10 +1,11 @@
-FROM python:3.13-bookworm
+FROM python:3.11-bookworm
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG STEMLAB_BUILD_REF=local
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu130
 ARG TORCH_VERSION=2.14.0
 ARG TORCHAUDIO_VERSION=2.11.0
+ARG TORCHVISION_VERSION=0.29.1
 
 LABEL org.opencontainers.image.title="StemLab" \
       org.opencontainers.image.description="StemLab audio analysis for DanceFlow BPM and motion-response workflows, including WordPress DanceMoves" \
@@ -26,7 +27,8 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     TORCH_HOME=/root/.cache/torch \
     VAMP_PATH=/root/.vamp
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Retries=3 update \
+    && apt-get -o Acquire::Retries=3 install -y --no-install-recommends \
     bash \
     build-essential \
     ca-certificates \
@@ -58,28 +60,33 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/requirements.lock.txt /opt/stemlab-docker/requirements.lock.txt
-COPY docker/install-sonic-annotator.sh /opt/stemlab-docker/install-sonic-annotator.sh
-COPY docker/install-vamp-pack.sh /opt/stemlab-docker/install-vamp-pack.sh
-COPY docker/verify-environment.sh /opt/stemlab-docker/verify-environment.sh
-COPY docker/entrypoint.sh /opt/stemlab-docker/entrypoint.sh
-COPY docker/start-web-service.sh /opt/stemlab-docker/start-web-service.sh
 
-RUN chmod +x /opt/stemlab-docker/*.sh
-
-# Pin Torch/TorchAudio independently so CUDA and CPU wheel indexes can be selected.
+# Pin the PyTorch family independently so CUDA and CPU wheel indexes can be selected.
 # The CUDA service uses
 # the corresponding CUDA 13.0 wheels instead of the host's CPU torch wheel.
 RUN python -m pip install --upgrade pip setuptools wheel \
     && python -m pip install \
         --index-url "${TORCH_INDEX_URL}" \
         "torch==${TORCH_VERSION}" \
-        "torchaudio==${TORCHAUDIO_VERSION}"
+        "torchaudio==${TORCHAUDIO_VERSION}" \
+        "torchvision==${TORCHVISION_VERSION}"
 
 # Top-level runtime versions are pinned in docker/requirements.lock.txt for a
 # deterministic container build.
-# madmom-prebuilt has a CPython 3.13 manylinux wheel, avoiding the fragile
-# source/Cython build of historical madmom.
+# Python 3.11 keeps Basic Pitch's TensorFlow runtime available while retaining
+# modern wheels for madmom-prebuilt and every other StemLab backend.
 RUN python -m pip install -r /opt/stemlab-docker/requirements.lock.txt
+
+COPY docker/install-sonic-annotator.sh /opt/stemlab-docker/install-sonic-annotator.sh
+COPY docker/install-vamp-pack.sh /opt/stemlab-docker/install-vamp-pack.sh
+COPY docker/verify-environment.sh /opt/stemlab-docker/verify-environment.sh
+COPY docker/entrypoint.sh /opt/stemlab-docker/entrypoint.sh
+COPY docker/start-web-service.sh /opt/stemlab-docker/start-web-service.sh
+
+# Git attributes keep shell scripts LF-only in fresh checkouts. Normalise again
+# in the image so builds from an existing Windows working tree are safe too.
+RUN sed -i 's/\r$//' /opt/stemlab-docker/*.sh \
+    && chmod +x /opt/stemlab-docker/*.sh
 
 # Install the external binary analysis stack before copying project source so
 # normal code changes do not invalidate these comparatively expensive layers.

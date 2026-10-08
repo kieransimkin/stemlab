@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "danceflow-stemlab"
 dynamic = ["version"]
-description = "StemLab audio timing analysis and loopable sections for creating Shorts videos; DanceFlow and WordPress DanceMoves"
+description = "Local, evidence-led music analysis for stems, timing, structure, harmony, lyrics, and loopable sections for Shorts"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Kieran Simkin"}]

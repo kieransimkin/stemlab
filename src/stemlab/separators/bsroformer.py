@@ -13,6 +13,32 @@ from .base import SeparatorBackend
 from .common import collect_wavs
 
 
+MVSep_MEGA53_MINIMUM_CUDA_BYTES = 16 * 1024**3
+
+
+def _validate_model_hardware(
+    model_slug: str,
+    device: str,
+    *,
+    cuda_total_bytes: int | None = None,
+) -> None:
+    """Reject a known-impossible Mega53 CUDA run before it can exhaust VRAM."""
+    resolved_device = device_string(device)
+    if model_slug != "mvsep_mega53" or resolved_device != "cuda":
+        return
+    if cuda_total_bytes is None:
+        import torch
+
+        cuda_total_bytes = int(torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory)
+    if cuda_total_bytes < MVSep_MEGA53_MINIMUM_CUDA_BYTES:
+        detected_gib = cuda_total_bytes / 1024**3
+        raise RuntimeError(
+            "MVSep-MDX23C/Mega53 requires at least 16 GiB of CUDA VRAM according to "
+            f"the upstream model guidance; detected {detected_gib:.1f} GiB. "
+            "The backend is unavailable on this GPU and inference was not attempted."
+        )
+
+
 class BSRoformerBackend(SeparatorBackend):
     """Version-tolerant adapter for openmirlab/bs-roformer-infer.
 
@@ -47,6 +73,7 @@ class BSRoformerBackend(SeparatorBackend):
         start = time.perf_counter()
         try:
             model_id = BS_ROFORMER_IDS[model_slug]
+            _validate_model_hardware(model_slug, device)
             output_dir.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryDirectory(prefix="stemlab-roformer-") as td:
                 inp = Path(td) / input_wav.name

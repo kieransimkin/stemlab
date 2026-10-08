@@ -1,8 +1,19 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 - 2026-10-08
 
+- Add MIDI transcription and independent evidence-model adapters, with lazy subprocess isolation, saved artifacts and explicit unavailable results.
+- Add ordered canonical-word reconciliation and full canonical LRC export without invented timestamps or automatic approval of model output.
+- Use the published React Timeline Sequence 0.2.0 package, rebuild the shared web UI and update the source-map-js development dependency to its security fix.
+- Verify plugin and Python distribution version agreement without hard-coding the previous release in the identity test.
+
+- Bound only the Matplotlib spectrogram preview to 8,192 time frames while preserving full-resolution compressed NPZ evidence, and add `stemlab repair-spectrograms` to rebuild failed PNG previews from retained analysis without rerunning separation.
+- Added `stemlab generate-cues` to export provenance-bearing provisional LRC section cues from full functional-structure analysis and safely align nearby boundaries to detected beats.
+- Cache and checksum-verify Beat This!'s official `final0` checkpoint through `STEMLAB_CACHE`, avoiding an implicit Torch user-cache write during analysis and adding `stemlab bootstrap beat-this`.
+- Refuse MVSep Mega53 CUDA inference before model loading when the detected GPU has less than the upstream 16 GiB VRAM minimum, preserving the unavailable result without triggering a predictable out-of-memory failure.
+- Make the Docker image use Python 3.11 and a compatible NumPy 1.26 lock so it can install and verify Spotify Basic Pitch and MuQ-MuLan alongside every existing StemLab model backend. MuQ model weights remain opt-in under their CC-BY-NC 4.0 licence.
 - Restore BeatNet offline/DBN analysis on modern Python with an explicit `madmom-prebuilt` dependency and a SHA-256-verified bootstrap of BeatNet's official 1.1.3 wheel that bypasses its unsatisfiable legacy dependency metadata. Honour `--no-bootstrap`, report cached readiness in `stemlab doctor`, and verify real 120 BPM inference plus JSON/TSV output on Python 3.13.
+- Add a clear project synopsis across the README, Python and web package metadata, generated-analysis attribution, and Codex/MCP package descriptions.
 
 ## 1.2.0 - 2026-10-01
 

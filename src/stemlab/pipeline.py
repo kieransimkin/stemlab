@@ -335,7 +335,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
     if config.run_beats:
         beat_backends = [
             BeatNetBackend(bootstrap_external=config.bootstrap_external),
-            BeatThisBackend(),
+            BeatThisBackend(bootstrap_external=config.bootstrap_external),
             BeatTransformerBackend(
                 bootstrap_external=config.bootstrap_external,
                 ensemble=config.beat_transformer_ensemble,

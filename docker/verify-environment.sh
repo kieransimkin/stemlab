@@ -10,10 +10,11 @@ import importlib
 import importlib.metadata
 
 mods = [
-    'torch', 'torchaudio', 'numpy', 'scipy', 'soundfile', 'matplotlib',
-    'demucs', 'openunmix', 'faster_whisper', 'beat_this', 'BeatNet',
+    'torch', 'torchaudio', 'torchvision', 'numpy', 'scipy', 'soundfile', 'matplotlib',
+    'demucs', 'openunmix', 'faster_whisper', 'beat_this',
     'bs_roformer', 'typer', 'rich', 'fastapi', 'uvicorn', 'socketio',
     'librosa', 'pyloudnorm', 'cmudict', 'sentence_transformers', 'allin1_infer',
+    'muq', 'basic_pitch',
 ]
 for name in mods:
     module = importlib.import_module(name)
@@ -30,6 +31,16 @@ madmom = importlib.import_module('madmom')
 print(f'BeatNet.BeatNet: OK {beatnet_class.__name__}')
 print(f'madmom: OK {getattr(madmom, "__version__", "")}')
 print(f'madmom-prebuilt metadata: {importlib.metadata.version("madmom-prebuilt")}')
+
+from stemlab.models import MODEL_REGISTRY
+
+supported_backends = {'bs_roformer', 'scnet', 'demucs', 'openunmix'}
+registered_backends = {spec.backend for spec in MODEL_REGISTRY.values()}
+unsupported = registered_backends - supported_backends
+if unsupported:
+    raise RuntimeError(f'Unverified model backends: {sorted(unsupported)}')
+print('registered separation models:', ', '.join(MODEL_REGISTRY))
+print('registered separation backends:', ', '.join(sorted(registered_backends)))
 
 import torch
 print('torch:', torch.__version__)

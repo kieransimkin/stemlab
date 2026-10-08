@@ -6,8 +6,9 @@ import json
 import pytest
 
 from stemlab.cues import (
-    BeatGrid, CueSnapConfig, format_timestamp, load_grid, parse_lrc, read_lrc,
-    review_html, select_grid, snap_cue_file, snap_document, snap_existing_cues,
+    BeatGrid, CueSnapConfig, format_timestamp, generate_section_cues, load_grid,
+    parse_lrc, read_lrc, review_html, select_grid, snap_cue_file, snap_document,
+    snap_existing_cues,
 )
 
 
@@ -270,6 +271,38 @@ def test_structure_json_fallback(tmp_path):
     save_json(tmp_path / 'deep/structure/structure.json', {'beats': [1, 2], 'downbeats': [1]})
     g = load_grid(tmp_path, config=CueSnapConfig())
     assert g.model == 'all_in_one' and g.times == (Decimal(1), Decimal(2))
+
+
+def test_generate_section_cues_uses_model_labels_and_nearby_detected_beats(tmp_path):
+    root = tmp_path / 'analysis'
+    save_json(root / 'analysis.json', {'source': {'sha256': 'audio', 'audio': {'sample_rate': 1000, 'duration_seconds': 30}}})
+    save_json(root / 'beats/consensus.json', {'model': 'consensus', 'beats': [0, 8, 16.1, 24]})
+    structure = save_json(root / 'deep/structure/structure.json', {
+        'segments': [
+            {'start': 0, 'end': 8, 'label': 'intro'},
+            {'start': 8.08, 'end': 16, 'label': 'verse'},
+            {'start': 15.7, 'end': 24, 'label': 'chorus'},
+        ]
+    })
+    report = generate_section_cues(root, tmp_path / 'cues', title='Test')
+    assert report['output_cue_file'] == 'test-section-cues.beat-snapped.lrc'
+    cue_text = (tmp_path / 'cues' / report['output_cue_file']).read_text()
+    assert '[SECTION: intro]' in cue_text and '[SECTION: verse]' in cue_text and '[SECTION: chorus]' in cue_text
+    assert '[00:08.00][SECTION: verse]' in cue_text
+    assert '[00:15.70][SECTION: chorus]' in cue_text
+    assert report['snapped_count'] == 1 and report['kept_count'] == 1
+    assert report['generation']['listening_review_required']
+    assert report['generation']['section_file_sha256'] == hashlib.sha256(structure.read_bytes()).hexdigest()
+
+
+def test_generate_section_cues_refuses_whole_track_fallback(tmp_path):
+    root = tmp_path / 'analysis'
+    save_json(root / 'beats/beat_this.json', {'beats': [0, 1]})
+    save_json(root / 'deep/song_map/song_map.json', {
+        'section_source': 'whole_track', 'sections': [{'start': 0, 'end': 1, 'label': 'Whole track'}]
+    })
+    with pytest.raises(ValueError, match='No functional section'):
+        generate_section_cues(root, tmp_path / 'cues')
 
 
 def test_escaping_symlink_rejected(tmp_path):

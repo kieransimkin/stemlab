@@ -1,9 +1,16 @@
 .git
 .github
-.venv
+.venv*
 venv
 __pycache__
 .pytest_cache
+.pytest-*
+.ruff_cache
+.uv-cache*
+.web-test-results-*
+node_modules
+**/node_modules
+**/dist
 *.pyc
 *.pyo
 *.patch
@@ -17,3 +24,7 @@ __pycache__
 docker-output
 music
 uv.lock
+/build
+/dist
+/dist-*
+/models

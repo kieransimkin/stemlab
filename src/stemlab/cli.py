@@ -25,6 +25,24 @@ console = Console()
 register_cue_commands(app, console)
 
 
+@app.command("repair-spectrograms")
+def repair_spectrograms(
+    results: Annotated[Path, typer.Argument(exists=True, file_okay=False, help="Existing analysis result directory")],
+    max_plot_frames: Annotated[int, typer.Option("--max-plot-frames", min=2, help="Maximum time frames passed to Matplotlib")] = 8192,
+):
+    """Repair failed spectrogram PNGs from retained full-resolution NPZ evidence."""
+    from .spectrogram_repair import repair_failed_spectrograms
+
+    try:
+        report = repair_failed_spectrograms(results, max_plot_frames=max_plot_frames)
+    except (ValueError, KeyError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(
+        f"Spectrogram repair: {report['repaired_count']} repaired; "
+        f"{report['remaining_error_count']} pipeline error(s) remain."
+    )
+
+
 @app.command()
 def analyze(
     input_wav: Annotated[Path, typer.Argument(exists=True, dir_okay=False, readable=True, help="Master WAV to analyse")],
@@ -390,6 +408,14 @@ def doctor():
                 status = "ready (installed or verified StemLab cache)"
             except Exception:
                 status = "missing (run `stemlab bootstrap beatnet`)"
+        elif p == "beat_this":
+            try:
+                from .bootstrap import ensure_beat_this_checkpoint
+
+                ensure_beat_this_checkpoint(install=False)
+                status = "ready (installed package and verified StemLab checkpoint)"
+            except Exception:
+                status = "package installed; checkpoint missing (run `stemlab bootstrap beat-this`)" if importlib.util.find_spec(p) else "missing"
         else:
             status = "installed" if importlib.util.find_spec(p) else "missing"
         if p == "allin1_infer" and status == "missing":

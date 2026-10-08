@@ -104,7 +104,7 @@ def test_publication_is_release_gated_and_dependency_ordered():
 
 
 def test_short_video_purpose_is_in_all_public_descriptions():
-    for name in ("README.md", "pyproject.toml", "src/stemlab/branding.py",
+    for name in ("README.md", "pyproject.toml", "package.json", "src/stemlab/branding.py",
                  "plugins/stemlab/plugin.json", "plugins/stemlab/.codex-plugin/plugin.json",
                  "mcp-registry/server.json"):
         text = (ROOT / name).read_text(encoding="utf-8").lower()

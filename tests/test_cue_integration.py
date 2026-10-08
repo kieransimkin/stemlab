@@ -25,7 +25,7 @@ def fixture(tmp_path):
 
 @pytest.mark.parametrize(
     'command, expected_option',
-    [('snap-cues', '--force-snap'), ('analyze', '--snap-cues')],
+    [('snap-cues', '--force-snap'), ('generate-cues', '--title'), ('analyze', '--snap-cues')],
 )
 @pytest.mark.parametrize('force_color', [False, True], ids=['plain', 'ansi'])
 def test_cli_help(command, expected_option, force_color, monkeypatch):

@@ -1,4 +1,6 @@
 from pathlib import Path
+import json
+import re
 
 try:
     import tomllib
@@ -18,7 +20,10 @@ def test_stemlab_stable_identity():
     assert project["scripts"]["stemlab"] == "stemlab.cli:app"
     assert "version" in project["dynamic"]
     assert "version" not in project
-    assert stemlab.__version__ == "1.2.0"
+    assert re.fullmatch(r"\d+\.\d+\.\d+", stemlab.__version__)
+    for manifest in ("plugins/stemlab/plugin.json", "plugins/stemlab/.codex-plugin/plugin.json"):
+        metadata = json.loads((root / manifest).read_text(encoding="utf-8"))
+        assert metadata["version"] == stemlab.__version__
     assert "beat-this>=1.1.0" in project["optional-dependencies"]["beats"]
     assert any(dep.startswith("madmom-prebuilt==0.17.post1") for dep in project["optional-dependencies"]["beats"])
     assert "BeatNet" not in project["optional-dependencies"]["beats"]

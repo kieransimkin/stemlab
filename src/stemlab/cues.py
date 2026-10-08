@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 SCHEMA = "stemlab.cue-snap.v1"
+GENERATE_SCHEMA = "stemlab.cue-generate.v1"
 TIMESTAMP = re.compile(r"\[(\d{1,9}):([0-5]\d)(?:\.(\d{1,30}))?\]")
 OFFSET = re.compile(r"^\s*\[offset:\s*([+-]?\d{1,9})\s*\]\s*$", re.IGNORECASE)
 ENHANCED = re.compile(r"<\d+:\d+(?:\.\d+)?>")
@@ -535,3 +536,110 @@ def snap_existing_cues(source: Path, cue_file: Path, output_dir: Path, *,
     config = config or CueSnapConfig()
     grid = load_grid(Path(source), config=config, sample_rate=sample_rate)
     return snap_cue_file(cue_file, output_dir, grid=grid, config=config)
+
+
+def _section_source(results: Path) -> tuple[str, list[dict], str, str]:
+    """Load functional boundaries without inventing labels or a whole-track cue."""
+    results = Path(results).expanduser().resolve()
+    candidates = [
+        (results / 'deep/song_map/song_map.json', 'sections', 'section_source'),
+        (results / 'deep/structure/structure.json', 'segments', None),
+    ]
+    for path, key, origin_key in candidates:
+        if not path.exists():
+            continue
+        if not path.resolve().is_relative_to(results):
+            raise ValueError('Structure result symlink escapes the result folder')
+        data, digest = _json(path)
+        origin = str(data.get(origin_key) or 'all_in_one') if origin_key else 'all_in_one'
+        if origin in {'whole_track', 'none'}:
+            continue
+        raw = data.get(key)
+        if not isinstance(raw, list):
+            raise ValueError(f'{path} {key} must be an array')
+        sections: list[dict] = []
+        for index, item in enumerate(raw):
+            if not isinstance(item, dict):
+                raise ValueError(f'{path} section {index + 1} must be an object')
+            start = _number(item.get('start'), f'section {index + 1} start')
+            if start < 0:
+                raise ValueError(f'{path} section {index + 1} has a negative start')
+            label = str(item.get('label') or item.get('text') or '').strip()
+            label = re.sub(r'[\r\n\t]+', ' ', label)
+            if not label:
+                raise ValueError(f'{path} section {index + 1} has no model label')
+            sections.append({'start': start, 'label': label, 'source_index': index + 1})
+        sections.sort(key=lambda row: (row['start'], row['source_index']))
+        if sections:
+            return origin, sections, str(path), digest
+    raise ValueError('No functional section boundaries found; full structure analysis must complete first')
+
+
+def generate_section_cues(results: Path, output_dir: Path, *,
+                          config: CueSnapConfig | None = None,
+                          title: str | None = None,
+                          artist: str = 'Kieran Simkin') -> dict:
+    """Export detected functional sections as a new beat-aligned LRC result."""
+    config = config or CueSnapConfig()
+    results = Path(results).expanduser().resolve()
+    output_dir = Path(output_dir).expanduser().absolute()
+    if output_dir.exists() or output_dir.is_symlink():
+        raise FileExistsError(f'Output must be a NEW directory: {output_dir}')
+    origin, sections, section_path, section_sha = _section_source(results)
+    grid = load_grid(results, config=config)
+    if title is None:
+        canonical = results / 'canonical.json'
+        if canonical.exists():
+            data, _ = _json(canonical)
+            candidate = data.get('title')
+            if isinstance(candidate, str) and candidate.strip():
+                title = candidate.strip()
+    title = title or 'StemLab-generated section cues'
+    safe_title = re.sub(r'[\r\n\t]+', ' ', title).strip()
+    safe_artist = re.sub(r'[\r\n\t]+', ' ', artist).strip()
+    lines = [
+        f'[ti:{safe_title} - Provisional Section Cues]',
+        f'[ar:{safe_artist}]',
+        f'[by:StemLab {origin} functional structure; machine-generated; listening review required]',
+        '[offset:0]',
+        '',
+    ]
+    for section in sections:
+        lines.append(f"{format_timestamp(section['start'])}[SECTION: {section['label']}]")
+    source_text = '\n'.join(lines) + '\n'
+    output, report = snap_document(parse_lrc(source_text), grid, config)
+    report['schema'] = GENERATE_SCHEMA
+    report['status'] = 'review_required'
+    report['generation'] = {
+        'section_source': origin,
+        'section_file': section_path,
+        'section_file_sha256': section_sha,
+        'section_count': len(sections),
+        'labels_retained_verbatim': True,
+        'machine_generated': True,
+        'listening_review_required': True,
+        'boundary_policy': 'Detected section starts are snapped only when a selected detected beat is within tolerance; distant starts are retained and flagged.',
+    }
+    filename_title = re.sub(r'[^A-Za-z0-9]+', '-', safe_title).strip('-').lower()
+    name = f'{filename_title or "stemlab"}-section-cues.beat-snapped.lrc'
+    report.update({
+        'generated_source_sha256': _hash(source_text.encode('utf-8')),
+        'output_cue_file': name,
+        'output_cue_sha256': _hash(output),
+        'files': {'cues': name, 'report': 'report.json', 'review': 'review.html', 'text': 'review.txt'},
+    })
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.cue-generate-', dir=output_dir.parent) as temporary:
+        stage = Path(temporary) / 'result'
+        stage.mkdir()
+        (stage / name).write_bytes(output)
+        (stage / 'report.json').write_text(
+            json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False) + '\n', encoding='utf-8')
+        generated_review = review_text(report)
+        generated_review += '\nMachine-generated functional boundaries require listening review before being treated as canonical.\n'
+        (stage / 'review.txt').write_text(generated_review, encoding='utf-8')
+        (stage / 'review.html').write_text(review_html(report), encoding='utf-8')
+        if output_dir.exists() or output_dir.is_symlink():
+            raise FileExistsError(f'Output appeared while processing: {output_dir}')
+        stage.rename(output_dir)
+    return report

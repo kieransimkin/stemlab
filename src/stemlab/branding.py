@@ -7,9 +7,10 @@ RELATED_PLUGIN_NAME = "DanceMoves"
 RELATED_PLUGIN_PLATFORM = "WordPress"
 WORKFLOW_NAME = "DanceFlow BPM and motion-response workflow"
 PROJECT_DESCRIPTION = (
-    "StemLab provides audio timing analysis and finds loopable sections for creating "
-    "Shorts and other short-form videos. It is the audio-analysis engine in DanceFlow's "
-    "BPM and motion-response workflow, including the WordPress DanceMoves plugin."
+    "StemLab is a local, evidence-led music analysis toolkit for inspectable stems, timing, "
+    "structure, harmony, lyrics and sonic evidence. It finds complete-bar loopable sections "
+    "for Shorts and other short-form videos and forms the music-understanding layer of "
+    "DanceFlow while remaining independently useful."
 )
 
 AUTHOR_NAME = "Kieran Simkin"

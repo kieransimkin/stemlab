@@ -1,5 +1,6 @@
 {
   "name": "stemlab-web-client",
+  "description": "StemLab's React workspace for inspecting music timing, analysis evidence and loopable sections for Shorts",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +9,7 @@
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-timeline-sequence": "github:kieransimkin/react-timeline-sequence#b02d66063a67e048a9238da10d7e002dc69d81c8"
+    "react-timeline-sequence": "0.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.4",

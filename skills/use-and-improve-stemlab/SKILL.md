@@ -51,6 +51,53 @@ audio as private raw auditions, never as finished seamless edits.
 
 ## Potential problems
 
+### A hidden Windows timeline helper opens `Z:\My` instead of the script
+
+- **Symptom (3 October 2026):** a hidden `Start-Process` launch of `codex_timeline_viewer_once.py` fails with `python.exe: can't open file 'Z:\\My': [Errno 2] No such file or directory` before StemLab starts.
+- **Cause and research:** PowerShell joins a `Start-Process -ArgumentList` array into one string, while the outer quotes of each PowerShell string are not preserved. Microsoft's `Start-Process` documentation recommends one argument string containing the required escaped quote characters; checked 3 October 2026: <https://learn.microsoft.com/powershell/module/microsoft.powershell.management/start-process>.
+- **Correction:** build one argument string and place escaped double quotes around every script or value path that can contain spaces. Keep `-WindowStyle Hidden` for this background helper. Do not weaken the timeline viewer's loopback binding, token, expiry or read-only checks.
+- **Verification:** the corrected launch created the private viewer manifest and the real bundled React timeline rendered the retained Paper Dreams full-analysis result with 140 lanes, including waveform, section, beat and stem-spectrogram evidence.
+- **Limit:** this correction applies to the PowerShell wrapper only. It does not establish musical accuracy, listening quality or public-safe screenshot content; inspect and redact captures separately.
+
+### The loopback capture receiver keeps running after its final screenshot
+
+- **Symptom (3 October 2026):** `save_browser_capture.py` returns HTTP 201 and writes the requested JPEG, but the Python process remains alive and its redirected stdout/stderr logs cannot be removed because they are still open.
+- **Cause and research:** `ThreadingHTTPServer` dispatches the handler on a worker thread. The main thread can enter the next blocking `handle_request()` before the worker sets the final-capture flag. Python's `socketserver` documentation confirms that `handle_request()` returns after the server timeout and that `ThreadingMixIn` handles requests in threads; checked 3 October 2026: <https://docs.python.org/3/library/socketserver.html>.
+- **Correction:** set the loopback server timeout to 0.5 seconds so the main loop promptly rechecks the final-capture flag. Keep the authenticated loopback-only endpoint, safe filename rule, JPEG validation and 20 MiB limit.
+- **Verification:** a one-capture smoke run returned HTTP 201, exited within five seconds and released all test, token and log files for exact-path cleanup.
+- **Limit:** this helper only serialises browser-native screenshot bytes locally. It does not replace visual inspection, WordPress upload verification or public responsive QA.
+
+### Long spectrogram PNG rendering exhausts memory after analysis succeeds
+
+- **Symptom (3 October 2026):** a long track retains a full `.npz` spectrogram but Matplotlib fails at `fig.savefig` with allocations such as `Unable to allocate 4.11 GiB for an array with shape (1048, 131513, 4) and data type float64`.
+- **Cause and research:** the full time-frequency matrix was passed to `imshow`, whose colour mapping creates much larger temporary RGBA arrays. Matplotlib issue [#6952](https://github.com/matplotlib/matplotlib/issues/6952) documents the same large-array RGBA amplification pattern; checked 3 October 2026.
+- **Correction:** current StemLab preserves the full-resolution compressed NPZ but limits the PNG preview to 8,192 evenly spaced time frames. For a completed affected result, run `stemlab repair-spectrograms <results-folder>`; it rebuilds only failed PNGs from retained NPZ evidence, removes only successfully repaired spectrogram errors, and refreshes the manifest.
+- **Verification:** focused downsampling/repair tests passed; four failed Open-Unmix previews for `Singin' the AI blues` were rebuilt with 8,192 plotted frames each, leaving the expected Mega53 hardware-unavailable record as the sole pipeline error.
+- **Limit:** the PNG is a visual preview, not full-resolution numerical evidence. Use the retained NPZ for exact analysis; the repair cannot recover a missing/corrupt NPZ or stem WAV.
+
+### A PowerShell `foreach` status probe cannot be piped directly
+
+- **Symptom (3 October 2026):** a batch-status command ending `foreach (...) { ... } | Format-Table` fails with `ParserError: An empty pipe element is not allowed`.
+- **Research:** Microsoft's PowerShell guidance identifies the statement form of `foreach` as not directly pipeable; checked 3 October 2026: <https://learn.microsoft.com/en-us/answers/questions/1638964/an-empty-pipe-element-is-not-allowed>.
+- **Correction:** assign the statement output first, for example `$rows = foreach (...) { ... }`, then pipe `$rows` to the formatter or exporter. Use `ForEach-Object` only when an actual pipeline is preferable.
+- **Verification:** the corrected read-only probe returns one status row per release without changing batch outputs.
+- **Limit:** this is a PowerShell inspection fix; it says nothing about StemLab analysis completeness.
+
+### MVSep Mega53 cannot fit the project GPU
+
+- **Symptom (3 October 2026):** the full profile raises a CUDA out-of-memory error while loading or running `mvsep_mega53` on the NVIDIA GeForce RTX 4060 Ti.
+- **Cause and research:** the upstream BS-RoFormer guide requires at least 16 GB VRAM for Mega53; this device exposes about 8 GB. See <https://github.com/openmirlab/bs-roformer-infer>.
+- **Correction:** keep the model in the full evidence profile, but let StemLab's hardware preflight record it as unavailable without attempting inference when total CUDA memory is below 16 GiB. Continue all other eligible backends.
+- **Verification:** require the explicit hardware-unavailable result and passing preflight tests; do not report Mega53 output.
+- **Limit:** do not infer that 16 GiB guarantees completion, and do not weaken the full-analysis request by silently dropping other backends.
+
+### Full-profile setup fails in a retained Windows environment
+
+- **Symptoms (3 October 2026):** uv's user cache is access-denied, Rich cannot encode its progress arrow under CP1252, BS-RoFormer 0.1.5 lacks `BSRoformerSession`, or an interrupted resolver leaves a mixed Torch installation.
+- **Correction:** use the project-local uv/model caches, process-scoped UTF-8 variables, the exact official BS-RoFormer commit recorded in `Z:\My Songs\Tools\README.md` with `--no-deps`, and install the official CUDA `torch`/`torchaudio`/`torchvision` trio together. SCNet's isolated environment needs the same CUDA trio separately.
+- **Verification:** `stemlab doctor`, direct Torch/CUDA imports, real Beat This and BS-RoFormer-SW smoke runs, and the focused regression tests must all pass.
+- **Limit:** a ready dependency is not a successful model result; preserve per-backend errors and listening-review requirements.
+
 ### A rerendered loop WAV no longer matches its old whole-file hash
 
 - **Symptom:** on 1 October 2026, regenerating the same named Silly Sausage Britain loop and three-repeat audition changed both files' SHA-256 values, while the decoded samples compared exactly with the intended master slice and three-repeat concatenation.

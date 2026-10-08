@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from .cues import CueSnapConfig, snap_existing_cues
+from .cues import CueSnapConfig, generate_section_cues, snap_existing_cues
 
 
 def print_cue_review(report: dict, console: Console) -> None:
@@ -31,6 +31,31 @@ def print_cue_review(report: dict, console: Console) -> None:
 
 
 def register_cue_commands(app: typer.Typer, console: Console) -> None:
+    @app.command('generate-cues')
+    def generate_cues(
+        results: Annotated[Path, typer.Argument(exists=True, file_okay=False, help='Existing StemLab full-analysis directory')],
+        output: Annotated[Path, typer.Option('--output', '-o', help='New output directory')],
+        title: Annotated[str | None, typer.Option('--title', help='Song title; defaults to canonical.json when present')] = None,
+        artist: Annotated[str, typer.Option('--artist', help='Artist metadata')] = 'Kieran Simkin',
+        tolerance_ms: Annotated[float, typer.Option('--tolerance-ms', min=0, max=60000, help='Maximum nearby beat gap in milliseconds')] = 150,
+        beat_model: Annotated[str, typer.Option('--beat-model', help='auto prefers consensus; or a specific detector id')] = 'auto',
+        downbeats: Annotated[bool, typer.Option('--downbeats', help='Only snap to explicitly detected bar starts')] = False,
+        precision: Annotated[str, typer.Option('--precision', help='exact, milliseconds or centiseconds')] = 'exact',
+        fail_on_review: Annotated[bool, typer.Option('--fail-on-review', help='Exit 2 when an alignment cue needs review')] = False,
+    ) -> None:
+        """Generate provisional beat-aligned LRC cues from functional sections."""
+        try:
+            config = CueSnapConfig(tolerance_ms, beat_model, downbeats, False, precision)
+            report = generate_section_cues(results, output, config=config, title=title, artist=artist)
+        except (ValueError, OSError) as exc:
+            console.print(Text(str(exc), style='red'))
+            raise typer.Exit(1) from exc
+        print_cue_review(report, console)
+        console.print(Text(f"Generated provisional cues: {output.resolve() / report['output_cue_file']}"))
+        console.print(Text('Listening review remains required for machine-generated section boundaries.', style='yellow'))
+        if fail_on_review and report['review_count']:
+            raise typer.Exit(2)
+
     @app.command('snap-cues')
     def snap_cues(
         results: Annotated[Path, typer.Argument(exists=True, help='Existing StemLab results directory or detector JSON')],
