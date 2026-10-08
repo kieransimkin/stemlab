@@ -1,13 +1,13 @@
 {
   "name": "stemlab",
-  "version": "1.3.0",
-  "description": "Local, evidence-led music analysis and loopable sections for Shorts; StemLab / DanceFlow MCP.",
+  "version": "1.3.1",
+  "description": "Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "StemLab",
     "shortDescription": "Local music timing and loopable sections for Shorts",
-    "longDescription": "StemLab turns music masters into inspectable local evidence: separated stems, beat/downbeat grids, tempo regimes, structure, harmony, vocals, lyrics, sonic features and native-sample loop candidates for Shorts and other short-form videos. Its React timeline aligns playback, spectrograms, sections, lyrics and loops, while exact reports preserve provenance. StemLab is part of Kieran Simkin's DanceFlow workflow and remains standalone from WordPress DanceMoves.",
+    "longDescription": "StemLab turns music masters into inspectable local evidence: separated stems, beat/downbeat grids, tempo regimes, structure, harmony, vocals, lyrics, sonic features and native-sample loop candidates for Shorts and other short-form videos. Its React timeline aligns playback, spectrograms, sections, lyrics and loops, while exact reports preserve provenance. StemLab is part of Kieran Simkin's DanceFlow workflow and remains standalone from WordPress DanceMoves. Website: https://kieransimkin.co.uk/",
     "developerName": "Kieran Simkin",
     "category": "Productivity",
     "capabilities": [
