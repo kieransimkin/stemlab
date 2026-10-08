@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.3 - 2026-10-08
+
+- Apply the reviewed capability description and author website to OCI container labels as well as language packages. Preserve previously published versions and original logo bytes.
+
+
 ## 1.3.2 - 2026-10-08
 
 - Keep the MCP Registry description within its 100-character schema limit while retaining timing, loopable Shorts and the author website.

@@ -8,7 +8,7 @@ ARG TORCHAUDIO_VERSION=2.11.0
 ARG TORCHVISION_VERSION=0.29.1
 
 LABEL org.opencontainers.image.title="StemLab" \
-      org.opencontainers.image.description="StemLab audio analysis for DanceFlow BPM and motion-response workflows, including WordPress DanceMoves" \
+      org.opencontainers.image.description="Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/" \
       org.opencontainers.image.authors="Kieran Simkin" \
       org.opencontainers.image.url="https://kieransimkin.co.uk/" \
       org.opencontainers.image.documentation="https://github.com/kieransimkin/stemlab#readme" \
