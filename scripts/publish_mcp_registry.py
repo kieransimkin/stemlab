@@ -43,6 +43,8 @@ def validate_metadata(data: dict, tag: str) -> str:
         raise ValueError("Unexpected registry identity")
     if tag != f"v{version}":
         raise ValueError("Registry version does not match the release tag")
+    if not isinstance(data.get("description"), str) or not 1 <= len(data["description"]) <= 100:
+        raise ValueError("MCP registry description must contain 1 to 100 characters")
     packages = data.get("packages", [])
     if len(packages) != 1 or packages[0].get("identifier") != "danceflow-stemlab":
         raise ValueError("Unexpected package")

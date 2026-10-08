@@ -25,6 +25,8 @@ def test_release_tag_and_registry_version_are_tied_to_source(tmp_path):
     archive = builder.build(ROOT, tmp_path, f"v{version}")
     meta = json.loads((tmp_path / "stemlab-mcp-server.json").read_text())
     assert meta["version"] == meta["packages"][0]["version"] == version
+    assert meta["icons"][0]["src"] == f"https://raw.githubusercontent.com/kieransimkin/stemlab/v{version}/docs/branding/logo.png"
+    assert meta["icons"][0]["sizes"] == ["256x256"]
     with zipfile.ZipFile(archive) as z:
         assert json.loads(z.read("plugins/stemlab/plugin.json"))["version"] == version
         assert json.loads(z.read("plugins/stemlab/.codex-plugin/plugin.json"))["version"] == version
@@ -78,6 +80,20 @@ def test_registry_publisher_metadata_fails_before_network():
     meta["packages"][0]["identifier"] = "unrelated"
     with pytest.raises(ValueError):
         publisher.validate_metadata(meta, "v1.2.3")
+
+
+@pytest.mark.parametrize("description", ["", "x" * 101, None])
+def test_registry_rejects_description_outside_published_schema(description, tmp_path):
+    publisher = module("publish_mcp_registry")
+    builder = module("build_codex_plugin")
+    meta = builder.registry_metadata(ROOT, "1.2.3")
+    meta["description"] = description
+    with pytest.raises(ValueError, match="1 to 100"):
+        publisher.validate_metadata(meta, "v1.2.3")
+    (tmp_path / "mcp-registry").mkdir()
+    (tmp_path / "mcp-registry/server.json").write_text(json.dumps(meta))
+    with pytest.raises(ValueError, match="1 to 100"):
+        builder.registry_metadata(tmp_path, "1.2.3")
 
 
 def test_publication_is_release_gated_and_dependency_ordered():

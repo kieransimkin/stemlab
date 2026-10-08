@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.2 - 2026-10-08
+
+- Keep the MCP Registry description within its 100-character schema limit while retaining timing, loopable Shorts and the author website.
+- Reject invalid description lengths during plugin packaging and before registry publication. Preserve all previously published 1.3.1 packages.
+
+
 ## 1.3.1 - 2026-10-08
 
 - Add an original tool-specific vector logo and PNG companion in the shared DanceFlow visual style.

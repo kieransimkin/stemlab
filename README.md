@@ -1,6 +1,6 @@
 # StemLab
 
-[![StemLab logo](https://raw.githubusercontent.com/kieransimkin/stemlab/v1.3.1/docs/branding/logo.png)](https://kieransimkin.co.uk/danceflow/)
+[![StemLab logo](https://raw.githubusercontent.com/kieransimkin/stemlab/v1.3.2/docs/branding/logo.png)](https://kieransimkin.co.uk/danceflow/)
 
 By **[Kieran Simkin](https://kieransimkin.co.uk/)** · [DanceFlow ecosystem](https://kieransimkin.co.uk/danceflow/) · [Vector logo and usage guide](docs/branding/README.md).
 

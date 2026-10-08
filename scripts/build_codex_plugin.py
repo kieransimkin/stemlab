@@ -58,9 +58,15 @@ def registry_metadata(root: Path, version: str) -> dict:
     value = json.loads((root / "mcp-registry/server.json").read_text(encoding="utf-8"))
     if value["name"] != "io.github.kieransimkin/stemlab":
         raise ValueError("Unexpected MCP registry namespace")
+    if not isinstance(value.get("description"), str) or not 1 <= len(value["description"]) <= 100:
+        raise ValueError("MCP registry description must contain 1 to 100 characters")
     if f'mcp-name: {value["name"]} -->' not in (root / "README.md").read_text(encoding="utf-8"):
         raise ValueError("PyPI README ownership marker is missing")
     value["version"] = version
+    value["icons"] = [{
+        "src": f"https://raw.githubusercontent.com/kieransimkin/stemlab/v{version}/docs/branding/logo.png",
+        "mimeType": "image/png", "sizes": ["256x256"],
+    }]
     for package in value["packages"]:
         if package["registryType"] != "pypi" or package["identifier"] != "danceflow-stemlab":
             raise ValueError("Unexpected MCP registry package")

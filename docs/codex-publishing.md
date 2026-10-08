@@ -168,3 +168,10 @@ validation at submission. Upstream specification changes can require a new patch
 - [GitHub workflow event behaviour](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
 
 - [uv tool invocation, extras and version selection](https://docs.astral.sh/uv/guides/tools/)
+
+
+## Potential problems
+
+### MCP Registry description length
+
+On 8 October 2026 the 1.3.1 MCP publication returned HTTP 422 with `expected length <= 100` at `body.description`. The package summary including its website URL exceeded this registry field's limit. The matching maintainer report [registry issue 1184](https://github.com/modelcontextprotocol/registry/issues/1184) and [official OpenAPI schema](https://github.com/modelcontextprotocol/registry/blob/main/docs/reference/api/openapi.yaml), accessed 8 October 2026, confirm the 100-character bound. Use a concise registry-specific description and keep fuller capability wording in Python/package metadata. Both the builder and publisher now validate 1–100 characters locally, with empty, overlong and non-string regression cases. Do not overwrite published tags or distributions to repair a registry description; release a successor version.
