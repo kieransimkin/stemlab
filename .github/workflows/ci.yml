@@ -40,3 +40,82 @@ jobs:
       - run: python -m compileall -q src tests
       - run: pytest
       - run: ruff check src tests scripts
+
+  # Runs inside the main CI status: a real native-wheel failure or too few
+  # Arcadians matches makes CI red, even though the base StemLab install stays
+  # independent of DanceRudiments.
+  rudiments:
+    name: native rudiments (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install published DanceRudiments native wheel (no source fallback)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --only-binary=dancerudiments -e ".[dev,rudiments]"
+      - name: Require native C++ extension and 28 official initial patterns
+        run: |
+          python - <<'PY'
+          from importlib.machinery import EXTENSION_SUFFIXES
+          import dancerudiments as native
+          from dancerudiments_authoring.collections import initial_pack
+
+          assert str(native.__file__).endswith(tuple(EXTENSION_SUFFIXES)), native.__file__
+          assert native.PIPS_PER_BEAT == 64
+          official = {pattern.name for pattern in initial_pack().patterns}
+          available = {item["name"] for item in native.catalogue()}
+          assert len(official) == 28, len(official)
+          assert official <= available, sorted(official - available)
+          print(f"Native module: {native.__file__}; {len(available)} catalogue patterns")
+          PY
+      - name: Run mandatory Arcadians audio + synthetic regression tests (no skips)
+        env:
+          STEMLAB_REQUIRE_NATIVE_RUDIMENTS: "1"
+        run: python -m pytest -v -s tests/test_rudiment_matches.py tests/test_arcadians_rudiments.py
+      - name: Exercise published CLI and retain real-audio report
+        run: |
+          stemlab rudiments "examples/arcadians/Arcadians - 320kbps.mp3" \
+            --bpm 145 --collection initial --top 28 \
+            --output "$RUNNER_TEMP/arcadians-rudiments"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          output = Path(os.environ["RUNNER_TEMP"]) / "arcadians-rudiments"
+          for name in ("report.json", "index.html", "overview.png"):
+              assert (output / name).is_file(), f"Missing measured output: {name}"
+          report = json.loads((output / "report.json").read_text(encoding="utf-8"))
+          matches = report["sources"][0]["matches"]
+          assert report["grid_source"] == "explicit_bpm_unverified_phase"
+          assert report["source_count"] == 1  # Mix-only, not invented stems
+          assert report["pattern_count_catalogue"] == 28
+          assert report["sources"][0]["peak_count"] >= 1000
+          assert report["total_matches"] >= 12, report["total_matches"]
+          assert len({match["pattern"] for match in matches}) >= 12
+          assert matches[0]["similarity"] >= 0.68
+          print(f"Arcadians: {report['sources'][0]['peak_count']} peaks; "
+                f"{report['total_matches']} native pattern matches")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as summary:
+              summary.write("### Native DanceRudiments — Arcadians (mix only)\n\n")
+              summary.write(f"- **{report['total_matches']}** candidates >= 0.68 "
+                            f"from **{report['pattern_count_catalogue']}** initial patterns\n")
+              summary.write(f"- **{report['sources'][0]['peak_count']}** audio peaks "
+                            "at artist-reported 145 BPM (beat phase unverified)\n")
+              summary.write("- Download the job artifact for report.json, index.html and overview.png.\n")
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: arcadians-native-rudiments-py${{ matrix.python }}
+          path: ${{ runner.temp }}/arcadians-rudiments/
+          if-no-files-found: error
+          retention-days: 14

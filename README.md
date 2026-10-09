@@ -172,6 +172,13 @@ not schematic illustrations or captures of the main React timeline.
 The analysis writes `deep/rudiments/report.json`, `index.html`, and `overview.png`.
 See **[method, score caveats, provenance, examples and screenshot reproduction](docs/rudiments.md)**.
 
+**Native CI coverage:** the main GitHub Actions `CI` workflow now has a dedicated
+Python 3.10/3.11 job that installs the official DanceRudiments *binary wheel*,
+requires the actual C++ module, and runs the Arcadians test with skipping disabled.
+Fewer than **12 real-audio matches** fails CI; passing runs publish the JSON,
+HTML and measured overlay PNG as downloadable CI artifacts. See the
+[native CI validation instructions](docs/rudiments.md#native-github-actions-gate).
+
 ## Timeline analysis gallery
 
 The browser workspace is intended to make the analysis output inspectable, not just downloadable. The illustrations below explain the main analysis families using the same shared timeline vocabulary as the frontend: one clock, one playhead, zoomable lanes, and consistent section alignment across spectrogram, beat, lyric and deep-analysis layers.
