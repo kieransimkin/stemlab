@@ -65,6 +65,9 @@ def analyze(
     no_beats: Annotated[bool, typer.Option("--no-beats")] = False,
     no_vamp: Annotated[bool, typer.Option("--no-vamp", help="Skip Vamp Plugin Pack melody/harmony analysis")] = False,
     no_deep_analysis: Annotated[bool, typer.Option("--no-deep-analysis", help="Skip derived sonic/harmonic/rhythmic/lyrical analysis")] = False,
+    rudiments: Annotated[bool, typer.Option("--rudiments", help="Match stem attack peaks to optional DanceRudiments patterns")] = False,
+    rudiments_top: Annotated[int, typer.Option("--rudiments-top", min=1, max=500)] = 20,
+    rudiments_max_patterns: Annotated[int, typer.Option("--rudiments-max-patterns", min=0, max=20000, help="0 = all official patterns")] = 0,
     no_loops: Annotated[bool, typer.Option("--no-loops", help="Skip verse/chorus loop discovery")] = False,
     export_loops: Annotated[bool, typer.Option("--export-loops", help="Write accepted native-rate loops as WAVs")] = False,
     max_loop_seconds: Annotated[float | None, typer.Option("--max-loop-seconds", min=0.001, help="Maximum discovered loop duration in seconds")] = None,
@@ -106,6 +109,8 @@ def analyze(
             raise typer.BadParameter(str(exc)) from exc
     if export_loops and (no_loops or no_deep_analysis):
         raise typer.BadParameter("--export-loops cannot be combined with --no-loops or --no-deep-analysis")
+    if rudiments and no_deep_analysis:
+        raise typer.BadParameter("--rudiments requires deep analysis; omit --no-deep-analysis")
     if midi_model:
         from .analysis.midi import MidiConfig
         if no_deep_analysis or (basic_pitch and "basic_pitch" in midi_model):
@@ -152,6 +157,9 @@ def analyze(
         run_vamp=not no_vamp,
         beat_transformer_ensemble=not beat_transformer_single_fold,
         run_deep_analysis=not no_deep_analysis,
+        run_rudiments=rudiments,
+        rudiments_top_per_stem=rudiments_top,
+        rudiments_max_patterns=rudiments_max_patterns,
         run_structure=not no_structure,
         all_in_one_embeddings=all_in_one_embeddings,
         run_text_semantics=not no_text_semantics,
@@ -192,6 +200,43 @@ def analyze(
         console.print("See analysis.json and deep/summary.json for backend diagnostics.")
         if strict:
             raise typer.Exit(1)
+
+
+@app.command("rudiments")
+def match_rudiments(
+    source: Annotated[Path, typer.Argument(exists=True, help="StemLab results directory or original WAV/MP3")],
+    output: Annotated[Path | None, typer.Option("--output", "-o", help="Report directory; needed for standalone audio")] = None,
+    bpm: Annotated[float | None, typer.Option("--bpm", help="Explicit reference BPM for standalone audio (no beat-phase claim)")] = None,
+    first_beat_seconds: Annotated[float, typer.Option("--first-beat-seconds", min=0, help="First regular-grid beat time when --bpm is given")] = 0,
+    top: Annotated[int, typer.Option("--top", min=1, max=500, help="Top candidates per stem")] = 20,
+    collection: Annotated[str | None, typer.Option("--collection", help="initial/expansion/atlas/continuum/club/dancefloor; default all")] = None,
+    max_patterns: Annotated[int, typer.Option("--max-patterns", min=0, max=20000, help="0 = entire DanceRudiments catalogue")] = 0,
+    stem: Annotated[list[str] | None, typer.Option("--stem", help="Filter saved stems by name; repeatable")] = None,
+):
+    """Compare measured audio attacks with the optional native DanceRudiments catalogue."""
+    from .analysis.rudiment_matches import (
+        RudimentConfig, analyze_rudiments, analyze_saved_rudiments,
+    )
+    try:
+        cfg = RudimentConfig(top_per_stem=top, max_patterns=max_patterns, collection=collection)
+        if source.is_dir():
+            if bpm is not None:
+                raise ValueError("--bpm applies to standalone audio; result folders reuse detected beats")
+            report = analyze_saved_rudiments(source, output=output, config=cfg,
+                                             stems_filter=tuple(stem or ()))
+        else:
+            if bpm is None or output is None:
+                raise ValueError("Standalone audio requires both --bpm and --output")
+            if stem:
+                raise ValueError("--stem only applies to saved StemLab results")
+            report = analyze_rudiments(source, output, bpm=bpm,
+                first_beat_seconds=first_beat_seconds, config=cfg)
+    except (ValueError, OSError, RuntimeError, KeyError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"DanceRudiments: {report['pattern_count_scored']} scored patterns; "
+                  f"{report['total_matches']} candidate match(es) across "
+                  f"{report['source_count']} audio source(s)")
+    console.print(str((output or source / "deep/rudiments").resolve() / "index.html"))
 
 
 @app.command("loops")

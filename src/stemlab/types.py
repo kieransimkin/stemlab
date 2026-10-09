@@ -63,6 +63,10 @@ class PipelineConfig:
     # low-level detectors so heavyweight/non-commercial model routes remain
     # explicit and auditable.
     run_deep_analysis: bool = True
+    # Candidate audio-attack -> DanceRudiments matching is opt-in.
+    run_rudiments: bool = False
+    rudiments_top_per_stem: int = 20
+    rudiments_max_patterns: int = 0
     run_structure: bool = True
     all_in_one_embeddings: bool = False
     run_text_semantics: bool = True

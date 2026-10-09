@@ -130,6 +130,48 @@ The derived artifacts live under `deep/` (`sonic/`, `rhythm/`, `harmony/`, `stru
 `lyrics/`, `semantic_text/`, optional `semantic_audio/` and `basic_pitch/`, plus
 `song_map/song_map.json` and `summary.json`).
 
+## Find DanceRudiments matching candidates from each stem
+
+Install the separately maintained **optional** native package with
+`python -m pip install -e ".[rudiments]"`. StemLab calls
+[`dancerudiments.catalogue()` and `dancerudiments.sample()`](https://github.com/kieransimkin/DanceRudiments)
+directly—no cloned movement functions or bundled catalogue. It extracts per-stem
+RMS attack peaks, maps them onto detected beats, and ranks 16-beat windows
+against position/speed/acceleration salience of actual native motion samples.
+Scores are **comparative similarities**, not probabilities or guarantees of a good motion.
+
+```sh
+# Match the mix plus every saved stem without running separation again.
+stemlab rudiments ./analysis-master --top 20
+# Limit an existing analysis to two stems, or choose one of six official collections.
+stemlab rudiments ./analysis-master --stem drums --stem bass --collection club
+# Include matching as an opt-in part of a new full analysis.
+stemlab analyze master.wav --output ./analysis-master --rudiments
+# The bundled Arcadians MP3 has a documented BPM but no pre-separated stems.
+stemlab rudiments 'examples/arcadians/Arcadians - 320kbps.mp3' \
+  --bpm 145 --collection initial --top 28 --output ./arcadians-rudiments
+```
+
+### Measured Arcadians benchmark
+
+The mix-only offline benchmark found **1,821** energy-rise peaks and **15 candidate
+patterns at ≥0.68** similarity among the authentic 28-pattern DanceRudiments
+initial collection, led by `groove_b_played` (0.739), `groove_b_grid` (0.737),
+and `lfo_morph` (0.724). The benchmark read DanceRudiments' officially compiled
+sample tables through an **offline adapter**; the native C++-extension test is
+separate and skips when that optional package is not installed. The BPM grid
+starts at zero with **unverified beat phase**. No stem separation was claimed.
+
+These are **actual Chromium screenshots** of the measured local HTML report,
+not schematic illustrations or captures of the main React timeline.
+
+![Actual Arcadians audio attack peaks overlaid with a matching DanceRudiments motion descriptor in local report](docs/screenshots/arcadians-rudiments-report.png)
+
+![Actual ranked Arcadians DanceRudiments candidate table captured in Chromium](docs/screenshots/arcadians-rudiments-ranked.png)
+
+The analysis writes `deep/rudiments/report.json`, `index.html`, and `overview.png`.
+See **[method, score caveats, provenance, examples and screenshot reproduction](docs/rudiments.md)**.
+
 ## Timeline analysis gallery
 
 The browser workspace is intended to make the analysis output inspectable, not just downloadable. The illustrations below explain the main analysis families using the same shared timeline vocabulary as the frontend: one clock, one playhead, zoomable lanes, and consistent section alignment across spectrogram, beat, lyric and deep-analysis layers.
@@ -486,6 +528,10 @@ analysis-master/
     lyrics/
     semantic_text/
     song_map/
+    rudiments/             # optional native DanceRudiments candidate report
+      report.json
+      index.html
+      overview.png
     summary.json
   sonic_visualiser/
     session.sv

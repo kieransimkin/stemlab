@@ -34,6 +34,21 @@ In the web UI, click **Load Arcadians example** before selecting/uploading the
 example MP3. The BPM, canonical lyrics and canonical timing are then stored
 against the uploaded audio hash and appear as synchronized reference layers.
 
+## Audio-peak / DanceRudiments candidate matching (mix-only)
+
+The bundled MP3 is genuine audio, but it is **not a set of separated stems**.
+With the optional `dancerudiments` package installed, run:
+
+```sh
+python -m pip install -e '.[rudiments]'
+stemlab rudiments 'examples/arcadians/Arcadians - 320kbps.mp3' \
+  --bpm 145 --collection initial --top 28 --output ./arcadians-rudiments
+```
+
+See [the benchmark, measured screenshots and caveats](../../docs/rudiments.md).
+For per-stem matches, first successfully run a separator profile, then use
+`stemlab rudiments ./analysis-arcadians`. The BPM-derived phase is **unverified**.
+
 ## Official Arcadians release links
 
 - EPK / song page: https://kieransimkin.co.uk/arcadians/

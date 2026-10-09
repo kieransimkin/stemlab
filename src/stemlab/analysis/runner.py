@@ -70,6 +70,9 @@ def run_comprehensive_analysis(
     evidence_chord_dictionary: str = "submission",
     evidence_prompt: str | None = None,
     run_loops: bool = True,
+    run_rudiments: bool = False,
+    rudiments_top_per_stem: int = 20,
+    rudiments_max_patterns: int = 0,
     export_loops: bool = False,
     loop_max_seconds: float | None = None,
     normalization_gains: dict[str, float] | None = None,
@@ -151,6 +154,17 @@ def run_comprehensive_analysis(
             deep_root=root,
         ),
     )
+
+    if run_rudiments:
+        def rudiments():
+            from .rudiment_matches import RudimentConfig, analyze_rudiments
+
+            return analyze_rudiments(
+                master, root / "rudiments", beat_results=beat_results, stems=stems,
+                config=RudimentConfig(top_per_stem=rudiments_top_per_stem,
+                                      max_patterns=rudiments_max_patterns),
+            )
+        run("rudiments", rudiments)
 
     if run_loops:
         run("loops", lambda: analyze_loops(
@@ -260,5 +274,7 @@ def run_comprehensive_analysis(
             "reported as calibrated probabilities; heuristic groove/rhyme metrics are labelled as such."
         ),
     }
+    if "rudiments" in report.get("analyses", {}):
+        report["analyses"]["rudiments"]["path"] = "deep/rudiments/report.json"
     write_json(root / "summary.json", report)
     return report

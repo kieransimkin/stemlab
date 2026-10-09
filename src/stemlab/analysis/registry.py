@@ -21,6 +21,16 @@ class AnalysisAction:
 
 ACTIONS: tuple[AnalysisAction, ...] = (
     AnalysisAction(
+        "rudiments", "rhythmic/motion", "Stem attack-peak to DanceRudiments candidates", False,
+        "optional dancerudiments>=0.2.4 (native C++ sampler)",
+        "deep/rudiments/report.json",
+        "Ranks 16-beat windows of the mix and each saved stem against actual DanceRudiments "
+        "catalogue motion samples; outputs JSON, local HTML and measured-overlays PNG. "
+        "Use stemlab rudiments RESULTS or stemlab analyze --rudiments.",
+        "https://github.com/kieransimkin/DanceRudiments",
+        "DanceRudiments stays separately licensed; scores are heuristic similarities, not probabilities.",
+    ),
+    AnalysisAction(
         "cue_alignment", "rhythmic", "Snap LRC cues and highlight missing nearby beats", False,
         "Python standard library + existing detected beat/downbeat timestamps",
         "cues/<cue-file-stem>/report.json",
