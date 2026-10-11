@@ -546,11 +546,9 @@ def _inside(root: Path, value: str) -> Path:
     return path
 
 
-def analyze_existing_loops(root: Path, *, export_audio: bool = False,
-                           config: LoopConfig | None = None) -> dict:
-    """Reuse saved models. Also works after canonical section/timing edits."""
+def load_loop_evidence(root: Path) -> dict:
+    """Load verified native master and saved evidence for both search strategies."""
     from .song_map import _choose_sections
-    from stemlab.manifest import write_manifest
 
     root = root.expanduser().resolve()
     analysis = _read(root / "analysis.json")
@@ -577,21 +575,38 @@ def analyze_existing_loops(root: Path, *, export_audio: bool = False,
             stems.append(StemArtifact(str(item["model"]), str(item["stem"]), _inside(root, item["path"])))
         for item in model.get("normalization", []):
             gains[str(_inside(root, item["path"]))] = float(item.get("gain_db", 0.0))
-    report = analyze_loops(master, root / "deep/loops", song_map=song_map, beat_results=results,
-                           stems=stems, whisper_result=_read(root / "speech/whisper.json"),
-                           lyrics_result=_read(root / "deep/lyrics/lyrics.json"), canonical=canonical,
-                           normalization_gains=gains, export_audio=export_audio, config=config)
+    return dict(audio_path=master, song_map=song_map, beat_results=results, stems=stems,
+                whisper_result=_read(root / "speech/whisper.json"),
+                lyrics_result=_read(root / "deep/lyrics/lyrics.json"), canonical=canonical,
+                normalization_gains=gains)
+
+
+def index_loop_report(root: Path, name: str, relative_path: str) -> None:
+    """Refresh existing analysis discovery and hashes after an explicit rescan."""
+    from stemlab.manifest import write_manifest
+
+    analysis = _read(root / "analysis.json")
     summary_path = root / "deep/summary.json"
     summary = _read(summary_path)
-    summary.setdefault("analyses", {})["loops"] = {"available": True, "path": "deep/loops/loops.json"}
+    summary.setdefault("analyses", {})[name] = {"available": True, "path": relative_path}
     _write_json(summary_path, summary)
     if not isinstance(analysis.get("deep_analysis"), dict):
         analysis["deep_analysis"] = {}
-    analysis["deep_analysis"].setdefault("analyses", {})["loops"] = summary["analyses"]["loops"]
+    analysis["deep_analysis"].setdefault("analyses", {})[name] = summary["analyses"][name]
     _write_json(root / "analysis.json", analysis)
     old_manifest = _read(root / "manifest.json")
     write_manifest(root, extra={k: v for k, v in old_manifest.items()
                                 if k not in {"generated_at", "platform", "python", "files"}})
+
+
+def analyze_existing_loops(root: Path, *, export_audio: bool = False,
+                           config: LoopConfig | None = None) -> dict:
+    """Reuse saved models. Also works after canonical section/timing edits."""
+    root = root.expanduser().resolve()
+    evidence = load_loop_evidence(root)
+    report = analyze_loops(output_dir=root / "deep/loops", **evidence,
+                           export_audio=export_audio, config=config)
+    index_loop_report(root, "loops", "deep/loops/loops.json")
     return report
 
 

@@ -1,5 +1,9 @@
 # Discover, audition and export loops
 
+For complete canonical lyric-line alternatives ranked by musical restart and
+explicit artist ratings, see [phrase loops](phrase-loops.md). That separate
+exploratory search does not change strict acceptance or this report.
+
 Released in StemLab 1.1.0 as a coordinated feature with the compatible
 `react-timeline-sequence` dependency.
 
