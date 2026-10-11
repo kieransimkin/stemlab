@@ -175,7 +175,9 @@ def test_reuse_and_cli_index_separate_report_preserve_strict(tmp_path):
     assert strict['loop_count']==0
     updated=json.loads((tmp_path/'analysis.json').read_text())
     assert updated['deep_analysis']['analyses']['phrase_loops']['path'].endswith('phrase_loops.json')
-    result=CliRunner().invoke(app,['phrase-loops',str(tmp_path),'--top','3'])
+    result=CliRunner().invoke(app,['phrase-loops',str(tmp_path),'--top','3',
+                                 '--max-bar-phase-error','0.125'])
     assert result.exit_code==0, result.output
     report=json.loads((tmp_path/'deep/phrase_loops/phrase_loops.json').read_text())
     assert report['candidate_count'] <= 3
+    assert report['config']['max_bar_phase_error'] == .125

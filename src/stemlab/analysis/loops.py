@@ -264,6 +264,38 @@ def grid_metrics(beats: np.ndarray, down_indices: np.ndarray, first: int, last: 
                 last_interval_seconds=float(intervals[-1]))
 
 
+def detected_bar_phase_metrics(beats: np.ndarray, down_indices: np.ndarray,
+                               start_seconds: float, end_seconds: float) -> dict:
+    """Compare cut positions on one measured bar grid without assuming 4/4."""
+    try:
+        beats = _ordered_times(beats)
+        indices = np.asarray(down_indices)
+        if (indices.ndim != 1 or len(indices) < 2 or indices.dtype.kind not in 'iu'
+                or np.any(indices < 0) or np.any(indices >= len(beats))
+                or np.any(indices[1:] <= indices[:-1])):
+            raise ValueError('Need ordered, distinct measured downbeat indices')
+        if (not np.isfinite([start_seconds, end_seconds]).all()
+                or not 0 <= start_seconds < end_seconds):
+            raise ValueError('Need finite ordered cut times')
+        downbeats = beats[indices]
+        if start_seconds < downbeats[0] or end_seconds > downbeats[-1]:
+            raise ValueError('Cuts lack enclosing measured downbeats')
+        first = max(0, int(np.searchsorted(downbeats, start_seconds, side='right'))-1)
+        last = max(0, int(np.searchsorted(downbeats, end_seconds, side='left'))-1)
+        counts = np.diff(indices)[first:last+1]
+        if not len(counts) or np.any(counts != counts[0]) or not 2 <= counts[0] <= 12:
+            raise ValueError('Detected beats per bar are unsupported or change across the cut')
+        coordinates = np.interp([start_seconds, end_seconds], downbeats,
+                                np.arange(len(downbeats)))
+        span = float(coordinates[1]-coordinates[0])
+        return dict(available=True, detected_beats_per_bar=int(counts[0]),
+            fractional_bar_count=span, bar_phase_error=abs(span-round(span)),
+            start_bar_coordinate=float(coordinates[0]), end_bar_coordinate=float(coordinates[1]),
+            interpretation='Measured relative bar position; not artist-confirmed meter or loop approval')
+    except (ValueError, TypeError, IndexError) as exc:
+        return dict(available=False, reason=str(exc))
+
+
 def optimize_join(audio: np.ndarray, sr: int, start: int, end: int,
                   lower: int, upper: int, cfg: LoopConfig, *, allow_failed: bool = False) -> dict | None:
     """Same offset at both cuts keeps length fixed. Score every channel."""
