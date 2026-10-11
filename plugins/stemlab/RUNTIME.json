@@ -1,8 +1,8 @@
 {
   "distribution": "danceflow-stemlab",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "extra": "codex",
-  "requirement": "danceflow-stemlab[codex]==1.3.4",
+  "requirement": "danceflow-stemlab[codex]==1.4.0",
   "command": "stemlab-codex",
   "args": [
     "serve"
