@@ -42,6 +42,8 @@ Created by Kieran Simkin — https://kieransimkin.co.uk/my-songs/
 10. For complete lyric-line alternatives and musical restarts, the local CLI
     `stemlab phrase-loops RESULTS --feedback RATINGS.json --export-audio` reuses
     explicit canonical timings and saved evidence. See `docs/phrase-loops.md`.
+    Use caller-selected duration bounds and optional `--max-bar-phase-error` to
+    screen measured bar-position mismatches; preserve unknown context and listening holds.
     Its separate report contains suggestions, never strict accepted loops or
     listening approval. Artist ratings are source-hash-bound; keep private
     ratings and song material out of public examples and packages.
