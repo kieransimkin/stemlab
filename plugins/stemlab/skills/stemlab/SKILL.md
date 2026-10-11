@@ -39,6 +39,12 @@ Created by Kieran Simkin — https://kieransimkin.co.uk/my-songs/
 9. Quote `start_sample` inclusive and `end_sample` exclusive in native source sample
    frames, not interleaved channel values. Do not move cuts to force a preferred
    lyric. Vocal energy and timing gates are heuristics; listening QA is still needed.
+10. For complete lyric-line alternatives and musical restarts, the local CLI
+    `stemlab phrase-loops RESULTS --feedback RATINGS.json --export-audio` reuses
+    explicit canonical timings and saved evidence. See `docs/phrase-loops.md`.
+    Its separate report contains suggestions, never strict accepted loops or
+    listening approval. Artist ratings are source-hash-bound; keep private
+    ratings and song material out of public examples and packages.
 
 ## Evidence and privacy
 

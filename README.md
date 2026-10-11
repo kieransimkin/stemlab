@@ -292,6 +292,13 @@ exported WAVs and writes no files. **Zoom to loop** focuses the shared timeline.
 See [the complete loop workflow](docs/loops.md) for installation of both patches,
 sample indexing, thresholds, limitations and reproducible screenshot examples.
 
+For line-complete alternatives when a musically satisfying restart is the goal,
+use `stemlab phrase-loops analysis-master --feedback artist-ratings.json --export-audio`.
+This opt-in search compares the musical context around both cuts, preserves
+canonical lyric occurrences, uses explicit artist feedback and selects diverse
+passages. Suggestions remain separate from strict accepted loops. See
+[phrase-loop methodology, feedback format and synthetic example](docs/phrase-loops.md).
+
 ![Loop selection and playback in the existing analysis frontend](docs/screenshots/loops-playing.png)
 
 ## Audio-to-MIDI model comparison

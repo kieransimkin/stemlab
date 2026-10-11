@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0 - 2026-10-11
+
+- Add opt-in canonical phrase-loop search with before/after harmonic context, existing RMS-rise rhythmic attacks, measured beat phase and diverse candidate selection.
+- Accept explicit native-sample artist feedback bound to the exact master hash; suppress rated near-duplicates and unsuitable passages plus exact canonical-word repeats. Preserve missing evidence, failed gates and listening holds.
+- Reuse the verified saved-evidence loader and report indexing without changing strict loop acceptance or overwriting its reports. Exports remain unmodified native-rate slices.
+- Include synthetic restart, feedback, privacy/identity, export and reuse regressions and a reproducible demo; no private song fixtures or trained preference model.
+
+
 ## 1.3.4 - 2026-10-08
 
 - Add explicit agent capability, improvement, validation and upstream PR guidance to the README and contributor instructions.

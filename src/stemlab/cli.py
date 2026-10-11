@@ -265,6 +265,33 @@ def find_loops(
     console.print(str(results / "deep/loops/loops.json"))
 
 
+@app.command("phrase-loops")
+def find_phrase_loops(
+    results: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    feedback: Annotated[Path | None, typer.Option("--feedback", exists=True, dir_okay=False,
+        help="Explicit stemlab.loop_feedback.v1 ratings for this exact master")] = None,
+    min_seconds: Annotated[float, typer.Option("--min-seconds", min=0.001)] = 5.0,
+    max_seconds: Annotated[float, typer.Option("--max-seconds", min=0.001)] = 30.0,
+    min_lines: Annotated[int, typer.Option("--min-lines", min=1, max=128)] = 4,
+    top: Annotated[int, typer.Option("--top", min=1, max=64)] = 6,
+    export_audio: Annotated[bool, typer.Option("--export-audio")] = False,
+):
+    """Suggest line-complete phrases by musical restart; never accept strict loops."""
+    import json
+    from .analysis.phrase_loops import PhraseLoopConfig, analyze_existing_phrase_loops
+
+    try:
+        ratings = json.loads(feedback.read_text(encoding="utf-8")) if feedback else None
+        report = analyze_existing_phrase_loops(results, feedback=ratings, export_audio=export_audio,
+            config=PhraseLoopConfig(min_seconds=min_seconds,max_seconds=max_seconds,
+                                    min_lines=min_lines,top=top))
+    except (ValueError, TypeError, KeyError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"{report['candidate_count']} phrase audition candidate(s); "
+                  "no listening or seamless-loop approval inferred.")
+    console.print(str(results / "deep/phrase_loops/phrase_loops.json"))
+
+
 @app.command("midi-models")
 def list_midi_models():
     """List MIDI backends without importing model runtimes or downloading weights."""
