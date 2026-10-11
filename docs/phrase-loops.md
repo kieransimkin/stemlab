@@ -10,6 +10,10 @@ or nearly matching beat phase? It never upgrades an unresolved strict loop.
 stemlab phrase-loops analysis --min-seconds 5 --max-seconds 30 --top 6 --export-audio
 stemlab phrase-loops analysis --feedback artist-ratings.json --export-audio
 python scripts/phrase_loop_demo.py --output phrase-demo
+# Restrict longer suggestions to similar measured positions within a bar:
+stemlab phrase-loops analysis --min-seconds 20 --max-seconds 30 --max-bar-phase-error 0.125
+# Reproduce half-bar exclusions without private song material:
+python scripts/phrase_loop_demo.py --output bar-demo --half-bar-endings --max-bar-phase-error 0.125
 ```
 
 Saved beat/section/vocal evidence is reused; no model reruns, native
@@ -38,6 +42,15 @@ reimplemented or used as a substitute for musical listening.
   existing strict/spectral-context algorithms.
 - Greedy selection suppresses alternatives sharing more than 60% of the
   shorter interval. This prevents a list of nested cuts from one passage.
+- Optional `--max-bar-phase-error` (0–0.5) filters mismatched positions on the
+  selected detector's bar grid. A whole number of beats can still skip half a
+  bar or change its accent position at the restart. `0.125` allows at most an
+  eighth of a measured bar; this is a user-selected tolerance, not a universal
+  listening threshold. The default is unset, preserving previous rankings.
+  Matching pickups are allowed. Enclosing downbeats and consistent detected
+  beats per bar across the interval are required when filtering; unknown
+  coverage or changing meter is held rather than extrapolated. No 4/4 meter,
+  phrase-length cadence or strict seamless-loop approval is inferred.
 
 ## Explicit artist feedback
 
@@ -71,7 +84,7 @@ inferred section classification or a general dislike prediction.
 The separate `deep/phrase_loops/phrase_loops.json` uses
 `stemlab.phrase_loops.v1`, is indexed in the existing summary/manifest, and
 contains the exact master hash, native bounds, full lyric occurrences, restart
-features, measured beat phase, waveform join and vocal checks, feedback
+features, measured beat phase, detected relative bar phase, waveform join and vocal checks, feedback
 summary, scored-pool size and rejected counts. Strict `deep/loops/loops.json`
 is preserved. The existing strict-loop timeline does not claim these new
 exploratory phrases as accepted regions; use exact exported WAVs to audition.
@@ -88,4 +101,5 @@ contexts test the mechanism and real suggestions still require listening.
 
 ```sh
 python -m pytest tests/test_phrase_loops.py tests/test_loops.py tests/test_loop_integration.py
+python -m pytest tests/test_bar_phase.py
 ```

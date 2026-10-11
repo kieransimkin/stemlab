@@ -15,7 +15,8 @@ import soundfile as sf
 
 from stemlab.util import sha256_file
 from .loops import (LoopConfig, _gates, _grid, _vocal_intervals, _write_json,
-                    index_loop_report, load_loop_evidence, optimize_join, spectral_context)
+                    detected_bar_phase_metrics, index_loop_report, load_loop_evidence,
+                    optimize_join, spectral_context)
 from .rudiment_matches import extract_peak_events
 
 
@@ -26,6 +27,7 @@ class PhraseLoopConfig:
     min_lines: int = 4
     top: int = 6
     max_overlap: float = 0.60
+    max_bar_phase_error: float | None = None
 
     def __post_init__(self):
         for key in ("min_seconds", "max_seconds", "max_overlap"):
@@ -38,6 +40,11 @@ class PhraseLoopConfig:
             raise ValueError("Require 0 < min_seconds <= max_seconds")
         if not 0 <= self.max_overlap < 1:
             raise ValueError("max_overlap must be in [0, 1)")
+        if self.max_bar_phase_error is not None:
+            value = self.max_bar_phase_error
+            if (isinstance(value, bool) or not isinstance(value, (float, int))
+                    or not math.isfinite(value) or not 0 <= value <= .5):
+                raise ValueError('max_bar_phase_error must be None or finite in [0, .5]')
         for key, upper in (("min_lines", 128), ("top", 64)):
             value = getattr(self, key)
             if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= upper:
@@ -178,7 +185,7 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
     source_hash = sha256_file(audio_path)
     lines = _canonical_lines(canonical, len(audio)/sr)
     ratings, excluded = _feedback(feedback, source_hash, len(audio), lines, sr)
-    model, beats, _down, errors = _grid(beat_results, len(audio)/sr)
+    model, beats, down, errors = _grid(beat_results, len(audio)/sr)
     strict_cfg = LoopConfig(snap_ms=0)
     gates, vocal_errors = _gates(stems, len(audio)/sr, strict_cfg, normalization_gains or {})
     intervals, timing_sources = _vocal_intervals(whisper_result, lyrics_result, canonical)
@@ -208,6 +215,14 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
             if not phase["available"]:
                 rejected["missing_grid"] += 1
                 continue
+            bar_phase = detected_bar_phase_metrics(beats, down, a/sr, b/sr)
+            if cfg.max_bar_phase_error is not None:
+                if not bar_phase['available']:
+                    rejected['missing_bar_phase'] += 1
+                    continue
+                if bar_phase['bar_phase_error'] > cfg.max_bar_phase_error+1e-12:
+                    rejected['bar_phase_mismatch'] += 1
+                    continue
             context = musical_restart_context(audio, sr, a, b,
                                                phase["local_period_seconds"], events)
             if not context["available"]:
@@ -233,7 +248,7 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
             pool.append(dict(start_sample=a,end_sample=b,duration_samples=b-a,
                 start_seconds=a/sr,end_seconds=b/sr,duration_seconds=duration,
                 included_lyrics=lines[i:j+1],canonical_line_indices=[i,j],
-                restart_context=context,phase=phase,join=join,
+                restart_context=context,phase=phase,detected_bar_phase=bar_phase,join=join,
                 vocal_clear=all(acoustic_clear) and all(timing_clear),
                 acoustic_clear=acoustic_clear,timing_clear=timing_clear,
                 failed_gates=failed,ranking_cost=cost,feedback_duration_cost=duration_cost,
@@ -275,6 +290,7 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
             "Bad section passages and exact canonical-word repeats excluded; all rated near-duplicates suppressed.",
             "Missing attack similarity stays null; available context weights are reported.",
             "Strict loop search and its acceptance gates are unchanged.",
+            "Optional detected bar-phase filter uses enclosing downbeats and consistent measured beats per bar; it does not prove meter, harmony or listening quality.",
             "Native audio slices only; no snap, fade, crossfade, stretch or normalisation."])
     _write_json(output_dir/"phrase_loops.json",report)
     return report

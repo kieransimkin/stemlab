@@ -274,6 +274,8 @@ def find_phrase_loops(
     max_seconds: Annotated[float, typer.Option("--max-seconds", min=0.001)] = 30.0,
     min_lines: Annotated[int, typer.Option("--min-lines", min=1, max=128)] = 4,
     top: Annotated[int, typer.Option("--top", min=1, max=64)] = 6,
+    max_bar_phase_error: Annotated[float | None, typer.Option("--max-bar-phase-error", min=0, max=.5,
+        help="Optional maximum cut-position mismatch as a fraction of a measured bar")] = None,
     export_audio: Annotated[bool, typer.Option("--export-audio")] = False,
 ):
     """Suggest line-complete phrases by musical restart; never accept strict loops."""
@@ -284,7 +286,8 @@ def find_phrase_loops(
         ratings = json.loads(feedback.read_text(encoding="utf-8")) if feedback else None
         report = analyze_existing_phrase_loops(results, feedback=ratings, export_audio=export_audio,
             config=PhraseLoopConfig(min_seconds=min_seconds,max_seconds=max_seconds,
-                                    min_lines=min_lines,top=top))
+                                    min_lines=min_lines,top=top,
+                                    max_bar_phase_error=max_bar_phase_error))
     except (ValueError, TypeError, KeyError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     console.print(f"{report['candidate_count']} phrase audition candidate(s); "

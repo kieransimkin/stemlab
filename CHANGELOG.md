@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1 - 2026-10-12
+
+- Add optional detected bar-position filtering to phrase-loop search. Reject half/quarter-bar restart mismatches even when beat phase matches, without assuming 4/4 or changing default rankings and strict acceptance.
+- Retain measured bar coordinates, detected beats per bar, explicit rejection counts and unknown coverage/meter-change holds. Add held-out 3-, 4- and 5-beat fixtures, native export regressions and a reproducible half-bar demo.
+
 ## 1.4.0 - 2026-10-11
 
 - Add opt-in canonical phrase-loop search with before/after harmonic context, existing RMS-rise rhythmic attacks, measured beat phase and diverse candidate selection.

@@ -298,6 +298,9 @@ This opt-in search compares the musical context around both cuts, preserves
 canonical lyric occurrences, uses explicit artist feedback and selects diverse
 passages. Suggestions remain separate from strict accepted loops. See
 [phrase-loop methodology, feedback format and synthetic example](docs/phrase-loops.md).
+For longer excerpts, add `--min-seconds 20 --max-seconds 30`; optional
+`--max-bar-phase-error 0.125` also screens out mismatched measured bar positions.
+These filters suggest auditions and do not establish seamless or listening approval.
 
 ![Loop selection and playback in the existing analysis frontend](docs/screenshots/loops-playing.png)
 
