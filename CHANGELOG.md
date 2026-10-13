@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.2 - 2026-10-13
+
+- Add model-free, hash-bound `match-clip` audio/video-to-source clock recovery with stereo-preserving correlation, independent windows, uniqueness and explicit unresolved states.
+- Preserve all inputs and existing reports; document player preroll/selected intervals, measured precision, encoding/fade tolerance and edit/rate limitations with focused tests and a synthetic example.
+
 ## 1.4.1 - 2026-10-12
 
 - Add optional detected bar-position filtering to phrase-loop search. Reject half/quarter-bar restart mismatches even when beat phase matches, without assuming 4/4 or changing default rankings and strict acceptance.

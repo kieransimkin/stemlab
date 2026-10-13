@@ -304,6 +304,18 @@ These filters suggest auditions and do not establish seamless or listening appro
 
 ![Loop selection and playback in the existing analysis frontend](docs/screenshots/loops-playing.png)
 
+## Recover a Short or video's source timing
+
+`stemlab match-clip master.wav published-original.mp4 --output new-match.json`
+locates a contiguous soundtrack excerpt without running models or downloading
+anything. It retains both original hashes, timing precision, competing source
+positions and independent window checks. Matched reports provide source offset,
+soundtrack duration and player start for synchronised consumers. Short fades and
+compression are tolerated; ambiguous repetition, edit jumps, different recordings
+and rate changes remain unresolved. Use `--clip-start` / `--clip-end` for an
+explicit known soundtrack interval. FFmpeg is required for video decoding.
+See [clip matching](docs/clip-matching.md) for limitations and a synthetic example.
+
 ## Audio-to-MIDI model comparison
 
 MIDI extraction is an **optional, independent model pass**. It adds Transkun V2
