@@ -14,6 +14,7 @@ from rich.table import Table
 from .analysis.registry import ACTIONS
 from .bootstrap import bootstrap as do_bootstrap
 from .branding import AUTHOR_NAME, AUTHOR_SITE, MY_SONGS_URL, PROJECT_DESCRIPTION, REPOSITORY_URL
+from .clip_cli import register_clip_commands
 from .cue_cli import print_cue_review, register_cue_commands
 from .models import MODEL_REGISTRY, profile as resolve_profile
 from .pipeline import run_pipeline
@@ -23,6 +24,7 @@ from .util import device_string
 app = typer.Typer(no_args_is_help=True, pretty_exceptions_show_locals=False, help=PROJECT_DESCRIPTION)
 console = Console()
 register_cue_commands(app, console)
+register_clip_commands(app, console)
 
 
 @app.command("repair-spectrograms")

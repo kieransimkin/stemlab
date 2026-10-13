@@ -30,6 +30,12 @@ optional separation/speech/beat backends must already be installed for new infer
 No model is downloaded at plugin installation. The existing `all` extra does not
 include the opt-in MuQ or Basic Pitch routes.
 
+The installed runtime also includes the model-free CLI
+`stemlab match-clip SOURCE CLIP --output NEW.json` for hash-bound Short/video
+soundtrack timing recovery. It runs locally and does not add a separate MCP tool
+or change the timeline. Review competing matches and unresolved states before
+using a result; see the repository's `docs/clip-matching.md`.
+
 `configure` records only a workspace and resource limits in the platform's
 user-configuration directory (`stemlab/codex.json`). It does not change Codex
 settings or grant approvals. Use `--replace` only after reviewing an existing file.
