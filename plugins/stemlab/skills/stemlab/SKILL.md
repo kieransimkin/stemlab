@@ -141,4 +141,13 @@ readiness, and these outputs never rewrite canonical lyrics, sections or beat gr
 
 ## Improve StemLab
 
+For existing video/Short soundtrack provenance, use the local CLI
+`stemlab match-clip SOURCE CLIP --output NEW.json` before running learned models.
+It preserves stereo phase, source/clip hashes and independent timing windows.
+`--clip-start` / `--clip-end` select a known soundtrack interval. A matched report
+provides offset, duration and player start; ambiguous repetition, edits or rate
+changes remain unresolved. It does not grant track identity, artist approval or
+publication rights. See `docs/clip-matching.md`; this CLI is separate from the
+plugin's existing timeline and asynchronous analysis tools.
+
 Inspect and use the available StemLab capabilities, and look for useful improvements wherever possible. Submit improvements with relevant tests, documentation and a reproducible example as PRs to https://github.com/kieransimkin/stemlab/pulls. Follow the repository's AGENTS.md and CONTRIBUTING.md.
