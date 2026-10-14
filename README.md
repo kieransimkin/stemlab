@@ -248,6 +248,26 @@ full download. It checks exact range responses and completed seeks without relax
 the clock tolerances. Failed browser checks retain JSON diagnostics and attempt
 a screenshot for the separate QA artifact; they still block publication.
 
+### Publish a tested demo without making a package release
+
+**Actions → Publish Arcadians demo to Pages → Run workflow → main** publishes an
+existing successful **Arcadians release demo**. Leave `demo_run_id` blank to use the
+latest successful manual demo on `main`, or enter a specific successful run ID.
+The demo build's green check means artifacts were built; **the Pages publisher's
+green check means those artifacts were deployed and the public URL was verified**.
+
+Enable **Settings → Pages → Source → GitHub Actions** first and allow `main` in
+the `github-pages` environment without removing existing approval requirements.
+Explicit manual publication does not need `STEMLAB_PAGES_ENABLED`. Setting that
+repository variable to `true` also automatically publishes future successful
+manual demo runs. The existing tagged-release publishing path is unchanged.
+
+The publisher reuses the original MP3 and movements, requires that run's successful
+HTTP audio/browser evidence, and checks the public landing page, comparison page,
+source commit and an actual partial MP3 response after deployment. Pull-request,
+fork, failed, expired and in-memory-only results are not publishable. QA evidence
+stays outside the public directory. No analysis models or package release are needed.
+
 See **[release recipe, playback, Pages setup and local reproduction](docs/arcadians-release-demo.md)**.
 
 ## Timeline analysis gallery

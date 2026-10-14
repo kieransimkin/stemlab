@@ -1,0 +1,107 @@
+name: Publish Arcadians demo to Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      demo_run_id:
+        description: 'Successful Arcadians demo run ID; blank selects the latest on main'
+        type: string
+        required: false
+        default: ''
+  workflow_run:
+    workflows: ['Arcadians release demo']
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    # Explicit manual publication needs no package release or opt-in variable.
+    # Automatic publication retains the existing Pages opt-in. Never publish PRs.
+    if: >-
+      github.repository == 'kieransimkin/stemlab' &&
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_run' && vars.STEMLAB_PAGES_ENABLED == 'true' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'workflow_dispatch' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == 'kieransimkin/stemlab'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: stemlab-pages
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # On workflow_run, github.sha is the trusted default-branch revision,
+      # not the triggering run's code. Artifacts are data, never executed.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Check Pages is enabled and configured for Actions
+        id: pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+      - name: Explain missing Pages configuration
+        if: steps.pages.outcome == 'failure'
+        run: |
+          echo '::error::Enable Settings > Pages > Source > GitHub Actions, then run this workflow again. The github-pages environment must permit main. No package release is required.'
+          exit 1
+      - name: Select successful same-repository demo and its exact artifacts
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEMO_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.demo_run_id }}
+        run: python scripts/publish_arcadians_pages.py select --run-id "$DEMO_RUN_ID"
+      - name: Download verified public site from selected run
+        uses: actions/download-artifact@v5
+        with:
+          artifact-ids: ${{ steps.source.outputs.site_artifact_id }}
+          merge-multiple: true
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: public-site
+      - name: Download that run's browser evidence separately
+        uses: actions/download-artifact@v5
+        with:
+          artifact-ids: ${{ steps.source.outputs.qa_artifact_id }}
+          merge-multiple: true
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: browser-qa
+      - name: Verify source commit, real MP3, public allowlist and successful HTTP browser QA
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        run: |
+          python scripts/publish_arcadians_pages.py verify \
+            --site public-site --qa browser-qa/arcadians-audio-browser.json --source-sha "$SOURCE_SHA"
+      - name: Upload only the verified public directory to Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public-site
+      - name: Deploy Arcadians visualizer and original MP3
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Require the public URL to serve this build and seekable audio
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        run: |
+          python scripts/publish_arcadians_pages.py live --url "$PAGE_URL" \
+            --site public-site --source-sha "$SOURCE_SHA"
+          echo "### Published Arcadians demo" >> "$GITHUB_STEP_SUMMARY"
+          echo "${PAGE_URL%/}/arcadians/" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source: $SOURCE_SHA. Public HTML and audio range request verified." >> "$GITHUB_STEP_SUMMARY"

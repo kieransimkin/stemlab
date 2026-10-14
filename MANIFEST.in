@@ -34,3 +34,6 @@ include scripts/arcadians_http.py
 include docs/arcadians-release-demo.md
 include .github/workflows/arcadians-demo.yml
 include .github/dancerudiments-recording-ref
+
+include scripts/publish_arcadians_pages.py
+include .github/workflows/arcadians-pages.yml

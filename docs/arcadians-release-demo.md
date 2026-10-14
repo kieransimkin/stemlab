@@ -132,6 +132,64 @@ updated `main`. Re-running an old run retries its original commit, not the fix.
 A successful standalone run produces preview artifacts; tagged-release Pages
 publication remains separate as described below.
 
+## Publish an already-tested demo now
+
+The **Arcadians release demo** workflow builds and tests artifacts. It does not
+itself deploy a public site. A successful run can therefore coexist with a Pages
+404 until a deployment is made.
+
+Use the separate **Publish Arcadians demo to Pages** workflow to publish those
+artifacts without changing a version, tagging a release, or running extraction
+again. Select `main`, then enter `demo_run_id` or leave it blank for the latest
+successful manual demo on `main`. For example, the validated real-audio run was:
+
+```sh
+gh workflow run arcadians-pages.yml --repo kieransimkin/stemlab --ref main \
+  -f demo_run_id=38514594498
+```
+
+First select **Settings → Pages → Build and deployment → Source → GitHub Actions**.
+In **Settings → Environments → github-pages**, ensure deployment rules permit
+`main`, preserving any reviewers and other protection rules. Do not create a
+blank Jekyll/static template or publish the source checkout. The new publisher
+uploads only the verified `public-site` directory.
+
+A manual publisher run is an explicit publication request and does not require the
+`STEMLAB_PAGES_ENABLED` variable. Setting the repository variable to `true` opts
+into automatic publication after future successful manual Arcadians demo runs.
+Already-finished runs do not emit a new completion event merely because this
+workflow was added: use **Run workflow** once to publish the existing result.
+
+Both publisher paths use the `stemlab-pages` concurrency group. Tagged releases
+retain their original dependency ordering and opt-in, described below. An explicit
+run ID deliberately allows publishing that selected older successful demo; omit
+it when the latest successful preview is intended.
+
+The new publisher checks the source workflow, same-repository `main` provenance,
+artifact IDs/expiry, the existing public-file allowlist, HTML and original MP3
+checksums, and the saved successful real-HTTP browser report. It does not run code
+from artifacts and never accepts pull-request/fork results. Browser QA downloads
+stay outside the Pages upload. This workflow uses trusted default-branch code for
+verification even when processing a `workflow_run` event.
+
+After `deploy-pages` succeeds, the final step retries the **actual public URL**
+until the landing/comparison HTML matches the tested artifact, the public source
+commit matches, and a 32-byte MP3 request returns the correct 206/range/body.
+A missing or stale page, 404, or broken audio transport fails publication
+verification instead of being reported as a working live demo. This final step is
+an HTTP availability/integrity check, not a new browser or subjective listening test.
+
+The one-time Pages enablement cannot be performed with the default `GITHUB_TOKEN`.
+The workflow therefore reports an actionable setup error; it does not ask for a
+new personal access token or alter environment approvals.
+
+Local regression tests (no token, Chromium or native companion required):
+
+```sh
+python -m pytest tests/test_arcadians_pages_publish.py tests/test_arcadians_http.py \
+  tests/test_codex_release.py
+```
+
 ## One-time Pages setup
 
 In `kieransimkin/stemlab`, set **Settings → Pages → Build and deployment → Source**
