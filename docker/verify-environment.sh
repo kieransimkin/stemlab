@@ -14,7 +14,7 @@ mods = [
     'demucs', 'openunmix', 'faster_whisper', 'beat_this',
     'bs_roformer', 'typer', 'rich', 'fastapi', 'uvicorn', 'socketio',
     'librosa', 'pyloudnorm', 'cmudict', 'sentence_transformers', 'allin1_infer',
-    'muq', 'basic_pitch',
+    'muq', 'basic_pitch', 'torchcodec',
 ]
 for name in mods:
     module = importlib.import_module(name)
@@ -50,6 +50,10 @@ if torch.cuda.is_available():
     for i in range(torch.cuda.device_count()):
         print(f'gpu {i}: {torch.cuda.get_device_name(i)}')
 PY
+
+# Import success does not prove that torchaudio can decode an MP3. Exercise
+# TorchCodec + FFmpeg with generated audio before accepting this image.
+python /opt/stemlab/scripts/check_torchaudio_decode.py
 
 ffmpeg -version | head -n 1
 sonic-annotator --version

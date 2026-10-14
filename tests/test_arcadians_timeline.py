@@ -11,11 +11,13 @@ from stemlab.static_timeline import digest, export_timeline, read_json, write_js
 from stemlab.vamp_runtime import VAMP_REQUIRED_OUTPUTS
 from test_static_timeline import build_small_analysis
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'scripts'))
+# Keep checkout imports usable without installing the project first.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import assemble_arcadians_site as assembly
 import build_arcadians_timeline as builder
 import publish_arcadians_pages as publisher
+
+ROOT = Path(__file__).resolve().parents[1]
 
 SHA = 'b' * 40
 

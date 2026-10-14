@@ -20,6 +20,26 @@ requirements and may conflict with the core environment. Provision only the
 needed backend and pass `--backend-python MODEL=PATH`; a registry listing is not
 evidence that its runtime and weights are ready.
 
+## Compressed-audio decoder check
+
+The Docker image installs **TorchCodec 0.17.0** alongside the existing pinned
+PyTorch family, from the same `TORCH_INDEX_URL`. CPU builds therefore use CPU
+wheels, and the default CUDA 13.0 build uses its corresponding wheels. Override
+`TORCHCODEC_VERSION` only with a version compatible with the selected PyTorch.
+TorchAudio's `load()` requires this separate decoder for the MP3 path used by
+All-In-One; importing TorchAudio alone is not sufficient verification.
+
+`verify-environment.sh` now generates a short synthetic MP3 and decodes it using
+`torchaudio.load`, checking finite, non-silent stereo PCM, sample rate and duration.
+This checks the decoder and FFmpeg shared-library integration; it does not claim
+that any analysis model has run. The Arcadians builder separately preflights the
+checksum-verified original song before inference and records the TorchCodec version.
+The original MP3 is not transcoded or replaced to bypass a decoder error.
+
+The Arcadians CI workflow restores ownership of its dedicated output folder to
+the runner after Docker exits, on success or failure. It does not make private
+JSON world-readable or change permissions on the source checkout or model caches.
+
 ## Validate the CI container locally
 
 On Windows PowerShell:

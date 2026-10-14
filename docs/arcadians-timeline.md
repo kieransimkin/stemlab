@@ -163,3 +163,21 @@ It is never used by the workflow and its reports cannot authorize publication.
 Post-deployment probes validate the actual public files and seekable source, not
 subjective listening quality. Test results should distinguish static rendering,
 actual model inference, HTTP loading, deployment and audible listening.
+
+## Decoder preflight and CI output ownership
+
+TorchCodec 0.17.0 is installed from the selected PyTorch CPU/CUDA wheel index.
+The image verifier decodes a generated MP3 through `torchaudio.load`; the real-song
+builder checks the original MP3 with that same API before running models. The
+source hash, sample rate and stereo/full-song duration are preserved. No decoder
+fallback, substituted WAV, truncated song or model bypass is used.
+
+Docker writes some atomic JSON files with mode 0600. An `always()` step restores
+the runner's ownership of the dedicated Arcadians output tree before browser tests
+and artifact uploads. Permissions stay private; neither `chmod 777` nor access to
+unrelated runner directories is required. The full-analysis gate remains mandatory.
+
+Use **Arcadians release demo** to build and publish both examples. The standalone
+**Arcadians complete analysis timeline** is for diagnostic builds and its own
+artifacts, not a second required dispatch. Start a fresh `main` run after changing
+code; retrying an older run keeps its original revision.

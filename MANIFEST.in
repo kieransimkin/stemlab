@@ -43,3 +43,5 @@ include scripts/check_arcadians_timeline.py
 include scripts/assemble_arcadians_site.py
 include .github/workflows/arcadians-timeline.yml
 include docs/arcadians-timeline.md
+
+include scripts/check_torchaudio_decode.py

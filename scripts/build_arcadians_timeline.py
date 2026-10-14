@@ -13,11 +13,14 @@ import math
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'src'))
+# Keep checkout imports usable without installing the project first.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 from build_arcadians_demo import ARCADIANS_SHA256, DEFAULT_AUDIO, validate_revision
+from check_torchaudio_decode import check_audio_decode
 from stemlab.static_timeline import digest, export_timeline, read_json, safe_file, write_json
+
+ROOT = Path(__file__).resolve().parents[1]
 
 RECIPE = 'arcadians-core-v1'
 STEMS = {'vocals', 'drums', 'bass', 'guitar', 'piano', 'other'}
@@ -139,6 +142,11 @@ def build(results: Path, output: Path, source_commit: str, *, reuse: bool = Fals
     if not reuse:
         if results.exists():
             raise FileExistsError('Choose a new analysis directory or explicitly use --reuse')
+        # Verify the actual compressed source through the decoder used by
+        # All-In-One before any separation/model inference. Keep source bytes intact.
+        print('Preflight: torchaudio decoding of the original Arcadians MP3', flush=True)
+        check_audio_decode(DEFAULT_AUDIO, expected_sample_rate=44100, expected_channels=2,
+                           expected_duration=273.604558)
         results.mkdir(parents=True)
         reference = read_json(ROOT / 'src/stemlab/web/arcadians-reference.json')
         save_canonical(results, reference)
@@ -146,7 +154,7 @@ def build(results: Path, output: Path, source_commit: str, *, reuse: bool = Fals
         print('Running ' + RECIPE + ': ' + SCOPE, flush=True)
         run_pipeline(cfg, progress=lambda line: print(line, flush=True))
         dependencies = {}
-        for distribution in ('torch', 'torchaudio', 'demucs', 'faster-whisper', 'beat-this',
+        for distribution in ('torch', 'torchaudio', 'torchcodec', 'demucs', 'faster-whisper', 'beat-this',
                              'all-in-one-infer', 'sentence-transformers', 'librosa'):
             dependencies[distribution] = importlib.metadata.version(distribution)
         # Provenance is not faked when --reuse exports an earlier completed analysis.

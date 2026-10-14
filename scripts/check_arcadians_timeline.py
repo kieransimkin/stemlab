@@ -15,11 +15,13 @@ import sys
 import threading
 from urllib.parse import unquote, urlsplit
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'src'))
+# Keep checkout imports usable without installing the project first.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 from arcadians_http import ProjectHandler, _byte_range
 from check_arcadians_audio import verify_audio_ranges
 from stemlab.static_timeline import digest, read_json, verify_snapshot
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, require_core=False) -> dict:

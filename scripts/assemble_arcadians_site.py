@@ -7,10 +7,12 @@ from pathlib import Path
 import shutil
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'src'))
+# Keep checkout imports usable without installing the project first.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 from stemlab.static_timeline import digest, read_json, verify_snapshot, write_json
 from build_arcadians_demo import ARCADIANS_SHA256, verify_site
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def verify_timeline_qa(site: Path, qa_path: Path, source_sha: str) -> dict:

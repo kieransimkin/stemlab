@@ -40,6 +40,16 @@ jobs:
             -v "$GITHUB_WORKSPACE/examples/arcadians:/opt/stemlab/examples/arcadians:ro" \
             stemlab-timeline:ci /opt/stemlab/scripts/build_arcadians_timeline.py \
               --results /work/analysis --output /work/site --source-commit "$GITHUB_SHA"
+      - name: Restore runner ownership of generated files
+        # Atomic JSON writes use 0600. Docker runs as root; transfer ownership,
+        # not world-readable permissions, even if analysis failed part-way.
+        if: always()
+        shell: bash
+        run: |
+          output="$RUNNER_TEMP/arcadians-timeline"
+          if [ -d "$output" ] && [ ! -L "$output" ]; then
+            sudo chown -R --no-dereference "$(id -u):$(id -g)" "$output"
+          fi
       - name: Install browser verification tools only
         run: |
           python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest playwright

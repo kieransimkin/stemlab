@@ -6,6 +6,8 @@ ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu130
 ARG TORCH_VERSION=2.14.0
 ARG TORCHAUDIO_VERSION=2.11.0
 ARG TORCHVISION_VERSION=0.29.1
+# TorchCodec >=0.12 supports torch >=2.11; keep the selected CPU/CUDA wheel family.
+ARG TORCHCODEC_VERSION=0.17.0
 
 LABEL org.opencontainers.image.title="StemLab" \
       org.opencontainers.image.description="Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/" \
@@ -69,7 +71,8 @@ RUN python -m pip install --upgrade pip setuptools wheel \
         --index-url "${TORCH_INDEX_URL}" \
         "torch==${TORCH_VERSION}" \
         "torchaudio==${TORCHAUDIO_VERSION}" \
-        "torchvision==${TORCHVISION_VERSION}"
+        "torchvision==${TORCHVISION_VERSION}" \
+        "torchcodec==${TORCHCODEC_VERSION}"
 
 # Top-level runtime versions are pinned in docker/requirements.lock.txt for a
 # deterministic container build.

@@ -779,3 +779,20 @@ Publishing setup.
 ## Reproducibility and licensing
 
 `analysis.json` records model/backend metadata and errors; `manifest.json` hashes every output artifact. Model checkpoints, research code and datasets retain their upstream terms. In particular, do not assume that an MIT-licensed inference wrapper automatically grants redistribution rights for every checkpoint it can download.
+
+### Arcadians timeline CI decoder and artifact checks
+
+The complete Arcadians demo checks lint before expensive analysis. Its Docker
+runtime includes pinned TorchCodec and performs a synthetic MP3 decoder smoke
+test; the timeline builder also checks the original Arcadians MP3 before model
+inference. Missing decoders fail early without changing the source audio or
+relaxing the complete-analysis/publication gates. After Docker exits, the workflow
+restores runner ownership of its dedicated output folder so private-mode JSON
+files remain readable for browser validation and diagnostic artifact upload,
+including on failed analysis runs. See [Docker checks](docker/README.md) and
+[the timeline workflow](docs/arcadians-timeline.md).
+
+For a new combined timeline and movement deployment, run **Arcadians release
+demo** on `main`. It calls **Arcadians complete analysis timeline** internally;
+starting that standalone workflow too duplicates analysis and does not itself
+publish the combined Pages site.

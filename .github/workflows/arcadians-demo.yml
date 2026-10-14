@@ -13,6 +13,9 @@ on:
       - 'scripts/arcadians_http.py'
       - '.github/workflows/arcadians-timeline.yml'
       - 'scripts/build_arcadians_timeline.py'
+      - 'scripts/check_torchaudio_decode.py'
+      - 'tests/test_arcadians_runtime.py'
+      - 'docker/**'
       - 'scripts/check_arcadians_timeline.py'
       - 'scripts/assemble_arcadians_site.py'
       - 'src/stemlab/static_timeline.py'
@@ -42,11 +45,13 @@ jobs:
           python-version: '3.11'
       - name: Install lightweight test dependencies, without model downloads
         run: |
-          python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest pyyaml
+          python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest pyyaml ruff
           python -m pip install --no-deps -e .
+      - name: Lint before expensive analysis
+        run: python -m ruff check src tests scripts
       - name: Test static timeline, completeness validation, HTTP and publication
         run: |
-          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py
+          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py tests/test_arcadians_runtime.py
 
   timeline:
     if: github.event_name != 'pull_request'
