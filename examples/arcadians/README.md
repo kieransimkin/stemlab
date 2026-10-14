@@ -49,6 +49,23 @@ See [the benchmark, measured screenshots and caveats](../../docs/rudiments.md).
 For per-stem matches, first successfully run a separator profile, then use
 `stemlab rudiments ./analysis-arcadians`. The BPM-derived phase is **unverified**.
 
+## Complete timeline and movement examples on Pages
+
+Start **Actions → Arcadians release demo → Run workflow → main** to build both
+viewers together. The timeline job runs the full-song `arcadians-core-v1` recipe
+with genuine HTDemucs six-stem separation, beat/word/Vamp/deep analysis and loop
+discovery, then exports StemLab's actual React viewer as static assets with audio.
+The existing master-derived movement comparison is preserved in the same site.
+
+After the verified combined site is published, the landing page links to
+`timeline/arcadians/` and `arcadians/`. No local analysis server or model download
+is required to view or listen. Artist reference metadata stays separate from
+machine inference; optional experimental/NC backends are not implied by “complete”.
+Missing required evidence blocks publication rather than generating a fake demo.
+
+For saved analyses, use `stemlab export-timeline ./analysis-arcadians --include-audio --output ./timeline-site`, then host the directory over static HTTP(S).
+See [the exact recipe, workflow and export guide](../../docs/arcadians-timeline.md).
+
 ## Official Arcadians release links
 
 - EPK / song page: https://kieransimkin.co.uk/arcadians/

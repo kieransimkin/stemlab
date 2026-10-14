@@ -11,6 +11,14 @@ on:
       - 'scripts/build_arcadians_demo.py'
       - 'scripts/check_arcadians_audio.py'
       - 'scripts/arcadians_http.py'
+      - '.github/workflows/arcadians-timeline.yml'
+      - 'scripts/build_arcadians_timeline.py'
+      - 'scripts/check_arcadians_timeline.py'
+      - 'scripts/assemble_arcadians_site.py'
+      - 'src/stemlab/static_timeline.py'
+      - 'src/stemlab/web/**'
+      - 'tests/test_static_timeline.py'
+      - 'tests/test_arcadians_timeline.py'
       - 'tests/test_arcadians_http.py'
       - 'src/stemlab/analysis/rudiment_recordings.py'
       - 'src/stemlab/analysis/rudiment_batch.py'
@@ -21,7 +29,35 @@ permissions:
   contents: read
 
 jobs:
+  static-regressions:
+    name: Check timeline export and combined publication contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install lightweight test dependencies, without model downloads
+        run: |
+          python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest pyyaml
+          python -m pip install --no-deps -e .
+      - name: Test static timeline, completeness validation, HTTP and publication
+        run: |
+          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py
+
+  timeline:
+    if: github.event_name != 'pull_request'
+    needs: static-regressions
+    name: Complete Arcadians analysis and static timeline
+    uses: ./.github/workflows/arcadians-timeline.yml
+    permissions:
+      contents: read
+
   build:
+    needs: timeline
     name: Generate and audition full Arcadians batch
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -83,6 +119,22 @@ jobs:
           python scripts/check_arcadians_audio.py dist/arcadians-pages \
             --report dist/arcadians-audio-browser.json --screenshot dist/arcadians-comparison.png
           python scripts/build_arcadians_demo.py verify dist/arcadians-pages
+      - name: Retrieve the complete browser-validated timeline
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-arcadians-timeline-pages
+          path: timeline-site
+      - name: Retrieve timeline QA separately, never into the public site
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-arcadians-timeline-qa
+          path: dist/timeline-qa
+      - name: Assemble both verified viewers into one Pages site
+        run: |
+          python scripts/assemble_arcadians_site.py --site dist/arcadians-pages \
+            --timeline timeline-site --qa dist/timeline-qa/arcadians-timeline-browser.json \
+            --source-sha "$GITHUB_SHA"
+          cp dist/timeline-qa/arcadians-timeline-browser.json dist/arcadians-timeline-browser.json
       - name: Freeze the tested public site as release assets
         run: |
           python scripts/build_arcadians_demo.py package dist/arcadians-pages --output dist/arcadians-release
@@ -107,4 +159,5 @@ jobs:
           path: |
             dist/arcadians-comparison.png
             dist/arcadians-audio-browser.json
+            dist/arcadians-timeline-browser.json
           if-no-files-found: warn

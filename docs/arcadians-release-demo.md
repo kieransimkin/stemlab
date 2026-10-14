@@ -1,4 +1,8 @@
-# Arcadians release demo and GitHub Pages
+# Arcadians release demos and GitHub Pages
+
+The public site now combines the movement comparison described here with a
+[complete full-song analysis timeline](arcadians-timeline.md). The root links to
+both; neither publisher deploys a movement-only artifact over the combined site.
 
 Every new StemLab release builds a **48-movement Arcadians comparison** using the
 same packaged DanceRudiments visualizer and C++/WebAssembly recording sampler as
@@ -55,7 +59,9 @@ an assessment of artistic dance quality.
 ## Release workflow
 
 `.github/workflows/release.yml` calls `arcadians-demo.yml` before building release
-packages. That reusable workflow:
+packages. That reusable workflow first completes and browser-tests the
+`arcadians-core-v1` CPU analysis timeline. See [the exact recipe and cost/scope
+notes](arcadians-timeline.md). Its subsequent movement job:
 
 1. Checks out the release's StemLab code and the exact companion commit stored in
    `.github/dancerudiments-recording-ref`.
@@ -68,7 +74,9 @@ packages. That reusable workflow:
    source data, synchronized play/pause, restart, seeking in both directions and
    non-looping completion. End-of-track checks wait for the real media event
    rather than assuming it must arrive within a fixed 180 ms delay.
-4. Packages only the verified site. The normal release archive/manifest assembly
+4. Verifies the timeline snapshot and its separate HTTP browser QA, binds it to
+   the same source revision, and assembles both viewers plus a landing page.
+   Packages only the combined verified site. The normal release archive/manifest assembly
    includes the new assets before GitHub publication.
 
 The release build depends on successful demo generation and browser checks even
@@ -84,14 +92,15 @@ The release demo itself always uses the checked-in pin.
 
 The new release assets are:
 
-- `StemLab-Arcadians-visualizer.zip`: entire offline-capable site, including MP3.
+- `StemLab-Arcadians-visualizer.zip`: both viewers and their audio/data; the timeline needs static HTTP(S) hosting, not a running StemLab server.
 - `StemLab-Arcadians-files.sha256`: hashes of every public file.
 - `StemLab-Arcadians-build.json`: input/build provenance and archive checksum.
 
 The existing release-wide `SHA256SUMS` includes those assets. Browser screenshots
 and reports are retained in a separate workflow artifact and never mixed with
 public review data. The standalone **Arcadians release demo** workflow also allows
-manual build/test runs and relevant pull-request validation without publishing.
+manual combined build/test runs. Pull requests run lightweight static/publication
+contract tests without the full model analysis or publishing.
 
 ## Audio-seeking regression and failure evidence
 
@@ -141,11 +150,10 @@ itself deploy a public site. A successful run can therefore coexist with a Pages
 Use the separate **Publish Arcadians demo to Pages** workflow to publish those
 artifacts without changing a version, tagging a release, or running extraction
 again. Select `main`, then enter `demo_run_id` or leave it blank for the latest
-successful manual demo on `main`. For example, the validated real-audio run was:
+successful combined manual demo on `main`:
 
 ```sh
-gh workflow run arcadians-pages.yml --repo kieransimkin/stemlab --ref main \
-  -f demo_run_id=38514594498
+gh workflow run arcadians-pages.yml --repo kieransimkin/stemlab --ref main
 ```
 
 First select **Settings → Pages → Build and deployment → Source → GitHub Actions**.
@@ -160,20 +168,25 @@ into automatic publication after future successful manual Arcadians demo runs.
 Already-finished runs do not emit a new completion event merely because this
 workflow was added: use **Run workflow** once to publish the existing result.
 
+Old movement-only runs, including the historical `38514594498` example, are now
+rejected: they lack the timeline and its matching HTTP QA. Build a new combined
+demo from the updated `main` first.
+
 Both publisher paths use the `stemlab-pages` concurrency group. Tagged releases
 retain their original dependency ordering and opt-in, described below. An explicit
 run ID deliberately allows publishing that selected older successful demo; omit
 it when the latest successful preview is intended.
 
 The new publisher checks the source workflow, same-repository `main` provenance,
-artifact IDs/expiry, the existing public-file allowlist, HTML and original MP3
-checksums, and the saved successful real-HTTP browser report. It does not run code
+artifact IDs/expiry, the combined public-file allowlist, both viewers' HTML and
+original MP3 checksums, and both saved successful real-HTTP browser reports. It does not run code
 from artifacts and never accepts pull-request/fork results. Browser QA downloads
 stay outside the Pages upload. This workflow uses trusted default-branch code for
 verification even when processing a `workflow_run` event.
 
 After `deploy-pages` succeeds, the final step retries the **actual public URL**
-until the landing/comparison HTML matches the tested artifact, the public source
+until the landing/comparison HTML and timeline HTML/JavaScript/CSS/data match
+the tested artifact, the public source
 commit matches, and a 32-byte MP3 request returns the correct 206/range/body.
 A missing or stale page, 404, or broken audio transport fails publication
 verification instead of being reported as a working live demo. This final step is
@@ -202,9 +215,10 @@ Keep any required approval/reviewer protections. No workflow changes environment
 protection rules or broadens repository permissions automatically.
 
 After these changes, publish a fresh version using StemLab's normal version/tag
-process. Do not reuse or move an old release tag. Only a successful tagged release
-in `kieransimkin/stemlab` deploys; pull requests and ordinary build previews cannot
-publish. Pages runs after the GitHub Release is created. A Pages failure leaves
+process. Do not reuse or move an old release tag. The release publishing path deploys only a successful tagged release
+in `kieransimkin/stemlab`; the separate manual/automatic demo publisher described
+above can publish a successful combined preview without a package release. Pull
+requests do not publish. Pages runs after the GitHub Release is created. A Pages failure leaves
 the tested downloadable release assets available, but does not mean deployment
 succeeded. Re-running an older release can replace the site with that release's
 demo: each release keeps its own ZIP regardless of what is currently hosted.
@@ -216,7 +230,11 @@ It rejects unexpected files/symlinks and caps public files at 90 MiB each and th
 site at 512 MiB. Audio is published only because the artist requested this demo;
 the code's MIT licence does not relicense the recording.
 
-## Reproduce locally
+## Reproduce the movement builder locally
+
+These commands test the movement portion only. For a publishable combined site,
+first build/test the [complete timeline](arcadians-timeline.md) and use
+`scripts/assemble_arcadians_site.py` as the combined workflow does.
 
 With the updated companion installed, run from a full StemLab Git checkout:
 

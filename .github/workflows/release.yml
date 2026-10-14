@@ -202,7 +202,7 @@ jobs:
             --clobber
 
   arcadians-pages:
-    name: Publish Arcadians audio and movement comparison to Pages
+    name: Publish Arcadians timeline and movement comparison to Pages
     if: startsWith(github.ref, 'refs/tags/v') && github.repository == 'kieransimkin/stemlab' && vars.STEMLAB_PAGES_ENABLED == 'true'
     needs: [github-release, arcadians-demo]
     runs-on: ubuntu-24.04
@@ -217,6 +217,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
       - name: Retrieve only the browser-validated public site
         uses: actions/download-artifact@v5
         with:
@@ -231,11 +237,18 @@ jobs:
       - name: Deploy Arcadians visualizer and original MP3
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify both public viewers and their seekable audio
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          python scripts/publish_arcadians_pages.py live --url "$PAGE_URL" \
+            --site public-site --source-sha "$GITHUB_SHA"
       - name: Published demo summary
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
-          echo "### Arcadians audio-synchronised movement demo" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Arcadians timeline and movement demos" >> "$GITHUB_STEP_SUMMARY"
+          echo "${PAGE_URL}timeline/arcadians/" >> "$GITHUB_STEP_SUMMARY"
           echo "${PAGE_URL}arcadians/" >> "$GITHUB_STEP_SUMMARY"
           echo '48 movements, original MP3 included, 145 BPM; beat phase unverified.' >> "$GITHUB_STEP_SUMMARY"
 

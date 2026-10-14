@@ -37,3 +37,9 @@ include .github/dancerudiments-recording-ref
 
 include scripts/publish_arcadians_pages.py
 include .github/workflows/arcadians-pages.yml
+
+include scripts/build_arcadians_timeline.py
+include scripts/check_arcadians_timeline.py
+include scripts/assemble_arcadians_site.py
+include .github/workflows/arcadians-timeline.yml
+include docs/arcadians-timeline.md

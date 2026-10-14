@@ -1,0 +1,72 @@
+name: Arcadians complete analysis timeline
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Analyse the full song and test the static React timeline
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Build the existing locked StemLab analysis environment for CPU
+        # The existing Dockerfile installs the verified Sonic Annotator/Vamp stack.
+        # No interactive installers, host GPU or non-commercial MuQ inference.
+        run: |
+          docker build -f docker/Dockerfile \
+            --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu \
+            --build-arg STEMLAB_BUILD_REF="$GITHUB_SHA" \
+            -t stemlab-timeline:ci .
+      - name: Run the complete core recipe on the original Arcadians MP3
+        # Model downloads use upstream registries, as in the normal local pipeline.
+        # Music is mounted because .dockerignore intentionally excludes audio.
+        run: |
+          mkdir -p "$RUNNER_TEMP/arcadians-timeline"
+          docker run --rm --entrypoint python \
+            -e OMP_NUM_THREADS=2 -e MKL_NUM_THREADS=2 \
+            -v "$RUNNER_TEMP/arcadians-timeline:/work" \
+            -v "$GITHUB_WORKSPACE/examples/arcadians:/opt/stemlab/examples/arcadians:ro" \
+            stemlab-timeline:ci /opt/stemlab/scripts/build_arcadians_timeline.py \
+              --results /work/analysis --output /work/site --source-commit "$GITHUB_SHA"
+      - name: Install browser verification tools only
+        run: |
+          python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest playwright
+          python -m pip install --no-deps -e .
+          python -m playwright install --with-deps chromium
+      - name: Require working static lanes, audio clock, seeking, zoom and saved-loop playback
+        run: |
+          python scripts/check_arcadians_timeline.py "$RUNNER_TEMP/arcadians-timeline/site" \
+            --require-core --report "$RUNNER_TEMP/arcadians-timeline/qa/arcadians-timeline-browser.json"
+      - name: Upload the tested timeline for the combined Pages build
+        uses: actions/upload-artifact@v7
+        with:
+          name: stemlab-arcadians-timeline-pages
+          path: ${{ runner.temp }}/arcadians-timeline/site/
+          if-no-files-found: error
+      - name: Upload separate timeline browser evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stemlab-arcadians-timeline-qa
+          path: ${{ runner.temp }}/arcadians-timeline/qa/
+          if-no-files-found: warn
+      - name: Retain original analysis artifacts, not models or runtime caches
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stemlab-arcadians-complete-analysis
+          path: ${{ runner.temp }}/arcadians-timeline/analysis/
+          retention-days: 7
+          if-no-files-found: warn

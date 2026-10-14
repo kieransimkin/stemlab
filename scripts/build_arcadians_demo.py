@@ -57,6 +57,15 @@ def public_files(site: Path) -> list[Path]:
     """Allowlist the site: never upload a checkout, symlink, source manifest or review."""
     files = []
     total = 0
+    timeline_files = set()
+    timeline_root = site / 'timeline/arcadians'
+    if (site / 'timeline').exists():
+        from stemlab.static_timeline import verify_snapshot
+        verify_snapshot(timeline_root)
+        timeline_files = {p.relative_to(site).as_posix() for p in timeline_root.rglob('*') if p.is_file()}
+    timeline_dirs = {str(Path(name).parent).replace('\\', '/') for name in timeline_files}
+    for directory in list(timeline_dirs):
+        timeline_dirs.update(p.as_posix() for p in Path(directory).parents if str(p) != '.')
     allowed = {
         '.nojekyll', 'index.html', 'arcadians/index.html', 'arcadians/index.json',
         'arcadians/report.json', 'arcadians/release-demo.json', 'arcadians/audio.mp3',
@@ -66,11 +75,11 @@ def public_files(site: Path) -> list[Path]:
         if path.is_symlink():
             raise ValueError('Site contains a symlink: ' + path.relative_to(site).as_posix())
         if path.is_dir():
-            if path.relative_to(site).as_posix() not in {'arcadians', 'arcadians/recordings'}:
+            if path.relative_to(site).as_posix() not in {'arcadians', 'arcadians/recordings'} | timeline_dirs:
                 raise ValueError('Unexpected site directory: ' + path.relative_to(site).as_posix())
             continue
         relative = path.relative_to(site).as_posix()
-        if relative not in allowed and not re.fullmatch(r'arcadians/recordings/candidate_[0-9]{4}\.json', relative):
+        if relative not in allowed | timeline_files and not re.fullmatch(r'arcadians/recordings/candidate_[0-9]{4}\.json', relative):
             raise ValueError('Unapproved public file: ' + relative)
         size = path.stat().st_size
         if size > MAX_FILE_BYTES:
@@ -231,6 +240,16 @@ def verify_site(site: Path, *, expected_sha256: str = ARCADIANS_SHA256,
     records = {p.name for p in (gallery / 'recordings').glob('*.json')}
     if records != {p['name'] + '.json' for p in payload['pack']['patterns']}:
         raise ValueError('Missing or unlisted authoritative recording file')
+    if (site / 'timeline').exists() or provenance.get('timeline'):
+        from stemlab.static_timeline import read_json, verify_snapshot
+        timeline = site / 'timeline/arcadians'
+        verify_snapshot(timeline)
+        snapshot = read_json(timeline / 'snapshot.json')
+        if (provenance.get('timeline', {}).get('snapshot_sha256') != digest(timeline / 'snapshot.json')
+                or snapshot['source_sha256'] != expected_sha256
+                or snapshot['source_commit'] != provenance['stemlab_commit']
+                or snapshot['coverage'].get('status') != 'complete'):
+            raise ValueError('Combined timeline provenance/completeness mismatch')
     if not (site / '.nojekyll').is_file() or not (site / 'index.html').is_file():
         raise ValueError('Missing Pages entry point')
     return dict(files=len(files), total_bytes=sum(p.stat().st_size for p in files), candidates=count,

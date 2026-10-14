@@ -102,6 +102,7 @@ jobs:
         run: |
           python scripts/publish_arcadians_pages.py live --url "$PAGE_URL" \
             --site public-site --source-sha "$SOURCE_SHA"
-          echo "### Published Arcadians demo" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Published Arcadians timeline and movement demos" >> "$GITHUB_STEP_SUMMARY"
+          echo "${PAGE_URL%/}/timeline/arcadians/" >> "$GITHUB_STEP_SUMMARY"
           echo "${PAGE_URL%/}/arcadians/" >> "$GITHUB_STEP_SUMMARY"
           echo "Source: $SOURCE_SHA. Public HTML and audio range request verified." >> "$GITHUB_STEP_SUMMARY"

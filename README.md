@@ -220,55 +220,80 @@ See **[installation, all options, limits, timing, demo and validation](docs/rudi
 inference. Restricted-environment QA used in-memory loading; normal file loading
 and audible listening are not claimed by that screenshot.*
 
-## Arcadians release visualizer with original audio
+## Arcadians: complete analysis timeline and movement demo
 
-Every new release builds a **48-movement full-song Arcadians demo** with the
-original MP3 included and automatically selected. Press **Play** to hear the
-track while comparing its generated movements; play/pause, restart and seeking
-share the audio clock. The demo uses **DanceRudiments' shared visualizer and native
-C++/WebAssembly sampler**, with 2D, 3D and 6D filtered/unfiltered master routes.
-It uses the artist-confirmed **145 BPM**, 64 pips per beat and float64 recordings.
-Beat-zero phase remains explicitly unverified. No separated stems are claimed.
+Every new release builds **one public site containing two working examples**, both
+covering the full original Arcadians song:
 
-The tested site is attached to each release as
-`StemLab-Arcadians-visualizer.zip`, with its source audio, recording data and
-checksums. Pages deployment is opt-in: set **Pages Source = GitHub Actions** and
-**`STEMLAB_PAGES_ENABLED=true`**, and allow release tags in the `github-pages`
-environment. After the first successful Pages-enabled release, open the
-**[Arcadians audio/movement comparison](https://kieransimkin.github.io/stemlab/arcadians/)**.
-The link is the deployment target, not a claim that an unmerged change is live.
+- **[Analysis timeline](https://kieransimkin.github.io/stemlab/timeline/arcadians/)**:
+  the real StemLab React viewer, original audio, six genuine HTDemucs stems,
+  waveforms/spectrograms, five beat/consensus results, Whisper words, all 13 curated
+  Vamp analyses, functional structure, sonic/rhythm/harmony/lyric analysis, text
+  semantics, song map and loop discovery.
+- **[Movement comparison](https://kieransimkin.github.io/stemlab/arcadians/)**:
+  the existing 48 DanceRudiments movements with 2D/3D/6D filtered/unfiltered master
+  routes, 145 BPM, 64 pips per beat and float64 recordings. This example remains
+  master-derived; it does not claim its movements use separated stems.
 
-Generation and real browser tests are release gates. A pinned companion revision
-prevents cross-repository push-order races. Only the generated public directory
-is deployed; source manifests and private/test data are excluded.
+The root landing page links to both. These are deployment destinations; a patch
+or a green build alone does not establish that the new page is live.
 
-The audio browser gate serves the MP3 through a byte-range-aware local HTTP server
-under `/stemlab/`, so seeking can request partial audio rather than restarting a
-full download. It checks exact range responses and completed seeks without relaxing
-the clock tolerances. Failed browser checks retain JSON diagnostics and attempt
-a screenshot for the separate QA artifact; they still block publication.
+The timeline's **`arcadians-core-v1` recipe** runs all the selected core families
+on the complete checksum-verified MP3. It is not the five-separator `full`
+comparison profile or every optional MIDI/evidence/NC model. Coverage, dependency
+versions and source/export revisions are disclosed. Missing stems, beat results,
+Vamp plugins or required deep-analysis evidence fail the build; there is no
+synthetic fallback. Artist-confirmed 145 BPM, lyrics, manually edited lyric timing
+and artist sections stay distinct from machine estimates. A completed loop scan
+may legitimately return zero accepted loops and explain unresolved sections.
 
-### Publish a tested demo without making a package release
+### Build and publish both examples
 
-**Actions → Publish Arcadians demo to Pages → Run workflow → main** publishes an
-existing successful **Arcadians release demo**. Leave `demo_run_id` blank to use the
-latest successful manual demo on `main`, or enter a specific successful run ID.
-The demo build's green check means artifacts were built; **the Pages publisher's
-green check means those artifacts were deployed and the public URL was verified**.
+Start **Actions → Arcadians release demo → Run workflow → main**. The workflow
+first runs the full CPU analysis in StemLab's existing Docker environment, then
+exports and browser-tests the timeline. It also builds/tests the movement example
+and combines both into a single verified Pages artifact. The model analysis is
+substantially heavier than master-peak extraction; upstream model downloads and
+inference must succeed. A new tagged release calls the same combined workflow.
 
-Enable **Settings → Pages → Source → GitHub Actions** first and allow `main` in
-the `github-pages` environment without removing existing approval requirements.
-Explicit manual publication does not need `STEMLAB_PAGES_ENABLED`. Setting that
-repository variable to `true` also automatically publishes future successful
-manual demo runs. The existing tagged-release publishing path is unchanged.
+Both examples include working audio playback, without autoplay. The timeline
+needs **no live StemLab API, Socket.IO connection or CDN**: the original React
+renderer loads precomputed local data, waveform envelopes and spectrogram strips.
+It supports play/pause, seeking, zoom/Fit, and saved-loop audition when loops exist.
+The original MP3 is unchanged; public stem audio uses full-duration PCM24 FLAC
+listening derivatives with their conversion disclosed. Original float WAVs and
+raw results are kept in a separate seven-day Actions analysis artifact.
 
-The publisher reuses the original MP3 and movements, requires that run's successful
-HTTP audio/browser evidence, and checks the public landing page, comparison page,
-source commit and an actual partial MP3 response after deployment. Pull-request,
-fork, failed, expired and in-memory-only results are not publishable. QA evidence
-stays outside the public directory. No analysis models or package release are needed.
+Keep **Pages Source = GitHub Actions** and **`STEMLAB_PAGES_ENABLED=true`** for
+automatic publication after a successful manual demo or a tagged release. Preserve
+`github-pages` environment approvals and allow the relevant `main`/tag refs.
+Alternatively, **Publish Arcadians demo to Pages → Run workflow → main** publishes
+a selected successful combined demo (blank run ID chooses the latest), without
+rerunning models or making a package release. Old movement-only artifacts are
+rejected so they cannot overwrite the new timeline. The standalone **Arcadians
+complete analysis timeline** job is build-only, not a separate Pages deployment.
 
-See **[release recipe, playback, Pages setup and local reproduction](docs/arcadians-release-demo.md)**.
+The publisher verifies both viewers' provenance, artifact checksums and successful
+HTTP browser reports, then probes the actual public pages, timeline assets/data
+and partial MP3 responses. Failed or in-memory-only QA cannot authorize publication.
+QA files, private folders, model caches and runtime logs stay outside the public
+upload. Both examples are included in **`StemLab-Arcadians-visualizer.zip`**, with
+file hashes and build provenance. An incomplete build never replaces the live site.
+
+### Export an existing analysis as a static timeline
+
+```sh
+# Install the server extra for shared export helpers; do not start a server.
+stemlab export-timeline ./analysis-arcadians \
+  --include-audio --output ./arcadians-timeline-site
+```
+
+The output must be a new directory outside the analysis. Host it over static
+HTTP(S), not `file://`. Audio/lyric inclusion is explicit. Generic exports show
+saved evidence without claiming the complete Arcadians recipe ran.
+
+See **[complete recipe, workflow, static export, timing and validation](docs/arcadians-timeline.md)**
+and **[movement/audio details and Pages configuration](docs/arcadians-release-demo.md)**.
 
 ## Timeline analysis gallery
 

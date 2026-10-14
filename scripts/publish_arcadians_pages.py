@@ -18,6 +18,7 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from build_arcadians_demo import ARCADIANS_SHA256, digest, validate_revision, verify_site
+from assemble_arcadians_site import verify_timeline_qa
 
 REPOSITORY = 'kieransimkin/stemlab'
 WORKFLOW = '.github/workflows/arcadians-demo.yml'
@@ -117,7 +118,11 @@ def verify_artifacts(site: Path, qa_path: Path, source_sha: str) -> dict:
     verify_qa(qa, provenance)
     if qa['http_ranges'].get('audio_bytes') != (site / 'arcadians/audio.mp3').stat().st_size:
         raise ValueError('QA refers to a different audio file size')
-    return dict(verified, source_sha=source_sha, browser_qa='passed')
+    # A newly deployed movement-only archive would erase the timeline. Reject old
+    # archives rather than claiming two demos while uploading only one.
+    verify_timeline_qa(site / 'timeline/arcadians',
+                       qa_path.with_name('arcadians-timeline-browser.json'), source_sha)
+    return dict(verified, source_sha=source_sha, browser_qa='passed', timeline_qa='passed')
 
 
 def public_request(url: str, *, headers=None, limit=90 * 1024 * 1024) -> tuple[int, dict, bytes]:
@@ -163,6 +168,8 @@ def verify_live(base_url: str, site: Path, source_sha: str, *, attempts: int = 1
             if (status != 206 or content != expected
                     or headers.get('content-range') != f'bytes 0-31/{size}'):
                 raise ValueError('The public MP3 is unavailable or does not honour byte ranges')
+            if (site / 'timeline/arcadians').is_dir():
+                verify_live_timeline(base, site / 'timeline/arcadians', source_sha)
             return dict(status='passed', url=gallery, source_sha=source_sha,
                         html_matches_tested_artifact=True, public_audio_range_verified=True,
                         live_browser_playback_tested=False)
@@ -172,6 +179,26 @@ def verify_live(base_url: str, site: Path, source_sha: str, *, attempts: int = 1
                 print(f'Waiting for Pages propagation ({attempt + 1}/{attempts}): {exc}', flush=True)
                 time.sleep(delay)
     raise RuntimeError(f'Pages deployment was submitted but the live URL did not verify: {last_error}')
+
+
+def verify_live_timeline(base: str, timeline: Path, source_sha: str) -> None:
+    snapshot = json.loads((timeline / 'snapshot.json').read_text(encoding='utf-8'))
+    if snapshot['source_commit'] != source_sha:
+        raise ValueError('Timeline export is stale')
+    prefix = base.rstrip('/') + '/timeline/arcadians/'
+    for name in ('index.html', 'snapshot.json', 'data/timeline.json', 'assets/app.js',
+                 'assets/static-timeline.js', 'assets/style.css', 'assets/timeline.css'):
+        status, _, data = public_request(prefix + name)
+        if status != 200 or hashlib.sha256(data).hexdigest() != digest(timeline / name):
+            raise ValueError('Public timeline/asset differs from tested snapshot: ' + name)
+    audio = timeline / snapshot['audio_path']
+    status, headers, data = public_request(prefix + snapshot['audio_path'],
+                                          headers={'Range': 'bytes=0-31'}, limit=32)
+    headers = {k.lower(): v for k, v in headers.items()}
+    with audio.open('rb') as handle:
+        expected = handle.read(32)
+    if status != 206 or data != expected or headers.get('content-range') != f'bytes 0-31/{audio.stat().st_size}':
+        raise ValueError('Public timeline audio is not seekable')
 
 
 def main() -> int:
