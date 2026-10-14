@@ -101,7 +101,8 @@ def test_publication_is_release_gated_and_dependency_ordered():
     workflow = yaml.load((ROOT / ".github/workflows/release.yml").read_text(), Loader=yaml.BaseLoader)
     jobs = workflow["jobs"]
     assert workflow["on"]["push"]["tags"] == ["v*"]
-    assert jobs["release-build"]["needs"] == "codex-package"
+    assert {"codex-package", "arcadians-demo"} <= set(jobs["release-build"]["needs"])
+    assert jobs["arcadians-demo"]["uses"] == "./.github/workflows/arcadians-demo.yml"
     assert "codex-package" in jobs["pypi-publish"]["needs"]
     for name in ("codex-marketplace", "mcp-registry"):
         assert "refs/tags/v" in jobs[name]["if"]
