@@ -1,0 +1,107 @@
+name: Arcadians release demo
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/arcadians-demo.yml'
+      - '.github/workflows/release.yml'
+      - '.github/dancerudiments-recording-ref'
+      - 'scripts/build_arcadians_demo.py'
+      - 'scripts/check_arcadians_audio.py'
+      - 'src/stemlab/analysis/rudiment_recordings.py'
+      - 'src/stemlab/analysis/rudiment_batch.py'
+      - 'tests/test_arcadians_release_demo.py'
+      - 'examples/arcadians/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Generate and audition full Arcadians batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      STEMLAB_REQUIRE_RECORDINGS: '1'
+      DANCERUDIMENTS_REQUIRE_NATIVE: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Read locked companion revision
+        id: companion
+        shell: bash
+        run: |
+          REF="$(tr -d '\r\n' < .github/dancerudiments-recording-ref)"
+          [[ "$REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'Companion must be pinned to a commit SHA'; exit 1; }
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with:
+          repository: kieransimkin/DanceRudiments
+          ref: ${{ steps.companion.outputs.ref }}
+          path: .recording-dancerudiments
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install native companion and lightweight recording dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libsndfile1 ffmpeg
+          python -m pip install numpy scipy 'soundfile>=0.12' matplotlib rich 'typer>=0.12' platformdirs pytest playwright
+          python -m pip install ./.recording-dancerudiments
+          python -m pip install --no-deps -e .
+          python -c "from dancerudiments import SampledRecording; from dancerudiments_authoring.harness import build_recording_harness"
+      - name: Run release-demo and recording regression tests
+        run: python -m pytest tests/test_arcadians_release_demo.py tests/test_rudiment_recordings.py tests/test_rudiment_matches.py
+      - name: Generate 48 full-song movements with the original MP3 included
+        env:
+          RELEASE_LABEL: ${{ github.ref_name }}
+          COMPANION_SHA: ${{ steps.companion.outputs.ref }}
+        shell: bash
+        run: |
+          # PR refs contain slashes; preview labels are not release claims.
+          LABEL="$RELEASE_LABEL"
+          if [[ "$GITHUB_EVENT_NAME" == 'pull_request' ]]; then LABEL="pr-${{ github.event.number }}"; fi
+          python scripts/build_arcadians_demo.py build \
+            --output dist/arcadians-pages \
+            --source-commit "$(git rev-parse HEAD)" \
+            --companion-commit "$COMPANION_SHA" \
+            --companion-license .recording-dancerudiments/LICENSE \
+            --release-tag "$LABEL"
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Run companion native recording and shared harness regressions
+        run: python -m unittest discover -s .recording-dancerudiments/tests/python -p test_recording.py -v
+      - name: Require audible source data and synchronized playback under the Pages URL prefix
+        run: |
+          python scripts/check_arcadians_audio.py dist/arcadians-pages \
+            --report dist/arcadians-audio-browser.json --screenshot dist/arcadians-comparison.png
+          python scripts/build_arcadians_demo.py verify dist/arcadians-pages
+      - name: Freeze the tested public site as release assets
+        run: |
+          python scripts/build_arcadians_demo.py package dist/arcadians-pages --output dist/arcadians-release
+      - name: Upload only the verified public site
+        uses: actions/upload-artifact@v7
+        with:
+          name: stemlab-arcadians-pages
+          path: dist/arcadians-pages/
+          include-hidden-files: true
+          if-no-files-found: error
+      - name: Upload Arcadians release archive and provenance
+        uses: actions/upload-artifact@v7
+        with:
+          name: stemlab-arcadians-release-assets
+          path: dist/arcadians-release/*
+          if-no-files-found: error
+      - name: Retain browser validation evidence separately from the public site
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stemlab-arcadians-browser-qa
+          path: |
+            dist/arcadians-comparison.png
+            dist/arcadians-audio-browser.json
+          if-no-files-found: warn

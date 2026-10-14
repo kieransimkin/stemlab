@@ -27,3 +27,9 @@ include docs/rudiment-recordings.md
 include docs/screenshots/recording-comparison.png
 recursive-include examples/recordings *.py
 include .github/workflows/recordings.yml
+
+include scripts/build_arcadians_demo.py
+include scripts/check_arcadians_audio.py
+include docs/arcadians-release-demo.md
+include .github/workflows/arcadians-demo.yml
+include .github/dancerudiments-recording-ref

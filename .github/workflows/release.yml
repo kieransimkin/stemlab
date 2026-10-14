@@ -9,6 +9,12 @@ permissions:
   contents: read
 
 jobs:
+  arcadians-demo:
+    name: Build Arcadians audio-synchronised movement demo
+    uses: ./.github/workflows/arcadians-demo.yml
+    permissions:
+      contents: read
+
   codex-package:
     name: Validate and package Codex plugin
     uses: ./.github/workflows/codex-plugin.yml
@@ -18,7 +24,7 @@ jobs:
       contents: read
 
   release-build:
-    needs: codex-package
+    needs: [codex-package, arcadians-demo]
     name: Build and validate StemLab release
     runs-on: ubuntu-22.04
     steps:
@@ -104,11 +110,18 @@ jobs:
           name: stemlab-codex-plugin-ubuntu-latest
           path: codex-release
 
+      - name: Retrieve browser-validated Arcadians release assets
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-arcadians-release-assets
+          path: arcadians-release
+
       - name: Assemble StemLab release directory and manifest
         run: |
           mkdir -p dist-release
           cp dist/* dist-release/
           cp codex-release/* dist-release/
+          cp arcadians-release/* dist-release/
           if [[ -f build/nuitka/stemlab-linux-x86_64 ]]; then
             cp build/nuitka/stemlab-linux-x86_64 dist-release/
             chmod +x dist-release/stemlab-linux-x86_64
@@ -187,6 +200,44 @@ jobs:
           gh release upload "$TAG" dist-release/* \
             --repo "$REPOSITORY" \
             --clobber
+
+  arcadians-pages:
+    name: Publish Arcadians audio and movement comparison to Pages
+    if: startsWith(github.ref, 'refs/tags/v') && github.repository == 'kieransimkin/stemlab' && vars.STEMLAB_PAGES_ENABLED == 'true'
+    needs: [github-release, arcadians-demo]
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: stemlab-pages
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Retrieve only the browser-validated public site
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-arcadians-pages
+          path: public-site
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload dedicated site directory, never the repository
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public-site
+      - name: Deploy Arcadians visualizer and original MP3
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Published demo summary
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          echo "### Arcadians audio-synchronised movement demo" >> "$GITHUB_STEP_SUMMARY"
+          echo "${PAGE_URL}arcadians/" >> "$GITHUB_STEP_SUMMARY"
+          echo '48 movements, original MP3 included, 145 BPM; beat phase unverified.' >> "$GITHUB_STEP_SUMMARY"
 
   container-publish:
     name: Build and publish release container

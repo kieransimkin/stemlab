@@ -238,3 +238,11 @@ to its commit SHA (also available as a workflow-dispatch input). Default is
 DanceRudiments `main`; missing APIs fail the job, never a green skip. Each run logs
 the exact resolved companion revision. Versions/releases are not changed by these
 patches; publish a fresh version only after review and CI.
+
+## Arcadians release publication
+
+StemLab's release process now generates a full-song, 48-candidate master-only
+Arcadians batch at 145 BPM, copies the original MP3 unchanged, tests audio-driven
+playback, and attaches the complete site to the release. GitHub Pages deployment
+is opt-in after successful tagged releases. See [Arcadians release demo and Pages
+setup](arcadians-release-demo.md). Public playback needs no user-supplied file.

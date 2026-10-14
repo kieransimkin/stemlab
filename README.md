@@ -220,6 +220,29 @@ See **[installation, all options, limits, timing, demo and validation](docs/rudi
 inference. Restricted-environment QA used in-memory loading; normal file loading
 and audible listening are not claimed by that screenshot.*
 
+## Arcadians release visualizer with original audio
+
+Every new release builds a **48-movement full-song Arcadians demo** with the
+original MP3 included and automatically selected. Press **Play** to hear the
+track while comparing its generated movements; play/pause, restart and seeking
+share the audio clock. The demo uses **DanceRudiments' shared visualizer and native
+C++/WebAssembly sampler**, with 2D, 3D and 6D filtered/unfiltered master routes.
+It uses the artist-confirmed **145 BPM**, 64 pips per beat and float64 recordings.
+Beat-zero phase remains explicitly unverified. No separated stems are claimed.
+
+The tested site is attached to each release as
+`StemLab-Arcadians-visualizer.zip`, with its source audio, recording data and
+checksums. Pages deployment is opt-in: set **Pages Source = GitHub Actions** and
+**`STEMLAB_PAGES_ENABLED=true`**, and allow release tags in the `github-pages`
+environment. After the first successful Pages-enabled release, open the
+**[Arcadians audio/movement comparison](https://kieransimkin.github.io/stemlab/arcadians/)**.
+The link is the deployment target, not a claim that an unmerged change is live.
+
+Generation and real browser tests are release gates. A pinned companion revision
+prevents cross-repository push-order races. Only the generated public directory
+is deployed; source manifests and private/test data are excluded.
+See **[release recipe, playback, Pages setup and local reproduction](docs/arcadians-release-demo.md)**.
+
 ## Timeline analysis gallery
 
 The browser workspace is intended to make the analysis output inspectable, not just downloadable. The illustrations below explain the main analysis families using the same shared timeline vocabulary as the frontend: one clock, one playhead, zoomable lanes, and consistent section alignment across spectrogram, beat, lyric and deep-analysis layers.

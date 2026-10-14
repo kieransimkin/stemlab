@@ -28,10 +28,17 @@ jobs:
       DANCERUDIMENTS_REQUIRE_NATIVE: '1'
     steps:
       - uses: actions/checkout@v7
+      - name: Read tested default companion revision
+        id: companion
+        shell: bash
+        run: |
+          REF="$(tr -d '\r\n' < .github/dancerudiments-recording-ref)"
+          [[ "$REF" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           repository: kieransimkin/DanceRudiments
-          ref: ${{ inputs.dancerudiments_ref || vars.DANCERUDIMENTS_RECORDING_REF || 'main' }}
+          ref: ${{ inputs.dancerudiments_ref || vars.DANCERUDIMENTS_RECORDING_REF || steps.companion.outputs.ref }}
           path: .recording-dancerudiments
       - name: Report exact companion revision
         run: git -C .recording-dancerudiments rev-parse HEAD
