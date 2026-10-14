@@ -179,6 +179,47 @@ Fewer than **12 real-audio matches** fails CI; passing runs publish the JSON,
 HTML and measured overlay PNG as downloadable CI artifacts. See the
 [native CI validation instructions](docs/rudiments.md#native-github-actions-gate).
 
+## BPM-synchronised recordings, harness and batch generation
+
+Export any number of independently routed master/stem dimensions at **64 pips per
+beat**, using the separately maintained DanceRudiments **float64** recording
+format. **A BPM estimate or confirmed value is required**; raw audio uses `--bpm`,
+while saved analysis can supply current beat evidence. `--bpm-confirmed` records
+explicit confirmation, separately from estimated/unverified beat phase.
+
+```sh
+# Bass on X, treble on Y; generate JSON plus the actual DanceRudiments visualizer.
+stemlab record-rudiment master.wav --bpm 145 \
+  --axis x=master --low-pass x=180 \
+  --axis y=master --high-pass y=3000 --output ./bass-treble
+# Explore filtered/unfiltered master and every saved stem, including N-D combinations.
+stemlab generate-batch ./analysis --bpm 145 \
+  --dimensions 2 --dimensions 3 --dimensions 6 \
+  --max-candidates 96 --seed 17 --include-audio --output ./movement-batch
+```
+
+Open the output `index.html` for searchable movement cards, the existing four-card
+comparison, shared audio transport, review choices/notes, and X/Y/Z selectors for
+any stored dimension. **Native C++/WASM playback and visualizer assets stay in
+DanceRudiments**, not a copied engine or lookalike page in StemLab. Recordings stop
+at their end, retain all dimensions, and do not silently become loops.
+
+Choose per-axis peak/mean-absolute-amplitude windows and low/high/band-pass routes.
+Batch mode covers each source, explores seeded combinations, and reuses cached
+filter results/deduplicated columns instead of an unbounded Cartesian product.
+Source audio is copied only with `--include-audio`; no inference or model download
+runs. Outputs must be new directories. This requires the companion DanceRudiments
+recording/harness update; older published packages lack the API. Existing matching
+and XYZ formats remain compatible (`--legacy` explicitly exports a bounded XYZ loop).
+
+See **[installation, all options, limits, timing, demo and validation](docs/rudiment-recordings.md)**.
+
+![Actual shared DanceRudiments harness comparing generated synthetic-audio movements](docs/screenshots/recording-comparison.png)
+
+*Real Chromium capture of the bundled synthetic-audio batch, not Arcadians model
+inference. Restricted-environment QA used in-memory loading; normal file loading
+and audible listening are not claimed by that screenshot.*
+
 ## Timeline analysis gallery
 
 The browser workspace is intended to make the analysis output inspectable, not just downloadable. The illustrations below explain the main analysis families using the same shared timeline vocabulary as the frontend: one clock, one playhead, zoomable lanes, and consistent section alignment across spectrogram, beat, lyric and deep-analysis layers.

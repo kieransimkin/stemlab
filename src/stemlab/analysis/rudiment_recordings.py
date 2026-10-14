@@ -1,0 +1,347 @@
+"""Native-rate amplitude extraction on the optional DanceRudiments recording clock."""
+from __future__ import annotations
+from dataclasses import dataclass, asdict
+from fractions import Fraction
+import importlib
+import json
+import math
+from pathlib import Path
+import re
+import tempfile
+
+import numpy as np
+import soundfile as sf
+from scipy.signal import butter, sosfilt, sosfilt_zi
+from stemlab.util import sha256_file
+
+BLOCK_FRAMES = 131072
+MAX_CACHED_VALUES = 32_000_000
+
+
+def recording_api():
+    try:
+        return importlib.import_module('dancerudiments_authoring.recording')
+    except ImportError as exc:
+        raise RuntimeError('Install the companion DanceRudiments recording/harness update; '
+                           'older packages do not contain it. StemLab does not substitute a private format.') from exc
+
+
+def finite(value, label):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f'{label} must be finite')
+    return float(value)
+
+
+@dataclass(frozen=True)
+class AxisSpec:
+    name: str
+    source: Path
+    mode: str = 'peak'
+    low_pass: float | None = None
+    high_pass: float | None = None
+    filter_order: int = 4
+    gain: float = 1.
+
+    def __post_init__(self):
+        if not isinstance(self.name, str) or not re.fullmatch(r'[a-z][a-z0-9_]{0,127}', self.name):
+            raise ValueError('Axis names must match [a-z][a-z0-9_]{0,127}')
+        object.__setattr__(self, 'source', Path(self.source).expanduser().resolve())
+        if self.mode not in ('peak', 'average'):
+            raise ValueError('Mode must be peak or average (mean absolute amplitude)')
+        if type(self.filter_order) is not int or not 1 <= self.filter_order <= 12:
+            raise ValueError('Filter order must be an integer in 1..12')
+        for key in ('low_pass', 'high_pass'):
+            v = getattr(self, key)
+            if v is not None and finite(v, key) <= 0:
+                raise ValueError('Filter cutoffs must be positive')
+        if self.low_pass is not None and self.high_pass is not None and self.high_pass >= self.low_pass:
+            raise ValueError('Band-pass requires high_pass < low_pass')
+        finite(self.gain, 'gain')
+
+
+def filter_sos(axis, sr):
+    for v in (axis.low_pass, axis.high_pass):
+        if v is not None and v >= sr/2:
+            raise ValueError(f'{axis.name}: cutoff must be below Nyquist ({sr/2:g} Hz)')
+    if axis.high_pass is not None and axis.low_pass is not None:
+        return butter(axis.filter_order, [axis.high_pass, axis.low_pass], btype='bandpass', fs=sr, output='sos')
+    if axis.low_pass is not None or axis.high_pass is not None:
+        return butter(axis.filter_order, axis.low_pass or axis.high_pass,
+                      btype='lowpass' if axis.low_pass is not None else 'highpass', fs=sr, output='sos')
+    return None
+
+
+def checked(block):
+    if not np.all(np.isfinite(block)):
+        raise ValueError('Audio/filter output contains non-finite samples')
+    return block
+
+
+def audio_blocks(path, sos=None, phase='zero', block_frames=BLOCK_FRAMES):
+    """Streaming SOS; zero-phase odd padding matches scipy.sosfiltfilt using a disk spool."""
+    with sf.SoundFile(str(path)) as f:
+        if sos is None or phase == 'causal':
+            state = np.zeros((len(sos), 2, f.channels)) if sos is not None else None
+            for block in f.blocks(blocksize=block_frames, dtype='float64', always_2d=True):
+                block = checked(block)
+                if sos is not None:
+                    block, state = sosfilt(sos, block, axis=0, zi=state)
+                yield checked(block)
+            return
+        edge = min(f.frames-1, int(3*(2*len(sos)+1-min((sos[:, 2] == 0).sum(), (sos[:, 5] == 0).sum()))))
+        first = checked(f.read(edge+1, dtype='float64', always_2d=True))
+        f.seek(f.frames-edge-1)
+        last = checked(f.read(edge+1, dtype='float64', always_2d=True))
+        left, right = 2*first[0]-first[1:][::-1], 2*last[-1]-last[:-1][::-1]
+        zi = sosfilt_zi(sos)[:, :, None]
+        with tempfile.TemporaryDirectory(prefix='stemlab-filter-') as folder:
+            spool = np.memmap(Path(folder)/'audio.f64', mode='w+', dtype='float64', shape=(f.frames+2*edge, f.channels))
+            try:
+                state = zi*(left[0] if edge else first[0])[None, None, :]
+                position = 0
+                def store(block):
+                    nonlocal state, position
+                    if len(block):
+                        result, state = sosfilt(sos, checked(block), axis=0, zi=state)
+                        spool[position:position+len(block)] = checked(result)
+                        position += len(block)
+                store(left)
+                f.seek(0)
+                for block in f.blocks(blocksize=block_frames, dtype='float64', always_2d=True):
+                    store(block)
+                store(right)
+                state = zi*np.array(spool[-1])[None, None, :]
+                end = len(spool)
+                while end:
+                    begin = max(0, end-block_frames)
+                    result, state = sosfilt(sos, spool[begin:end][::-1], axis=0, zi=state)
+                    spool[begin:end] = checked(result[::-1])
+                    end = begin
+                for begin in range(0, f.frames, block_frames):
+                    yield np.array(spool[edge+begin:edge+min(f.frames, begin+block_frames)])
+            finally:
+                spool._mmap.close()
+
+
+def ceil_fraction(v):
+    return -(-v.numerator//v.denominator)
+
+
+def sample_edges(clock, count, sr):
+    origin = (Fraction(str(clock.beat_zero_seconds))+clock.start_pip*clock.pip_seconds)*sr
+    step = clock.pip_seconds*sr
+    if step < 1:
+        raise ValueError('BPM-synchronised sampling rate exceeds the input audio rate')
+    denominator = math.lcm(origin.denominator, step.denominator)
+    a = origin.numerator*(denominator//origin.denominator)
+    b = step.numerator*(denominator//step.denominator)
+    try:
+        return np.fromiter((-(-(a+i*b)//denominator) for i in range(count+1)), dtype=np.int64, count=count+1)
+    except OverflowError as exc:
+        raise ValueError('Clock exceeds supported audio-frame range') from exc
+
+
+class EnvelopeBank:
+    """Cache each source/filter pass once, producing both peak and average envelopes."""
+    def __init__(self, sources, *, bpm=None, bpm_source='user', bpm_status='estimated',
+                 beat_zero_seconds=0., phase_status='unverified', start_seconds=0., end_seconds=None,
+                 length_policy='strict', filter_phase='zero', progress=None, block_frames=BLOCK_FRAMES):
+        if bpm is None or finite(bpm, 'BPM') <= 0:
+            raise ValueError('A BPM estimate or confirmed value is required')
+        if length_policy not in ('strict', 'pad', 'trim') or filter_phase not in ('zero', 'causal'):
+            raise ValueError('Invalid length policy or filter phase')
+        if type(block_frames) is not int or block_frames < 1:
+            raise ValueError('block_frames must be a positive integer')
+        self.api = recording_api()
+        base = self.api.RecordingClock(bpm, bpm_source, bpm_status, beat_zero_seconds, phase_status)
+        self.infos = {Path(p).resolve(): sf.info(str(p)) for p in sources}
+        if not self.infos or any(i.frames < 1 or i.samplerate < 1 for i in self.infos.values()):
+            raise ValueError('Every selected source must contain audio samples')
+        durations = [Fraction(i.frames, i.samplerate) for i in self.infos.values()]
+        tolerance = max(Fraction(1, i.samplerate) for i in self.infos.values())
+        if length_policy == 'strict' and max(durations)-min(durations) > tolerance:
+            raise ValueError('Source durations differ; explicitly select length-policy pad/trim or align the files')
+        duration = min(durations) if length_policy == 'trim' else max(durations)
+        self.start = Fraction(str(finite(start_seconds, 'start_seconds')))
+        self.end = duration if end_seconds is None else Fraction(str(finite(end_seconds, 'end_seconds')))
+        if not 0 <= self.start < self.end <= duration:
+            raise ValueError('Require 0 <= start < end <= selected audio duration')
+        origin = Fraction(str(beat_zero_seconds))
+        first = (self.start-origin)//base.pip_seconds
+        self.count = ceil_fraction((self.end-origin)/base.pip_seconds)-first
+        if self.count < 1 or self.count > self.api.MAX_RECORDING_VALUES:
+            raise ValueError('Recording exceeds the value budget; export a shorter excerpt')
+        self.clock = self.api.RecordingClock(bpm, bpm_source, bpm_status, beat_zero_seconds, phase_status, first)
+        if first+self.count > 2147483647:
+            raise ValueError('Recording exceeds the signed int32 pip range')
+        self.edges = {i.samplerate: sample_edges(self.clock, self.count, i.samplerate) for i in self.infos.values()}
+        self.hashes = {p: sha256_file(p) for p in self.infos}
+        self.cache = {}
+        self.filter_phase, self.length_policy = filter_phase, length_policy
+        self.progress, self.block_frames = progress or (lambda message: None), block_frames
+        self.cache_hits = 0
+
+    def envelope(self, axis):
+        key = (axis.source, axis.low_pass, axis.high_pass, axis.filter_order)
+        if key in self.cache:
+            self.cache_hits += 1
+        else:
+            if (len(self.cache)+1)*self.count*2 > MAX_CACHED_VALUES:
+                raise ValueError('Envelope-cache budget exceeded; shorten the excerpt or reduce source/filter variants')
+            info = self.infos[axis.source]
+            sos = filter_sos(axis, info.samplerate)
+            self.progress(f'Extracting {axis.source.name}: low-pass={axis.low_pass}, high-pass={axis.high_pass}')
+            edges = self.edges[info.samplerate]
+            lower = max(0, ceil_fraction(self.start*info.samplerate))
+            upper = min(info.frames, ceil_fraction(self.end*info.samplerate))
+            peak, sums, counts = np.zeros(self.count), np.zeros(self.count), np.zeros(self.count, dtype=np.int64)
+            position = 0
+            for block in audio_blocks(axis.source, sos, self.filter_phase, self.block_frames):
+                first, last = max(lower, position), min(upper, position+len(block))
+                if first < last:
+                    absolute = np.abs(block)
+                    maxima, means = absolute.max(axis=1), absolute.mean(axis=1)
+                    lo = max(0, int(np.searchsorted(edges, first, side='right'))-1)
+                    hi = min(self.count, int(np.searchsorted(edges, last, side='left')))
+                    for i in range(lo, hi):
+                        a, b = max(first, edges[i]), min(last, edges[i+1])
+                        if a < b:
+                            peak[i] = max(peak[i], float(maxima[a-position:b-position].max()))
+                            sums[i] += means[a-position:b-position].sum(dtype=np.float64)
+                            counts[i] += b-a
+                position += len(block)
+            np.divide(sums, counts, out=sums, where=counts > 0)
+            stats = dict(empty_windows=int(np.count_nonzero(counts == 0)),
+                         partial_windows=int(np.count_nonzero((counts > 0) & (counts < np.diff(edges)))),
+                         contributing_frames=int(counts.sum()))
+            self.cache[key] = (checked(peak), checked(sums), stats)
+        p, a, stats = self.cache[key]
+        return (p if axis.mode == 'peak' else a), stats
+
+    def compose(self, axes, *, name='audio_recording', normalization='none', metadata=None, _data_only=False):
+        if not axes or len({a.name for a in axes}) != len(axes):
+            raise ValueError('At least one axis with unique names is required')
+        if normalization not in ('none', 'global', 'per-axis'):
+            raise ValueError('Normalization must be none/global/per-axis')
+        if len(axes)*self.count > self.api.MAX_RECORDING_VALUES:
+            raise ValueError('Recording exceeds the shared value budget')
+        values = np.empty((self.count, len(axes)), dtype=np.float64)
+        provenance = []
+        for j, axis in enumerate(axes):
+            values[:, j], stats = self.envelope(axis)
+            info = self.infos[axis.source]
+            item = asdict(axis)
+            item.update(source=axis.source.name, source_sha256=self.hashes[axis.source],
+                        source_sample_rate=info.samplerate, source_channels=info.channels,
+                        source_frames=info.frames, source_subtype=info.subtype, **stats)
+            provenance.append(item)
+        peaks = values.max(axis=0)
+        denominators = peaks if normalization == 'per-axis' else np.full(len(axes), peaks.max() if normalization == 'global' else 1.)
+        for j, axis in enumerate(axes):
+            scale = float(denominators[j]) or 1.
+            with np.errstate(over='ignore'):
+                values[:, j] = values[:, j]/scale*axis.gain
+            provenance[j].update(normalization_divisor=scale, unscaled_peak=float(peaks[j]),
+                                 clipped_windows=int(np.count_nonzero(np.abs(values[:, j]) > 1)))
+        values = np.clip(values, -1., 1.)
+        meta = dict(metadata or {})
+        meta.update(producer='StemLab', axes=provenance, normalization=normalization,
+                    filter_phase=self.filter_phase, length_policy=self.length_policy,
+                    requested_start_seconds=float(self.start), requested_end_seconds=float(self.end),
+                    mean_definition='mean absolute amplitude across observed frames and channels',
+                    window_interval='left-closed/right-open; partial averages use observed frames only',
+                    clock_note='Constant BPM; not a variable-tempo map',
+                    dynamic=bool(np.any(np.ptp(values, axis=0) > 1e-9)))
+        if _data_only:
+            return np.round(values, 12), meta
+        return self.api.Recording(name, tuple(a.name for a in axes), values.tolist(), self.clock,
+                                  json.dumps(meta, allow_nan=False))
+
+    def verify_sources(self):
+        for path, digest in self.hashes.items():
+            if sha256_file(path) != digest:
+                raise ValueError('Source audio changed during extraction: '+path.name)
+
+
+def extract_recording(axes, *, name='audio_recording', normalization='none', **kwargs):
+    bank = EnvelopeBank([a.source for a in axes], **kwargs)
+    result = bank.compose(axes, name=name, normalization=normalization)
+    bank.verify_sources()
+    return result
+
+
+def read_manifest(root):
+    path = Path(root)/'analysis.json'
+    if not path.is_file() or path.stat().st_size > 32*1024*1024:
+        raise ValueError('Choose a StemLab analysis containing analysis.json')
+    data = json.loads(path.read_text(encoding='utf-8'))
+    if not isinstance(data, dict):
+        raise ValueError('analysis.json must be an object')
+    return data
+
+
+def resolve_tempo(source, *, bpm=None, confirmed=False, beat_zero=None, beat_model='auto'):
+    if confirmed and bpm is None:
+        raise ValueError('--bpm-confirmed requires an explicit --bpm')
+    origin, phase = 0., 'unverified'
+    if bpm is not None:
+        if finite(bpm, 'BPM') <= 0:
+            raise ValueError('BPM must be positive')
+        if beat_model != 'auto':
+            raise ValueError('Choose --bpm or --beat-model, not both')
+        result = dict(bpm=bpm, bpm_source='user', bpm_status='confirmed' if confirmed else 'estimated')
+    elif Path(source).is_dir():
+        root = Path(source).resolve()
+        choices = []
+        for item in read_manifest(root).get('beats', []):
+            if not isinstance(item, dict) or item.get('error'):
+                continue
+            model = str(item.get('model', ''))
+            if not re.fullmatch('[a-zA-Z0-9_-]+', model) or (beat_model != 'auto' and model != beat_model):
+                continue
+            data = dict(item)
+            p = (root/'beats'/(model+'.json')).resolve()
+            if p.is_relative_to(root) and p.is_file() and p.stat().st_size <= 32*1024*1024:
+                value = json.loads(p.read_text(encoding='utf-8'))
+                if isinstance(value, dict) and value.get('model', model) == model:
+                    data.update(value)
+            try:
+                times = np.asarray(data['beats'], dtype=float) if isinstance(data.get('beats'), list) else np.empty(0)
+            except (ValueError, TypeError):
+                continue
+            if times.ndim != 1 or not np.all(np.isfinite(times)) or np.any(np.diff(times) <= 0):
+                continue
+            tempo = data.get('tempo_bpm')
+            if tempo is None and len(times) >= 2:
+                tempo = float(60/np.median(np.diff(times)))
+            if isinstance(tempo, bool) or not isinstance(tempo, (int, float)) or not math.isfinite(tempo) or tempo <= 0:
+                continue
+            choices.append((2 if model == 'consensus' else 1 if model == 'all_in_one' else 0,
+                            len(times), model, tempo, times))
+        if not choices:
+            raise ValueError('No usable saved BPM estimate. Provide --bpm before exporting')
+        _, _, model, tempo, times = max(choices, key=lambda v: v[:3])
+        result = dict(bpm=tempo, bpm_source='saved:'+model, bpm_status='estimated')
+        if len(times):
+            origin, phase = float(times[0]), 'estimated'
+    else:
+        raise ValueError('A BPM estimate or confirmed value is required: supply --bpm')
+    if beat_zero is not None:
+        origin, phase = finite(beat_zero, 'beat-zero'), 'supplied'
+    result.update(beat_zero_seconds=origin, phase_status=phase)
+    return result
+
+
+def source_catalogue(source):
+    source = Path(source).expanduser().resolve()
+    if source.is_file():
+        return {'master': source}
+    from .midi.runner import saved_sources
+    master, stems = saved_sources(source)  # retains existing containment and copied-master SHA checks
+    result = {'master': master}
+    for stem in stems:
+        key = f'{stem.model}/{stem.stem}'
+        if key in result:
+            raise ValueError('Duplicate saved source '+key)
+        result[key] = stem.path
+    return result

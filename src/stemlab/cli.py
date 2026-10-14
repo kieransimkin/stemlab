@@ -18,6 +18,7 @@ from .clip_cli import register_clip_commands
 from .cue_cli import print_cue_review, register_cue_commands
 from .models import MODEL_REGISTRY, profile as resolve_profile
 from .pipeline import run_pipeline
+from .recording_cli import register_recording_commands
 from .types import PipelineConfig
 from .util import device_string
 
@@ -25,6 +26,7 @@ app = typer.Typer(no_args_is_help=True, pretty_exceptions_show_locals=False, hel
 console = Console()
 register_cue_commands(app, console)
 register_clip_commands(app, console)
+register_recording_commands(app, console)
 
 
 @app.command("repair-spectrograms")

@@ -22,3 +22,8 @@ include scripts/benchmark_evidence_corpus.py
 
 recursive-include docs/branding *.svg *.png *.md
 include AGENTS.md CONTRIBUTING.md
+
+include docs/rudiment-recordings.md
+include docs/screenshots/recording-comparison.png
+recursive-include examples/recordings *.py
+include .github/workflows/recordings.yml
