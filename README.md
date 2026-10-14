@@ -241,6 +241,13 @@ The link is the deployment target, not a claim that an unmerged change is live.
 Generation and real browser tests are release gates. A pinned companion revision
 prevents cross-repository push-order races. Only the generated public directory
 is deployed; source manifests and private/test data are excluded.
+
+The audio browser gate serves the MP3 through a byte-range-aware local HTTP server
+under `/stemlab/`, so seeking can request partial audio rather than restarting a
+full download. It checks exact range responses and completed seeks without relaxing
+the clock tolerances. Failed browser checks retain JSON diagnostics and attempt
+a screenshot for the separate QA artifact; they still block publication.
+
 See **[release recipe, playback, Pages setup and local reproduction](docs/arcadians-release-demo.md)**.
 
 ## Timeline analysis gallery

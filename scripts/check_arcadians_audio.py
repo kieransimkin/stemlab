@@ -9,30 +9,77 @@ from __future__ import annotations
 import argparse
 import base64
 from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 import json
 from pathlib import Path
 import sys
 import threading
-from urllib.parse import unquote, urlparse
+from urllib.request import Request, urlopen
 
+from arcadians_http import ProjectHandler
 from build_arcadians_demo import read_payload
 
 
-class ProjectHandler(SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if urlparse(self.path).path == '/favicon.ico':
-            self.send_response(204)
-            self.end_headers()
-            return
-        if not unquote(urlparse(self.path).path).startswith('/stemlab/'):
-            self.send_error(404)
-            return
-        self.path = self.path[len('/stemlab'):]
-        super().do_GET()
+def verify_audio_ranges(url: str, audio_file: Path) -> dict:
+    """Prove the HTTP transport supports seeking before starting the browser."""
+    size = audio_file.stat().st_size
+    if size < 1:
+        raise ValueError('Audio file is empty')
+    with urlopen(Request(url, method='HEAD'), timeout=10) as response:
+        assert response.status == 200
+        assert response.headers.get('Accept-Ranges') == 'bytes'
+        assert int(response.headers['Content-Length']) == size
+        assert not response.read(), 'HEAD must not include audio bytes'
+    width = min(size, 32)
+    spans = [(f'bytes=0-{width-1}', 0, width-1),
+             (f'bytes=-{width}', size-width, size-1),
+             (f'bytes={size-width}-', size-width, size-1)]
+    for header, start, end in spans:
+        with urlopen(Request(url, headers={'Range': header}), timeout=10) as response:
+            assert response.status == 206, 'Audio server must honour byte-range requests'
+            assert response.headers['Content-Range'] == f'bytes {start}-{end}/{size}'
+            assert int(response.headers['Content-Length']) == end-start+1
+            received = response.read()
+        with audio_file.open('rb') as source:
+            source.seek(start)
+            assert received == source.read(end-start+1), 'Wrong partial audio payload'
+    return {'verified': True, 'partial_requests': len(spans), 'audio_bytes': size}
 
-    def log_message(self, *_args):
-        pass
+
+def _failure_report(report_path: Path, exc: Exception, stage: str, *, page=None,
+                    screenshot=None, in_memory=False, errors=(), bad_responses=(),
+                    ranges=None, target=None):
+    """Retain useful evidence before Playwright/browser teardown, even on timeout."""
+    result = dict(format='stemlab.arcadians-audio-browser-check', status='failed',
+                  mode='in-memory' if in_memory else 'http-project-pages-prefix',
+                  stage=stage, error_type=type(exc).__name__, error=str(exc),
+                  target_seconds=target, http_ranges=ranges,
+                  page_errors=list(errors), bad_responses=list(bad_responses),
+                  hosted_file_loading_verified=False, listening_qa=False)
+    if page is not None:
+        try:
+            result['browser_state'] = page.evaluate("""() => {
+                const a = document.getElementById('audio');
+                const spans = r => Array.from({length:r.length}, (_,i)=>[r.start(i),r.end(i)]);
+                const media = a ? {src:a.currentSrc, time:a.currentTime,
+                    duration:Number.isFinite(a.duration)?a.duration:null,
+                    paused:a.paused, seeking:a.seeking, ended:a.ended,
+                    readyState:a.readyState, networkState:a.networkState,
+                    seekable:spans(a.seekable), buffered:spans(a.buffered),
+                    error:a.error?{code:a.error.code,message:a.error.message}:null} : null;
+                return {url:location.href, audio:media, audition:window.audition?.state()};
+            }""")
+        except Exception as diagnostic_error:
+            result['state_error'] = str(diagnostic_error)
+        if screenshot:
+            try:
+                Path(screenshot).parent.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(screenshot), timeout=5000)
+                result['screenshot'] = Path(screenshot).name
+            except Exception as diagnostic_error:
+                result['screenshot_error'] = str(diagnostic_error)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
 
 
 def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, screenshot=None) -> dict:
@@ -48,6 +95,9 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
         raise ValueError('The public MP3 must exist alongside the visualizer')
     server = None
     origin = None
+    stage, page, target = 'http-range-preflight', None, None
+    ranges = {'verified': False, 'reason': ('in-memory mode bypasses HTTP' if in_memory
+                                          else 'HTTP preflight not completed')}
     errors, bad_responses, requests = [], [], []
     if not in_memory:
         server = ThreadingHTTPServer(('127.0.0.1', 0), partial(ProjectHandler, directory=str(site)))
@@ -55,6 +105,9 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
         thread.start()
         origin = f'http://127.0.0.1:{server.server_port}'
     try:
+        if not in_memory:
+            ranges = verify_audio_ranges(origin + '/stemlab/arcadians/audio.mp3', audio_file)
+        stage = 'browser-start'
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True, executable_path=chromium,
                                                   args=['--no-sandbox'])
@@ -63,10 +116,12 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 page.on('pageerror', lambda e: errors.append(str(e)))
                 page.on('request', lambda r: requests.append(r.url))
                 page.on('response', lambda r: bad_responses.append((r.status, r.url)) if r.status >= 400 else None)
+                stage = 'page-load'
                 if in_memory:
                     page.set_content((gallery / 'index.html').read_text(encoding='utf-8'))
                 else:
                     page.goto(origin + '/stemlab/arcadians/', wait_until='load')
+                stage = 'harness-ready'
                 page.wait_for_function('window.audition?.ready === true', timeout=60000)
                 if in_memory:
                     page.evaluate('''b64 => {
@@ -83,6 +138,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 assert page.locator('#bpm').is_disabled() and page.locator('#offset').is_disabled()
                 if not in_memory:
                     assert audio.evaluate('(a) => a.currentSrc') == origin + '/stemlab/arcadians/audio.mp3'
+                stage = 'native-sample-comparison'
                 # Check every stored dimension of every candidate at three points.
                 # Expected data are the authoritative JSON, not a second sampler.
                 patterns = payload['pack']['patterns']
@@ -109,6 +165,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                     decode_input = {'base64': raw}
                 else:
                     decode_input = {'url': origin + '/stemlab/arcadians/audio.mp3'}
+                stage = 'audio-decode'
                 decoded = page.evaluate('''async input => {
                     const bytes = input.base64 ? Uint8Array.from(atob(input.base64), c=>c.charCodeAt(0)).buffer
                         : await (await fetch(input.url)).arrayBuffer();
@@ -135,9 +192,18 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                     expected = (value['time'] - clock['beat_zero_seconds']) * clock['bpm'] / 60
                     assert abs(value['beat'] - expected) < 1e-6, value
                 # Shared Play starts the actual bundled source, not a silent timer.
+                stage = 'shared-control-seek'
                 target = duration * .37
-                page.evaluate('(b) => window.audition.setBeat(b)', target * clock['bpm'] / 60)
-                page.wait_for_function('(t) => Math.abs(document.getElementById("audio").currentTime-t)<.04', arg=target)
+                page.wait_for_function("""t => {
+                    const a=document.getElementById('audio');
+                    return Array.from({length:a.seekable.length}, (_,i)=>i).some(
+                        i=>a.seekable.start(i)<=t && a.seekable.end(i)>=t);
+                }""", arg=target, timeout=30000)
+                page.evaluate('(b) => window.audition.setBeat(b)',
+                              (target-clock['beat_zero_seconds']) * clock['bpm'] / 60)
+                page.wait_for_function("""t => {const a=document.getElementById('audio');
+                    return !a.seeking && Math.abs(a.currentTime-t)<.04;}""", arg=target)
+                stage = 'play-pause'
                 page.locator('#play').click()
                 page.wait_for_function('!document.getElementById("audio").paused && window.audition.state().running')
                 page.wait_for_function('(t)=>document.getElementById("audio").currentTime > t+.1', arg=target)
@@ -148,21 +214,28 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 page.wait_for_timeout(150)
                 assert abs(audio.evaluate('(a) => a.currentTime') - stopped) < .03
                 # Native audio seek is also reflected by the movement clock.
-                audio.evaluate('(a,t)=>{a.currentTime=t}', duration * .63)
-                page.wait_for_timeout(100)
+                stage = 'native-audio-seek'
+                target = duration * .63
+                audio.evaluate('(a,t)=>{a.currentTime=t}', target)
+                page.wait_for_function("""t => {const a=document.getElementById('audio');
+                    return !a.seeking && Math.abs(a.currentTime-t)<.04;}""", arg=target)
                 assert_clock()
                 # Restart controls both media and movement, without starting playback.
+                stage = 'restart'
                 page.locator('#reset').click()
-                page.wait_for_timeout(100)
+                page.wait_for_function("""() => {const a=document.getElementById('audio');
+                    return !a.seeking && Math.abs(a.currentTime)<.04;}""")
                 assert abs(audio.evaluate('(a)=>a.currentTime')) < .04
                 assert not page.evaluate('window.audition.state().running')
                 assert_clock()
+                stage = 'playing-slider-seek'
                 # Exercise the visible seek slider while audio is playing.
                 page.locator('#play').click()
                 page.wait_for_function('window.audition.state().running')
                 target_pip = round(duration * .5 * clock['bpm'] / 60 * 64)
                 page.locator('#seek').evaluate('(s,p)=>{s.value=p;s.dispatchEvent(new Event("input",{bubbles:true}))}', target_pip)
-                page.wait_for_timeout(150)
+                page.wait_for_function("""t => {const a=document.getElementById('audio');
+                    return !a.seeking && Math.abs(a.currentTime-t)<1;}""", arg=duration*.5)
                 assert_clock()
                 assert abs(audio.evaluate('(a)=>a.currentTime') - duration * .5) < 1
                 page.locator('#play').click()
@@ -173,6 +246,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 expected_sample = recording['samples'][pip]
                 actual_sample = page.evaluate('([i,p])=>window.audition.sample(i,p)', [i,pip])
                 assert actual_sample == expected_sample
+                stage = 'review-export-import'
                 name = patterns[0]['name']
                 page.evaluate('name=>window.audition.setStatus(name,"keep")', name)
                 review = page.evaluate('window.audition.review()')
@@ -184,9 +258,11 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 download.value.save_as(review_path)
                 assert json.loads(review_path.read_text(encoding='utf-8')) == review
                 page.evaluate('doc=>window.audition.importReview(doc)', review)
+                stage = 'end-of-recording'
                 # Compressed-audio end events can arrive after the last sample
                 # reaches duration. Wait for actual completion, not a 180 ms sleep.
                 page.evaluate('beat=>window.audition.setBeat(beat)', (first+count-1)/64)
+                page.wait_for_function("!document.getElementById('audio').seeking")
                 page.evaluate('''() => {
                     window.__arcadiansEndPlay = false;
                     document.getElementById('audio').addEventListener('play', () => {
@@ -199,7 +275,9 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 assert audio.evaluate('(a)=>a.currentTime') >= payload['audio']['range_end'] - .1
                 assert page.evaluate('window.audition.state().beat') >= (first+count-2)/64
                 page.evaluate('beat=>window.audition.setBeat(beat)', count/128)
+                stage = 'screenshot-and-network-check'
                 if screenshot:
+                    Path(screenshot).parent.mkdir(parents=True, exist_ok=True)
                     page.locator('#comparison').scroll_into_view_if_needed()
                     page.locator('#comparison').screenshot(path=str(screenshot))
                 # No missing files or remote CDN/audio dependency is allowed.
@@ -208,14 +286,23 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 external = [r for r in requests if r.startswith(('https://','http://')) and
                             (origin is None or not r.startswith(origin + '/'))]
                 assert not external, external
+            except Exception as exc:
+                _failure_report(report_path, exc, stage, page=page, screenshot=screenshot,
+                                in_memory=in_memory, errors=errors, bad_responses=bad_responses,
+                                ranges=ranges, target=target)
+                raise
             finally:
                 browser.close()
+    except Exception as exc:
+        if stage in ('http-range-preflight', 'browser-start'):
+            _failure_report(report_path, exc, stage, in_memory=in_memory, ranges=ranges)
+        raise
     finally:
         if server:
             server.shutdown()
             server.server_close()
     report = dict(
-        format='stemlab.arcadians-audio-browser-check',
+        format='stemlab.arcadians-audio-browser-check', status='passed', http_ranges=ranges,
         mode='in-memory' if in_memory else 'http-project-pages-prefix',
         hosted_file_loading_verified=not in_memory, audio_source=metadata['source']['title'],
         audio_sha256=metadata['source']['sha256'], decoded=decoded,

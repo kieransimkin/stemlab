@@ -10,6 +10,8 @@ on:
       - '.github/dancerudiments-recording-ref'
       - 'scripts/build_arcadians_demo.py'
       - 'scripts/check_arcadians_audio.py'
+      - 'scripts/arcadians_http.py'
+      - 'tests/test_arcadians_http.py'
       - 'src/stemlab/analysis/rudiment_recordings.py'
       - 'src/stemlab/analysis/rudiment_batch.py'
       - 'tests/test_arcadians_release_demo.py'
@@ -26,6 +28,7 @@ jobs:
     env:
       STEMLAB_REQUIRE_RECORDINGS: '1'
       DANCERUDIMENTS_REQUIRE_NATIVE: '1'
+      PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@v7
         with:
@@ -55,7 +58,7 @@ jobs:
           python -m pip install --no-deps -e .
           python -c "from dancerudiments import SampledRecording; from dancerudiments_authoring.harness import build_recording_harness"
       - name: Run release-demo and recording regression tests
-        run: python -m pytest tests/test_arcadians_release_demo.py tests/test_rudiment_recordings.py tests/test_rudiment_matches.py
+        run: python -m pytest tests/test_arcadians_http.py tests/test_arcadians_release_demo.py tests/test_rudiment_recordings.py tests/test_rudiment_matches.py
       - name: Generate 48 full-song movements with the original MP3 included
         env:
           RELEASE_LABEL: ${{ github.ref_name }}

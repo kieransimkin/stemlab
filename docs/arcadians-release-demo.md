@@ -93,6 +93,45 @@ and reports are retained in a separate workflow artifact and never mixed with
 public review data. The standalone **Arcadians release demo** workflow also allows
 manual build/test runs and relevant pull-request validation without publishing.
 
+## Audio-seeking regression and failure evidence
+
+The first real-song release-demo run generated all 48 movements but failed during
+HTTP audio seeking. The old QA server inherited `SimpleHTTPRequestHandler` without
+byte-range handling, so it sent the entire MP3 with status 200 even for a `Range`
+request. The in-memory browser check bypassed this HTTP behaviour and could not
+establish that seeking worked over HTTP.
+
+The loopback-only QA server in `scripts/arcadians_http.py` now implements single
+byte ranges (206 with exact `Content-Range`/`Content-Length`), suffix/open-ended
+ranges, 416 for unsatisfiable ranges, and HEAD under the same project prefix.
+Cancelled media preloads may close their connection; these expected disconnects
+are handled without hiding unrelated server errors. Requests outside the supplied
+site and directory listings are not served. This helper is not a production server.
+
+Before launching Chromium, the gate verifies HEAD and three partial MP3 responses
+against the source bytes. It then waits for seekable media and completed seeks,
+retaining the existing 40 ms paused-seek and audio/movement clock tolerances. It
+does not replace HTTP media with a Blob or waive playback checks in release CI.
+
+Browser exceptions, including Playwright timeouts, now write `status: failed`,
+the failing stage and target, audio `currentTime`, `readyState`, `networkState`,
+`seekable` and `buffered` ranges, and page errors before closing the browser. The
+requested screenshot is attempted on failure too. These files remain in the
+`stemlab-arcadians-browser-qa` artifact, not the public site. Failures still stop
+packaging and deployment. Progress is unbuffered in the demo workflow.
+
+Run the lightweight transport/diagnostic regression tests without installing the
+optional native companion or Chromium:
+
+```sh
+python -m pytest tests/test_arcadians_http.py
+```
+
+After applying a correction, start **a new** Arcadians release demo run from the
+updated `main`. Re-running an old run retries its original commit, not the fix.
+A successful standalone run produces preview artifacts; tagged-release Pages
+publication remains separate as described below.
+
 ## One-time Pages setup
 
 In `kieransimkin/stemlab`, set **Settings → Pages → Build and deployment → Source**
