@@ -45,3 +45,4 @@ include .github/workflows/arcadians-timeline.yml
 include docs/arcadians-timeline.md
 
 include scripts/check_torchaudio_decode.py
+include scripts/check_semantic_runtime.py

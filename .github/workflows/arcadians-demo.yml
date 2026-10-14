@@ -14,6 +14,7 @@ on:
       - '.github/workflows/arcadians-timeline.yml'
       - 'scripts/build_arcadians_timeline.py'
       - 'scripts/check_torchaudio_decode.py'
+      - 'scripts/check_semantic_runtime.py'
       - 'tests/test_arcadians_runtime.py'
       - 'docker/**'
       - 'scripts/check_arcadians_timeline.py'

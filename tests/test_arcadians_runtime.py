@@ -13,6 +13,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import build_arcadians_timeline as builder
 import check_torchaudio_decode as decoder
+import check_semantic_runtime as semantic_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -168,5 +169,146 @@ def test_new_runtime_files_pass_ruff():
     subprocess.run([sys.executable, '-m', 'ruff', 'check',
                     'scripts/assemble_arcadians_site.py', 'scripts/build_arcadians_timeline.py',
                     'scripts/check_arcadians_timeline.py', 'scripts/check_torchaudio_decode.py',
+                    'scripts/check_semantic_runtime.py',
                     'tests/test_arcadians_timeline.py', 'tests/test_arcadians_runtime.py'],
                    cwd=ROOT, check=True, timeout=30)
+
+
+@pytest.fixture
+def semantic_modules(monkeypatch):
+    """Unit-test doubles only; the Docker verifier always loads real packages."""
+    calls = []
+    class PreTrainedModel:
+        pass
+    class SentenceTransformer:
+        def encode(self, *args, **kwargs):
+            raise AssertionError("The import-only probe must not execute any model")
+    def resample(source, *, orig_sr, target_sr, res_type):
+        calls.append(res_type)
+        assert source.shape == (800,) and source.dtype == np.float32
+        assert orig_sr == 8000 and target_sr == 16000
+        return np.repeat(source, 2)
+    modules = {
+        "librosa": SimpleNamespace(resample=resample),
+        "transformers": SimpleNamespace(PreTrainedModel=PreTrainedModel),
+        "sentence_transformers": SimpleNamespace(SentenceTransformer=SentenceTransformer),
+    }
+    def load(name):
+        calls.append(name)
+        return modules[name]
+    monkeypatch.setattr(semantic_runtime.importlib, "import_module", load)
+    monkeypatch.setattr(semantic_runtime.importlib.metadata, "version", lambda name: "unit-test-double")
+    return modules, calls
+
+
+def test_semantic_preflight_resamples_before_resolving_model_classes(semantic_modules):
+    _, calls = semantic_modules
+    report = semantic_runtime.check_semantic_runtime()
+    assert calls == ["librosa", "kaiser_best", "kaiser_fast", "transformers", "sentence_transformers"]
+    assert report["status"] == "passed"
+    assert report["format"] == "stemlab.semantic-runtime-check"
+    assert "no model inference" in report["scope"]
+    assert len(report["resampling"]) == 2
+    assert all(p["output_frames"] == 1600 for p in report["resampling"])
+    assert {"setuptools", "resampy", "torchvision"} <= report["dependencies"].keys()
+
+
+def test_missing_lazy_pkg_resources_stops_before_any_model_import(semantic_modules):
+    modules, calls = semantic_modules
+    missing = ModuleNotFoundError("No module named 'pkg_resources'", name="pkg_resources")
+    def fail(*args, **kwargs):
+        raise missing
+    modules["librosa"].resample = fail
+    with pytest.raises(RuntimeError, match="kaiser_best.*setuptools 81.0.0") as caught:
+        semantic_runtime.check_semantic_runtime()
+    assert caught.value.__cause__ is missing
+    assert calls == ["librosa"]
+
+
+@pytest.mark.parametrize("broken", [np.zeros(1600), np.ones(1600),
+                                     np.full(1600, np.nan), np.full(1600, np.inf),
+                                     np.ones(1599), np.ones((2, 1600))])
+def test_semantic_preflight_rejects_invalid_resampled_audio(semantic_modules, broken):
+    modules, calls = semantic_modules
+    modules["librosa"].resample = lambda *args, **kwargs: broken
+    with pytest.raises(RuntimeError, match="kaiser_best") as caught:
+        semantic_runtime.check_semantic_runtime()
+    assert isinstance(caught.value.__cause__, ValueError)
+    assert "transformers" not in calls
+
+
+def test_semantic_preflight_requires_second_filter_too(semantic_modules):
+    modules, calls = semantic_modules
+    original = modules["librosa"].resample
+    def resample(*args, **kwargs):
+        if kwargs["res_type"] == "kaiser_fast":
+            raise FileNotFoundError("kaiser_fast.npz missing")
+        return original(*args, **kwargs)
+    modules["librosa"].resample = resample
+    with pytest.raises(RuntimeError, match="kaiser_fast") as caught:
+        semantic_runtime.check_semantic_runtime()
+    assert isinstance(caught.value.__cause__, FileNotFoundError)
+    assert "transformers" not in calls
+
+
+@pytest.mark.parametrize("name,attr,value", [
+    ("transformers", "PreTrainedModel", None),
+    ("sentence_transformers", "SentenceTransformer", None),
+    ("sentence_transformers", "SentenceTransformer", type("NoEncode", (), {})),
+])
+def test_semantic_preflight_resolves_concrete_classes(semantic_modules, name, attr, value):
+    modules, _ = semantic_modules
+    setattr(modules[name], attr, value)
+    with pytest.raises(RuntimeError, match=attr) as caught:
+        semantic_runtime.check_semantic_runtime()
+    assert isinstance(caught.value.__cause__, TypeError)
+
+
+def test_semantic_preflight_keeps_nested_lazy_import_cause(semantic_modules):
+    modules, _ = semantic_modules
+    missing = ModuleNotFoundError("No module named 'pkg_resources'", name="pkg_resources")
+    class BrokenTransformers:
+        @property
+        def PreTrainedModel(self):
+            raise ModuleNotFoundError("Could not import module 'PreTrainedModel'") from missing
+    modules["transformers"] = BrokenTransformers()
+    with pytest.raises(RuntimeError, match="PreTrainedModel") as caught:
+        semantic_runtime.check_semantic_runtime()
+    assert caught.value.__cause__.__cause__ is missing
+
+
+def test_semantic_cli_emits_only_a_successful_check(semantic_modules, capsys):
+    import json
+    assert semantic_runtime.main() == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["status"] == "passed"
+
+
+def test_container_legacy_resampy_constraint_does_not_break_basic_pitch():
+    from packaging.requirements import Requirement
+    from packaging.version import Version
+    requirements = (ROOT / "docker/requirements.lock.txt").read_text()
+    declared = {r.name: r for r in (
+        Requirement(line) for line in requirements.splitlines()
+        if line.strip() and not line.startswith("#")
+    )}
+    assert str(declared["basic-pitch"].specifier) == "==0.4.0"
+    assert str(declared["resampy"].specifier) == "==0.4.2"
+    assert str(declared["setuptools"].specifier) == "==81.0.0"
+    assert Version("0.4.2") in Requirement("resampy>=0.2.2,<0.4.3").specifier
+    assert Version("81.0.0") in Requirement("setuptools>=77.0.3,<82").specifier
+    dockerfile = (ROOT / "docker/Dockerfile").read_text()
+    assert dockerfile.index("pip install -r /opt/stemlab-docker/requirements.lock.txt") < dockerfile.index("verify-environment.sh --build")
+
+
+def test_audio_first_runtime_probe_is_offline_fresh_and_mandatory():
+    verifier = (ROOT / "docker/verify-environment.sh").read_text()
+    command = "python /opt/stemlab/scripts/check_semantic_runtime.py"
+    assert "set -euo pipefail" in verifier
+    assert "HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1" in verifier
+    assert verifier.index(command) < verifier.index("python - <<'PY'")
+    assert "||" not in verifier.split(command, 1)[1].split("python - <<'PY'", 1)[0]
+    assert "include scripts/check_semantic_runtime.py" in (ROOT / "MANIFEST.in").read_text()
+    workflow = (ROOT / ".github/workflows/arcadians-demo.yml").read_text()
+    assert "'scripts/check_semantic_runtime.py'" in workflow
+    assert "'docker/**'" in workflow

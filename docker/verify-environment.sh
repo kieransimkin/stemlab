@@ -5,6 +5,11 @@ mode="${1:-runtime}"
 
 echo "=== StemLab Docker environment verification ($mode) ==="
 python --version
+# Fresh-process, audio-first check: the broad import loop below loads
+# torchvision first and can otherwise conceal broken lazy audio imports.
+# This probe exercises real filter files but must not fetch model weights.
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+    python /opt/stemlab/scripts/check_semantic_runtime.py
 python - <<'PY'
 import importlib
 import importlib.metadata

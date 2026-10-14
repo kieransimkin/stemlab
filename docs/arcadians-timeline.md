@@ -181,3 +181,14 @@ Use **Arcadians release demo** to build and publish both examples. The standalon
 **Arcadians complete analysis timeline** is for diagnostic builds and its own
 artifacts, not a second required dispatch. Start a fresh `main` run after changing
 code; retrying an older run keeps its original revision.
+
+### Late lyric-semantic import failure
+
+A generic `Could not import module 'PreTrainedModel'` can hide
+`ModuleNotFoundError: No module named 'pkg_resources'` from resampy's lazy
+filter loader. The Docker lock now keeps resampy 0.4.2 with Setuptools 81.0.0
+for Basic Pitch compatibility, and the image verifier executes both real Kaiser
+resamplers before importing the text-model classes in a fresh offline process.
+See [the runtime check](../docker/README.md#audio-first-semantic-runtime-check).
+The original MP3, required analysis stages, ownership repair and publication
+gates are unchanged; partial analysis artifacts are not publishable timelines.

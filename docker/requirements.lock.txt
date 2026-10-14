@@ -3,6 +3,12 @@
 # index can be selected while preserving the captured version numbers.
 beat-this==1.1.0
 basic-pitch==0.4.0
+# Basic Pitch requires resampy<0.4.3, whose filter loader still uses
+# pkg_resources. Setuptools removed it in 82.0.0. Keep this temporary
+# compatibility pair scoped to the container runtime (not build isolation).
+# Upgrade/remove both pins when Basic Pitch accepts the migrated resampy.
+resampy==0.4.2
+setuptools==81.0.0
 bs-roformer==1.2.4
 bs-roformer-infer==0.1.5
 cmudict==1.1.3

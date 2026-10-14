@@ -40,6 +40,39 @@ The Arcadians CI workflow restores ownership of its dedicated output folder to
 the runner after Docker exits, on success or failure. It does not make private
 JSON world-readable or change permissions on the source checkout or model caches.
 
+## Audio-first semantic runtime check
+
+`basic-pitch==0.4.0` requires `resampy<0.4.3`. Resampy 0.4.2 loads its Kaiser
+filter resources through `pkg_resources`, removed in Setuptools 82.0.0. The
+container runtime lock therefore pins **resampy 0.4.2 + Setuptools 81.0.0**. It
+is applied after the initial packaging bootstrap and before the image verifier.
+The pin is deliberately scoped to this legacy runtime, not normal isolated
+source/wheel builds or the user's global Python installation. Setuptools is
+not a fully pinned security/reproducibility guarantee for all transitive tools;
+retire this compatibility pair when Basic Pitch accepts a migrated resampy.
+
+Before the broad module-import loop, `verify-environment.sh` runs
+`check_semantic_runtime.py` in a **fresh process with Hugging Face offline**.
+It performs 8 kHz to 16 kHz resampling with the actual `kaiser_best` and
+`kaiser_fast` resources, validates the synthetic probe's length and level, then
+resolves `transformers.PreTrainedModel` and `SentenceTransformer.encode`. The
+order matters: preloading torchvision had hidden a lazy resampy failure until
+lyric analysis. Import errors keep their original chained traceback. Nothing is
+monkey-patched, no alternative resampler is substituted, and no checkpoint is
+downloaded or executed by this smoke test.
+
+Run the same check in an installed container:
+
+```bash
+docker run --rm --entrypoint python \
+  -e HF_HUB_OFFLINE=1 -e TRANSFORMERS_OFFLINE=1 \
+  stemlab-timeline:ci /opt/stemlab/scripts/check_semantic_runtime.py
+```
+
+The real Arcadians analysis must still pass lyric embeddings, song-map/loop
+stages, timeline browser tests and the combined publication checks. Passing the
+runtime smoke test is not evidence that those later stages completed.
+
 ## Validate the CI container locally
 
 On Windows PowerShell:

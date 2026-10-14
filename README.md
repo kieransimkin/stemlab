@@ -796,3 +796,13 @@ For a new combined timeline and movement deployment, run **Arcadians release
 demo** on `main`. It calls **Arcadians complete analysis timeline** internally;
 starting that standalone workflow too duplicates analysis and does not itself
 publish the combined Pages site.
+
+The Docker build also checks **audio-first lyric-semantic imports** in a fresh,
+offline process: it exercises both resampy Kaiser filters before resolving the
+actual Transformers and SentenceTransformer classes. This catches lazy-loading
+failures before full-song inference. The container runtime temporarily pins
+`resampy==0.4.2` and `setuptools==81.0.0` because Basic Pitch 0.4.0 excludes the
+newer resampy that no longer needs `pkg_resources`. These are container-only
+compatibility pins, not a downgrade of normal package-build tooling. This smoke
+test does not download weights or claim semantic inference; the full analysis
+and browser/publication gates remain required.
