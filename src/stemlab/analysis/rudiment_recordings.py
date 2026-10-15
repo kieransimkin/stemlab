@@ -13,6 +13,7 @@ import numpy as np
 import soundfile as sf
 from scipy.signal import butter, sosfilt, sosfilt_zi
 from stemlab.util import sha256_file
+from .frequency_bands import FourierBand, frequency_edges, band_envelopes
 
 BLOCK_FRAMES = 131072
 MAX_CACHED_VALUES = 32_000_000
@@ -42,13 +43,18 @@ class AxisSpec:
     filter_order: int = 4
     gain: float = 1.
     moving_average_beats: float = 0.25
+    fourier: FourierBand | None = None
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not re.fullmatch(r'[a-z][a-z0-9_]{0,127}', self.name):
             raise ValueError('Axis names must match [a-z][a-z0-9_]{0,127}')
         object.__setattr__(self, 'source', Path(self.source).expanduser().resolve())
-        if self.mode not in ('peak', 'average', 'moving-average'):
-            raise ValueError('Mode must be peak, average or moving-average')
+        if self.mode not in ('peak', 'average', 'moving-average', 'fourier'):
+            raise ValueError('Mode must be peak, average, moving-average or fourier')
+        if (self.fourier is not None and not isinstance(self.fourier, FourierBand)) or (self.mode == 'fourier') != (self.fourier is not None):
+            raise ValueError('Fourier mode requires a FourierBand specification; other modes cannot use it')
+        if self.fourier is not None and (self.low_pass is not None or self.high_pass is not None):
+            raise ValueError('Fourier bands cannot be combined with time-domain low/high-pass filters')
         window = finite(self.moving_average_beats, 'moving_average_beats')
         if not 0 < window <= 64:
             raise ValueError('Moving-average window must be >0 and <=64 beats')
@@ -61,6 +67,16 @@ class AxisSpec:
         if self.low_pass is not None and self.high_pass is not None and self.high_pass >= self.low_pass:
             raise ValueError('Band-pass requires high_pass < low_pass')
         finite(self.gain, 'gain')
+
+
+def fourier_axes(source, bands=32, *, fft_size=2048, minimum=0., maximum=None, spacing='linear'):
+    """One ascending-frequency dimension per bucket, using a single source pass."""
+    source = Path(source).expanduser().resolve()
+    info = sf.info(str(source))
+    edges = frequency_edges(info.samplerate, bands, minimum=minimum, maximum=maximum, spacing=spacing)
+    specs = [FourierBand(i, edges, fft_size) for i in range(bands)]
+    specs[0].bins(info.samplerate)  # Reject unresolved/empty buckets before export.
+    return [AxisSpec(f'band_{i:03d}', source, mode='fourier', fourier=spec) for i, spec in enumerate(specs)]
 
 
 def moving_average_pips(beats: float, pips_per_beat: int = 64) -> int:
@@ -225,11 +241,30 @@ class EnvelopeBank:
         self.hashes = {p: sha256_file(p) for p in self.infos}
         self.cache = {}
         self.smoothing_cache = {}
+        self.fourier_cache = {}
         self.filter_phase, self.length_policy = filter_phase, length_policy
         self.progress, self.block_frames = progress or (lambda message: None), block_frames
         self.cache_hits = 0
 
     def envelope(self, axis):
+        if axis.fourier is not None:
+            spec = axis.fourier
+            key = (axis.source, spec.fft_size, spec.edges_hz)
+            if key in self.fourier_cache:
+                self.cache_hits += 1
+            else:
+                if self.cached_values + self.count*(len(spec.edges_hz)-1) > MAX_CACHED_VALUES:
+                    raise ValueError('Envelope-cache budget exceeded; shorten the excerpt or reduce frequency buckets')
+                info = self.infos[axis.source]
+                self.progress(f'Fourier analysis of {axis.source.name}: {len(spec.edges_hz)-1} bands, FFT {spec.fft_size}')
+                self.fourier_cache[key] = band_envelopes(axis.source, self.edges[info.samplerate],
+                    max(0, ceil_fraction(self.start*info.samplerate)),
+                    min(info.frames, ceil_fraction(self.end*info.samplerate)), spec)
+            values, stats, starts, stops = self.fourier_cache[key]
+            i = spec.index
+            return values[:, i], dict(stats, frequency_low_hz=spec.edges_hz[i],
+                frequency_high_hz=spec.edges_hz[i+1], fft_bin_start=int(starts[i]),
+                fft_bin_end_exclusive=int(stops[i]), band_index=i, band_count=values.shape[1])
         key = (axis.source, axis.low_pass, axis.high_pass, axis.filter_order)
         if key in self.cache:
             self.cache_hits += 1
@@ -281,7 +316,7 @@ class EnvelopeBank:
 
     @property
     def cached_values(self):
-        return self.count*(2*len(self.cache) + len(self.smoothing_cache))
+        return self.count*(2*len(self.cache) + len(self.smoothing_cache)) + sum(v[0].size for v in self.fourier_cache.values())
 
     def compose(self, axes, *, name='audio_recording', normalization='none', metadata=None,
                 normalization_reference='self', _data_only=False):
@@ -307,7 +342,7 @@ class EnvelopeBank:
         reference = peaks
         if normalization_reference == 'peak':
             from dataclasses import replace
-            reference = np.array([self.envelope(replace(a, mode='peak'))[0].max() for a in axes])
+            reference = np.array([self.envelope(a if a.fourier is not None else replace(a, mode='peak'))[0].max() for a in axes])
         denominators = reference if normalization == 'per-axis' else np.full(len(axes), reference.max() if normalization == 'global' else 1.)
         for j, axis in enumerate(axes):
             scale = float(denominators[j])

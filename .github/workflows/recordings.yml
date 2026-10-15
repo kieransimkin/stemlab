@@ -49,7 +49,7 @@ jobs:
       - name: Require new shared APIs and native class; no fallback/skip
         run: python -c "from dancerudiments_authoring.harness import build_recording_harness, HARNESS_DISPLAY_API_VERSION; assert HARNESS_DISPLAY_API_VERSION == 1; from dancerudiments import SampledRecording"
       - name: DSP, routing, mandatory BPM, native playback and matching regressions
-        run: python -m pytest tests/test_rudiment_recordings.py tests/test_rudiment_matches.py tests/test_rudiment_pairs.py tests/test_arcadians_pair_demos.py
+        run: python -m pytest tests/test_rudiment_recordings.py tests/test_frequency_bands.py tests/test_rudiment_matches.py tests/test_rudiment_pairs.py tests/test_arcadians_pair_demos.py
       - name: Generate master/stem synthetic examples and a 48-candidate batch
         run: python examples/recordings/generate_demo.py --output recording-demo
       - name: Install Chromium

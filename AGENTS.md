@@ -45,3 +45,10 @@ bipolar projection. Non-silent axes map zero amplitude to -1 and their selected
 reference to +1, then apply signed gain and clipping. Completely silent axes stay
 at 0. Single, batch, stem-pair, average-comparison, legacy and harness exports
 must all pass through `EnvelopeBank.compose`; do not add a parallel exporter.
+
+Fourier frequency buckets also use that composition route: N buckets must export
+exactly N named dimensions on the same 64-pip clock. Preserve window-corrected
+one-sided band RMS, independent channel powers, source-rate/excerpt boundaries and
+frequency-bin provenance. Empty/unresolved buckets are errors, not invented data.
+Run `tests/test_frequency_bands.py` with the mandatory released native recording
+API in the recording CI job when changing this feature.

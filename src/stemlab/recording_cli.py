@@ -70,6 +70,12 @@ def register_recording_commands(app, console):
         beat_zero: Annotated[float | None, typer.Option('--beat-zero', help='Source seconds at musical beat zero')] = None,
         beat_model: Annotated[str, typer.Option('--beat-model')] = 'auto',
         axis: Annotated[list[str] | None, typer.Option('--axis', help='NAME=master, NAME=MODEL/STEM or NAME=audio-path; repeat')] = None,
+        frequency_bands: Annotated[int | None, typer.Option('--frequency-bands', help='Fourier buckets: N bands become N dimensions; default range 0..Nyquist', min=1, max=1024)] = None,
+        frequency_source: Annotated[str, typer.Option('--frequency-source', help='master, MODEL/STEM or audio path for Fourier analysis')] = 'master',
+        fft_size: Annotated[int, typer.Option('--fft-size', help='Fourier window size in source frames; power of two', min=16, max=65536)] = 2048,
+        frequency_min: Annotated[float, typer.Option('--frequency-min', help='Lowest Fourier-band frequency in Hz', min=0)] = 0.,
+        frequency_max: Annotated[float | None, typer.Option('--frequency-max', help='Highest frequency in Hz; default source Nyquist', min=0)] = None,
+        frequency_scale: Annotated[str, typer.Option('--frequency-scale', help='linear (default) or log; log requires a positive --frequency-min')] = 'linear',
         mode: Annotated[str, typer.Option('--mode', help='peak, average (per-pip mean absolute) or moving-average (centered envelope)')] = 'peak',
         axis_mode: Annotated[list[str] | None, typer.Option('--axis-mode', help='NAME=peak|average|moving-average; repeat')] = None,
         moving_average_beats: Annotated[float, typer.Option('--moving-average-beats', help='Centered smoothing window in beats; default 1/4 beat', min=0.000001, max=64)] = .25,
@@ -89,14 +95,28 @@ def register_recording_commands(app, console):
         name: Annotated[str, typer.Option('--name')] = 'audio_recording',
     ):
         """Export a BPM-synced N-dimensional recording and its native-WASM visualizer."""
-        from .analysis.rudiment_recordings import resolve_tempo, source_catalogue
+        from .analysis.rudiment_recordings import resolve_tempo, source_catalogue, fourier_axes
         from .analysis.rudiment_batch import export_single
         try:
             timing = resolve_tempo(source, bpm=bpm, confirmed=bpm_confirmed, beat_zero=beat_zero, beat_model=beat_model)
             catalogue = source_catalogue(source)
-            axes = resolve_axes(source, catalogue, axes=axis, mode=mode, low_pass=low_pass,
-                                high_pass=high_pass, axis_mode=axis_mode, gain=gain, filter_order=filter_order,
-                                moving_average_beats=moving_average_beats, axis_window=axis_window)
+            if frequency_bands is not None:
+                if any((axis, low_pass, high_pass, axis_mode, axis_window)) or mode != 'peak' or filter_order != 4 or filter_phase != 'zero' or moving_average_beats != .25:
+                    raise ValueError('--frequency-bands selects Fourier RMS; do not combine it with time-domain axis/filter/mode options')
+                selected = resolve_axes(source, catalogue, axes=['spectrum='+frequency_source])[0].source
+                axes = fourier_axes(selected, frequency_bands, fft_size=fft_size, minimum=frequency_min,
+                                    maximum=frequency_max, spacing=frequency_scale)
+                gains = assignments(gain, '--gain')
+                if set(gains)-{a.name for a in axes}:
+                    raise ValueError('--gain: unknown Fourier band axes')
+                from dataclasses import replace
+                axes = [replace(a, gain=float(gains.get(a.name, 1.))) for a in axes]
+            else:
+                if frequency_source != 'master' or fft_size != 2048 or frequency_min != 0 or frequency_max is not None or frequency_scale != 'linear':
+                    raise ValueError('Fourier options require --frequency-bands')
+                axes = resolve_axes(source, catalogue, axes=axis, mode=mode, low_pass=low_pass,
+                                    high_pass=high_pass, axis_mode=axis_mode, gain=gain, filter_order=filter_order,
+                                    moving_average_beats=moving_average_beats, axis_window=axis_window)
             report = export_single(catalogue['master'], output, axes, timing=timing, normalization=normalize,
                 filter_phase=filter_phase, length_policy=length_policy, start_seconds=start, end_seconds=end,
                 include_audio=include_audio, harness=harness, legacy=legacy, name=name,

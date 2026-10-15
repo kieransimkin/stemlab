@@ -68,7 +68,7 @@ def export_single(master, output, axes, *, timing, normalization='none', name='a
         report = dict(schema='stemlab.rudiment-recording-run.v1', clock=asdict(bank.clock),
                       sources=[dict(name=p.name, sha256=h) for p, h in bank.hashes.items()],
                       candidates=[dict(name=r.name, dimensions=list(r.dimensions), file='recordings/'+r.name+'.json')],
-                      extraction_passes=len(bank.cache), cached_values=bank.cached_values)
+                      extraction_passes=len(bank.cache)+len(bank.fourier_cache), cached_values=bank.cached_values)
         if renderer:
             report['harness'] = renderer.build_recording_harness([r], stage/'index.html', audio=audio)
         bank.verify_sources()
@@ -80,7 +80,8 @@ def export_single(master, output, axes, *, timing, normalization='none', name='a
 
 def _describe(axes):
     return ' | '.join(f'{a.name}: {a.source.name}, {a.mode}, '+
-        (f'HP {a.high_pass:g} Hz / LP {a.low_pass:g} Hz' if a.high_pass is not None and a.low_pass is not None else
+        (f'{a.fourier.edges_hz[a.fourier.index]:g}..{a.fourier.edges_hz[a.fourier.index+1]:g} Hz, FFT {a.fourier.fft_size}' if a.fourier is not None else
+         f'HP {a.high_pass:g} Hz / LP {a.low_pass:g} Hz' if a.high_pass is not None and a.low_pass is not None else
          f'LP {a.low_pass:g} Hz' if a.low_pass is not None else f'HP {a.high_pass:g} Hz' if a.high_pass is not None else 'unfiltered')+
         (f', {a.moving_average_beats:g} beat centered window' if a.mode == 'moving-average' else '')+
         (f', gain {a.gain:g}' if a.gain != 1 else '') for a in axes)
