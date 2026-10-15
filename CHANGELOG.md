@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 - 2026-10-16
 
 - Add `record-rudiment --frequency-bands N`: Fourier frequency buckets map one-to-one to N native DanceRudiments dimensions, with configurable FFT size/range/linear or logarithmic spacing and source selection. Reuse bipolar composition, timing, transactional export and the shared harness; retain RMS/bin/window/source provenance without cancelling antiphase stereo.
 
