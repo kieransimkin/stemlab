@@ -61,6 +61,17 @@ def next_minor(current: str, latest: str) -> str:
     return f'{major}.{minor + 1}.0'
 
 
+def release_python_supported(version_info=None) -> bool:
+    """Return whether the release coordinator may execute under this Python.
+
+    StemLab itself still tests Python 3.10. The release coordinator deliberately
+    requires Python 3.11+, so unit tests of unrelated preflight behavior stub
+    this narrow gate instead of making the full 3.10 project CI fail.
+    """
+    version_info = sys.version_info if version_info is None else version_info
+    return tuple(version_info[:2]) >= (3, 11)
+
+
 def command(args: list[str], cwd: Path, *, capture: bool = False) -> str:
     # Resolve npm.cmd explicitly on Windows. Never use shell=True/Invoke-Expression.
     if args[0] == 'npm':
@@ -247,7 +258,7 @@ class ReleaseSuite:
                 raise ValueError(f'Install {tool} and restart PowerShell before running the release script')
         if not shutil.which('npm.cmd' if os.name == 'nt' else 'npm'):
             raise ValueError('npm is required')
-        if sys.version_info < (3, 11):
+        if not release_python_supported():
             raise ValueError('Use Python 3.11 or newer for this release coordinator')
         node_major = int(command(['node', '-p', 'process.versions.node.split(".")[0]'], self.root, capture=True))
         if node_major != 24:

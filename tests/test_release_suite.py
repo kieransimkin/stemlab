@@ -33,6 +33,12 @@ def test_version_selection_uses_higher_source_or_release():
     assert rs.next_minor('1.8.0', '2.1.0') == '2.2.0'
 
 
+def test_release_python_gate_is_explicit_and_independent_of_project_support():
+    assert rs.release_python_supported((3, 11, 0))
+    assert rs.release_python_supported((3, 14, 0))
+    assert not rs.release_python_supported((3, 10, 99))
+
+
 @pytest.mark.parametrize('bad', ['main', 'latest', 'v1.2.3', '1.2.3-rc.1', '1.2', '01.2.3', '1.2.3\n'])
 def test_release_version_is_strict(bad):
     with pytest.raises(ValueError):
@@ -256,6 +262,7 @@ def setup_preflight(suite, monkeypatch):
         return ''
     monkeypatch.setattr(rs, 'command', command)
     monkeypatch.setattr(rs.shutil, 'which', lambda tool: '/fixture/' + tool)
+    monkeypatch.setattr(rs, 'release_python_supported', lambda: True)
     monkeypatch.setattr(rs, 'require_origin', lambda *args: None)
     monkeypatch.setattr(rs, 'current_version', lambda repo, name: '1.4.2' if name == 'stemlab' else ('0.2.4' if name == 'DanceRudiments' else '0.2.2'))
     def api(name, endpoint):
