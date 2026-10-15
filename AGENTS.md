@@ -35,3 +35,13 @@
   resolve BeatNet's obsolete NumPy/Numba dependency metadata.
 - Smoke-test the produced executable with a fresh external cache and require its
   embedded BeatNet runtime to be reported ready before uploading the artifact.
+
+## DanceRudiments output scale
+
+All StemLab-generated DanceRudiments recording coordinates are mandatory bipolar
+float64 values in [-1,+1]. `none`, `global`, and `per-axis` select only the
+amplitude reference used by the affine mapping; they must never bypass the final
+bipolar projection. Non-silent axes map zero amplitude to -1 and their selected
+reference to +1, then apply signed gain and clipping. Completely silent axes stay
+at 0. Single, batch, stem-pair, average-comparison, legacy and harness exports
+must all pass through `EnvelopeBank.compose`; do not add a parallel exporter.

@@ -310,15 +310,36 @@ class EnvelopeBank:
             reference = np.array([self.envelope(replace(a, mode='peak'))[0].max() for a in axes])
         denominators = reference if normalization == 'per-axis' else np.full(len(axes), reference.max() if normalization == 'global' else 1.)
         for j, axis in enumerate(axes):
-            scale = float(denominators[j]) or 1.
-            with np.errstate(over='ignore'):
-                values[:, j] = values[:, j]/scale*axis.gain
-            provenance[j].update(normalization_divisor=scale, unscaled_peak=float(peaks[j]),
-                                 clipped_windows=int(np.count_nonzero(np.abs(values[:, j]) > 1)))
-        values = np.clip(values, -1., 1.)
+            scale = float(denominators[j])
+            signal_peak = float(reference[j])
+            if signal_peak <= 0:
+                # A silent dimension has no meaningful direction; keep it centered.
+                values[:, j] = 0.
+                clipped = 0
+            else:
+                if not math.isfinite(scale) or scale <= 0:
+                    raise ValueError('Normalization reference must be finite and positive for non-silent axes')
+                # Every DanceRudiments movement coordinate is bipolar.
+                # Existing normalization choices select the amplitude reference:
+                # 0 amplitude -> -1; selected reference -> +1.
+                # Signed gain is then applied so negative gain reverses the axis.
+                with np.errstate(over='ignore', invalid='ignore'):
+                    values[:, j] = (2.*(values[:, j]/scale)-1.)*axis.gain
+                clipped = int(np.count_nonzero(np.abs(values[:, j]) > 1))
+            provenance[j].update(
+                normalization_divisor=scale,
+                unscaled_peak=float(peaks[j]),
+                clipped_windows=clipped,
+                output_scale='bipolar',
+                output_range=[-1., 1.],
+                silent_axis=signal_peak <= 0,
+            )
+        values = np.round(np.clip(values, -1., 1.), 12)
         meta = dict(metadata or {})
         meta.update(producer='StemLab', axes=provenance, normalization=normalization,
                     normalization_reference=normalization_reference,
+                    output_scale='bipolar', output_range=[-1., 1.],
+                    output_mapping='0 amplitude -> -1; selected normalization reference -> +1; signed gain applied after mapping; silent axes -> 0',
                     filter_phase=self.filter_phase, length_policy=self.length_policy,
                     requested_start_seconds=float(self.start), requested_end_seconds=float(self.end),
                     mean_definition='mean absolute amplitude across observed frames and channels',

@@ -183,7 +183,13 @@ HTML and measured overlay PNG as downloadable CI artifacts. See the
 
 Export any number of independently routed master/stem dimensions at **64 pips per
 beat**, using the separately maintained DanceRudiments **float64** recording
-format. **A BPM estimate or confirmed value is required**; raw audio uses `--bpm`,
+format. Every exported DanceRudiments dimension is projected onto the same
+**bipolar -1 to +1 movement scale** before JSON, legacy-pack or harness output.
+The normalization option selects the amplitude reference (PCM unity, shared peak,
+or per-axis peak); it no longer changes the output coordinate range. Silent axes
+remain centered at 0, and signed gain is applied after bipolar projection.
+
+**A BPM estimate or confirmed value is required**; raw audio uses `--bpm`,
 while saved analysis can supply current beat evidence. `--bpm-confirmed` records
 explicit confirmation, separately from estimated/unverified beat phase.
 

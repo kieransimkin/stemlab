@@ -129,11 +129,16 @@ Unfiltered/causal audio streams without that spool. Filter state never resets
 at block/pip boundaries. Partial boundary windows average observed samples only;
 wholly missing windows are zero. Coverage counts remain in provenance.
 
-`--normalize none` preserves source-relative levels (single-export default).
-`global` applies one maximum across axes; `per-axis` scales each axis independently.
-Signed `--gain NAME=NUMBER` is applied afterwards. Clipping to [-1,1] is counted;
-silence stays zero. The recording declares float64 and rounds to twelve decimals,
-matching native double offsets and the compiled-value convention, **not PCM bit depth**.
+Every exported DanceRudiments dimension is written on a mandatory **bipolar
+-1 to +1 movement scale**. `--normalize` chooses the amplitude reference before
+that projection: `none` uses PCM unity, `global` uses one shared peak across axes,
+and `per-axis` uses each axis peak independently. For a non-silent axis, zero
+amplitude maps to -1 and the selected reference maps to +1. Signed
+`--gain NAME=NUMBER` is applied after this mapping, so a negative gain reverses
+the axis; out-of-range gain results are clipped and counted. A completely silent
+axis stays centered at 0 instead of inventing a direction. Values are float64,
+clipped to [-1,+1] and rounded to twelve decimals before every JSON/legacy/harness
+export.
 
 ## Generate a varied batch and comparison page
 

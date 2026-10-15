@@ -82,9 +82,12 @@ Each pair produces a **complete group**: peak, average, then every requested
 moving-average window. The defaults are four smoothing windows (1/8, 1/4, 1/2,
 1 beat), so 32 pairs produce up to 192 recordings. The source pair, axis order,
 filter cutoffs, gains and normalization reference remain fixed within each group.
-Every mode uses the unsmoothed peak's scale, so quieter/smoother motion is not
-boosted to disguise the smoothing. `--normalize global` shares one scale between
-X/Y; `per-axis` is the default; `none` avoids normalization.
+Every mode uses the unsmoothed peak's amplitude reference, so quieter/smoother
+motion is not independently boosted to disguise the smoothing. The final movement
+coordinates are always bipolar [-1,+1]: `--normalize global` shares one reference
+between X/Y, `per-axis` is the default, and `none` uses PCM unity as the reference.
+Because the same affine bipolar mapping is reused across each comparison family,
+peak/average/moving-average differences remain directly comparable.
 
 Master/stem, stem/stem and two differently filtered routes of the same source
 are included. Raw pairs are followed by each source's bass/treble pair and then

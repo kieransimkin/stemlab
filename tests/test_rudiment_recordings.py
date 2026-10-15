@@ -32,6 +32,7 @@ def test_correct_rectified_window_values_and_antiphase(tmp_path,mode):
     p=audio(tmp_path,np.column_stack((x,-x)),1280)
     r=extract_recording([AxisSpec('x',p,mode=mode)],bpm=120,block_frames=7)
     expected=max(abs(x[:10])) if mode=='peak' else np.mean(abs(x[:10]))
+    expected=2*expected-1
     assert np.asarray(r.samples)[:,0]==pytest.approx([expected]*4,abs=1e-12)
 
 
@@ -39,7 +40,7 @@ def test_correct_rectified_window_values_and_antiphase(tmp_path,mode):
 def test_any_number_of_axes(tmp_path,dims):
     p=audio(tmp_path,[.5]*20,1280)
     r=extract_recording([AxisSpec('axis_'+str(i),p) for i in range(dims)],bpm=120)
-    assert r.samples==((.5,)*dims,)*2
+    assert r.samples==((0.,)*dims,)*2
 
 
 def test_absolute_rational_boundaries_do_not_drift():
@@ -55,7 +56,7 @@ def test_different_rates_same_extent_and_partial_window(tmp_path):
     a=audio(tmp_path,[.2]*4410,44100,'a.wav')
     b=audio(tmp_path,[.4]*4800,48000,'b.wav')
     r=extract_recording([AxisSpec('a',a),AxisSpec('b',b,mode='average')],bpm=137.3,beat_zero_seconds=.03)
-    assert all(v==(.2,.4) for v in r.samples)
+    assert all(v==(-.6,-.2) for v in r.samples)
     assert r.clock.start_pip<0
     assert r.provenance['axes'][0]['partial_windows']>=1
 
@@ -89,8 +90,8 @@ def test_bass_treble_discrimination_before_rectification(tmp_path):
     p=audio(tmp_path,x)
     r=extract_recording([AxisSpec('bass',p,mode='average',low_pass=200),AxisSpec('treble',p,mode='average',high_pass=1000)],bpm=120)
     v=np.asarray(r.samples)
-    assert v[25:100,0].mean()>.4 and v[25:100,1].mean()<.001
-    assert v[155:230,0].mean()<.001 and v[155:230,1].mean()>.3
+    assert v[25:100,0].mean() > v[25:100,1].mean() + .5
+    assert v[155:230,1].mean() > v[155:230,0].mean() + .5
 
 
 @pytest.mark.parametrize('bad',[None,0,-1,True,float('inf'),float('nan')])
@@ -127,15 +128,29 @@ def test_length_policies(tmp_path):
     axes=[AxisSpec('a',a),AxisSpec('b',b)]
     with pytest.raises(ValueError,match='durations differ'):
         extract_recording(axes,bpm=120)
-    assert extract_recording(axes,bpm=120,length_policy='trim').samples==((.2,.4),)*2
-    assert extract_recording(axes,bpm=120,length_policy='pad').samples==((.2,.4),)*2+((0.,.4),)*2
+    assert extract_recording(axes,bpm=120,length_policy='trim').samples==((-.6,-.2),)*2
+    assert extract_recording(axes,bpm=120,length_policy='pad').samples==((-.6,-.2),)*2+((-1.,-.2),)*2
 
 
-@pytest.mark.parametrize('normalization,expected',[('none',(.2,.4)),('global',(.5,1.)),('per-axis',(1.,1.))])
+@pytest.mark.parametrize('normalization,expected',[('none',(-.6,-.2)),('global',(0.,1.)),('per-axis',(1.,1.))])
 def test_normalization(tmp_path,normalization,expected):
     a=audio(tmp_path,[.2]*20,1280,'a.wav')
     b=audio(tmp_path,[.4]*20,1280,'b.wav')
     assert extract_recording([AxisSpec('a',a),AxisSpec('b',b)],bpm=120,normalization=normalization).samples[0]==expected
+
+
+def test_all_dancerudiments_output_uses_bipolar_scale(tmp_path):
+    p=audio(tmp_path,[0.]*10+[.5]*10,1280,'dynamic.wav')
+    r=extract_recording([AxisSpec('x',p)],bpm=120,normalization='per-axis')
+    assert r.samples==((-1.,),(1.,))
+    assert r.provenance['output_scale']=='bipolar'
+    assert r.provenance['output_range']==[-1.,1.]
+    assert r.provenance['axes'][0]['output_range']==[-1.,1.]
+    assert np.min(r.samples)>=-1 and np.max(r.samples)<=1
+
+    silent=audio(tmp_path,[0.]*20,1280,'silent.wav')
+    s=extract_recording([AxisSpec('x',silent)],bpm=120,normalization='per-axis')
+    assert s.samples==((0.,),(0.,))
 
 
 def test_silence_direction_and_clipping(tmp_path):
@@ -249,7 +264,7 @@ def test_cli_registration_missing_bpm_and_custom_six_axes(tmp_path):
     result=runner.invoke(app,args)
     assert result.exit_code==0,result.output
     r=load_recording(tmp_path/'six/recordings/audio_recording.json')
-    assert len(r.dimensions)==6 and r.samples[0][-1]==-.3 and r.clock.bpm_status=='confirmed'
+    assert len(r.dimensions)==6 and r.samples[0][-1]==.4 and r.clock.bpm_status=='confirmed'
 
 
 def test_ambiguous_stems_and_unknown_axes(tmp_path):
