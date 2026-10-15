@@ -47,6 +47,89 @@ the rate in seconds is `64 * BPM / 60` (128 Hz at 120 BPM). Exact rational absol
 sample boundaries prevent accumulated rounded-hop drift. This is a constant-BPM
 recording, not a variable-tempo map: changing tempo/phase requires re-export.
 
+## Fourier frequency bands to N dimensions
+
+```sh
+# A master OR a standalone stem file; no separation/model inference runs.
+stemlab record-rudiment master.wav --bpm 145 --frequency-bands 32 \
+  --fft-size 2048 --normalize global --output ./frequency-32
+# Saved analysis: retain its BPM evidence and select one existing source.
+stemlab record-rudiment ./analysis --frequency-bands 32 \
+  --frequency-source htdemucs_6s/drums --normalize global --output ./drum-frequency-32
+# Finer low-frequency resolution and musical logarithmic spacing.
+stemlab record-rudiment bass.wav --bpm 145 --frequency-bands 32 \
+  --frequency-min 20 --frequency-max 4000 --frequency-scale log \
+  --fft-size 16384 --normalize global --output ./log-frequency-32
+```
+
+**N buckets produce exactly N dimensions**, named `band_000`, `band_001`, etc.,
+in ascending-frequency order. This option is on `record-rudiment`; existing
+time-domain single/batch/stem-pair extraction is unchanged. `--frequency-source`
+defaults to `master`; it also accepts an unambiguous saved stem or an audio path
+under the existing source-resolution rules. Raw stem files work directly as the
+positional input. No new separation, weights, inference or resampling is needed.
+
+| Option | Meaning |
+| --- | --- |
+| `--frequency-bands N` | 1..1024 output dimensions, subject to native recording/cache limits and available FFT bins. |
+| `--fft-size N` | Power of two, 16..65536 source frames; default 2048. Frequency resolution is sample rate / N Hz. |
+| `--frequency-min HZ` | Lower edge, default 0 Hz (DC). |
+| `--frequency-max HZ` | Upper edge, default the selected source's Nyquist frequency. |
+| `--frequency-scale linear\|log` | Equal-width Hz buckets by default; log requires a positive minimum. |
+| `--frequency-source SOURCE` | One existing master, saved stem or audio path; default master. |
+| `--gain band_000=-1` | Existing signed bipolar gain, repeated for specific band dimensions. |
+
+The exact 64-pip clock is unchanged. Each pip measures one periodic-Hann-windowed
+real FFT centered at `floor((pip start frame + pip end frame)/2)` in native source
+frames. One-sided power counts DC/Nyquist once and other bins twice. Per-band RMS
+is `sqrt(sum(bin power)/(FFT size * sum(Hann**2)))`, averaging **channel powers**
+before RMS. Antiphase stereo does not cancel. For a sustained sine away from
+boundaries, its complete band measures peak amplitude / sqrt(2). A full-band DC
+or Nyquist component retains its amplitude. These values pass through the same
+`EnvelopeBank.compose` bipolar projection as every other recording.
+
+Band edges are left-closed/right-open; the last band includes its upper edge,
+including Nyquist when selected. FFT bins are assigned by their center frequency,
+once only. This is a windowed spectral measurement: finite frequency resolution
+and leakage remain, and a longer window trades timing precision for frequency
+precision. It does not reconstruct isolated band WAVs or identify instruments.
+The centered window uses earlier/later samples inside the selected excerpt;
+samples outside the excerpt/source are zero, never wrapped or borrowed. Edge
+windows therefore have reduced measured energy. Empty padded pips remain zero.
+
+`--normalize global` preserves inter-band strength and makes one shared peak
+reference. `none` retains PCM-unity RMS as its reference; `per-axis` independently
+expands each band and may amplify leakage/noise. All three still produce bipolar
+[-1,+1] values; fully silent axes remain 0. Inspect unscaled peaks and actual
+source hashes. Time-domain `--axis`, filter, mode and smoothing options cannot be
+combined with `--frequency-bands`; conflicting options fail rather than being
+silently ignored. Legacy XYZ export remains limited to at most three dimensions.
+
+All bands share one cached Fourier pass. Each axis records exact frequency edges,
+selected FFT bin bounds, window/calibration, source identity/rate/channels,
+normalization and boundary/clock provenance. Existing new-directory transaction,
+value budgets, source-change checks, native playback and shared per-dimension bars
+remain authoritative. A bounded FFT frame also limits source-channel memory use.
+
+```sh
+python examples/recordings/generate_frequency_demo.py --output ./fourier-demo
+python -m pytest tests/test_frequency_bands.py tests/test_rudiment_recordings.py
+```
+
+The demo synthesizes an antiphase stereo sweep and exports a 32-dimensional
+recording plus the actual shared harness; it uses no private master. Tests verify
+known-tone separation, calibrated RMS/Parseval power, DC/Nyquist, phase-independent
+stereo, exact clock/excerpt boundaries, cache/budget gates and native N-D playback.
+
+### Fourier resolution problems
+
+If a selected frequency bucket contains no FFT-bin center, the command fails
+before exporting a recording. Reduce the number of buckets, increase `--fft-size`
+or widen the selected frequency range. For logarithmic bands near 20 Hz, the
+default 2048-frame window may be too coarse; a larger window can resolve the
+requested buckets, with the documented loss of temporal precision. This is a
+resolution limit, not missing source audio; do not invent/interpolate a band.
+
 ## Single recording: bass on X, treble on Y
 
 ```sh

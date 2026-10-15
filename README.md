@@ -202,7 +202,24 @@ stemlab record-rudiment master.wav --bpm 145 \
 stemlab generate-batch ./analysis --bpm 145 \
   --dimensions 2 --dimensions 3 --dimensions 6 \
   --max-candidates 96 --seed 17 --include-audio --output ./movement-batch
+# Fourier analysis: 32 frequency buckets become exactly 32 recording dimensions.
+stemlab record-rudiment master.wav --bpm 145 --frequency-bands 32 \
+  --fft-size 2048 --normalize global --output ./frequency-32
+# Reuse a saved stem instead of analysing the master spectrum.
+stemlab record-rudiment ./analysis --frequency-bands 32 \
+  --frequency-source htdemucs_6s/drums --normalize global --output ./drum-frequency-32
 ```
+
+`--frequency-bands N` maps ascending frequency bands to `band_000` through
+`band_N-1`, with one periodic-Hann real FFT per pip and window-corrected RMS band
+levels. The default is equal-width bands from DC to the source Nyquist frequency;
+`--frequency-min`, `--frequency-max` and `--frequency-scale linear|log` select a
+different range/spacing. Log spacing requires a positive minimum. `--fft-size`
+controls the frequency/time resolution; unresolved empty bands are errors. Channel
+powers are averaged without cancelling antiphase stereo. The existing clock,
+bipolar projection, gain, normalization, JSON and native harness routes are reused.
+This produces band-level motion, not separated audio files or instrument stems.
+See [Fourier options, calibration and boundaries](docs/rudiment-recordings.md#fourier-frequency-bands-to-n-dimensions).
 
 Open the output `index.html` for searchable movement cards, the existing four-card
 comparison, shared audio transport, review choices/notes, and X/Y/Z selectors for
