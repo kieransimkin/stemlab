@@ -175,7 +175,7 @@ def test_release_gating_and_pages_boundary():
     release = (ROOT / '.github/workflows/release.yml').read_text()
     demo = (ROOT / '.github/workflows/arcadians-demo.yml').read_text()
     recordings = (ROOT / '.github/workflows/recordings.yml').read_text()
-    assert 'needs: [codex-package, arcadians-demo]' in release
+    assert 'needs: [codex-package, arcadians-demo, onefile-cli]' in release
     assert 'cp arcadians-release/* dist-release/' in release
     assert 'needs: [github-release, arcadians-demo]' in release
     assert "vars.STEMLAB_PAGES_ENABLED == 'true'" in release
