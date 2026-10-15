@@ -41,13 +41,17 @@ class AxisSpec:
     high_pass: float | None = None
     filter_order: int = 4
     gain: float = 1.
+    moving_average_beats: float = 0.25
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not re.fullmatch(r'[a-z][a-z0-9_]{0,127}', self.name):
             raise ValueError('Axis names must match [a-z][a-z0-9_]{0,127}')
         object.__setattr__(self, 'source', Path(self.source).expanduser().resolve())
-        if self.mode not in ('peak', 'average'):
-            raise ValueError('Mode must be peak or average (mean absolute amplitude)')
+        if self.mode not in ('peak', 'average', 'moving-average'):
+            raise ValueError('Mode must be peak, average or moving-average')
+        window = finite(self.moving_average_beats, 'moving_average_beats')
+        if not 0 < window <= 64:
+            raise ValueError('Moving-average window must be >0 and <=64 beats')
         if type(self.filter_order) is not int or not 1 <= self.filter_order <= 12:
             raise ValueError('Filter order must be an integer in 1..12')
         for key in ('low_pass', 'high_pass'):
@@ -57,6 +61,49 @@ class AxisSpec:
         if self.low_pass is not None and self.high_pass is not None and self.high_pass >= self.low_pass:
             raise ValueError('Band-pass requires high_pass < low_pass')
         finite(self.gain, 'gain')
+
+
+def moving_average_pips(beats: float, pips_per_beat: int = 64) -> int:
+    """Round half up to the nearest recording pip; never alter the recording clock."""
+    window = finite(beats, 'moving_average_beats')
+    if not 0 < window <= 64:
+        raise ValueError('Moving-average window must be >0 and <=64 beats')
+    return max(1, math.floor(window * pips_per_beat + 0.5))
+
+
+def smooth_envelope(values: np.ndarray, window_pips: int) -> np.ndarray:
+    """Centered boxcar of the per-pip mean-absolute envelope, not signed PCM.
+
+    Even windows use half weight at each outer bin, preserving symmetry about
+    the current pip. At excerpt/file boundaries only available bins contribute;
+    there is no wrap or artificial zero padding. O(n), including very wide windows.
+    """
+    x = np.asarray(values, dtype=np.float64)
+    if x.ndim != 1 or not len(x) or not np.isfinite(x).all():
+        raise ValueError('Smoothing requires a finite, non-empty 1D envelope')
+    if type(window_pips) is not int or window_pips < 1:
+        raise ValueError('window_pips must be a positive integer')
+    if window_pips == 1:
+        return x.copy()
+    radius = window_pips // 2
+    i = np.arange(len(x), dtype=np.int64)
+    lo, hi = np.maximum(0, i-radius), np.minimum(len(x), i+radius+1)
+    prefix = np.concatenate(([0.], np.cumsum(x, dtype=np.float64)))
+    sums = prefix[hi] - prefix[lo]
+    weights = (hi-lo).astype(np.float64)
+    if window_pips % 2 == 0:
+        left, right = i-radius, i+radius
+        valid = left >= 0
+        sums[valid] -= 0.5 * x[left[valid]]
+        weights[valid] -= 0.5
+        valid = right < len(x)
+        sums[valid] -= 0.5 * x[right[valid]]
+        weights[valid] -= 0.5
+    # Input envelopes are non-negative; clamp sub-ULP cancellation at silence.
+    result = sums / weights
+    if np.all(x >= 0):
+        result = np.maximum(result, 0.)
+    return checked(result)
 
 
 def filter_sos(axis, sr):
@@ -177,6 +224,7 @@ class EnvelopeBank:
         self.edges = {i.samplerate: sample_edges(self.clock, self.count, i.samplerate) for i in self.infos.values()}
         self.hashes = {p: sha256_file(p) for p in self.infos}
         self.cache = {}
+        self.smoothing_cache = {}
         self.filter_phase, self.length_policy = filter_phase, length_policy
         self.progress, self.block_frames = progress or (lambda message: None), block_frames
         self.cache_hits = 0
@@ -186,7 +234,7 @@ class EnvelopeBank:
         if key in self.cache:
             self.cache_hits += 1
         else:
-            if (len(self.cache)+1)*self.count*2 > MAX_CACHED_VALUES:
+            if self.cached_values + self.count*2 > MAX_CACHED_VALUES:
                 raise ValueError('Envelope-cache budget exceeded; shorten the excerpt or reduce source/filter variants')
             info = self.infos[axis.source]
             sos = filter_sos(axis, info.samplerate)
@@ -216,9 +264,27 @@ class EnvelopeBank:
                          contributing_frames=int(counts.sum()))
             self.cache[key] = (checked(peak), checked(sums), stats)
         p, a, stats = self.cache[key]
-        return (p if axis.mode == 'peak' else a), stats
+        if axis.mode != 'moving-average':
+            return (p if axis.mode == 'peak' else a), stats
+        window = moving_average_pips(axis.moving_average_beats)
+        smooth_key = (*key, window)
+        if smooth_key not in self.smoothing_cache:
+            if self.cached_values + self.count > MAX_CACHED_VALUES:
+                raise ValueError('Envelope-cache budget exceeded; reduce smoothing variants or excerpt length')
+            self.smoothing_cache[smooth_key] = smooth_envelope(a, window)
+        return self.smoothing_cache[smooth_key], dict(stats,
+            moving_average_window_pips=window,
+            moving_average_effective_beats=window/64,
+            moving_average_seconds=float(self.clock.pip_seconds)*window,
+            moving_average_alignment='centered; half-weight endpoints for even windows',
+            moving_average_boundary='available bins only; no wrap; excerpt-local')
 
-    def compose(self, axes, *, name='audio_recording', normalization='none', metadata=None, _data_only=False):
+    @property
+    def cached_values(self):
+        return self.count*(2*len(self.cache) + len(self.smoothing_cache))
+
+    def compose(self, axes, *, name='audio_recording', normalization='none', metadata=None,
+                normalization_reference='self', _data_only=False):
         if not axes or len({a.name for a in axes}) != len(axes):
             raise ValueError('At least one axis with unique names is required')
         if normalization not in ('none', 'global', 'per-axis'):
@@ -235,8 +301,14 @@ class EnvelopeBank:
                         source_sample_rate=info.samplerate, source_channels=info.channels,
                         source_frames=info.frames, source_subtype=info.subtype, **stats)
             provenance.append(item)
+        if normalization_reference not in ('self', 'peak'):
+            raise ValueError('Normalization reference must be self or peak')
         peaks = values.max(axis=0)
-        denominators = peaks if normalization == 'per-axis' else np.full(len(axes), peaks.max() if normalization == 'global' else 1.)
+        reference = peaks
+        if normalization_reference == 'peak':
+            from dataclasses import replace
+            reference = np.array([self.envelope(replace(a, mode='peak'))[0].max() for a in axes])
+        denominators = reference if normalization == 'per-axis' else np.full(len(axes), reference.max() if normalization == 'global' else 1.)
         for j, axis in enumerate(axes):
             scale = float(denominators[j]) or 1.
             with np.errstate(over='ignore'):
@@ -246,6 +318,7 @@ class EnvelopeBank:
         values = np.clip(values, -1., 1.)
         meta = dict(metadata or {})
         meta.update(producer='StemLab', axes=provenance, normalization=normalization,
+                    normalization_reference=normalization_reference,
                     filter_phase=self.filter_phase, length_policy=self.length_policy,
                     requested_start_seconds=float(self.start), requested_end_seconds=float(self.end),
                     mean_definition='mean absolute amplitude across observed frames and channels',

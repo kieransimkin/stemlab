@@ -22,7 +22,8 @@ def tempo_from_beats(beats: list[float]) -> float | None:
 def _cluster_events(results: list[BeatResult], attr: str, tolerance: float) -> list[dict]:
     events: list[tuple[float, str]] = []
     for result in results:
-        events.extend((float(t), result.model) for t in getattr(result, attr))
+        detector = result.metadata.get('detector', result.model)
+        events.extend((float(t), detector) for t in getattr(result, attr))
     events.sort(key=lambda item: item[0])
     if not events:
         return []
@@ -42,7 +43,7 @@ def _cluster_events(results: list[BeatResult], attr: str, tolerance: float) -> l
     if current:
         clusters.append(current)
 
-    required = len(results) // 2 + 1
+    required = len({r.metadata.get('detector', r.model) for r in results}) // 2 + 1
     consensus: list[dict] = []
     for cluster in clusters:
         raw_centre = float(np.median([t for t, _ in cluster]))
@@ -71,12 +72,14 @@ def consensus_result(results: list[BeatResult], *, tolerance: float = 0.08) -> B
     """Build a majority-vote beat/downbeat estimate from successful detectors.
 
     Events within ``tolerance`` seconds are clustered and each detector gets at
-    most one vote in a cluster.  A cluster must be supported by a strict
+    most one vote in a cluster, across all of its master/percussion inputs.
+    A cluster must be supported by a strict
     majority of the available detectors.  The chosen event time is the median
     of the supporting detector times, which is robust to one slightly early or
     late detector.
     """
-    source_results = [r for r in results if r.model != "consensus"]
+    source_results = [r for r in results
+                      if r.metadata.get('detector', r.model) != "consensus"]
     if not source_results:
         return None
 
@@ -84,7 +87,8 @@ def consensus_result(results: list[BeatResult], *, tolerance: float = 0.08) -> B
     downbeat_events = _cluster_events(source_results, "downbeats", tolerance)
     beats = [event["time"] for event in beat_events]
     downbeats = [event["time"] for event in downbeat_events]
-    required = len(source_results) // 2 + 1
+    detectors = sorted({r.metadata.get('detector', r.model) for r in source_results})
+    required = len(detectors) // 2 + 1
     return BeatResult(
         "consensus",
         beats,
@@ -94,6 +98,10 @@ def consensus_result(results: list[BeatResult], *, tolerance: float = 0.08) -> B
             "method": "majority-vote median event clustering",
             "tolerance_seconds": float(tolerance),
             "sources": [r.model for r in source_results],
+            "detector": "consensus",
+            "detectors": detectors,
+            "voting_unit": "detector family; at most one vote across all its master/stem runs",
+            "input_sources": {r.model: r.metadata.get('source', {}) for r in source_results},
             "required_support": required,
             "beat_support": beat_events,
             "downbeat_support": downbeat_events,

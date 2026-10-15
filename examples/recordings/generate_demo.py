@@ -9,6 +9,7 @@ import soundfile as sf
 from stemlab.util import sha256_file
 from stemlab.analysis.rudiment_recordings import AxisSpec
 from stemlab.analysis.rudiment_batch import export_single, generate_batch
+from stemlab.analysis.rudiment_pairs import generate_stem_batch, generate_average_comparison_batch
 
 
 def main():
@@ -55,7 +56,12 @@ def main():
     batch = generate_batch(source, root/'batch', bpm=bpm, confirmed=True, beat_zero=0.,
                            dimensions=(2,3,6), max_candidates=args.max_candidates, seed=17,
                            include_audio=True, progress=print)
-    print(json.dumps(dict(single=single['harness'], batch=batch['harness']), indent=2))
+    stem_pairs = generate_stem_batch(source, root/'stem-pairs', bpm=bpm, confirmed=True,
+        max_candidates=36, include_audio=True)
+    averages = generate_average_comparison_batch(source, root/'averages', bpm=bpm, confirmed=True,
+        max_pairs=18, include_audio=True)
+    print(json.dumps(dict(single=single['harness'], batch=batch['harness'],
+                         stem_pairs=stem_pairs['harness'], averages=averages['harness']), indent=2))
 
 
 if __name__ == '__main__':

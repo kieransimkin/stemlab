@@ -138,7 +138,10 @@ def test_verify_artifacts_reuses_site_verifier_and_checks_provenance(tmp_path, m
     monkeypatch.setattr(pages, 'verify_site', lambda path: calls.append(path) or {'candidates': 48})
     timeline_calls = []
     monkeypatch.setattr(pages, 'verify_timeline_qa', lambda *args: timeline_calls.append(args))
+    pair_calls = []
+    monkeypatch.setattr(pages, 'verify_pair_artifacts', lambda *args: pair_calls.append(args))
     result = pages.verify_artifacts(tmp_path, qa_file, SHA)
+    assert pair_calls == [(tmp_path, tmp_path, SHA)]
     assert timeline_calls == [(tmp_path / 'timeline/arcadians', tmp_path / 'arcadians-timeline-browser.json', SHA)]
     assert calls == [tmp_path] and result['browser_qa'] == 'passed'
     with pytest.raises(ValueError, match='provenance'):

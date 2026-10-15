@@ -22,12 +22,12 @@ from stemlab.static_timeline import digest, export_timeline, read_json, safe_fil
 
 ROOT = Path(__file__).resolve().parents[1]
 
-RECIPE = 'arcadians-core-v1'
+RECIPE = 'arcadians-core-v2'
 STEMS = {'vocals', 'drums', 'bass', 'guitar', 'piano', 'other'}
 BEATS = {'all_in_one', 'beatnet', 'beat_this', 'beat_transformer', 'consensus'}
 DEEP = {'structure', 'sonic', 'rhythm', 'harmony', 'lyrics', 'semantic_text', 'song_map', 'loops'}
 SCOPE = ('Complete full-song core analysis: HTDemucs six stems, master/stem spectrograms, '
-         'Whisper small + VAD, three beat trackers + All-In-One + consensus, '
+         'Whisper small + VAD, master/percussion BeatNet and BeatThis, demixed Beat Transformer + All-In-One + detector-balanced consensus, '
          '13 Vamp analyses, sonic/rhythm/harmony/lyrics/text semantics, song map and loop discovery')
 
 
@@ -75,6 +75,29 @@ def require_core(results: Path, *, expected_sha: str = ARCADIANS_SHA256) -> dict
             raise ValueError('Missing/invalid full-song beat evidence: ' + backend)
         if beats != sorted(set(beats)):
             raise ValueError('Beat evidence is not strictly time ordered')
+    # v2 requires real master AND percussion passes, not just plausible filenames.
+    from stemlab.beats.inputs import beat_inputs
+    from stemlab.types import StemArtifact
+    inputs = beat_inputs(master, [StemArtifact('htdemucs_6s', item['stem'], safe_file(results, item['path']))
+                                 for item in model['stems']])
+    percussion_models = []
+    for source in inputs:
+        expected_source = source.metadata(results)
+        for detector in ('beatnet', 'beat_this'):
+            name = detector if source.kind == 'master' else detector+'__'+source.id
+            value = read_json(safe_file(results, f'beats/{name}.json'))
+            times = value.get('beats')
+            if (value.get('model') != name or value.get('metadata', {}).get('detector') != detector
+                    or value.get('metadata', {}).get('source') != expected_source
+                    or not isinstance(times, list) or len(times) < 2
+                    or any(isinstance(t, bool) or not isinstance(t, (int, float))
+                           or not math.isfinite(t) or not 0 <= t <= info['duration_seconds'] + 1 for t in times)
+                    or times != sorted(set(times))):
+                raise ValueError('Missing/misattributed master or percussion beat evidence: '+name)
+            if source.kind == 'stem':
+                percussion_models.append(name)
+    if not percussion_models:
+        raise ValueError('Core v2 requires beat analysis of an actual drum/percussion stem')
     vamp = read_json(safe_file(results, 'vamp/report.json'))
     if vamp.get('errors') or vamp.get('missing_outputs') or vamp.get('skipped'):
         raise ValueError('All curated Vamp transforms must complete; partial plugin installs are not a complete demo')
@@ -125,7 +148,8 @@ def require_core(results: Path, *, expected_sha: str = ARCADIANS_SHA256) -> dict
             or not isinstance(loops.get('unresolved_sections'), list)):
         raise ValueError('Loop scan is not bound to the complete source')
     return dict(status='complete', recipe=RECIPE, scope=SCOPE, stems=sorted(STEMS),
-                beat_models=sorted(BEATS), deep_stages=sorted(DEEP), vamp_transforms=len(VAMP_REQUIRED_OUTPUTS),
+                beat_models=sorted(BEATS), percussion_beat_models=percussion_models,
+                beat_input_sources=[source.metadata(results) for source in inputs], deep_stages=sorted(DEEP), vamp_transforms=len(VAMP_REQUIRED_OUTPUTS),
                 source_sha256=expected_sha, source_frames=info['num_frames'],
                 duration_seconds=info['duration_seconds'], loop_count=loops['loop_count'],
                 unselected=['alternate separation comparison models', 'optional MIDI transcribers',
@@ -133,7 +157,7 @@ def require_core(results: Path, *, expected_sha: str = ARCADIANS_SHA256) -> dict
                 listening_qa=False, hypotheses_not_ground_truth=True)
 
 
-def build(results: Path, output: Path, source_commit: str, *, reuse: bool = False) -> dict:
+def build(results: Path, output: Path, source_commit: str, *, reuse: bool = False, recording_sources: Path | None = None) -> dict:
     from stemlab.pipeline import run_pipeline
     from stemlab.canonical import save_canonical
     validate_revision(source_commit)
@@ -167,7 +191,11 @@ def build(results: Path, output: Path, source_commit: str, *, reuse: bool = Fals
         raise ValueError('Unrecognized core analysis recipe')
     coverage['analysis_commit'] = stamp['analysis_commit']
     coverage['dependencies'] = stamp['dependencies']
-    return export_timeline(results, output, include_audio=True, source_commit=source_commit, coverage=coverage)
+    snapshot = export_timeline(results, output, include_audio=True, source_commit=source_commit, coverage=coverage)
+    if recording_sources is not None:
+        from build_arcadians_pair_demos import prepare_sources
+        prepare_sources(results, recording_sources, source_commit, coverage=coverage)
+    return snapshot
 
 
 def main() -> int:
@@ -175,10 +203,11 @@ def main() -> int:
     parser.add_argument('--results', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-commit', required=True)
+    parser.add_argument('--recording-sources', type=Path, help='NEW exact-stem handoff for downstream pair demos')
     parser.add_argument('--reuse', action='store_true', help='Validate and export existing complete analysis; no model rerun')
     args = parser.parse_args()
     try:
-        result = build(args.results, args.output, args.source_commit, reuse=args.reuse)
+        result = build(args.results, args.output, args.source_commit, reuse=args.reuse, recording_sources=args.recording_sources)
         print(json.dumps({key: value for key, value in result.items() if key != 'files'}, indent=2))
     except Exception as exc:
         # Failed runs remain failed, with diagnostics outside public output.

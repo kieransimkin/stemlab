@@ -1,12 +1,14 @@
 # Complete Arcadians timeline on GitHub Pages
 
-The Arcadians demo workflow builds **two viewers in one public site**:
+The Arcadians demo workflow builds **four viewers in one public site**:
 
 - `timeline/arcadians/`: StemLab's existing React timeline, with the full song and
-  a completed `arcadians-core-v1` analysis.
+  a completed `arcadians-core-v2` analysis.
 - `arcadians/`: the existing 48-movement DanceRudiments comparison and original MP3.
+- `arcadians-stems/`: 60 movements using different real stems for X and Y.
+- `arcadians-averages/`: 180 fixed-pair peak/average/moving-average comparisons.
 
-The root is a landing page linking to both. Both the manual Pages publisher and
+The root is a landing page linking to all four examples. Both the manual Pages publisher and
 release publisher upload this same combined artifact. No source checkout, model
 cache, backend server or separate Pages branch is published. These paths describe
 what this change deploys; a code patch alone does not make the new timeline live.
@@ -22,7 +24,7 @@ experimental model has been run.
 | --- | --- |
 | Source and stems | Original master plus HTDemucs `htdemucs_6s`: vocals, drums, bass, guitar, piano, other. Every stem must span the master duration. |
 | Audio display | Master/stem waveforms and spectrograms; the VAD-derived spoken-word track where produced. |
-| Beat timing | BeatNet, BeatThis, BeatTransformer, All-In-One and consensus outputs. The artist-confirmed 145 BPM remains a distinct reference, not a substitute for detection. |
+| Beat timing | BeatNet and BeatThis on master and each percussion stem, BeatTransformer on the demixed streams, All-In-One and detector-family consensus outputs. The artist-confirmed 145 BPM remains a distinct reference, not a substitute for detection. |
 | Words and structure | Whisper `small`, word timestamps, previous-text conditioning disabled; Silero VAD; All-In-One functional sections; artist-edited lyrics, timing and sections retained separately. |
 | Harmony and pitch | All 13 existing curated Vamp outputs: Chordino, NNLS chroma/bass chroma/tuning, QM key/tonal-change/bar/beat, pYIN pitch/notes, Silvet notes and Segmentino. |
 | Derived analysis | Loudness/dynamics/timbre/stereo, rhythm/groove, harmony, lyric rhyme/prosody, MiniLM text semantics, song map and loop discovery. |
@@ -58,7 +60,9 @@ The sequence is:
    forward/backward seeking, Fit/Zoom and accepted-loop playback when available.
    It rejects backend, Socket.IO and external CDN requests.
 4. The movement build generates/tests the existing 48 full-song movements, then
-   adds the verified timeline and a two-demo landing page. Both source revisions,
+   reuses the exact float stems for the 60 stem-pair and 180 mode-comparison
+   recordings. It validates both new galleries separately before adding the
+   verified timeline and four-example landing page. The source revisions,
    the original MP3 hash and timeline snapshot checksum must agree.
 5. The existing publisher deploys the combined site and verifies public HTML,
    timeline JavaScript/CSS/data and partial MP3 responses after deployment.
@@ -86,7 +90,7 @@ models” publication path. No neural inference runs in a visitor's browser.
 
 The combined workflow publishes these artifacts:
 
-- `stemlab-arcadians-pages`: the only public upload tree, containing both viewers.
+- `stemlab-arcadians-pages`: the only public upload tree, containing all four viewers.
 - `stemlab-arcadians-browser-qa`: separate movement and timeline browser reports.
 - `stemlab-arcadians-release-assets`: the combined `StemLab-Arcadians-visualizer.zip`,
   file checksums and build provenance, also attached to tagged releases.
@@ -107,7 +111,7 @@ exported as time-aligned PNG strips using the same helper as the live viewer.
 
 Every public file is inventoried and hashed; source-local paths and configuration
 are removed from public JSON, and private folders/logs/checkpoints are not copied.
-Per-file and combined-site budgets remain 90 MiB and 512 MiB. Exceeding the budget
+Per-file and combined-site budgets remain 90 MiB and 900 MiB. Exceeding the budget
 fails explicitly instead of truncating the song or silently dropping an analysis.
 
 ## Export any existing StemLab analysis
@@ -177,7 +181,7 @@ the runner's ownership of the dedicated Arcadians output tree before browser tes
 and artifact uploads. Permissions stay private; neither `chmod 777` nor access to
 unrelated runner directories is required. The full-analysis gate remains mandatory.
 
-Use **Arcadians release demo** to build and publish both examples. The standalone
+Use **Arcadians release demo** to build and publish all four examples. The standalone
 **Arcadians complete analysis timeline** is for diagnostic builds and its own
 artifacts, not a second required dispatch. Start a fresh `main` run after changing
 code; retrying an older run keeps its original revision.
@@ -192,3 +196,16 @@ resamplers before importing the text-model classes in a fresh offline process.
 See [the runtime check](../docker/README.md#audio-first-semantic-runtime-check).
 The original MP3, required analysis stages, ownership repair and publication
 gates are unchanged; partial analysis artifacts are not publishable timelines.
+
+## Core v2 and reuse of the separated stems
+
+The v2 recipe additionally requires separate, source-hash-attributed BeatNet and
+BeatThis results for the master and the actual drum stem. The timeline preserves
+the separate event lanes. Beat Transformer remains one demixed-input analysis,
+and consensus counts detector families rather than raw stem pass count.
+
+The `--recording-sources` option exports an exact-float-stem handoff **outside**
+the public timeline. The combined demo workflow uses it for the separate stem
+pair and smoothing comparison galleries, without rerunning separation. These
+recordings are not driven by the timeline's quantized FLAC listening copies.
+See [the four-page deployment](recording-pairs.md) and [beat input policy](beat-inputs.md).

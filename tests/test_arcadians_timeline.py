@@ -39,6 +39,15 @@ def core_fixture(root: Path):
     write_json(root / 'analysis.json', report)
     for model in builder.BEATS:
         write_json(root / f'beats/{model}.json', {'model': model, 'beats': [0, .5, 1, 1.5, 2, 2.5, 3]})
+    from stemlab.beats.inputs import beat_inputs
+    from stemlab.types import StemArtifact
+    inputs = beat_inputs(root/report['source']['copied_path'],
+        [StemArtifact('htdemucs_6s', item['stem'], root/item['path']) for item in stems])
+    for source in inputs:
+        for detector in ('beatnet', 'beat_this'):
+            name = detector if source.kind == 'master' else detector+'__'+source.id
+            write_json(root / f'beats/{name}.json', {'model': name, 'beats': [0, .5, 1, 1.5, 2, 2.5, 3],
+                'metadata': {'detector': detector, 'source': source.metadata(root)}})
     write_json(root / 'speech/whisper.json', {'words': [{'start': 1, 'end': 2, 'word': 'TEST'}],
                                            'condition_on_previous_text': False})
     write_json(root / 'speech/speech_regions.json', [{'start': 0, 'end': 3}])
@@ -239,7 +248,7 @@ def test_workflow_builds_both_before_publication_and_never_requires_backend_at_r
     assert 'examples/arcadians:/opt/stemlab/examples/arcadians:ro' in str(timeline)
     steps = demo['jobs']['build']['steps']
     names = [s.get('name', '') for s in steps]
-    assert names.index('Assemble both verified viewers into one Pages site') < names.index('Freeze the tested public site as release assets')
+    assert names.index('Assemble all four verified viewers into one Pages site') < names.index('Freeze the tested public site as release assets')
     qa_upload = next(s for s in timeline['jobs']['build']['steps'] if s.get('with', {}).get('name') == 'stemlab-arcadians-timeline-qa')
     assert qa_upload['with']['path'].endswith('/qa/') and '\n' not in qa_upload['with']['path']
     publication = release['jobs']['arcadians-pages']['steps']
@@ -264,6 +273,12 @@ def test_combined_site_integrity_with_real_native_movement_builder(complete, tmp
     sha = digest(master)
     analysis = read_json(root / 'analysis.json')
     analysis['source'].update(copied_path='input/synthetic.mp3', sha256=sha)
+    from stemlab.beats.inputs import beat_inputs
+    for detector in ('beatnet', 'beat_this'):
+        path = root/f'beats/{detector}.json'
+        document = read_json(path)
+        document['metadata']['source'] = beat_inputs(master, [])[0].metadata(root)
+        write_json(path, document)
     write_json(root / 'analysis.json', analysis)
     loops = read_json(root / 'deep/loops/loops.json')
     loops['source_sha256'] = sha
@@ -289,3 +304,22 @@ def test_combined_site_integrity_with_real_native_movement_builder(complete, tmp
     (site / 'timeline/arcadians/assets/app.js').write_text('tampered')
     with pytest.raises(ValueError, match='checksum'):
         movements.verify_site(site, expected_sha256=sha)
+
+
+def test_core_v2_requires_separate_drum_beat_runs(complete):
+    root, sha = complete
+    files = list((root/'beats').glob('beat_this__*.json'))
+    assert len(files) == 1
+    files[0].unlink()
+    with pytest.raises((ValueError, OSError)):
+        builder.require_core(root, expected_sha=sha)
+
+
+def test_core_rejects_drum_results_attributed_to_master(complete):
+    root, sha = complete
+    path = next((root/'beats').glob('beatnet__*.json'))
+    data = read_json(path)
+    data['metadata']['source']['kind'] = 'master'
+    write_json(path, data)
+    with pytest.raises(ValueError, match='misattributed'):
+        builder.require_core(root, expected_sha=sha)

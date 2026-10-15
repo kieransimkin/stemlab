@@ -1,4 +1,4 @@
-"""Combine two verified demos into ONE Pages artifact; never replace one with the other."""
+"""Combine all verified demos into ONE Pages artifact; never replace one with the other."""
 from __future__ import annotations
 
 import argparse
@@ -50,7 +50,7 @@ def assemble(site: Path, timeline: Path, qa: Path, source_sha: str) -> dict:
     provenance['timeline'] = {'path': 'timeline/arcadians/', 'snapshot_sha256': digest(destination / 'snapshot.json'),
                               'coverage': snapshot['coverage']}
     write_json(site / 'arcadians/release-demo.json', provenance)
-    (site / 'index.html').write_text('''<!doctype html>
+    landing = '''<!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arcadians · StemLab demos · Kieran Simkin</title>
 <style>body{font:18px/1.7 system-ui;max-width:58rem;margin:4rem auto;padding:1rem;background:#101a25;color:#eef4fa}a{color:#9cd9ff}article{padding:1.5rem;border:1px solid #456;margin:1rem 0;border-radius:1rem}</style>
@@ -63,7 +63,15 @@ structure, harmony, sonic evidence and loop discovery. Press Play to listen.</p>
 <p>Artist references and model hypotheses are distinct. Inferred results are not ground truth.
 Audio and lyrics retain their original rights; software licensing does not license the song.</p>
 <p><a href="https://kieransimkin.co.uk/arcadians/">Arcadians EPK</a> ·
-<a href="https://github.com/kieransimkin/stemlab">StemLab source</a></p></html>\n''', encoding='utf-8')
+<a href="https://github.com/kieransimkin/stemlab">StemLab source</a></p></html>\n'''
+    if (site/'arcadians-stems/index.html').is_file() and (site/'arcadians-averages/index.html').is_file():
+        landing = landing.replace('<p>Artist references', '''<article><h2><a href="arcadians-stems/">Open separated-stem pairs</a></h2>
+<p>60 two-dimensional movements: different genuine stems drive X and Y, with raw and filtered routes.</p></article>
+<article><h2><a href="arcadians-averages/">Compare peak, average and moving averages</a></h2>
+<p>30 fixed input pairs, six settings each: peak, average and 1/8, 1/4, 1/2 and 1-beat smoothing.
+The inputs, filters and amplitude scales stay fixed within each comparison.</p></article>
+<p>Artist references''')
+    (site/'index.html').write_text(landing, encoding='utf-8')
     return verify_site(site)
 
 

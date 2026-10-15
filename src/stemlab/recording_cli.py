@@ -16,7 +16,8 @@ def assignments(values, option):
 
 
 def resolve_axes(source, catalogue, *, axes=None, mode='peak', low_pass=None, high_pass=None,
-                 axis_mode=None, gain=None, filter_order=4):
+                 axis_mode=None, gain=None, filter_order=4, moving_average_beats=.25,
+                 axis_window=None):
     from .analysis.rudiment_recordings import AxisSpec
     selected = assignments(axes, '--axis')
     if not selected:
@@ -30,7 +31,8 @@ def resolve_axes(source, catalogue, *, axes=None, mode='peak', low_pass=None, hi
                 suffix += 1
             selected[name] = key
     options = dict(low_pass=assignments(low_pass, '--low-pass'), high_pass=assignments(high_pass, '--high-pass'),
-                   mode=assignments(axis_mode, '--axis-mode'), gain=assignments(gain, '--gain'))
+                   mode=assignments(axis_mode, '--axis-mode'), gain=assignments(gain, '--gain'),
+                   moving_average_beats=assignments(axis_window, '--axis-window-beats'))
     for label, values in options.items():
         if set(values)-set(selected):
             raise ValueError(label+': unknown axes '+', '.join(sorted(set(values)-set(selected))))
@@ -53,6 +55,7 @@ def resolve_axes(source, catalogue, *, axes=None, mode='peak', low_pass=None, hi
                     raise ValueError('Unknown audio source: '+key)
         kwargs = {k: (v[name] if k == 'mode' else float(v[name])) for k, v in options.items() if name in v}
         kwargs.setdefault('mode', mode)
+        kwargs.setdefault('moving_average_beats', moving_average_beats)
         specs.append(AxisSpec(name, path, filter_order=filter_order, **kwargs))
     return specs
 
@@ -67,8 +70,10 @@ def register_recording_commands(app, console):
         beat_zero: Annotated[float | None, typer.Option('--beat-zero', help='Source seconds at musical beat zero')] = None,
         beat_model: Annotated[str, typer.Option('--beat-model')] = 'auto',
         axis: Annotated[list[str] | None, typer.Option('--axis', help='NAME=master, NAME=MODEL/STEM or NAME=audio-path; repeat')] = None,
-        mode: Annotated[str, typer.Option('--mode', help='peak or average (mean absolute amplitude)')] = 'peak',
-        axis_mode: Annotated[list[str] | None, typer.Option('--axis-mode', help='NAME=peak|average; repeat')] = None,
+        mode: Annotated[str, typer.Option('--mode', help='peak, average (per-pip mean absolute) or moving-average (centered envelope)')] = 'peak',
+        axis_mode: Annotated[list[str] | None, typer.Option('--axis-mode', help='NAME=peak|average|moving-average; repeat')] = None,
+        moving_average_beats: Annotated[float, typer.Option('--moving-average-beats', help='Centered smoothing window in beats; default 1/4 beat', min=0.000001, max=64)] = .25,
+        axis_window: Annotated[list[str] | None, typer.Option('--axis-window-beats', help='NAME=beats; override smoothing window per axis')] = None,
         low_pass: Annotated[list[str] | None, typer.Option('--low-pass', help='NAME=Hz; filter before amplitude extraction')] = None,
         high_pass: Annotated[list[str] | None, typer.Option('--high-pass', help='NAME=Hz; combine with low-pass for a band-pass')] = None,
         gain: Annotated[list[str] | None, typer.Option('--gain', help='NAME=number; negative reverses this axis')] = None,
@@ -90,7 +95,8 @@ def register_recording_commands(app, console):
             timing = resolve_tempo(source, bpm=bpm, confirmed=bpm_confirmed, beat_zero=beat_zero, beat_model=beat_model)
             catalogue = source_catalogue(source)
             axes = resolve_axes(source, catalogue, axes=axis, mode=mode, low_pass=low_pass,
-                                high_pass=high_pass, axis_mode=axis_mode, gain=gain, filter_order=filter_order)
+                                high_pass=high_pass, axis_mode=axis_mode, gain=gain, filter_order=filter_order,
+                                moving_average_beats=moving_average_beats, axis_window=axis_window)
             report = export_single(catalogue['master'], output, axes, timing=timing, normalization=normalize,
                 filter_phase=filter_phase, length_policy=length_policy, start_seconds=start, end_seconds=end,
                 include_audio=include_audio, harness=harness, legacy=legacy, name=name,
@@ -108,6 +114,8 @@ def register_recording_commands(app, console):
         bpm_confirmed: Annotated[bool, typer.Option('--bpm-confirmed')] = False,
         beat_zero: Annotated[float | None, typer.Option('--beat-zero')] = None,
         beat_model: Annotated[str, typer.Option('--beat-model')] = 'auto',
+        mode: Annotated[list[str] | None, typer.Option('--mode', help='Repeat peak, average or moving-average; default peak and average')] = None,
+        moving_average_beats: Annotated[float, typer.Option('--moving-average-beats', min=0.000001, max=64)] = .25,
         dimensions: Annotated[list[int] | None, typer.Option('--dimensions', help='Repeat: e.g. 2, 3, 6. Defaults to 2 and 3.')] = None,
         max_candidates: Annotated[int, typer.Option('--max-candidates', min=0, max=1024, help='0: min(1024, max(48, three times the number of sources))')] = 0,
         seed: Annotated[int, typer.Option('--seed', help='Reproducible combination/orientation seed')] = 0,
@@ -133,6 +141,7 @@ def register_recording_commands(app, console):
             report = generate_batch(source, output, bpm=bpm, confirmed=bpm_confirmed, beat_zero=beat_zero,
                 beat_model=beat_model, dimensions=tuple(dimensions or (2, 3)), max_candidates=max_candidates,
                 seed=seed, normalization=normalize, filters=filters, extra_sources=extras,
+                modes=tuple(mode) if mode is not None else ('peak', 'average'), moving_average_beats=moving_average_beats,
                 filter_phase=filter_phase, length_policy=length_policy, start_seconds=start, end_seconds=end,
                 include_audio=include_audio, harness=harness, progress=lambda text: console.print(text, markup=False))
         except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
@@ -141,3 +150,99 @@ def register_recording_commands(app, console):
         if report['skipped_filters']:
             console.print(f"Skipped {len(report['skipped_filters'])} invalid source/filter combinations; see report.json.", markup=False)
         console.print(str(output.resolve()/('index.html' if harness else 'report.json')), markup=False)
+
+
+    @app.command('generate-stem-batch')
+    def generate_stem_batch_command(
+        source: Annotated[Path, typer.Argument(exists=True, help='Song to separate once, or saved analysis to reuse')],
+        output: Annotated[Path, typer.Option('--output', '-o', help='NEW comparison page / recordings directory')],
+        bpm: Annotated[float | None, typer.Option('--bpm')] = None,
+        bpm_confirmed: Annotated[bool, typer.Option('--bpm-confirmed')] = False,
+        beat_zero: Annotated[float | None, typer.Option('--beat-zero')] = None,
+        beat_model: Annotated[str, typer.Option('--beat-model')] = 'auto',
+        model: Annotated[str, typer.Option('--model', help='Separator for raw song input only')] = 'htdemucs_6s',
+        device: Annotated[str, typer.Option('--device')] = 'auto',
+        analysis_output: Annotated[Path | None, typer.Option('--analysis-output', help='NEW separate directory to retain separation for reuse')] = None,
+        max_candidates: Annotated[int, typer.Option('--max-candidates', min=1, max=1024)] = 120,
+        mode: Annotated[str, typer.Option('--mode', help='peak, average or moving-average')] = 'peak',
+        moving_average_beats: Annotated[float, typer.Option('--moving-average-beats', min=0.000001, max=64)] = .25,
+        seed: Annotated[int, typer.Option('--seed')] = 17,
+        low_pass: Annotated[list[float] | None, typer.Option('--low-pass')] = None,
+        high_pass: Annotated[list[float] | None, typer.Option('--high-pass')] = None,
+        normalize: Annotated[str, typer.Option('--normalize')] = 'per-axis',
+        filter_phase: Annotated[str, typer.Option('--filter-phase')] = 'zero',
+        length_policy: Annotated[str, typer.Option('--length-policy')] = 'strict',
+        start: Annotated[float, typer.Option('--start', min=0)] = 0.,
+        end: Annotated[float | None, typer.Option('--end', min=0)] = None,
+        include_audio: Annotated[bool, typer.Option('--include-audio')] = False,
+        harness: Annotated[bool, typer.Option('--harness/--no-harness')] = True,
+    ):
+        """Separate once; compare 2D recordings whose X and Y use different stems."""
+        from .analysis.rudiment_pairs import generate_stem_batch
+        try:
+            report = generate_stem_batch(source, output, bpm=bpm, confirmed=bpm_confirmed,
+                beat_zero=beat_zero, beat_model=beat_model, model=model, device=device,
+                analysis_output=analysis_output, max_candidates=max_candidates, mode=mode,
+                moving_average_beats=moving_average_beats, seed=seed,
+                filters=_pair_filters(low_pass, high_pass), normalization=normalize,
+                filter_phase=filter_phase, length_policy=length_policy, start_seconds=start,
+                end_seconds=end, include_audio=include_audio, harness=harness,
+                progress=lambda text: console.print(text, markup=False))
+        except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+            raise typer.BadParameter(str(exc)) from exc
+        _pair_result(console, output, report)
+
+    @app.command('generate-average-comparison')
+    def generate_average_comparison_command(
+        source: Annotated[Path, typer.Argument(exists=True, help='Song to separate once, or saved analysis to reuse')],
+        output: Annotated[Path, typer.Option('--output', '-o')],
+        bpm: Annotated[float | None, typer.Option('--bpm')] = None,
+        bpm_confirmed: Annotated[bool, typer.Option('--bpm-confirmed')] = False,
+        beat_zero: Annotated[float | None, typer.Option('--beat-zero')] = None,
+        beat_model: Annotated[str, typer.Option('--beat-model')] = 'auto',
+        model: Annotated[str, typer.Option('--model')] = 'htdemucs_6s',
+        device: Annotated[str, typer.Option('--device')] = 'auto',
+        analysis_output: Annotated[Path | None, typer.Option('--analysis-output')] = None,
+        master_only: Annotated[bool, typer.Option('--master-only', help='No separation; compare filtered master routes only')] = False,
+        include_master: Annotated[bool, typer.Option('--include-master/--stems-only')] = True,
+        max_pairs: Annotated[int, typer.Option('--max-pairs', min=1, max=341, help='Input-pair groups, each retaining every mode/window')] = 32,
+        window_beats: Annotated[list[float] | None, typer.Option('--window-beats', help='Repeat; defaults to .125, .25, .5 and 1 beat')] = None,
+        seed: Annotated[int, typer.Option('--seed')] = 17,
+        low_pass: Annotated[list[float] | None, typer.Option('--low-pass')] = None,
+        high_pass: Annotated[list[float] | None, typer.Option('--high-pass')] = None,
+        normalize: Annotated[str, typer.Option('--normalize', help='Shared unsmoothed peak scales within each pair: none/global/per-axis')] = 'per-axis',
+        filter_phase: Annotated[str, typer.Option('--filter-phase')] = 'zero',
+        length_policy: Annotated[str, typer.Option('--length-policy')] = 'strict',
+        start: Annotated[float, typer.Option('--start', min=0)] = 0.,
+        end: Annotated[float | None, typer.Option('--end', min=0)] = None,
+        include_audio: Annotated[bool, typer.Option('--include-audio')] = False,
+        harness: Annotated[bool, typer.Option('--harness/--no-harness')] = True,
+    ):
+        """Hold inputs/filters fixed; compare peak, average and several moving averages."""
+        from .analysis.rudiment_pairs import DEFAULT_AVERAGE_WINDOWS, generate_average_comparison_batch
+        try:
+            report = generate_average_comparison_batch(source, output, bpm=bpm, confirmed=bpm_confirmed,
+                beat_zero=beat_zero, beat_model=beat_model, model=model, device=device,
+                analysis_output=analysis_output, master_only=master_only, include_master=include_master,
+                max_pairs=max_pairs, windows_beats=tuple(window_beats) if window_beats is not None else DEFAULT_AVERAGE_WINDOWS,
+                seed=seed, filters=_pair_filters(low_pass, high_pass), normalization=normalize,
+                filter_phase=filter_phase, length_policy=length_policy, start_seconds=start,
+                end_seconds=end, include_audio=include_audio, harness=harness,
+                progress=lambda text: console.print(text, markup=False))
+        except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+            raise typer.BadParameter(str(exc)) from exc
+        _pair_result(console, output, report)
+
+
+def _pair_filters(low_pass, high_pass):
+    from .analysis.rudiment_batch import DEFAULT_FILTERS
+    if low_pass is None and high_pass is None:
+        return DEFAULT_FILTERS
+    return tuple([('raw', None, None)] + [(f'low{v:g}', v, None) for v in low_pass or []]
+                 + [(f'high{v:g}', None, v) for v in high_pass or []])
+
+
+def _pair_result(console, output, report):
+    console.print(f"Generated {report['candidate_count']} recordings across {report['pair_count']} input pairs; "
+                  f"{report['extraction_passes']} extraction passes, {report['smoothing_passes']} smoothing passes.", markup=False)
+    console.print(str(output.resolve()/(report['harness_file'] or 'report.json')), markup=False)

@@ -13,6 +13,11 @@ on:
       - 'scripts/arcadians_http.py'
       - '.github/workflows/arcadians-timeline.yml'
       - 'scripts/build_arcadians_timeline.py'
+      - 'scripts/build_arcadians_pair_demos.py'
+      - 'src/stemlab/analysis/rudiment_pairs.py'
+      - 'src/stemlab/recording_cli.py'
+      - 'tests/test_rudiment_pairs.py'
+      - 'tests/test_arcadians_pair_demos.py'
       - 'scripts/check_torchaudio_decode.py'
       - 'scripts/check_semantic_runtime.py'
       - 'tests/test_arcadians_runtime.py'
@@ -26,6 +31,9 @@ on:
       - 'tests/test_arcadians_http.py'
       - 'src/stemlab/analysis/rudiment_recordings.py'
       - 'src/stemlab/analysis/rudiment_batch.py'
+      - 'src/stemlab/beats/**'
+      - 'src/stemlab/pipeline.py'
+      - 'tests/test_beat_inputs.py'
       - 'tests/test_arcadians_release_demo.py'
       - 'examples/arcadians/**'
 
@@ -52,7 +60,7 @@ jobs:
         run: python -m ruff check src tests scripts
       - name: Test static timeline, completeness validation, HTTP and publication
         run: |
-          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py tests/test_arcadians_runtime.py
+          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py tests/test_arcadians_runtime.py tests/test_beat_inputs.py tests/test_beat_consensus.py
 
   timeline:
     if: github.event_name != 'pull_request'
@@ -95,12 +103,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes libsndfile1 ffmpeg
-          python -m pip install numpy scipy 'soundfile>=0.12' matplotlib rich 'typer>=0.12' platformdirs pytest playwright
+          python -m pip install numpy scipy 'soundfile>=0.12' matplotlib rich 'typer>=0.12' platformdirs pytest pyyaml playwright
           python -m pip install ./.recording-dancerudiments
           python -m pip install --no-deps -e .
           python -c "from dancerudiments import SampledRecording; from dancerudiments_authoring.harness import build_recording_harness"
       - name: Run release-demo and recording regression tests
-        run: python -m pytest tests/test_arcadians_http.py tests/test_arcadians_release_demo.py tests/test_rudiment_recordings.py tests/test_rudiment_matches.py
+        run: python -m pytest tests/test_arcadians_http.py tests/test_arcadians_release_demo.py tests/test_rudiment_recordings.py tests/test_rudiment_matches.py tests/test_rudiment_pairs.py tests/test_arcadians_pair_demos.py
       - name: Generate 48 full-song movements with the original MP3 included
         env:
           RELEASE_LABEL: ${{ github.ref_name }}
@@ -125,6 +133,24 @@ jobs:
           python scripts/check_arcadians_audio.py dist/arcadians-pages \
             --report dist/arcadians-audio-browser.json --screenshot dist/arcadians-comparison.png
           python scripts/build_arcadians_demo.py verify dist/arcadians-pages
+      - name: Retrieve the same analysis run's exact float stems, outside the public site
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-arcadians-recording-sources
+          path: recording-sources
+      - name: Generate stem-pair and average-comparison pages without rerunning separation
+        env:
+          COMPANION_SHA: ${{ steps.companion.outputs.ref }}
+        run: |
+          python scripts/build_arcadians_pair_demos.py --sources recording-sources \
+            --site dist/arcadians-pages --source-commit "$GITHUB_SHA" \
+            --companion-commit "$COMPANION_SHA" --companion-license .recording-dancerudiments/LICENSE
+      - name: Verify both additional galleries with original audio and native samples
+        run: |
+          python scripts/check_arcadians_audio.py dist/arcadians-pages --gallery arcadians-stems \
+            --report dist/arcadians-stems-audio-browser.json --screenshot dist/arcadians-stems-comparison.png
+          python scripts/check_arcadians_audio.py dist/arcadians-pages --gallery arcadians-averages \
+            --report dist/arcadians-averages-audio-browser.json --screenshot dist/arcadians-averages-comparison.png
       - name: Retrieve the complete browser-validated timeline
         uses: actions/download-artifact@v5
         with:
@@ -135,12 +161,16 @@ jobs:
         with:
           name: stemlab-arcadians-timeline-qa
           path: dist/timeline-qa
-      - name: Assemble both verified viewers into one Pages site
+      - name: Assemble all four verified viewers into one Pages site
         run: |
           python scripts/assemble_arcadians_site.py --site dist/arcadians-pages \
             --timeline timeline-site --qa dist/timeline-qa/arcadians-timeline-browser.json \
             --source-sha "$GITHUB_SHA"
           cp dist/timeline-qa/arcadians-timeline-browser.json dist/arcadians-timeline-browser.json
+      - name: Require matching HTTP QA for the complete four-viewer site
+        run: |
+          python scripts/publish_arcadians_pages.py verify --site dist/arcadians-pages \
+            --qa dist/arcadians-audio-browser.json --source-sha "$GITHUB_SHA"
       - name: Freeze the tested public site as release assets
         run: |
           python scripts/build_arcadians_demo.py package dist/arcadians-pages --output dist/arcadians-release
@@ -166,4 +196,8 @@ jobs:
             dist/arcadians-comparison.png
             dist/arcadians-audio-browser.json
             dist/arcadians-timeline-browser.json
+            dist/arcadians-stems-audio-browser.json
+            dist/arcadians-averages-audio-browser.json
+            dist/arcadians-stems-comparison.png
+            dist/arcadians-averages-comparison.png
           if-no-files-found: warn

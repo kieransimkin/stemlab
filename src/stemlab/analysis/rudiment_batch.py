@@ -68,7 +68,7 @@ def export_single(master, output, axes, *, timing, normalization='none', name='a
         report = dict(schema='stemlab.rudiment-recording-run.v1', clock=asdict(bank.clock),
                       sources=[dict(name=p.name, sha256=h) for p, h in bank.hashes.items()],
                       candidates=[dict(name=r.name, dimensions=list(r.dimensions), file='recordings/'+r.name+'.json')],
-                      extraction_passes=len(bank.cache), cached_values=len(bank.cache)*bank.count*2)
+                      extraction_passes=len(bank.cache), cached_values=bank.cached_values)
         if renderer:
             report['harness'] = renderer.build_recording_harness([r], stage/'index.html', audio=audio)
         bank.verify_sources()
@@ -82,12 +82,14 @@ def _describe(axes):
     return ' | '.join(f'{a.name}: {a.source.name}, {a.mode}, '+
         (f'HP {a.high_pass:g} Hz / LP {a.low_pass:g} Hz' if a.high_pass is not None and a.low_pass is not None else
          f'LP {a.low_pass:g} Hz' if a.low_pass is not None else f'HP {a.high_pass:g} Hz' if a.high_pass is not None else 'unfiltered')+
+        (f', {a.moving_average_beats:g} beat centered window' if a.mode == 'moving-average' else '')+
         (f', gain {a.gain:g}' if a.gain != 1 else '') for a in axes)
 
 
 def generate_batch(source, output, *, bpm=None, confirmed=False, beat_zero=None, beat_model='auto',
                    dimensions=(2, 3), max_candidates=0, seed=0, normalization='per-axis',
                    filters=DEFAULT_FILTERS, include_audio=False, harness=True, extra_sources=None,
+                   modes=('peak', 'average'), moving_average_beats=.25,
                    progress=None, **options):
     """Fair source coverage then seeded cross-source combinations, not an exhaustive Cartesian product.
 
@@ -96,6 +98,11 @@ def generate_batch(source, output, *, bpm=None, confirmed=False, beat_zero=None,
     are labelled, rather than silently dropping a source from the batch.
     """
     timing = resolve_tempo(source, bpm=bpm, confirmed=confirmed, beat_zero=beat_zero, beat_model=beat_model)
+    if not modes:
+        raise ValueError('Choose at least one amplitude mode')
+    modes = tuple(dict.fromkeys(modes))
+    for mode in modes:
+        AxisSpec('validate', Path(source), mode=mode, moving_average_beats=moving_average_beats)
     if not dimensions or any(type(d) is not int or d < 2 for d in dimensions):
         raise ValueError('Batch dimensions must be positive integers >=2')
     dimensions = tuple(dict.fromkeys(dimensions))
@@ -139,8 +146,8 @@ def generate_batch(source, output, *, bpm=None, confirmed=False, beat_zero=None,
             except ValueError as exc:
                 skipped_filters.append(dict(source=key, filter=label, reason=str(exc)))
                 continue
-            for mode in ('peak', 'average'):
-                variants.append((label, replace(prototype, mode=mode)))
+            for mode in modes:
+                variants.append((label, replace(prototype, mode=mode, moving_average_beats=moving_average_beats)))
         routes[key] = variants
     rng = random.Random(seed)
     pool = [(key, label, spec) for key, variants in routes.items() for label, spec in variants]
@@ -157,10 +164,10 @@ def generate_batch(source, output, *, bpm=None, confirmed=False, beat_zero=None,
     def baseline_plans():
         index = 0
         for key, variants in routes.items():
-            raw_peak = next((label, spec) for label, spec in variants if label == 'raw' and spec.mode == 'peak')
-            raw_mean = next((label, spec) for label, spec in variants if label == 'raw' and spec.mode == 'average')
-            bass = next(((label, spec) for label, spec in variants if spec.low_pass is not None and spec.high_pass is None and spec.mode == 'peak'), raw_peak)
-            treble = next(((label, spec) for label, spec in variants if spec.high_pass is not None and spec.low_pass is None and spec.mode == 'average'), raw_mean)
+            raw_peak = next(((label, spec) for label, spec in variants if label == 'raw' and spec.mode == 'peak'), variants[0])
+            raw_mean = next(((label, spec) for label, spec in variants if label == 'raw' and spec.mode == 'average'), variants[0])
+            bass = next(((label, spec) for label, spec in variants if spec.low_pass is not None and spec.high_pass is None and spec.mode == raw_peak[1].mode), raw_peak)
+            treble = next(((label, spec) for label, spec in variants if spec.high_pass is not None and spec.low_pass is None and spec.mode == raw_mean[1].mode), raw_mean)
             pair_family = 'Source bass / treble' if bass[1].low_pass is not None and treble[1].high_pass is not None else 'Source filtered pair (limited bandwidth)'
             for family, chosen in [(pair_family, [bass, treble, raw_peak]), ('Source raw / filtered', [raw_mean, bass, treble])]:
                 dim = dimensions[index % len(dimensions)]
@@ -182,6 +189,7 @@ def generate_batch(source, output, *, bpm=None, confirmed=False, beat_zero=None,
 
     report = dict(schema='stemlab.rudiment-recording-batch.v1', clock=asdict(bank.clock), seed=seed,
                   requested_dimensions=list(dimensions), max_candidates=maximum, normalization=normalization,
+                  modes=list(modes), moving_average_beats=moving_average_beats,
                   sources=[dict(key=k, name=p.name, sha256=bank.hashes[p.resolve()]) for k, p in catalogue.items()],
                   candidates=[], skipped_filters=skipped_filters, skipped_candidates=[], limit_reason=None,
                   coverage_policy='A bass/treble and a raw/filtered baseline per source; static/duplicate baselines are labelled',
@@ -237,7 +245,7 @@ def generate_batch(source, output, *, bpm=None, confirmed=False, beat_zero=None,
             report['limit_reason'] = 'max_candidates' if len(report['candidates']) >= maximum else 'attempt_budget'
         report.update(total_values=int(total_values), attempts=attempts,
                       extraction_passes=len(bank.cache), cache_hits=bank.cache_hits,
-                      cached_values=len(bank.cache)*bank.count*2,
+                      cached_values=bank.cached_values,
                       candidate_count=len(report['candidates']), harness_file='index.html' if renderer else None)
         (stage/'report.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
         os.rename(stage, output)

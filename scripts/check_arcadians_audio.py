@@ -82,11 +82,14 @@ def _failure_report(report_path: Path, exc: Exception, stage: str, *, page=None,
     report_path.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
 
 
-def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, screenshot=None) -> dict:
+def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, screenshot=None, gallery_name='arcadians') -> dict:
     from playwright.sync_api import sync_playwright
 
     site = site.resolve()
-    gallery = site / 'arcadians'
+    if gallery_name not in ('arcadians', 'arcadians-stems', 'arcadians-averages'):
+        raise ValueError('Unknown movement gallery')
+    gallery = site / gallery_name
+    prefix = '/stemlab/' + gallery_name + '/'
     payload = read_payload(gallery / 'index.html')
     metadata = json.loads((gallery / 'release-demo.json').read_text(encoding='utf-8'))
     clock = payload['clock']
@@ -106,7 +109,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
         origin = f'http://127.0.0.1:{server.server_port}'
     try:
         if not in_memory:
-            ranges = verify_audio_ranges(origin + '/stemlab/arcadians/audio.mp3', audio_file)
+            ranges = verify_audio_ranges(origin + prefix + 'audio.mp3', audio_file)
         stage = 'browser-start'
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True, executable_path=chromium,
@@ -120,7 +123,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 if in_memory:
                     page.set_content((gallery / 'index.html').read_text(encoding='utf-8'))
                 else:
-                    page.goto(origin + '/stemlab/arcadians/', wait_until='load')
+                    page.goto(origin + prefix, wait_until='load')
                 stage = 'harness-ready'
                 page.wait_for_function('window.audition?.ready === true', timeout=60000)
                 if in_memory:
@@ -137,7 +140,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 assert page.locator('#bpm').input_value() == str(int(clock['bpm']))
                 assert page.locator('#bpm').is_disabled() and page.locator('#offset').is_disabled()
                 if not in_memory:
-                    assert audio.evaluate('(a) => a.currentSrc') == origin + '/stemlab/arcadians/audio.mp3'
+                    assert audio.evaluate('(a) => a.currentSrc') == origin + prefix + 'audio.mp3'
                 stage = 'native-sample-comparison'
                 # Check every stored dimension of every candidate at three points.
                 # Expected data are the authoritative JSON, not a second sampler.
@@ -158,13 +161,25 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                     mapping = [n_dimensions-1, n_dimensions-2, -1]
                     page.evaluate('([i,m])=>window.audition.setProjection(i,m)', [selected,mapping])
                     assert page.evaluate('i=>window.audition.projection(i)', selected) == mapping
+                if selected is None and len(patterns[0]['dimensions']) >= 2:
+                    mapping = [1, 0, -1]
+                    page.evaluate('m=>window.audition.setProjection(0,m)', mapping)
+                    assert page.evaluate('window.audition.projection(0)') == mapping
+                    page.evaluate('window.audition.setProjection(0,[0,1,-1])')
+                if gallery_name == 'arcadians-averages':
+                    stage = 'fixed-pair-family-filter'
+                    group = patterns[0]['provenance']['family']
+                    expected = sum(p['provenance']['family'] == group for p in patterns)
+                    page.locator('#family').select_option(group)
+                    assert page.locator('#grid > .card').count() == expected
+                    page.locator('#family').select_option('')
                 # Check a decoded source window via Web Audio; this does not play a
                 # second source. The actual HTML audio element remains the playback clock.
                 if in_memory:
                     raw = base64.b64encode(audio_file.read_bytes()).decode()
                     decode_input = {'base64': raw}
                 else:
-                    decode_input = {'url': origin + '/stemlab/arcadians/audio.mp3'}
+                    decode_input = {'url': origin + prefix + 'audio.mp3'}
                 stage = 'audio-decode'
                 decoded = page.evaluate('''async input => {
                     const bytes = input.base64 ? Uint8Array.from(atob(input.base64), c=>c.charCodeAt(0)).buffer
@@ -310,7 +325,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
         restart=True, audio_clock=True, native_sample=True, sample_vectors_checked=len(patterns)*3,
         candidates=len(patterns), arbitrary_axis_projection=True, review_export_import=True,
         non_looping=True, external_requests=[], page_errors=[],
-        listening_qa=False,
+        listening_qa=False, gallery=gallery_name, pair_family_filter=(gallery_name == 'arcadians-averages'),
+        html_sha256=__import__('hashlib').sha256((gallery/'index.html').read_bytes()).hexdigest(),
     )
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
@@ -322,12 +338,13 @@ def main():
     parser.add_argument('site', type=Path)
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--screenshot', type=Path)
+    parser.add_argument('--gallery', choices=('arcadians', 'arcadians-stems', 'arcadians-averages'), default='arcadians')
     parser.add_argument('--chromium')
     parser.add_argument('--in-memory', action='store_true')
     args = parser.parse_args()
     try:
         print(json.dumps(check(args.site, args.report, chromium=args.chromium,
-                               in_memory=args.in_memory, screenshot=args.screenshot), indent=2))
+                               in_memory=args.in_memory, screenshot=args.screenshot, gallery_name=args.gallery), indent=2))
     except (AssertionError, OSError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
         return 1

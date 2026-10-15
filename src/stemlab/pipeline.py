@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import shutil
+import tempfile
 import traceback
 from dataclasses import asdict
 from pathlib import Path
@@ -12,6 +13,7 @@ from .analysis.structure import analyze_structure
 from .audio import audio_info, normalize_audio_file
 from .beats import BeatNetBackend, BeatThisBackend, BeatTransformerBackend
 from .beats.common import consensus_result, save_result
+from .beats.inputs import attributed_result, beat_inputs
 from .branding import attribution
 from .manifest import write_manifest
 from .models import MODEL_REGISTRY
@@ -312,6 +314,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 device=config.device,
                 include_embeddings=config.all_in_one_embeddings,
             )
+            structure_beats = attributed_result(structure_beats, beat_inputs(master, [])[0], out)
             beat_results.append(structure_beats)
             analysis["structure"] = {
                 "model": structure_result.get("model"),
@@ -341,27 +344,61 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                 ensemble=config.beat_transformer_ensemble,
             ),
         ]
-        for backend in beat_backends:
-            name = backend.__class__.__name__
-            progress(f"beat analysis: {name}")
+        # Separation and normalization above must finish before any beat pass.
+        # Single-waveform trackers run on master AND every explicitly labelled
+        # drum/percussion stem. Beat Transformer runs once on its genuine five
+        # demixed streams; repeating it with a different filename changes nothing.
+        selected_inputs = beat_inputs(master, all_stems)
+        analysis["beat_inputs"] = []
+        for source in selected_inputs:
             try:
-                br = backend.analyze(master, beats_dir, all_stems)
-                beat_results.append(br)
-                analysis["beats"].append({
-                    "model": br.model,
-                    "beats": len(br.beats),
-                    "downbeats": len(br.downbeats),
-                    "tempo_bpm": br.tempo_bpm,
-                    "metadata": br.metadata,
-                })
+                info = audio_info(source.path)
+                duration = analysis["source"]["audio"]["duration_seconds"]
+                if abs(info["duration_seconds"] - duration) > .05:
+                    raise ValueError("Percussion stem is not aligned to the full master duration")
+                analysis["beat_inputs"].append(source.metadata(out))
             except Exception as exc:
-                analysis["errors"].append(_error_record(f"beats:{name}", exc))
+                analysis["errors"].append(_error_record(f"beats:input:{source.id}", exc))
                 if not config.continue_on_error:
                     raise
+                continue
+            for backend in beat_backends:
+                demixed = getattr(backend, 'requires_demixed_stems', False)
+                if demixed and source.kind != 'master':
+                    continue
+                name = backend.__class__.__name__
+                scope = 'five demixed streams' if demixed else source.id
+                progress(f"beat analysis: {name} on {scope}")
+                try:
+                    # Isolate hardcoded upstream artifact names so per-stem runs
+                    # cannot overwrite the master's JSON/TSV or leave duplicate lanes.
+                    with tempfile.TemporaryDirectory(prefix='.beat-pass-', dir=out) as temporary:
+                        scratch = Path(temporary)
+                        raw = backend.analyze(source.path, scratch, all_stems if demixed else [])
+                        br = attributed_result(raw, source, out, demixed=demixed)
+                        save_result(br, beats_dir)
+                        for sidecar in scratch.iterdir():
+                            if sidecar.is_file() and sidecar.name not in (raw.model+'.json', raw.model+'.tsv'):
+                                target = (br.model+sidecar.name[len(raw.model):]
+                                          if sidecar.name.startswith(raw.model) else br.model+'__'+sidecar.name)
+                                shutil.move(str(sidecar), beats_dir/target)
+                    beat_results.append(br)
+                    analysis["beats"].append({
+                        "model": br.model,
+                        "beats": len(br.beats),
+                        "downbeats": len(br.downbeats),
+                        "tempo_bpm": br.tempo_bpm,
+                        "metadata": br.metadata,
+                    })
+                except Exception as exc:
+                    analysis["errors"].append(_error_record(f"beats:{name}:{source.id}", exc))
+                    if not config.continue_on_error:
+                        raise
 
     # Produce one clearly identified shared guess across every successful beat
-    # detector, including All-In-One when that route is available.
-    if len(beat_results) >= 2:
+    # detector, including All-In-One when that route is available. Multiple
+    # master/stem passes of one detector receive at most ONE vote per cluster.
+    if len({r.metadata.get('detector', r.model) for r in beat_results}) >= 2:
         consensus = consensus_result(beat_results)
         if consensus is not None and consensus.beats:
             save_result(consensus, beats_dir)

@@ -47,19 +47,23 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Build actual companion package and install lightweight test dependencies
         run: |
-          python -m pip install numpy scipy soundfile matplotlib rich "typer>=0.12" platformdirs pytest playwright
+          python -m pip install numpy scipy soundfile matplotlib rich "typer>=0.12" platformdirs pytest pyyaml playwright
           python -m pip install ./.recording-dancerudiments
           python -m pip install --no-deps -e .
       - name: Require new shared APIs and native class; no fallback/skip
         run: python -c "from dancerudiments_authoring.harness import build_recording_harness; from dancerudiments import SampledRecording"
       - name: DSP, routing, mandatory BPM, native playback and matching regressions
-        run: python -m pytest tests/test_rudiment_recordings.py tests/test_rudiment_matches.py
+        run: python -m pytest tests/test_rudiment_recordings.py tests/test_rudiment_matches.py tests/test_rudiment_pairs.py tests/test_arcadians_pair_demos.py
       - name: Generate master/stem synthetic examples and a 48-candidate batch
         run: python examples/recordings/generate_demo.py --output recording-demo
       - name: Install Chromium
         run: python -m playwright install --with-deps chromium
       - name: Verify real local-file comparison, native samples, audio clock and reviews
         run: python .recording-dancerudiments/tools/test_recording_harness.py recording-demo/batch/index.html --screenshot recording-comparison.png
+      - name: Verify new stem-pair and smoothing comparison harnesses
+        run: |
+          python .recording-dancerudiments/tools/test_recording_harness.py recording-demo/stem-pairs/index.html --screenshot stem-pairs-comparison.png
+          python .recording-dancerudiments/tools/test_recording_harness.py recording-demo/averages/index.html --screenshot averages-comparison.png
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -67,4 +71,6 @@ jobs:
           path: |
             recording-demo/
             recording-comparison.png
+            stem-pairs-comparison.png
+            averages-comparison.png
           if-no-files-found: warn

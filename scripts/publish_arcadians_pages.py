@@ -19,6 +19,7 @@ from urllib.request import Request, urlopen
 
 from build_arcadians_demo import ARCADIANS_SHA256, digest, validate_revision, verify_site
 from assemble_arcadians_site import verify_timeline_qa
+from build_arcadians_pair_demos import GALLERIES, verify_pair_gallery
 
 REPOSITORY = 'kieransimkin/stemlab'
 WORKFLOW = '.github/workflows/arcadians-demo.yml'
@@ -84,7 +85,7 @@ def select_run(requested: str = '') -> dict:
     return result
 
 
-def verify_qa(qa: dict, provenance: dict) -> None:
+def verify_qa(qa: dict, provenance: dict, *, expected_candidates=48) -> None:
     required_true = ('hosted_file_loading_verified', 'bundled_audio', 'play_pause',
                      'seek_both_directions', 'restart', 'audio_clock', 'native_sample',
                      'arbitrary_axis_projection', 'review_export_import', 'non_looping')
@@ -93,7 +94,7 @@ def verify_qa(qa: dict, provenance: dict) -> None:
             or qa.get('mode') != 'http-project-pages-prefix'
             or any(qa.get(field) is not True for field in required_true)
             or qa.get('autoplay') is not False
-            or qa.get('candidates') != 48 or qa.get('sample_vectors_checked') != 144
+            or qa.get('candidates') != expected_candidates or qa.get('sample_vectors_checked') != expected_candidates*3
             or qa.get('audio_source') != 'Arcadians'
             or qa.get('audio_sha256') != ARCADIANS_SHA256
             or qa.get('external_requests') != [] or qa.get('page_errors') != []
@@ -122,7 +123,23 @@ def verify_artifacts(site: Path, qa_path: Path, source_sha: str) -> dict:
     # archives rather than claiming two demos while uploading only one.
     verify_timeline_qa(site / 'timeline/arcadians',
                        qa_path.with_name('arcadians-timeline-browser.json'), source_sha)
-    return dict(verified, source_sha=source_sha, browser_qa='passed', timeline_qa='passed')
+    verify_pair_artifacts(site, qa_path.parent, source_sha)
+    return dict(verified, source_sha=source_sha, browser_qa='passed', timeline_qa='passed', pair_galleries_qa='passed')
+
+
+def verify_pair_artifacts(site: Path, qa_dir: Path, source_sha: str) -> None:
+    """Mandatory on new publications: older sites must not erase the extra demos."""
+    for name, expected in zip(GALLERIES, (60, 180)):
+        provenance = verify_pair_gallery(site/name, source_commit=source_sha)
+        if provenance['candidate_count'] != expected:
+            raise ValueError('Missing requested pair-demo candidates')
+        qa = json.loads((qa_dir/(name+'-audio-browser.json')).read_text(encoding='utf-8'))
+        verify_qa(qa, provenance, expected_candidates=expected)
+        if name == 'arcadians-averages' and qa.get('pair_family_filter') is not True:
+            raise ValueError('Average comparison must validate its fixed-pair family filter')
+        if (qa.get('gallery') != name or qa.get('html_sha256') != digest(site/name/'index.html')
+                or qa['http_ranges'].get('audio_bytes') != (site/name/'audio.mp3').stat().st_size):
+            raise ValueError('Pair-demo browser QA is stale or belongs to a different gallery')
 
 
 def public_request(url: str, *, headers=None, limit=90 * 1024 * 1024) -> tuple[int, dict, bytes]:
@@ -170,6 +187,9 @@ def verify_live(base_url: str, site: Path, source_sha: str, *, attempts: int = 1
                 raise ValueError('The public MP3 is unavailable or does not honour byte ranges')
             if (site / 'timeline/arcadians').is_dir():
                 verify_live_timeline(base, site / 'timeline/arcadians', source_sha)
+            for name in GALLERIES:
+                if (site/name).exists():
+                    verify_live_pair(base, site/name, name, source_sha)
             return dict(status='passed', url=gallery, source_sha=source_sha,
                         html_matches_tested_artifact=True, public_audio_range_verified=True,
                         live_browser_playback_tested=False)
@@ -179,6 +199,24 @@ def verify_live(base_url: str, site: Path, source_sha: str, *, attempts: int = 1
                 print(f'Waiting for Pages propagation ({attempt + 1}/{attempts}): {exc}', flush=True)
                 time.sleep(delay)
     raise RuntimeError(f'Pages deployment was submitted but the live URL did not verify: {last_error}')
+
+
+def verify_live_pair(base: str, gallery: Path, name: str, source_sha: str) -> None:
+    provenance = json.loads((gallery/'release-demo.json').read_text(encoding='utf-8'))
+    if provenance['stemlab_commit'] != source_sha:
+        raise ValueError('Pair gallery is stale')
+    prefix = base.rstrip('/')+'/'+name+'/'
+    for file in ('index.html', 'release-demo.json', 'report.json'):
+        status, _, content = public_request(prefix+file)
+        if status != 200 or hashlib.sha256(content).hexdigest() != digest(gallery/file):
+            raise ValueError('Public pair gallery differs from tested build: '+name+'/'+file)
+    audio = gallery/'audio.mp3'
+    status, headers, content = public_request(prefix+'audio.mp3', headers={'Range': 'bytes=0-31'}, limit=32)
+    headers = {key.lower(): value for key, value in headers.items()}
+    with audio.open('rb') as stream:
+        expected = stream.read(32)
+    if (status != 206 or content != expected or headers.get('content-range') != f'bytes 0-31/{audio.stat().st_size}'):
+        raise ValueError('Public pair gallery audio is not seekable')
 
 
 def verify_live_timeline(base: str, timeline: Path, source_sha: str) -> None:

@@ -220,25 +220,30 @@ See **[installation, all options, limits, timing, demo and validation](docs/rudi
 inference. Restricted-environment QA used in-memory loading; normal file loading
 and audible listening are not claimed by that screenshot.*
 
-## Arcadians: complete analysis timeline and movement demo
+## Arcadians: complete analysis timeline and three movement demos
 
-Every new release builds **one public site containing two working examples**, both
+Every new release builds **one public site containing four working examples**, all
 covering the full original Arcadians song:
 
 - **[Analysis timeline](https://kieransimkin.github.io/stemlab/timeline/arcadians/)**:
   the real StemLab React viewer, original audio, six genuine HTDemucs stems,
-  waveforms/spectrograms, five beat/consensus results, Whisper words, all 13 curated
+  waveforms/spectrograms, master/percussion beat estimates and consensus, Whisper words, all 13 curated
   Vamp analyses, functional structure, sonic/rhythm/harmony/lyric analysis, text
   semantics, song map and loop discovery.
 - **[Movement comparison](https://kieransimkin.github.io/stemlab/arcadians/)**:
   the existing 48 DanceRudiments movements with 2D/3D/6D filtered/unfiltered master
   routes, 145 BPM, 64 pips per beat and float64 recordings. This example remains
   master-derived; it does not claim its movements use separated stems.
+- **[Stem-pair comparison](https://kieransimkin.github.io/stemlab/arcadians-stems/)**:
+  60 two-dimensional recordings with different actual stems driving X and Y.
+- **[Amplitude-mode comparison](https://kieransimkin.github.io/stemlab/arcadians-averages/)**:
+  30 fixed input/filter pairs, each with peak, average and four moving-average
+  windows: 180 recordings on shared normalization references.
 
-The root landing page links to both. These are deployment destinations; a patch
+The root landing page links to all four. These are deployment destinations; a patch
 or a green build alone does not establish that the new page is live.
 
-The timeline's **`arcadians-core-v1` recipe** runs all the selected core families
+The timeline's **`arcadians-core-v2` recipe** runs all the selected core families
 on the complete checksum-verified MP3. It is not the five-separator `full`
 comparison profile or every optional MIDI/evidence/NC model. Coverage, dependency
 versions and source/export revisions are disclosed. Missing stems, beat results,
@@ -247,16 +252,17 @@ synthetic fallback. Artist-confirmed 145 BPM, lyrics, manually edited lyric timi
 and artist sections stay distinct from machine estimates. A completed loop scan
 may legitimately return zero accepted loops and explain unresolved sections.
 
-### Build and publish both examples
+### Build and publish all four examples
 
 Start **Actions → Arcadians release demo → Run workflow → main**. The workflow
 first runs the full CPU analysis in StemLab's existing Docker environment, then
-exports and browser-tests the timeline. It also builds/tests the movement example
-and combines both into a single verified Pages artifact. The model analysis is
+exports and browser-tests the timeline. It also builds/tests the original movement example and both new comparison
+pages, reusing the exact separated float WAVs, and combines all four into a
+single verified Pages artifact. The model analysis is
 substantially heavier than master-peak extraction; upstream model downloads and
 inference must succeed. A new tagged release calls the same combined workflow.
 
-Both examples include working audio playback, without autoplay. The timeline
+All four examples include audio playback, without autoplay. The timeline
 needs **no live StemLab API, Socket.IO connection or CDN**: the original React
 renderer loads precomputed local data, waveform envelopes and spectrogram strips.
 It supports play/pause, seeking, zoom/Fit, and saved-loop audition when loops exist.
@@ -269,11 +275,11 @@ automatic publication after a successful manual demo or a tagged release. Preser
 `github-pages` environment approvals and allow the relevant `main`/tag refs.
 Alternatively, **Publish Arcadians demo to Pages → Run workflow → main** publishes
 a selected successful combined demo (blank run ID chooses the latest), without
-rerunning models or making a package release. Old movement-only artifacts are
-rejected so they cannot overwrite the new timeline. The standalone **Arcadians
+rerunning models or making a package release. Old artifacts without both new galleries and the timeline are
+rejected so they cannot overwrite the complete four-example site. The standalone **Arcadians
 complete analysis timeline** job is build-only, not a separate Pages deployment.
 
-The publisher verifies both viewers' provenance, artifact checksums and successful
+The publisher verifies all viewers' provenance, artifact checksums and successful
 HTTP browser reports, then probes the actual public pages, timeline assets/data
 and partial MP3 responses. Failed or in-memory-only QA cannot authorize publication.
 QA files, private folders, model caches and runtime logs stay outside the public
@@ -806,3 +812,52 @@ newer resampy that no longer needs `pkg_resources`. These are container-only
 compatibility pins, not a downgrade of normal package-build tooling. This smoke
 test does not download weights or claim semantic inference; the full analysis
 and browser/publication gates remain required.
+
+### Separated-stem movement batches and controlled smoothing
+
+`stemlab generate-stem-batch` separates a raw song once (default `htdemucs_6s`) or
+reuses a saved analysis, then generates 2D DanceRudiments with **different stems
+on X and Y**. It covers raw ordered pairs and seeded low-/high-/band-pass variants;
+120 candidates is the bounded default. Supply a BPM estimate or confirmed value
+for raw audio. `--analysis-output` keeps the prepared stems for reuse.
+
+```bash
+stemlab generate-stem-batch song.wav --bpm 145 --bpm-confirmed \
+  --analysis-output ./song-stems --include-audio --output ./stem-pairs
+stemlab generate-average-comparison ./song-stems --bpm 145 --max-pairs 32 \
+  --window-beats .125 --window-beats .25 --window-beats .5 --window-beats 1 \
+  --include-audio --output ./average-comparisons
+```
+
+The second command keeps each pair's source, filters, orientation and amplitude
+scale fixed while comparing **peak**, **per-pip average**, and **moving-average**
+settings. Moving average is a separate centered smoothing window on the rectified
+amplitude envelope, configurable in beats; it does not average signed audio or
+change the 64-pips-per-beat / float64 recording format. It is also available in
+`record-rudiment` and `generate-batch` via `--mode moving-average` and
+`--moving-average-beats`; individual axes use `--axis-window-beats NAME=BEATS`.
+
+The Arcadians workflow now assembles **four** examples: the existing
+`arcadians/` movements and `timeline/arcadians/` analysis, plus
+`arcadians-stems/` (60 separated-stem movements) and `arcadians-averages/`
+(30 pairs × six settings). It hands off the timeline analysis's real float stems,
+without rerunning separation, and bundles the original song for synchronized
+playback. Both new galleries have mandatory native/browser/audio checks and
+public-URL verification before success is reported. All pages remain in one
+Pages deployment. See [settings, boundaries, budgets and examples](docs/recording-pairs.md).
+
+### Beat detection after separation: master and percussion hypotheses
+
+With beat analysis enabled, the pipeline completes separation first, then runs
+**BeatNet and BeatThis on the master and every labelled drum/percussion stem**
+from every successful selected separator. Each result retains its own source
+hash, separator, role and timeline lane. Master JSON filenames remain compatible;
+percussion files have distinct source-qualified IDs. Failed sources are recorded
+separately, and no guessed percussion stem is substituted.
+
+All-In-One structure remains master-based, and Beat Transformer runs once on its
+actual five demixed streams—not repeatedly on filenames it does not consume.
+Consensus allows **one vote per detector family**, not one per stem, preserving
+all source hypotheses without letting repeated drum runs dominate the vote.
+The `arcadians-core-v2` publication gate requires the new, correctly attributed
+master/drum beat results. See [routing, provenance and failure handling](docs/beat-inputs.md).

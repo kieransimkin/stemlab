@@ -15,6 +15,8 @@ from .common import save_result, tempo_from_beats
 
 
 class BeatTransformerBackend(BeatBackend):
+    # This trained model consumes five demixed streams, not an arbitrary single file.
+    requires_demixed_stems = True
     FPS = 44100 / 1024
 
     def __init__(self, bootstrap_external: bool = True, ensemble: bool = True):

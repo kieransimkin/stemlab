@@ -60,7 +60,7 @@ an assessment of artistic dance quality.
 
 `.github/workflows/release.yml` calls `arcadians-demo.yml` before building release
 packages. That reusable workflow first completes and browser-tests the
-`arcadians-core-v1` CPU analysis timeline. See [the exact recipe and cost/scope
+`arcadians-core-v2` CPU analysis timeline. See [the exact recipe and cost/scope
 notes](arcadians-timeline.md). Its subsequent movement job:
 
 1. Checks out the release's StemLab code and the exact companion commit stored in
@@ -75,7 +75,7 @@ notes](arcadians-timeline.md). Its subsequent movement job:
    non-looping completion. End-of-track checks wait for the real media event
    rather than assuming it must arrive within a fixed 180 ms delay.
 4. Verifies the timeline snapshot and its separate HTTP browser QA, binds it to
-   the same source revision, and assembles both viewers plus a landing page.
+   the same source revision, and assembles all four viewers plus a landing page.
    Packages only the combined verified site. The normal release archive/manifest assembly
    includes the new assets before GitHub publication.
 
@@ -92,7 +92,7 @@ The release demo itself always uses the checked-in pin.
 
 The new release assets are:
 
-- `StemLab-Arcadians-visualizer.zip`: both viewers and their audio/data; the timeline needs static HTTP(S) hosting, not a running StemLab server.
+- `StemLab-Arcadians-visualizer.zip`: all four viewers and their audio/data; the timeline needs static HTTP(S) hosting, not a running StemLab server.
 - `StemLab-Arcadians-files.sha256`: hashes of every public file.
 - `StemLab-Arcadians-build.json`: input/build provenance and archive checksum.
 
@@ -178,7 +178,7 @@ run ID deliberately allows publishing that selected older successful demo; omit
 it when the latest successful preview is intended.
 
 The new publisher checks the source workflow, same-repository `main` provenance,
-artifact IDs/expiry, the combined public-file allowlist, both viewers' HTML and
+artifact IDs/expiry, the combined public-file allowlist, all viewers' HTML and
 original MP3 checksums, and both saved successful real-HTTP browser reports. It does not run code
 from artifacts and never accepts pull-request/fork results. Browser QA downloads
 stay outside the Pages upload. This workflow uses trusted default-branch code for
@@ -227,7 +227,7 @@ The deploy job gets `pages: write` and `id-token: write` and uses the protected
 `github-pages` environment. It uploads **only the dedicated generated site**,
 never the repository, caches, source manifests, credentials or private media.
 It rejects unexpected files/symlinks and caps public files at 90 MiB each and the
-site at 512 MiB. Audio is published only because the artist requested this demo;
+site at 900 MiB. Audio is published only because the artist requested this demo;
 the code's MIT licence does not relicense the recording.
 
 ## Reproduce the movement builder locally
@@ -266,3 +266,16 @@ References:
 - [Deployment environment protection](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)
 - [Arcadians source and timing reference](../examples/arcadians/README.md)
 - [Recording extraction and batch modes](rudiment-recordings.md)
+
+## Additional stem-pair and amplitude-mode galleries
+
+The combined workflow now publishes `arcadians-stems/` (60 distinct-stem 2D
+recordings) and `arcadians-averages/` (180 recordings in 30 fixed-input comparison
+groups) alongside the original two viewers. It downloads a dedicated seven-file
+source bundle from the complete-analysis job, verifies the source SHA-256,
+separator roles, float format and durations, then reuses it for both generators.
+Each new page gets separate HTTP/browser/audio/native tests and public URL checks.
+The publisher rejects older artifacts without these new galleries and reports.
+
+See [recording-pairs.md](recording-pairs.md) for CLI commands, centering/edge rules,
+fixed normalization references, exact default windows and publication budgets.

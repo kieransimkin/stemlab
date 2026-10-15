@@ -80,3 +80,13 @@ The reference fixture also includes the artist's canonical section map: Intro �
 Pre-Chorus → Build 1 → Drop 1 → Post-Drop → Verse 2 → Build 2 → Final Drop → Outro.
 StemLab's All-In-One output is retained separately so machine boundaries can be compared
 with—not substituted for—the artist-authored structure.
+
+## Separated-stem and smoothing demonstrators
+
+The combined **Arcadians release demo** first runs `arcadians-core-v2`, including
+master/drum BeatNet and BeatThis passes after separation. Its exact six float
+stems are reused for `arcadians-stems/` (60 2D distinct-stem pairings) and
+`arcadians-averages/` (30 pairs × peak/average/four smoothing widths). Both pages
+include unchanged Arcadians audio, share the existing DanceRudiments renderer,
+and are published alongside the original movement and React timeline examples.
+See [pair-generation settings and CI gates](../../docs/recording-pairs.md).

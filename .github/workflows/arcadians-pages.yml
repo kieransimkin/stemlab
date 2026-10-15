@@ -104,5 +104,7 @@ jobs:
             --site public-site --source-sha "$SOURCE_SHA"
           echo "### Published Arcadians timeline and movement demos" >> "$GITHUB_STEP_SUMMARY"
           echo "${PAGE_URL%/}/timeline/arcadians/" >> "$GITHUB_STEP_SUMMARY"
+          echo "${PAGE_URL%/}/arcadians-stems/" >> "$GITHUB_STEP_SUMMARY"
+          echo "${PAGE_URL%/}/arcadians-averages/" >> "$GITHUB_STEP_SUMMARY"
           echo "${PAGE_URL%/}/arcadians/" >> "$GITHUB_STEP_SUMMARY"
           echo "Source: $SOURCE_SHA. Public HTML and audio range request verified." >> "$GITHUB_STEP_SUMMARY"

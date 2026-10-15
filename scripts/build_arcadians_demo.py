@@ -24,8 +24,10 @@ ARCADIANS_SHA256 = '5a3d17d8b5b27d62a6bb9fa1f654c403db0341da826d650cc282dfa5758e
 ARCADIANS_BPM = 145.0
 DEFAULT_AUDIO = ROOT / 'examples/arcadians/Arcadians - 320kbps.mp3'
 PAYLOAD_RE = re.compile(r'<script type="application/json" id="data">(.*?)</script>', re.S)
-MAX_SITE_BYTES = 512 * 1024 * 1024
+# Four viewers + full-song authoritative JSON; stay below Pages' 1 GB limit.
+MAX_SITE_BYTES = 900 * 1024 * 1024
 MAX_FILE_BYTES = 90 * 1024 * 1024
+EXTRA_GALLERIES = ('arcadians-stems', 'arcadians-averages')
 
 
 def digest(path: Path) -> str:
@@ -71,22 +73,28 @@ def public_files(site: Path) -> list[Path]:
         'arcadians/report.json', 'arcadians/release-demo.json', 'arcadians/audio.mp3',
         'arcadians/SOURCE-NOTICE.txt', 'arcadians/DANCERUDIMENTS-LICENSE.txt',
     }
+    gallery_dirs = {'arcadians', 'arcadians/recordings'}
+    for name in EXTRA_GALLERIES:
+        if (site/name).exists():
+            gallery_dirs.update((name, name+'/recordings'))
+            allowed.update(name+'/'+file for file in ('index.html', 'index.json', 'report.json',
+                'release-demo.json', 'audio.mp3', 'SOURCE-NOTICE.txt', 'DANCERUDIMENTS-LICENSE.txt'))
     for path in sorted(site.rglob('*')):
         if path.is_symlink():
             raise ValueError('Site contains a symlink: ' + path.relative_to(site).as_posix())
         if path.is_dir():
-            if path.relative_to(site).as_posix() not in {'arcadians', 'arcadians/recordings'} | timeline_dirs:
+            if path.relative_to(site).as_posix() not in gallery_dirs | timeline_dirs:
                 raise ValueError('Unexpected site directory: ' + path.relative_to(site).as_posix())
             continue
         relative = path.relative_to(site).as_posix()
-        if relative not in allowed | timeline_files and not re.fullmatch(r'arcadians/recordings/candidate_[0-9]{4}\.json', relative):
+        if relative not in allowed | timeline_files and not re.fullmatch(r'(?:arcadians|arcadians-stems|arcadians-averages)/recordings/candidate_[0-9]{4}\.json', relative):
             raise ValueError('Unapproved public file: ' + relative)
         size = path.stat().st_size
         if size > MAX_FILE_BYTES:
             raise ValueError('A public file exceeds the 90 MiB budget: ' + relative)
         total += size
         if total > MAX_SITE_BYTES:
-            raise ValueError('Site exceeds the 512 MiB publication budget')
+            raise ValueError('Site exceeds the 900 MiB publication budget')
         files.append(path)
     return files
 
@@ -250,6 +258,15 @@ def verify_site(site: Path, *, expected_sha256: str = ARCADIANS_SHA256,
                 or snapshot['source_commit'] != provenance['stemlab_commit']
                 or snapshot['coverage'].get('status') != 'complete'):
             raise ValueError('Combined timeline provenance/completeness mismatch')
+    for name in EXTRA_GALLERIES:
+        stamp = provenance.get('additional_galleries', {}).get(name)
+        if (site/name).exists() or stamp is not None:
+            from build_arcadians_pair_demos import verify_pair_gallery
+            extra = verify_pair_gallery(site/name, expected_sha=expected_sha256,
+                                        source_commit=provenance['stemlab_commit'])
+            if (not stamp or stamp.get('provenance_sha256') != digest(site/name/'release-demo.json')
+                    or stamp.get('candidate_count') != extra['candidate_count']):
+                raise ValueError('Additional gallery provenance mismatch')
     if not (site / '.nojekyll').is_file() or not (site / 'index.html').is_file():
         raise ValueError('Missing Pages entry point')
     return dict(files=len(files), total_bytes=sum(p.stat().st_size for p in files), candidates=count,
