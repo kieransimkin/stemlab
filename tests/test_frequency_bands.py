@@ -1,6 +1,7 @@
 """Known-frequency, clock, stereo and native-export checks for Fourier dimensions."""
 import json
 import os
+import re
 from dataclasses import replace
 
 import numpy as np
@@ -215,4 +216,5 @@ def test_fourier_options_need_frequency_bands(tmp_path):
     p = write_audio(tmp_path, np.zeros(512))
     result = CliRunner().invoke(app, ['record-rudiment', str(p), '--bpm', '120',
         '--fft-size', '4096', '-o', str(tmp_path/'output')])
-    assert result.exit_code != 0 and 'require --frequency-bands' in result.output
+    plain = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+    assert result.exit_code != 0 and 'require --frequency-bands' in plain
