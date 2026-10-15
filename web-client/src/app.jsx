@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TimelineSequence, formatTimelineTime } from "react-timeline-sequence";
+import { TimelineSequence, formatTimelineTime, TIMELINE_DISPLAY_API_VERSION } from "react-timeline-sequence";
+import { groupAudioLanes } from "./audio-channels.js";
+if (TIMELINE_DISPLAY_API_VERSION !== 1) throw new Error("Install the shared timeline display-controls update before building StemLab");
 import "react-timeline-sequence/styles.css";
 import { LoopSummary, useAnalysisLoops } from "./loops";
 
@@ -146,6 +148,11 @@ async function laneFromFile(hash, file) {
   }
 
   try {
+    if (path === "analysis.json") {
+      const data = await fetchJson(hash, path);
+      return {id, title:prettyPath(path), meta:"analysis provenance", kind:"artifact",
+        sourceMap:data.spectrograms || [], content:artifact(hash, path)};
+    }
     if (path.startsWith("beats/") && extension === "json") {
       const data = await fetchJson(hash, path);
       const downbeats = new Set((data.downbeats || []).map(value => Number(value).toFixed(3)));
@@ -324,11 +331,14 @@ function StemLabTimeline({ hash, filename }) {
   // File discovery is asynchronous. Keep the musical evidence above raw artifacts.
   const lanePriority = lane => lane.id === "__source__" ? 0
     : lane.kind === "deep-structure" ? 10 : lane.kind === "events" ? 20
-    : lane.kind === "spectrogram" ? 30 : lane.kind === "waveform" ? 40 : 90;
-  const allLanes = [...references.lanes, ...[...lanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
+    : lane.kind === "audio" ? 1 : lane.kind === "spectrogram" ? 30 : lane.kind === "waveform" ? 40 : 90;
+  const displayLanes = useMemo(() => groupAudioLanes(lanes), [lanes]);
+  const allLanes = [...references.lanes, ...[...displayLanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
   const state = status.state || "submitted";
   return <TimelineSequence
     className="stemlab-timeline"
+    laneControls
+    wheelNavigation
     audioSrc={`/api/${hash}/source`}
     duration={duration}
     title={canonical.title || filename}

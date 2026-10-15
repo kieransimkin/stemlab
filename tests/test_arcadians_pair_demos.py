@@ -205,3 +205,21 @@ def test_workflows_reuse_one_separation_and_gate_all_pages():
     assert text.index('publish_arcadians_pages.py verify') < text.index('build_arcadians_demo.py package')
     assert '--in-memory' not in text
     assert 'test_rudiment_pairs.py' in str(recording) and 'test_arcadians_pair_demos.py' in str(recording)
+
+
+def test_source_bundle_relative_cli_path_matches_absolute_catalogue(tmp_path, monkeypatch):
+    bundle, sha = make_bundle(tmp_path)
+    expected = builder.verify_sources(bundle, SHA, expected_sha=sha)
+    monkeypatch.chdir(tmp_path)
+    actual = builder.verify_sources(Path('bundle'), SHA, expected_sha=sha)
+    assert actual == expected
+
+
+def test_relative_bundle_does_not_bypass_hash_checks(tmp_path, monkeypatch):
+    bundle, sha = make_bundle(tmp_path)
+    path = bundle / 'stems/htdemucs_6s/drums.wav'
+    samples, rate = sf.read(path, dtype='float32', always_2d=True)
+    sf.write(path, samples * .75, rate, subtype='FLOAT')
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ValueError, match='hash mismatch: htdemucs_6s/drums'):
+        builder.verify_sources(Path('bundle'), SHA, expected_sha=sha)

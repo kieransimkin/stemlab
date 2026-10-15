@@ -19,6 +19,7 @@ from urllib.parse import unquote, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 from arcadians_http import ProjectHandler, _byte_range
 from check_arcadians_audio import verify_audio_ranges
+from timeline_display_checks import expected_display_layout, check_display_controls
 from stemlab.static_timeline import digest, read_json, verify_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,8 +33,9 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
     if require_core and snapshot['coverage'].get('status') != 'complete':
         raise ValueError('Core timeline is incomplete')
     state = read_json(site / 'data/timeline.json')
-    expected = 1 + int(snapshot['loop_count'] > 0) + sum(f['path'] != 'canonical.json' and not f['path'].startswith('deep/loops/') for f in state['files'])
-    expected += int(bool(state['canonical'].get('bpm'))) + int(bool(state['canonical'].get('lyrics'))) + int(bool(state['canonical'].get('lyric_timing')))
+    analysis_path = site / 'data/analysis.json'
+    layout = expected_display_layout(state, snapshot, read_json(analysis_path) if analysis_path.exists() else {})
+    expected = layout['lane_count']
     report_path.parent.mkdir(parents=True, exist_ok=True)
     class Handler(ProjectHandler):
         prefix = '/stemlab/timeline/arcadians/'
@@ -88,6 +90,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 page.wait_for_function('''() => [...document.querySelectorAll('.rts-track img')]
                     .every(i => i.complete && i.naturalWidth > 0)''', timeout=60000)
                 page.wait_for_function('document.querySelector("audio")?.readyState >= 1', timeout=30000)
+                stage = 'Combined waveform/spectrogram views and navigation'
+                report.update(check_display_controls(page, paired_count=layout['paired_count']))
                 report['all_expected_lanes'] = True
                 report['images_loaded'] = True
                 report['lanes'] = page.locator('.rts-lane').count()

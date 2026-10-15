@@ -91,8 +91,13 @@ def verify_sources(source: Path, source_commit: str, *, expected_sha=ARCADIANS_S
     for entry in entries:
         path = safe_file(source, entry['path'])
         info = audio_info(path)
-        if path != catalogue[entry['key']] or digest(path) != entry['sha256']:
-            raise ValueError('Source bundle stem hash/path mismatch')
+        # CLI callers supply relative bundle roots; source_catalogue resolves its
+        # paths. Compare canonical paths, but keep all safe_file containment and
+        # symlink checks, then verify the original bytes independently.
+        if path.resolve() != catalogue[entry['key']].resolve():
+            raise ValueError('Source bundle path mismatch: ' + entry['key'])
+        if digest(path) != entry['sha256']:
+            raise ValueError('Source bundle hash mismatch: ' + entry['key'])
         for field in ('sample_rate', 'num_frames', 'num_channels', 'subtype'):
             if info[field] != entry[field]:
                 raise ValueError('Source bundle audio metadata mismatch')

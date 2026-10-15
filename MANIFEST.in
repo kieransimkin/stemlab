@@ -49,3 +49,8 @@ include scripts/check_semantic_runtime.py
 include scripts/build_arcadians_pair_demos.py
 include docs/recording-pairs.md
 include docs/beat-inputs.md
+
+include scripts/timeline_display_checks.py
+include scripts/check_viewer_build.py
+include scripts/configure_viewer_build.py
+include docs/viewer-controls.md

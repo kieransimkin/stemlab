@@ -1,6 +1,7 @@
 """Static exporter contracts using generated audio; no learned-model claims."""
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 import re
@@ -178,7 +179,17 @@ def test_loop_previews_use_existing_sample_exact_exporter(tmp_path):
     for loop in loops:
         actual = (tmp_path / 'site/loops' / (loop['id'] + '.wav')).read_bytes()
         expected, _ = preview_loop(source, loop['id'])
-        assert actual == expected
+        # Float WAV's PEAK chunk can contain a write-time timestamp. Compare
+        # the actual sample contract, not unrelated wall-clock header metadata.
+        actual_info, expected_info = sf.info(io.BytesIO(actual)), sf.info(io.BytesIO(expected))
+        assert (actual_info.format, actual_info.subtype, actual_info.frames,
+                actual_info.channels, actual_info.samplerate) == (
+                    expected_info.format, expected_info.subtype, expected_info.frames,
+                    expected_info.channels, expected_info.samplerate)
+        actual_samples, actual_rate = sf.read(io.BytesIO(actual), dtype='float64', always_2d=True)
+        expected_samples, expected_rate = sf.read(io.BytesIO(expected), dtype='float64', always_2d=True)
+        assert actual_rate == expected_rate
+        np.testing.assert_array_equal(actual_samples, expected_samples)
 
 
 def test_missing_loop_evidence_is_not_claimed_to_have_zero_candidates(analysis, tmp_path):

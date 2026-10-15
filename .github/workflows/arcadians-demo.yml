@@ -14,6 +14,10 @@ on:
       - '.github/workflows/arcadians-timeline.yml'
       - 'scripts/build_arcadians_timeline.py'
       - 'scripts/build_arcadians_pair_demos.py'
+      - 'scripts/check_viewer_build.py'
+      - 'scripts/timeline_display_checks.py'
+      - 'web-client/**'
+      - 'vendor/**'
       - 'src/stemlab/analysis/rudiment_pairs.py'
       - 'src/stemlab/recording_cli.py'
       - 'tests/test_rudiment_pairs.py'
@@ -56,11 +60,13 @@ jobs:
         run: |
           python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest pyyaml ruff
           python -m pip install --no-deps -e .
+      - name: Require rebuilt shared viewer controls before model inference
+        run: python scripts/check_viewer_build.py
       - name: Lint before expensive analysis
         run: python -m ruff check src tests scripts
       - name: Test static timeline, completeness validation, HTTP and publication
         run: |
-          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py tests/test_arcadians_runtime.py tests/test_beat_inputs.py tests/test_beat_consensus.py
+          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py tests/test_arcadians_runtime.py tests/test_beat_inputs.py tests/test_beat_consensus.py tests/test_viewer_controls.py
 
   timeline:
     if: github.event_name != 'pull_request'
@@ -106,7 +112,7 @@ jobs:
           python -m pip install numpy scipy 'soundfile>=0.12' matplotlib rich 'typer>=0.12' platformdirs pytest pyyaml playwright
           python -m pip install ./.recording-dancerudiments
           python -m pip install --no-deps -e .
-          python -c "from dancerudiments import SampledRecording; from dancerudiments_authoring.harness import build_recording_harness"
+          python -c "from dancerudiments import SampledRecording; from dancerudiments_authoring.harness import build_recording_harness, HARNESS_DISPLAY_API_VERSION; assert HARNESS_DISPLAY_API_VERSION == 1"
       - name: Run release-demo and recording regression tests
         run: python -m pytest tests/test_arcadians_http.py tests/test_arcadians_release_demo.py tests/test_rudiment_recordings.py tests/test_rudiment_matches.py tests/test_rudiment_pairs.py tests/test_arcadians_pair_demos.py
       - name: Generate 48 full-song movements with the original MP3 included

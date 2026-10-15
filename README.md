@@ -861,3 +861,22 @@ Consensus allows **one vote per detector family**, not one per stem, preserving
 all source hypotheses without letting repeated drum runs dominate the vote.
 The `arcadians-core-v2` publication gate requires the new, correctly attributed
 master/drum beat results. See [routing, provenance and failure handling](docs/beat-inputs.md).
+
+## Timeline overlays and movement display modes
+
+Master/stem audio appears as one channel per source, with **Waveform /
+Spectrogram / Both** in the left heading. Both overlays the waveform on the
+time-aligned spectrum. Each channel has a height slider and reset: wheel pans
+time, Ctrl/Command + wheel zooms time, Alt + wheel resizes the hovered channel,
+and Shift + wheel scrolls between channels. These are display-only changes.
+
+The shared DanceRudiments **Movement view** selector switches between the
+existing X–Y trajectory and **Bar graph**, one labelled signed bar per stored
+dimension. It retains the original native sampler, audio clock and review state.
+BeatNet/BeatThis still analyse **both** the master and every drums/percussion stem
+after separation; the master pass is never replaced.
+
+See **[viewer controls and the required companion build/pin setup](docs/viewer-controls.md)**
+before applying this source update. The shared timeline package and StemLab web
+bundle must be genuinely rebuilt; the setup helper records real pushed companion
+SHAs and an exact local npm archive. Existing exported pages must be regenerated.

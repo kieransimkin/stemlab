@@ -223,6 +223,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 page.wait_for_function('!document.getElementById("audio").paused && window.audition.state().running')
                 page.wait_for_function('(t)=>document.getElementById("audio").currentTime > t+.1', arg=target)
                 assert_clock()
+                from dancerudiments_authoring.harness_checks import check_running_view_switch
+                check_running_view_switch(page)
                 page.locator('#play').click()
                 page.wait_for_function('document.getElementById("audio").paused && !window.audition.state().running')
                 stopped = audio.evaluate('(a) => a.currentTime')
@@ -261,6 +263,9 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 expected_sample = recording['samples'][pip]
                 actual_sample = page.evaluate('([i,p])=>window.audition.sample(i,p)', [i,pip])
                 assert actual_sample == expected_sample
+                stage = 'xy-and-all-dimension-bar-views'
+                from dancerudiments_authoring.harness_checks import check_display_modes
+                display_report = check_display_modes(page)
                 stage = 'review-export-import'
                 name = patterns[0]['name']
                 page.evaluate('name=>window.audition.setStatus(name,"keep")', name)
@@ -328,6 +333,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
         listening_qa=False, gallery=gallery_name, pair_family_filter=(gallery_name == 'arcadians-averages'),
         html_sha256=__import__('hashlib').sha256((gallery/'index.html').read_bytes()).hexdigest(),
     )
+    report.update(display_report)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     return report
