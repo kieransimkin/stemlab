@@ -23,8 +23,14 @@ jobs:
     permissions:
       contents: read
 
+  onefile-cli:
+    name: Build and smoke-test standalone CLI
+    uses: ./.github/workflows/binary.yml
+    permissions:
+      contents: read
+
   release-build:
-    needs: [codex-package, arcadians-demo]
+    needs: [codex-package, arcadians-demo, onefile-cli]
     name: Build and validate StemLab release
     runs-on: ubuntu-22.04
     steps:
@@ -48,7 +54,7 @@ jobs:
           python -m pip install -U pip wheel setuptools
           # madmom/BeatNet remain legacy-sensitive; preinstall Cython before resolving extras.
           python -m pip install 'Cython<3' 'numpy<2'
-          python -m pip install -e '.[all,binary,dev]'
+          python -m pip install -e '.[all,dev]'
           python -m pip install -U build twine
 
       - name: Install and audit the same published native wheel used by demo CI
@@ -84,31 +90,11 @@ jobs:
           python -m build
           python -m twine check dist/*
 
-      - name: Build supplemental StemLab one-file CLI
-        if: startsWith(github.ref, 'refs/tags/v')
-        timeout-minutes: 30
-        continue-on-error: true
-        run: |
-          python -m nuitka \
-            --onefile \
-            --assume-yes-for-downloads \
-            --output-dir=build/nuitka \
-            --output-filename=stemlab-linux-x86_64 \
-            --include-package=stemlab \
-            --include-package=demucs \
-            --include-package=openunmix \
-            --include-package=bs_roformer \
-            --include-package=faster_whisper \
-            --include-package=beat_this \
-            --include-package=BeatNet \
-            --include-package=librosa \
-            --include-package=pyloudnorm \
-            --include-package=cmudict \
-            --include-package=sentence_transformers \
-            --include-package=allin1_infer \
-            --include-package-data=bs_roformer \
-            --include-package-data=faster_whisper \
-            src/stemlab/__main__.py
+      - name: Retrieve validated standalone CLI
+        uses: actions/download-artifact@v5
+        with:
+          name: stemlab-onefile-linux-x86_64
+          path: build/nuitka
 
       - name: Retrieve validated Codex plugin assets
         uses: actions/download-artifact@v5
@@ -128,15 +114,10 @@ jobs:
           cp dist/* dist-release/
           cp codex-release/* dist-release/
           cp arcadians-release/* dist-release/
-          if [[ -f build/nuitka/stemlab-linux-x86_64 ]]; then
-            cp build/nuitka/stemlab-linux-x86_64 dist-release/
-            chmod +x dist-release/stemlab-linux-x86_64
-          else
-            printf '%s\n' \
-              'The optional Linux one-file executable was not produced.' \
-              'Install StemLab from PyPI or use the published container image.' \
-              > dist-release/STEMLAB-BINARY-NOTE.txt
-          fi
+          test -f build/nuitka/stemlab-linux-x86_64
+          chmod +x build/nuitka/stemlab-linux-x86_64
+          cp build/nuitka/stemlab-linux-x86_64 dist-release/
+          chmod +x dist-release/stemlab-linux-x86_64
           python scripts/release_about.py dist-release/STEMLAB-ABOUT.txt
           python scripts/release_manifest.py dist-release
           cat dist-release/SHA256SUMS

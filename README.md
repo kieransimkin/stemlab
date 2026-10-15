@@ -924,3 +924,18 @@ Pages deployment, live HTML and seekable audio. Do not start a duplicate manual
 Arcadians analysis during that tagged build. Read
 **[the full release, resume, verification and troubleshooting guide](docs/released-viewers.md)**
 before running it. Keep this README and AGENTS.md synchronized with future changes.
+
+## Standalone Linux CLI release gate
+
+The Linux one-file `stemlab-linux-x86_64` executable is a required release
+artifact, not a best-effort extra. Its dedicated `Standalone CLI` workflow uses
+Python 3.11 so the maintained `madmom-prebuilt` decoder and StemLab's
+checksum-verified BeatNet 1.1.3 runtime can coexist. The build bootstraps the
+official BeatNet wheel, verifies its SHA-256, embeds the BeatNet code and model
+weights plus required package data/metadata, then smoke-tests the actual
+executable with an empty external StemLab cache. `--help`, `models`, and
+`doctor` must work, and `doctor` must report embedded BeatNet as ready.
+
+Main-branch release coordination requires `binary.yml` to pass before tagging.
+Tagged releases call the same reusable workflow and cannot publish a fallback
+`STEMLAB-BINARY-NOTE.txt`; absence or failure of the executable fails the release.

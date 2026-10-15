@@ -24,7 +24,7 @@ OWNER = 'kieransimkin'
 MAIN_CI = {
     'react-timeline-sequence': {'ci.yml'},
     'DanceRudiments': {'ci.yml', 'patterns.yml', 'initial-collection.yml', 'recordings.yml', 'visualizer.yml', 'csharp.yml'},
-    'stemlab': {'ci.yml', 'recordings.yml', 'midi.yml', 'evidence.yml', 'codex-plugin.yml'},
+    'stemlab': {'ci.yml', 'recordings.yml', 'midi.yml', 'evidence.yml', 'codex-plugin.yml', 'binary.yml'},
 }
 RELEASE_CI = {
     'react-timeline-sequence': {'release.yml'},

@@ -96,3 +96,21 @@ Release material retains the canonical StemLab name and includes:
 - https://kieransimkin.co.uk/my-songs/
 - https://kieransimkin.co.uk/arcadians/
 - https://github.com/kieransimkin/stemlab
+
+## Required one-file CLI
+
+The Linux one-file CLI is built by the reusable `Standalone CLI` workflow on
+Python 3.11 and is now a hard release dependency. This is intentionally separate
+from the ordinary wheel/sdist release build, which may use another supported
+Python version.
+
+The binary builder first runs StemLab's checksum-pinned BeatNet bootstrap, adds
+that verified runtime to Nuitka's package discovery path, embeds BeatNet's model
+weights and `madmom` package data, and preserves `madmom-prebuilt` distribution
+metadata required by BeatNet's compatibility layer. The executable is then run
+with a fresh external cache: `--help`, `models`, and `doctor` must succeed and
+BeatNet must be reported ready without downloading its wheel.
+
+A release no longer continues after a one-file build failure and no longer
+substitutes `STEMLAB-BINARY-NOTE.txt`. Main CI also runs the standalone build, so
+binary packaging regressions are found before a version tag is created.

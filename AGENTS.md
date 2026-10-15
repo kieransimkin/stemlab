@@ -23,3 +23,15 @@
 - Update this repository's README.md and AGENTS.md in the same change whenever release policy, dependency rules, automation, commands, controls or validation change. Keep relevant package/feature READMEs current too. A separate guide or changelog does not replace the root README update.
 - Preserve the master-plus-drums/percussion beat-routing contract, 64-pips-per-beat native recording clock, per-dimension bars and combined waveform/spectrogram lanes. New UI features must be supplied by released shared APIs and genuinely rebuilt frontend assets, not copied engines or marker strings.
 - Distinguish source CI, package publication, full-song inference, browser/audio QA, artifact packaging, actual Pages deployment and live URL/audio verification. Keep all four Arcadians pages together; do not report unexecuted, skipped or older-commit checks as success. CI playback evidence is not subjective listening QA.
+
+## Standalone CLI release contract
+
+- Treat `.github/workflows/binary.yml` as a required release gate. Do not restore
+  `continue-on-error` or a placeholder binary note.
+- Build the one-file CLI on Python 3.11+ because BeatNet's maintained offline DBN
+  path uses `madmom-prebuilt`; normal project CI may still test Python 3.10.
+- BeatNet must come from `ensure_beatnet_runtime()`: the official 1.1.3 wheel is
+  SHA-256 verified before its package/model data is embedded. Never ask pip to
+  resolve BeatNet's obsolete NumPy/Numba dependency metadata.
+- Smoke-test the produced executable with a fresh external cache and require its
+  embedded BeatNet runtime to be reported ready before uploading the artifact.
