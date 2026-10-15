@@ -61,7 +61,11 @@ def test_timeline_control_comes_from_the_public_npm_package():
     requested = package["dependencies"]["react-timeline-sequence"]
     installed = lock["packages"]["node_modules/react-timeline-sequence"]
 
-    assert requested == "0.2.0"
+    import sys
+    sys.path.insert(0, str(root / "scripts"))
+    from viewer_releases import check
+    released = check(root)
+    assert requested == released["timeline"]["version"]
     assert installed["version"] == requested
     assert installed["resolved"] == (
         f"https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-{requested}.tgz"

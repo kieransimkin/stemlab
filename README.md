@@ -876,7 +876,51 @@ dimension. It retains the original native sampler, audio clock and review state.
 BeatNet/BeatThis still analyse **both** the master and every drums/percussion stem
 after separation; the master pass is never replaced.
 
-See **[viewer controls and the required companion build/pin setup](docs/viewer-controls.md)**
-before applying this source update. The shared timeline package and StemLab web
-bundle must be genuinely rebuilt; the setup helper records real pushed companion
-SHAs and an exact local npm archive. Existing exported pages must be regenerated.
+See **[viewer controls](docs/viewer-controls.md)** and the
+**[released-viewer workflow](docs/released-viewers.md)**. Release both companion
+packages first; StemLab resolves the latest stable official npm/PyPI releases and
+rebuilds from those distributions. Development pins and local vendor archives are
+not production dependencies. Existing exported pages must be regenerated.
+
+
+## Coordinated releases and latest-release dependencies
+
+Keep `DanceRudiments`, `react-timeline-sequence`, and `stemlab` as sibling
+checkouts. The release order is **React Timeline Sequence → DanceRudiments →
+StemLab**: publish and verify the companions before updating the consuming app.
+StemLab must use their **latest stable official releases**, not an unreleased
+commit, sibling source package or vendored npm archive. Each build records exact
+released versions/commits/integrity after latest-release resolution so all its
+jobs use the same bytes; CI fails clearly when that snapshot is stale.
+
+From the parent folder, preview and then explicitly execute:
+
+```powershell
+.\stemlab\scripts\Release-DanceFlow.ps1 -ProjectsRoot .
+.\stemlab\scripts\Release-DanceFlow.ps1 -ProjectsRoot . -Execute
+```
+
+For the first migration use the same commands with
+`.\release-kit\Release-DanceFlow.ps1` after extracting the complete kit. It
+applies the three repository patches, updates versions, performs scoped commits
+and normal pushes, waits for exact-commit CI, then creates **new** release tags.
+StemLab's CLI, both plugin manifests and MCP registry metadata are versioned together.
+The existing GitHub Actions workflows publish packages; no protection rules,
+credentials, old tags or assets are changed. The initial expected next-minor
+versions are only a preview proposal, never a claim that they are published.
+
+Use Node.js 24, Python 3.11+, PowerShell 5.1+, Git and authenticated GitHub CLI.
+Required main/registry/Pages jobs must pass; missing approvals and partial
+publication are blockers, not success. The default script releases all three
+projects, is opt-in via `-Execute`, and supports a saved exact-source `-Resume`
+session. A changed checkout or pre-commit build failure requires review rather
+than an automatic stash/reset or guessed recovery.
+
+StemLab's helper updates npm manifests/lock, optional native dependency minimum,
+release/build metadata and the genuinely rebuilt JS/CSS together. Its daily
+release-update workflow proposes subsequent updates by PR without auto-merging.
+A tagged StemLab release generates all four Arcadians pages and validates actual
+Pages deployment, live HTML and seekable audio. Do not start a duplicate manual
+Arcadians analysis during that tagged build. Read
+**[the full release, resume, verification and troubleshooting guide](docs/released-viewers.md)**
+before running it. Keep this README and AGENTS.md synchronized with future changes.

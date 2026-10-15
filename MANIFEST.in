@@ -54,3 +54,8 @@ include scripts/timeline_display_checks.py
 include scripts/check_viewer_build.py
 include scripts/configure_viewer_build.py
 include docs/viewer-controls.md
+
+include scripts/viewer_releases.py
+include scripts/release_suite.py
+include scripts/Release-DanceFlow.ps1
+include docs/released-viewers.md

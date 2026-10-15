@@ -11,6 +11,25 @@ permissions:
   contents: read
 
 jobs:
+  release-tools:
+    name: Release coordinator and PowerShell syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest pyyaml
+      - run: python -m pytest tests/test_viewer_releases.py tests/test_release_suite.py
+      - name: Parse PowerShell without executing releases
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'scripts/Release-DanceFlow.ps1'), [ref]$tokens, [ref]$errors)
+          if ($errors.Count -gt 0) { throw ($errors | Out-String) }
+
   web:
     runs-on: ubuntu-latest
     steps:
@@ -19,8 +38,17 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Require latest stable released viewers, not development checkouts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/check_viewer_build.py --latest
       - run: npm ci
       - run: npm run build:web
+      - run: node --test tests/web/audio-channels.test.mjs
+      - run: python scripts/check_viewer_build.py
       - run: git diff --exit-code -- src/stemlab/web/app.js src/stemlab/web/timeline.css
 
   test:
@@ -61,7 +89,8 @@ jobs:
       - name: Install published DanceRudiments native wheel (no source fallback)
         run: |
           python -m pip install --upgrade pip
-          python -m pip install --only-binary=dancerudiments -e ".[dev,rudiments]"
+          python -m pip install -e ".[dev]"
+          python scripts/viewer_releases.py install
       - name: Require native C++ extension and 28 official initial patterns
         run: |
           python - <<'PY'

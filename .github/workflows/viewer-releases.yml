@@ -1,0 +1,65 @@
+name: Update released viewer dependencies
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: released-viewer-update
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.repository == 'kieransimkin/stemlab'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Resolve current stable releases and build from npm, never main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/viewer_releases.py sync --if-needed
+          python scripts/check_viewer_build.py --latest
+      - name: Propose the exact registry versions, lock and rebuilt assets together
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths=(package.json package-lock.json pyproject.toml .github/dancerudiments-recording-ref .github/viewer-releases.json .github/viewer-build.json src/stemlab/web/app.js src/stemlab/web/timeline.css)
+          # No arbitrary vendor trees or unrelated worktree files enter this PR.
+          git add -- "${paths[@]}"
+          if git diff --cached --quiet; then
+            echo 'Latest released viewers are already recorded and built.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          pair="$(python -c "import json; d=json.load(open('.github/viewer-releases.json')); print(d['dancerudiments']['version']+'-'+d['timeline']['version'])")"
+          branch="automation/viewer-releases-${pair}"
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json url --jq '.[0].url // empty')"
+          if [ -n "$existing" ]; then
+            echo "A release update already awaits review: $existing" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git switch -c "$branch"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Update to latest released viewers (${pair})"
+          # No force-push or auto-merge. A stale remote branch requires maintainer review.
+          git push origin "HEAD:refs/heads/$branch"
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+            --title "Update released viewers: ${pair}" \
+            --body 'Resolves latest stable GitHub releases and published npm/PyPI packages, verifies release identities, and rebuilds the frontend. Approve the GitHub Actions checks if required, review and merge only after CI passes. No development revision, vendored package, package release, or Pages deployment is performed by this updater.'

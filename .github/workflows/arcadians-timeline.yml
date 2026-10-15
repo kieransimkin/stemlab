@@ -21,6 +21,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
+      - name: Require the latest released-viewer build before Docker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/check_viewer_build.py --latest
       - name: Build the existing locked StemLab analysis environment for CPU
         # The existing Dockerfile installs the verified Sonic Annotator/Vamp stack.
         # No interactive installers, host GPU or non-commercial MuQ inference.

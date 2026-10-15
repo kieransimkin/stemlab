@@ -232,12 +232,12 @@ playback, seeking, projection, review download/import and non-looping completion
 it did not establish audible listening quality or local-file loading. Normal CI
 uses the actual output files and does not opt into that fallback.
 
-The recording CI workflow builds the separate companion first. Merge that patch
-before the StemLab patch, or set repository variable `DANCERUDIMENTS_RECORDING_REF`
-to its commit SHA (also available as a workflow-dispatch input). Default is
-DanceRudiments `main`; missing APIs fail the job, never a green skip. Each run logs
-the exact resolved companion revision. Versions/releases are not changed by these
-patches; publish a fresh version only after review and CI.
+The recording CI workflow installs a hash-verified binary wheel of the latest
+stable DanceRudiments release from PyPI. It rejects stale release metadata and
+missing native/display APIs; it never falls back to main, a development-commit
+variable or a source build. A checkout of the same immutable **release** commit
+supplies regression scripts and licences only. Release the companions before
+StemLab; see [the coordinated PowerShell release workflow](released-viewers.md).
 
 ## Arcadians release publication
 

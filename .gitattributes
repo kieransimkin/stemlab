@@ -8,3 +8,9 @@ examples/arcadians/*.lrc binary
 # Keep original DanceFlow artwork byte-identical across platform packages.
 **/branding/*.svg text eol=lf
 **/branding/*.png binary
+
+# Released-viewer build receipts hash these exact bytes across Windows and Linux.
+src/stemlab/web/app.js text eol=lf
+src/stemlab/web/timeline.css text eol=lf
+.github/viewer-*.json text eol=lf
+.github/dancerudiments-recording-ref text eol=lf

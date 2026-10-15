@@ -59,37 +59,30 @@ Beat Transformer continues to use its genuine multistem input once; All-In-One
 structure analysis remains on the master. Arcadians' HTDemucs six-stem result has
 a drums stem; that does not imply it also has a separate percussion stem.
 
-## Apply this three-repository source update
+## Install the released shared APIs
 
-Apply the supplied DanceRudiments patch to its checkout and the
-react-timeline-sequence patch to its checkout. Commit and push those companion
-changes first, keeping each working tree clean. No package release is required.
-Then apply the StemLab patch and run from the StemLab checkout:
+Release the updated React Timeline Sequence and DanceRudiments packages first,
+then synchronize StemLab with their **latest stable official releases**:
 
 ```powershell
-python scripts/configure_viewer_build.py --timeline ../react-timeline-sequence --dancerudiments ../DanceRudiments
-python scripts/check_viewer_build.py
+python scripts/configure_viewer_build.py
+python scripts/check_viewer_build.py --latest
 ```
 
-Node.js 22, npm, Git, and Python are needed. The helper checks official remote
-origins, clean source trees and display API markers, fetches the exact companion
-commits, runs the timeline package's typecheck/tests/Vite build, and retains its
-built package under `vendor/` with a SHA-256 record. It installs that relative
-archive into StemLab and runs StemLab's genuine Vite web build and grouping tests.
-It writes the actual pushed DanceRudiments SHA to the existing recording pin.
-It does **not** push, commit, publish packages, create releases or deploy Pages.
+Use Node.js 24. No sibling checkout arguments or vendor-tarball fallback are
+supported. The helper genuinely rebuilds StemLab against the published npm
+package, checks its display API, and writes registry-backed release identities
+and build hashes. Commit package.json/package-lock.json, pyproject.toml, both
+`.github/viewer-*.json` receipts, the derived release-commit pin and rebuilt
+`app.js`/`timeline.css` together. Native recording jobs install and hash-check the
+published PyPI wheel, not the sibling source tree.
 
-Review and commit **all** resulting changes: source/tests/docs/workflows,
-`package.json`, `package-lock.json`, `vendor/`,
-`.github/dancerudiments-recording-ref`, `src/stemlab/web/app.js` and
-`src/stemlab/web/timeline.css`. Do not commit only the source patch: the web client
-requires the newly built shared package and bundle. No nonexistent npm version
-or invented remote commit is used. CI `npm ci` uses the retained exact archive.
-
-Start one fresh **Arcadians release demo** run on main after pushing StemLab.
-The combined build retains the same four Pages routes and tests the new
-controls before publication. An early guard rejects stale bundles/dependencies
-before expensive inference. Normal GitHub HTTP/browser checks are still mandatory.
+Use the parent-folder PowerShell coordinator to prepare the companion releases,
+wait for publication, then update and release StemLab. The tagged release builds
+the four combined Pages examples and requires their normal HTTP/browser checks.
+See [released-viewers.md](released-viewers.md) for preview/execute/resume, version
+selection, credential prerequisites and the daily latest-release update workflow.
+Do not separately start a duplicate manual demo while the tagged build runs.
 
 ## Relative source-bundle handoff correction
 

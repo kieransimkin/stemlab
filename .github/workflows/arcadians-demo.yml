@@ -17,7 +17,9 @@ on:
       - 'scripts/check_viewer_build.py'
       - 'scripts/timeline_display_checks.py'
       - 'web-client/**'
-      - 'vendor/**'
+      - '.github/viewer-*.json'
+      - 'scripts/viewer_releases.py'
+      - 'package*.json'
       - 'src/stemlab/analysis/rudiment_pairs.py'
       - 'src/stemlab/recording_cli.py'
       - 'tests/test_rudiment_pairs.py'
@@ -60,8 +62,10 @@ jobs:
         run: |
           python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest pyyaml ruff
           python -m pip install --no-deps -e .
-      - name: Require rebuilt shared viewer controls before model inference
-        run: python scripts/check_viewer_build.py
+      - name: Require latest stable released viewers and rebuilt controls before inference
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/check_viewer_build.py --latest
       - name: Lint before expensive analysis
         run: python -m ruff check src tests scripts
       - name: Test static timeline, completeness validation, HTTP and publication
@@ -89,28 +93,25 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Read locked companion revision
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Read the same verified release snapshot used by the timeline
         id: companion
         shell: bash
-        run: |
-          REF="$(tr -d '\r\n' < .github/dancerudiments-recording-ref)"
-          [[ "$REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'Companion must be pinned to a commit SHA'; exit 1; }
-          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+        run: python scripts/check_viewer_build.py --outputs "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           repository: kieransimkin/DanceRudiments
           ref: ${{ steps.companion.outputs.ref }}
           path: .recording-dancerudiments
           persist-credentials: false
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-      - name: Install native companion and lightweight recording dependencies
+      - name: Install published native companion and lightweight recording dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes libsndfile1 ffmpeg
           python -m pip install numpy scipy 'soundfile>=0.12' matplotlib rich 'typer>=0.12' platformdirs pytest pyyaml playwright
-          python -m pip install ./.recording-dancerudiments
+          python scripts/viewer_releases.py install
           python -m pip install --no-deps -e .
           python -c "from dancerudiments import SampledRecording; from dancerudiments_authoring.harness import build_recording_harness, HARNESS_DISPLAY_API_VERSION; assert HARNESS_DISPLAY_API_VERSION == 1"
       - name: Run release-demo and recording regression tests
