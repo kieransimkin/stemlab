@@ -52,7 +52,8 @@ def test_existing_success_does_not_hide_failed_newer_run():
     assert rs.select_runs([good, bad], 'a' * 40, 'main')['ci.yml'] == bad
 
 
-@pytest.mark.parametrize('path', ['../outside', '/absolute', 'with space', 'one\nnew'])
+@pytest.mark.parametrize('path', ['../outside', '/absolute', 'C:/absolute',
+                                  r'..\\outside', 'with space', 'one\nnew'])
 def test_patch_paths_are_scoped(tmp_path, path):
     patch = tmp_path / 'p.patch'
     patch.write_text(f'diff --git a/{path} b/{path}\n')
@@ -207,7 +208,7 @@ def test_real_git_scoped_dirty_detection(tmp_path):
 def test_workflows_retain_http_and_native_gates():
     root = Path(__file__).parents[1]
     def load(name):
-        return yaml.load((root / '.github/workflows' / name).read_text(), Loader=yaml.BaseLoader)
+        return yaml.load((root / '.github/workflows' / name).read_text(encoding='utf-8'), Loader=yaml.BaseLoader)
     ci, recording, arcadians = load('ci.yml'), load('recordings.yml'), load('arcadians-demo.yml')
     assert '--latest' in str(ci) and '--latest' in str(recording) and '--latest' in str(arcadians)
     assert 'ParseFile' in str(ci)
@@ -225,7 +226,7 @@ def test_workflows_retain_http_and_native_gates():
 
 def test_release_update_workflow_only_proposes_reviewed_changes():
     root = Path(__file__).parents[1]
-    text = (root / '.github/workflows/viewer-releases.yml').read_text()
+    text = (root / '.github/workflows/viewer-releases.yml').read_text(encoding='utf-8')
     assert 'schedule:' in text and 'workflow_dispatch:' in text
     assert 'sync --if-needed' in text
     assert 'gh pr create' in text
@@ -235,11 +236,11 @@ def test_release_update_workflow_only_proposes_reviewed_changes():
 def test_readme_and_agents_cover_release_policy():
     root = Path(__file__).parents[1]
     for name in ('README.md', 'AGENTS.md'):
-        text = (root / name).read_text()
+        text = (root / name).read_text(encoding='utf-8')
         assert 'latest stable official releases' in text
         assert 'Release-DanceFlow.ps1' in text
         assert 'released-viewers.md' in text
-    assert 'No package release is required' not in (root / 'docs/viewer-controls.md').read_text()
+    assert 'No package release is required' not in (root / 'docs/viewer-controls.md').read_text(encoding='utf-8')
 
 
 def setup_preflight(suite, monkeypatch):
@@ -296,6 +297,49 @@ def test_resume_rejects_checkout_movement(tmp_path, monkeypatch):
     suite.save()
     with pytest.raises(ValueError, match='checkout moved'):
         suite.preflight()
+
+
+def test_prepared_stemlab_resume_can_adopt_scoped_descendant_repair(tmp_path, monkeypatch):
+    repo = tmp_path / 'stemlab'
+    repo.mkdir()
+    suite = rs.ReleaseSuite(options(tmp_path, resume=True))
+    old, new = 'a' * 40, 'b' * 40
+    item = dict(initial_sha='0' * 40, sha=old, version='1.5.0', phase='prepared')
+    suite.state['projects']['stemlab'] = item
+    monkeypatch.setattr(rs, 'current_version', lambda repo, name: '1.5.0')
+    def command(args, cwd, **kwargs):
+        if args[:2] == ['git', 'merge-base']:
+            return old
+        if args[:3] == ['git', 'diff', '--name-only']:
+            return 'scripts/release_suite.py\ntests/test_release_suite.py'
+        if args[:3] == ['git', 'ls-remote', 'origin'] and args[-1] == 'refs/heads/main':
+            return new + '\trefs/heads/main'
+        if args[:2] == ['git', 'tag'] or args[:3] == ['git', 'ls-remote', '--tags']:
+            return ''
+        raise AssertionError(args)
+    monkeypatch.setattr(rs, 'command', command)
+    assert suite._adopt_prepared_repair('stemlab', item, new) is True
+    assert item['sha'] == new
+    assert item['repairs'] == [{'from': old, 'to': new,
+                                'files': ['scripts/release_suite.py', 'tests/test_release_suite.py']}]
+
+
+def test_prepared_repair_rejects_unrelated_file(tmp_path, monkeypatch):
+    repo = tmp_path / 'stemlab'
+    repo.mkdir()
+    suite = rs.ReleaseSuite(options(tmp_path, resume=True))
+    old, new = 'a' * 40, 'b' * 40
+    item = dict(initial_sha='0' * 40, sha=old, version='1.5.0', phase='prepared')
+    monkeypatch.setattr(rs, 'current_version', lambda repo, name: '1.5.0')
+    def command(args, cwd, **kwargs):
+        if args[:2] == ['git', 'merge-base']:
+            return old
+        if args[:3] == ['git', 'diff', '--name-only']:
+            return 'README.md'
+        raise AssertionError(args)
+    monkeypatch.setattr(rs, 'command', command)
+    assert suite._adopt_prepared_repair('stemlab', item, new) is False
+    assert item['sha'] == old
 
 
 def make_version_fixture(root):

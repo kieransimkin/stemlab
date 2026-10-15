@@ -41,6 +41,12 @@ VERSION_FILES = {
 VIEWER_FILES = {'package.json', 'package-lock.json', 'pyproject.toml',
                 '.github/dancerudiments-recording-ref', '.github/viewer-releases.json',
                 '.github/viewer-build.json', 'src/stemlab/web/app.js', 'src/stemlab/web/timeline.css'}
+# A failed prepared StemLab commit may be repaired without restarting the already-
+# published companion release chain. Keep this deliberately narrow: only the
+# coordinator and its tests may move between the saved prepared SHA and resume.
+PREPARED_REPAIR_FILES = {
+    'stemlab': {'scripts/release_suite.py', 'tests/test_release_suite.py'},
+}
 
 
 def semver(text: str) -> tuple[int, int, int]:
@@ -100,8 +106,13 @@ def patch_files(patch: Path) -> set[str]:
         if not left.startswith('a/') or not right.startswith('b/') or left[2:] != right[2:]:
             raise ValueError('Patch paths must be simple matching repository-relative paths')
         path = left[2:]
-        parsed = Path(path)
-        if parsed.is_absolute() or '..' in parsed.parts:
+        # Git patch paths are POSIX-style even when the coordinator runs on
+        # Windows. WindowsPath('/absolute').is_absolute() is False without a
+        # drive, so validate the patch syntax itself rather than host semantics.
+        parts = path.split('/')
+        if (not path or '\\' in path or path.startswith('/')
+                or re.match(r'^[A-Za-z]:', path)
+                or any(part in {'', '.', '..'} for part in parts)):
             raise ValueError('Unsafe patch path')
         paths.add(path)
     if len(paths) != len(header_lines):
@@ -200,6 +211,36 @@ class ReleaseSuite:
     def patch(self, name):
         return self.args.patch_dir / f'{name}.patch' if self.args.patch_dir else None
 
+    def _adopt_prepared_repair(self, name, item, current_sha):
+        """Adopt one narrowly-scoped descendant CI repair before a tag exists."""
+        expected = item.get('sha', item['initial_sha'])
+        allowed = PREPARED_REPAIR_FILES.get(name)
+        if item.get('phase') != 'prepared' or not allowed:
+            return False
+        repo = self.root / name
+        if current_version(repo, name) != item['version']:
+            return False
+        if command(['git', 'merge-base', expected, current_sha], repo, capture=True) != expected:
+            return False
+        changed = {line for line in command(
+            ['git', 'diff', '--name-only', f'{expected}..{current_sha}'], repo, capture=True
+        ).splitlines() if line}
+        if not changed or changed - allowed:
+            return False
+        remote = command(['git', 'ls-remote', 'origin', 'refs/heads/main'], repo, capture=True)
+        if not remote or remote.split()[0] != current_sha:
+            return False
+        tag = 'v' + item['version']
+        if command(['git', 'tag', '--list', tag], repo, capture=True):
+            raise ValueError(f'{name}: {tag} already exists locally; do not adopt repair code after tagging')
+        if command(['git', 'ls-remote', '--tags', 'origin', f'refs/tags/{tag}'], repo, capture=True):
+            raise ValueError(f'{name}: {tag} already exists remotely; do not adopt repair code after tagging')
+        item.setdefault('repairs', []).append({'from': expected, 'to': current_sha, 'files': sorted(changed)})
+        item['sha'] = current_sha
+        self.save()
+        print(f'{name}: adopted prepared CI repair {expected[:7]} -> {current_sha[:7]}: {sorted(changed)}', flush=True)
+        return True
+
     def preflight(self):
         for tool in ('git', 'gh', 'node'):
             if not shutil.which(tool):
@@ -234,8 +275,10 @@ class ReleaseSuite:
                 semver(item['version'])
                 if item.get('phase') not in {'planned', 'prepared', 'tagged', 'released'}:
                     raise ValueError('Unknown release session phase')
-                if self.sha(name) != item.get('sha', item['initial_sha']):
-                    raise ValueError(f'{name}: checkout moved since the saved session; review instead of tagging different code')
+                current_sha = self.sha(name)
+                if current_sha != item.get('sha', item['initial_sha']):
+                    if not self._adopt_prepared_repair(name, item, current_sha):
+                        raise ValueError(f'{name}: checkout moved since the saved session; review instead of tagging different code')
             return
         if self.args.execute and self.state_path.exists():
             raise ValueError('A saved release session exists. Use -Resume, or select a new -StateFile for a genuinely new release.')
@@ -460,3 +503,12 @@ def main(argv=None):
             suite.execute()
         else:
             print('Preview only. Run again with -Execute to apply the release kit, commit, push, tag and publish.')
+        return 0
+    except (OSError, ValueError, KeyError, RuntimeError, subprocess.CalledProcessError) as exc:
+        print(f'Release stopped: {exc}', file=sys.stderr)
+        print('No rollback/reset, force-push, or replacement release will be attempted. Inspect the checkout and saved session before resuming.', file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
