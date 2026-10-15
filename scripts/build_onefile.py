@@ -1,4 +1,9 @@
-"""Build StemLab's Linux one-file CLI with the verified BeatNet runtime embedded."""
+"""Build StemLab's Linux one-file CLI with PyInstaller.
+
+This is a distribution bundle, not an ahead-of-time optimization build. Heavy
+ML libraries stay as Python/native modules inside the executable rather than
+being translated into a huge C compilation unit.
+"""
 from __future__ import annotations
 
 import argparse
@@ -11,7 +16,9 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
-INCLUDE_PACKAGES = (
+# Packages with runtime/dynamic imports that PyInstaller cannot safely infer
+# only from StemLab's lazy import paths.
+COLLECT_SUBMODULES = (
     "stemlab",
     "demucs",
     "openunmix",
@@ -26,7 +33,9 @@ INCLUDE_PACKAGES = (
     "sentence_transformers",
     "allin1_infer",
 )
-PACKAGE_DATA = (
+
+# Packages where non-Python files are part of the runtime contract.
+COLLECT_DATA = (
     "stemlab",
     "BeatNet",
     "madmom",
@@ -36,97 +45,191 @@ PACKAGE_DATA = (
     "cmudict",
     "allin1_infer",
 )
-DISTRIBUTION_METADATA = (
+
+# StemLab's BeatNet compatibility layer asks importlib.metadata for these.
+COPY_METADATA = (
     "danceflow-stemlab",
     "madmom-prebuilt",
 )
 
 
 def validate_beatnet_runtime(runtime: Path) -> Path:
-    """Require code and bundled model weights from the checksum-verified wheel."""
+    """Require code and model weights from StemLab's verified upstream wheel."""
     runtime = Path(runtime).resolve()
     package = runtime / "BeatNet"
-    model = package / "models" / "model_1_weights.pt"
-    if not (package / "BeatNet.py").is_file() or not model.is_file():
+
+    required = (
+        package / "BeatNet.py",
+        package / "models" / "model_1_weights.pt",
+    )
+    missing = [path for path in required if not path.is_file()]
+
+    if missing:
         raise RuntimeError(
-            "Verified BeatNet runtime is incomplete; expected BeatNet.py and model_1_weights.pt"
+            "Verified BeatNet runtime is incomplete: "
+            + ", ".join(path.name for path in missing)
         )
+
     return runtime
 
 
-def nuitka_command(runtime: Path, output_dir: Path, output_name: str) -> tuple[list[str], dict[str, str]]:
-    """Return the exact reproducible Nuitka command/environment."""
+def pyinstaller_command(
+    runtime: Path,
+    output_dir: Path,
+    output_name: str,
+) -> tuple[list[str], dict[str, str]]:
+    """Return the reproducible PyInstaller command and environment."""
     runtime = validate_beatnet_runtime(runtime)
-    output_dir = Path(output_dir)
+    output_dir = Path(output_dir).resolve()
     entry = ROOT / "scripts" / "stemlab_onefile_entry.py"
+
     if not entry.is_file():
         raise FileNotFoundError(entry)
 
     command = [
         sys.executable,
         "-m",
-        "nuitka",
+        "PyInstaller",
+        "--noconfirm",
+        "--clean",
         "--onefile",
-        "--assume-yes-for-downloads",
-        f"--output-dir={output_dir}",
-        f"--output-filename={output_name}",
-        "--nofollow-import-to=*.tests",
+        "--name",
+        output_name,
+        "--distpath",
+        str(output_dir),
+        "--workpath",
+        str(output_dir / "work"),
+        "--specpath",
+        str(output_dir / "spec"),
+        "--paths",
+        str(ROOT / "src"),
+        "--paths",
+        str(runtime),
+        "--exclude-module",
+        "pytest",
+        "--exclude-module",
+        "ruff",
     ]
-    command.extend(f"--include-package={name}" for name in INCLUDE_PACKAGES)
-    command.extend(f"--include-package-data={name}" for name in PACKAGE_DATA)
-    command.extend(
-        f"--include-distribution-metadata={name}" for name in DISTRIBUTION_METADATA
-    )
+
+    for package in COLLECT_SUBMODULES:
+        command.extend(("--collect-submodules", package))
+
+    for package in COLLECT_DATA:
+        command.extend(("--collect-data", package))
+
+    for distribution in COPY_METADATA:
+        command.extend(("--copy-metadata", distribution))
+
     command.append(str(entry))
 
     env = dict(os.environ)
+
+    search_paths = [
+        str(runtime),
+        str(ROOT / "src"),
+    ]
+
     existing = env.get("PYTHONPATH")
-    env["PYTHONPATH"] = str(runtime) + (os.pathsep + existing if existing else "")
+    if existing:
+        search_paths.append(existing)
+
+    env["PYTHONPATH"] = os.pathsep.join(search_paths)
+
     return command, env
 
 
 def build(output_dir: Path, output_name: str) -> Path:
     if sys.version_info < (3, 11):
-        raise RuntimeError("The standalone CLI build requires Python 3.11+ for madmom-prebuilt/BeatNet")
+        raise RuntimeError(
+            "The standalone CLI build requires Python 3.11+ "
+            "for madmom-prebuilt/BeatNet"
+        )
 
     sys.path.insert(0, str(ROOT / "src"))
-    from stemlab.bootstrap import BEATNET_WHEEL_SHA256, ensure_beatnet_runtime
 
-    runtime = validate_beatnet_runtime(ensure_beatnet_runtime(install=True))
-    command, env = nuitka_command(runtime, output_dir, output_name)
+    from stemlab.bootstrap import (
+        BEATNET_WHEEL_SHA256,
+        ensure_beatnet_runtime,
+    )
+
+    # This downloads only the official hash-pinned BeatNet wheel if the verified
+    # cache is absent. Its obsolete dependency metadata is never installed.
+    runtime = validate_beatnet_runtime(
+        ensure_beatnet_runtime(install=True)
+    )
+
+    output_dir = Path(output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("+", subprocess.list2cmdline(command), flush=True)
-    subprocess.run(command, cwd=ROOT, env=env, check=True)
+    command, env = pyinstaller_command(
+        runtime,
+        output_dir,
+        output_name,
+    )
 
-    output = (output_dir / output_name).resolve()
-    if not output.is_file() or output.stat().st_size < 10 * 1024 * 1024:
-        raise RuntimeError("Nuitka did not produce a plausible one-file executable")
+    print("+", subprocess.list2cmdline(command), flush=True)
+
+    subprocess.run(
+        command,
+        cwd=ROOT,
+        env=env,
+        check=True,
+    )
+
+    output = output_dir / output_name
+
+    if not output.is_file():
+        raise RuntimeError(
+            "PyInstaller did not produce the requested one-file executable"
+        )
+
+    size = output.stat().st_size
+
+    if size < 10 * 1024 * 1024:
+        raise RuntimeError(
+            f"PyInstaller output is unexpectedly small: {size} bytes"
+        )
+
     output.chmod(output.stat().st_mode | 0o111)
 
     info = {
-        "schema": "stemlab.onefile-build.v1",
+        "schema": "stemlab.onefile-build.v2",
+        "backend": "pyinstaller",
         "python": ".".join(map(str, sys.version_info[:3])),
-        "nuitka": importlib.metadata.version("nuitka"),
+        "pyinstaller": importlib.metadata.version("pyinstaller"),
         "beatnet_wheel_sha256": BEATNET_WHEEL_SHA256,
         "beatnet_runtime": "embedded-from-verified-wheel",
         "output": output.name,
-        "bytes": output.stat().st_size,
-        "packages": list(INCLUDE_PACKAGES),
-        "package_data": list(PACKAGE_DATA),
-        "distribution_metadata": list(DISTRIBUTION_METADATA),
+        "bytes": size,
+        "collect_submodules": list(COLLECT_SUBMODULES),
+        "collect_data": list(COLLECT_DATA),
+        "copy_metadata": list(COPY_METADATA),
     }
+
     (output_dir / "build-info.json").write_text(
-        json.dumps(info, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(info, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )
+
     return output
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output-dir", type=Path, default=Path("build/nuitka"))
-    parser.add_argument("--output-name", default="stemlab-linux-x86_64")
+
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("build/onefile"),
+    )
+
+    parser.add_argument(
+        "--output-name",
+        default="stemlab-linux-x86_64",
+    )
+
     args = parser.parse_args()
+
     build(args.output_dir, args.output_name)
     return 0
 

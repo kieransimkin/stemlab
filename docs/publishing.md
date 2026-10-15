@@ -104,10 +104,11 @@ Python 3.11 and is now a hard release dependency. This is intentionally separate
 from the ordinary wheel/sdist release build, which may use another supported
 Python version.
 
-The binary builder first runs StemLab's checksum-pinned BeatNet bootstrap, adds
-that verified runtime to Nuitka's package discovery path, embeds BeatNet's model
-weights and `madmom` package data, and preserves `madmom-prebuilt` distribution
-metadata required by BeatNet's compatibility layer. The executable is then run
+The binary builder uses **PyInstaller one-file bundling** rather than compiling
+StemLab's entire ML dependency graph to C. It first runs StemLab's checksum-pinned
+BeatNet bootstrap, adds that verified runtime to PyInstaller's analysis path,
+embeds BeatNet's model weights and `madmom` package data, and preserves
+`madmom-prebuilt` distribution metadata required by BeatNet's compatibility layer. The executable is then run
 with a fresh external cache: `--help`, `models`, and `doctor` must succeed and
 BeatNet must be reported ready without downloading its wheel.
 

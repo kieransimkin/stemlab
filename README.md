@@ -934,7 +934,9 @@ before running it. Keep this README and AGENTS.md synchronized with future chang
 ## Standalone Linux CLI release gate
 
 The Linux one-file `stemlab-linux-x86_64` executable is a required release
-artifact, not a best-effort extra. Its dedicated `Standalone CLI` workflow uses
+artifact, not a best-effort extra. It is packaged with **PyInstaller**, so normal
+Python/native modules are bundled rather than translating the complete ML stack
+into C. Its dedicated `Standalone CLI` workflow uses
 Python 3.11 so the maintained `madmom-prebuilt` decoder and StemLab's
 checksum-verified BeatNet 1.1.3 runtime can coexist. The build bootstraps the
 official BeatNet wheel, verifies its SHA-256, embeds the BeatNet code and model

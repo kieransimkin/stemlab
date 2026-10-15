@@ -94,7 +94,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: stemlab-onefile-linux-x86_64
-          path: build/nuitka
+          path: build/onefile
 
       - name: Retrieve validated Codex plugin assets
         uses: actions/download-artifact@v5
@@ -114,9 +114,9 @@ jobs:
           cp dist/* dist-release/
           cp codex-release/* dist-release/
           cp arcadians-release/* dist-release/
-          test -f build/nuitka/stemlab-linux-x86_64
-          chmod +x build/nuitka/stemlab-linux-x86_64
-          cp build/nuitka/stemlab-linux-x86_64 dist-release/
+          test -f build/onefile/stemlab-linux-x86_64
+          chmod +x build/onefile/stemlab-linux-x86_64
+          cp build/onefile/stemlab-linux-x86_64 dist-release/
           chmod +x dist-release/stemlab-linux-x86_64
           python scripts/release_about.py dist-release/STEMLAB-ABOUT.txt
           python scripts/release_manifest.py dist-release

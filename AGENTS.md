@@ -28,7 +28,7 @@
 
 - Treat `.github/workflows/binary.yml` as a required release gate. Do not restore
   `continue-on-error` or a placeholder binary note.
-- Build the one-file CLI on Python 3.11+ because BeatNet's maintained offline DBN
+- Build the one-file CLI with PyInstaller on Python 3.11+ because BeatNet's maintained offline DBN
   path uses `madmom-prebuilt`; normal project CI may still test Python 3.10.
 - BeatNet must come from `ensure_beatnet_runtime()`: the official 1.1.3 wheel is
   SHA-256 verified before its package/model data is embedded. Never ask pip to

@@ -18,11 +18,18 @@ on:
 permissions:
   contents: read
 
+# A new main build supersedes an older main binary build. Tags use their own
+# ref-specific group and therefore cannot cancel a main build or another tag.
+concurrency:
+  group: stemlab-onefile-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build and smoke-test Linux one-file CLI
     runs-on: ubuntu-22.04
-    timeout-minutes: 180
+    timeout-minutes: 90
+
     steps:
       - uses: actions/checkout@v7
         with:
@@ -33,42 +40,46 @@ jobs:
           python-version: '3.11'
           cache: pip
 
-      - name: Native build requirements
+      - name: Native runtime requirements
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential patchelf libsndfile1 ffmpeg
+          sudo apt-get install -y patchelf libsndfile1 ffmpeg
 
-      - name: Install the one-file build environment
+      - name: Install one-file build environment
         run: |
           python -m pip install -U pip wheel setuptools
-          # madmom-prebuilt and the verified BeatNet runtime are supported together
-          # on the binary build's Python 3.11 environment.
+
+          # madmom-prebuilt remains legacy-sensitive.
           python -m pip install 'Cython<3' 'numpy<2'
-          # Build against CPU-only PyTorch. The one-file release does not need
-          # CUDA runtime libraries bundled into the executable.
-          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch torchaudio
+
+          # The CLI bundle does not need CUDA/NVIDIA runtime libraries.
+          python -m pip install \
+            --index-url https://download.pytorch.org/whl/cpu \
+            torch torchaudio
+
           python -m pip install -e '.[all,binary]'
 
-      - name: Build checksum-pinned standalone CLI
+      - name: Build checksum-pinned standalone CLI with PyInstaller
         env:
           STEMLAB_CACHE: ${{ runner.temp }}/stemlab-onefile-cache
         run: |
           python scripts/build_onefile.py \
-            --output-dir build/nuitka \
+            --output-dir build/onefile \
             --output-name stemlab-linux-x86_64
 
-      - name: Smoke-test the actual executable with an empty external cache
+      - name: Smoke-test actual executable with an empty external cache
         env:
           STEMLAB_CACHE: ${{ runner.temp }}/stemlab-onefile-smoke-cache
         run: |
-          python scripts/check_onefile.py build/nuitka/stemlab-linux-x86_64
+          python scripts/check_onefile.py \
+            build/onefile/stemlab-linux-x86_64
 
       - name: Upload validated standalone CLI
         uses: actions/upload-artifact@v7
         with:
           name: stemlab-onefile-linux-x86_64
           path: |
-            build/nuitka/stemlab-linux-x86_64
-            build/nuitka/build-info.json
+            build/onefile/stemlab-linux-x86_64
+            build/onefile/build-info.json
           if-no-files-found: error
           retention-days: 14
