@@ -22,7 +22,7 @@ jobs:
   build:
     name: Build and smoke-test Linux one-file CLI
     runs-on: ubuntu-22.04
-    timeout-minutes: 75
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v7
         with:
@@ -44,6 +44,9 @@ jobs:
           # madmom-prebuilt and the verified BeatNet runtime are supported together
           # on the binary build's Python 3.11 environment.
           python -m pip install 'Cython<3' 'numpy<2'
+          # Build against CPU-only PyTorch. The one-file release does not need
+          # CUDA runtime libraries bundled into the executable.
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch torchaudio
           python -m pip install -e '.[all,binary]'
 
       - name: Build checksum-pinned standalone CLI

@@ -57,9 +57,11 @@ def test_binary_workflow_is_required_and_uses_python311():
     assert job["runs-on"] == "ubuntu-22.04"
     setup = next(step for step in job["steps"] if step.get("uses", "").startswith("actions/setup-python@"))
     assert setup["with"]["python-version"] == "3.11"
+    assert int(job["timeout-minutes"]) >= 150
     source = str(workflow)
     assert "build_onefile.py" in source and "check_onefile.py" in source
     assert "stemlab-onefile-linux-x86_64" in source
+    assert "https://download.pytorch.org/whl/cpu" in source
 
 
 def test_release_consumes_validated_binary_and_cannot_silently_fall_back():
