@@ -18,6 +18,7 @@ from urllib.request import Request, urlopen
 
 from arcadians_http import ProjectHandler
 from build_arcadians_demo import read_payload
+from recording_downloads import read_recording
 
 
 def verify_audio_ranges(url: str, audio_file: Path) -> dict:
@@ -82,15 +83,19 @@ def _failure_report(report_path: Path, exc: Exception, stage: str, *, page=None,
     report_path.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
 
 
-def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, screenshot=None, gallery_name='arcadians') -> dict:
+def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, screenshot=None, gallery_name='arcadians', channels=None) -> dict:
     from playwright.sync_api import sync_playwright
 
     site = site.resolve()
-    if gallery_name not in ('arcadians', 'arcadians-stems', 'arcadians-averages'):
+    if gallery_name not in ('arcadians', 'arcadians-stems', 'arcadians-averages', 'arcadians-fourier'):
         raise ValueError('Unknown movement gallery')
+    from build_arcadians_fourier_demo import CHANNELS
+    if (gallery_name == 'arcadians-fourier') != (channels in CHANNELS):
+        raise ValueError('Fourier checks require one of the six channel counts')
+    view_name = f'bands-{channels}.html' if channels else 'index.html'
     gallery = site / gallery_name
     prefix = '/stemlab/' + gallery_name + '/'
-    payload = read_payload(gallery / 'index.html')
+    payload = read_payload(gallery / view_name)
     metadata = json.loads((gallery / 'release-demo.json').read_text(encoding='utf-8'))
     clock = payload['clock']
     audio_file = gallery / payload['audio']['relative_path']
@@ -121,9 +126,15 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 page.on('response', lambda r: bad_responses.append((r.status, r.url)) if r.status >= 400 else None)
                 stage = 'page-load'
                 if in_memory:
-                    page.set_content((gallery / 'index.html').read_text(encoding='utf-8'))
+                    page.set_content((gallery / view_name).read_text(encoding='utf-8'))
                 else:
-                    page.goto(origin + prefix, wait_until='load')
+                    if channels:
+                        page.goto(origin + prefix, wait_until='load')
+                        assert page.locator('#channels option').evaluate_all('(items)=>items.map(x=>Number(x.value))') == list(CHANNELS)
+                        page.locator('#channels').select_option(str(channels))
+                        assert page.locator('#viewer').get_attribute('src') == view_name
+                        assert page.locator('#standalone').get_attribute('href') == view_name
+                    page.goto(origin + prefix + (view_name if channels else ''), wait_until='load')
                 stage = 'harness-ready'
                 page.wait_for_function('window.audition?.ready === true', timeout=60000)
                 if in_memory:
@@ -149,7 +160,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 count = patterns[0]['period_pips']
                 expected_vectors = []
                 for pattern in patterns:
-                    document = json.loads((gallery / pattern['recording_path']).read_text(encoding='utf-8'))
+                    document = read_recording(gallery / pattern['recording_path'])
                     expected_vectors.append([document['samples'][i] for i in (0, count // 2, count - 1)])
                 actual_vectors = page.evaluate('''([first,count]) => window.audition.metadata().map((_,i) =>
                     [0,Math.floor(count/2),count-1].map(k=>window.audition.sample(i,first+k)))''', [first,count])
@@ -259,13 +270,15 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
                 # Also check the sample at the chosen middle position after transport edits.
                 i = 0
                 pip = payload['pack']['patterns'][i]['period_pips'] // 2
-                recording = json.loads((gallery / payload['pack']['patterns'][i]['recording_path']).read_text())
+                recording = read_recording(gallery / payload['pack']['patterns'][i]['recording_path'])
                 expected_sample = recording['samples'][pip]
                 actual_sample = page.evaluate('([i,p])=>window.audition.sample(i,p)', [i,pip])
                 assert actual_sample == expected_sample
                 stage = 'xy-and-all-dimension-bar-views'
                 from dancerudiments_authoring.harness_checks import check_display_modes
                 display_report = check_display_modes(page)
+                if channels:
+                    assert display_report['bar_channels_checked'] == channels
                 stage = 'review-export-import'
                 name = patterns[0]['name']
                 page.evaluate('name=>window.audition.setStatus(name,"keep")', name)
@@ -331,7 +344,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, scre
         candidates=len(patterns), arbitrary_axis_projection=True, review_export_import=True,
         non_looping=True, external_requests=[], page_errors=[],
         listening_qa=False, gallery=gallery_name, pair_family_filter=(gallery_name == 'arcadians-averages'),
-        html_sha256=__import__('hashlib').sha256((gallery/'index.html').read_bytes()).hexdigest(),
+        channels=channels, view=view_name, resolution_selector=bool(channels and not in_memory),
+        html_sha256=__import__('hashlib').sha256((gallery/view_name).read_bytes()).hexdigest(),
     )
     report.update(display_report)
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -344,13 +358,14 @@ def main():
     parser.add_argument('site', type=Path)
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--screenshot', type=Path)
-    parser.add_argument('--gallery', choices=('arcadians', 'arcadians-stems', 'arcadians-averages'), default='arcadians')
+    parser.add_argument('--gallery', choices=('arcadians', 'arcadians-stems', 'arcadians-averages', 'arcadians-fourier'), default='arcadians')
+    parser.add_argument('--channels', type=int)
     parser.add_argument('--chromium')
     parser.add_argument('--in-memory', action='store_true')
     args = parser.parse_args()
     try:
         print(json.dumps(check(args.site, args.report, chromium=args.chromium,
-                               in_memory=args.in_memory, screenshot=args.screenshot, gallery_name=args.gallery), indent=2))
+                               in_memory=args.in_memory, screenshot=args.screenshot, gallery_name=args.gallery, channels=args.channels), indent=2))
     except (AssertionError, OSError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
         return 1

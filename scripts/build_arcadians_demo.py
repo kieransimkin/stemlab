@@ -16,6 +16,7 @@ import re
 import sys
 import tempfile
 import zipfile
+from recording_downloads import compress_downloads
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
@@ -24,7 +25,7 @@ ARCADIANS_SHA256 = '5a3d17d8b5b27d62a6bb9fa1f654c403db0341da826d650cc282dfa5758e
 ARCADIANS_BPM = 145.0
 DEFAULT_AUDIO = ROOT / 'examples/arcadians/Arcadians - 320kbps.mp3'
 PAYLOAD_RE = re.compile(r'<script type="application/json" id="data">(.*?)</script>', re.S)
-# Four viewers + full-song authoritative JSON; stay below Pages' 1 GB limit.
+# Five viewers + full-song authoritative JSON; stay below Pages' 1 GB limit.
 MAX_SITE_BYTES = 900 * 1024 * 1024
 MAX_FILE_BYTES = 90 * 1024 * 1024
 EXTRA_GALLERIES = ('arcadians-stems', 'arcadians-averages')
@@ -79,6 +80,12 @@ def public_files(site: Path) -> list[Path]:
             gallery_dirs.update((name, name+'/recordings'))
             allowed.update(name+'/'+file for file in ('index.html', 'index.json', 'report.json',
                 'release-demo.json', 'audio.mp3', 'SOURCE-NOTICE.txt', 'DANCERUDIMENTS-LICENSE.txt'))
+    if (site/'arcadians-fourier').exists():
+        gallery_dirs.update(('arcadians-fourier', 'arcadians-fourier/recordings'))
+        allowed.update('arcadians-fourier/'+file for file in ('index.html', 'report.json',
+            'release-demo.json', 'audio.mp3', 'SOURCE-NOTICE.txt', 'DANCERUDIMENTS-LICENSE.txt'))
+        from build_arcadians_fourier_demo import CHANNELS
+        allowed.update(f'arcadians-fourier/bands-{n}.{ext}' for n in CHANNELS for ext in ('html', 'json'))
     for path in sorted(site.rglob('*')):
         if path.is_symlink():
             raise ValueError('Site contains a symlink: ' + path.relative_to(site).as_posix())
@@ -87,7 +94,7 @@ def public_files(site: Path) -> list[Path]:
                 raise ValueError('Unexpected site directory: ' + path.relative_to(site).as_posix())
             continue
         relative = path.relative_to(site).as_posix()
-        if relative not in allowed | timeline_files and not re.fullmatch(r'(?:arcadians|arcadians-stems|arcadians-averages)/recordings/candidate_[0-9]{4}\.json', relative):
+        if relative not in allowed | timeline_files and not re.fullmatch(r'(?:arcadians|arcadians-stems|arcadians-averages|arcadians-fourier)/recordings/candidate_[0-9]{4}\.json(?:\.gz)?', relative):
             raise ValueError('Unapproved public file: ' + relative)
         size = path.stat().st_size
         if size > MAX_FILE_BYTES:
@@ -101,7 +108,7 @@ def public_files(site: Path) -> list[Path]:
 
 def build_site(audio: Path, output: Path, *, source_commit: str, companion_commit: str,
                release_tag: str, companion_license: str, expected_sha256: str = ARCADIANS_SHA256,
-               title: str = 'Arcadians', candidates: int = 48, progress=print) -> dict:
+               title: str = 'Arcadians', candidates: int = 48, progress=print, compress_recordings=False) -> dict:
     """Build to a new directory; public CLI locks audio identity and candidate count."""
     from dancerudiments_authoring.harness import render_template
     from stemlab.analysis.rudiment_batch import generate_batch
@@ -142,6 +149,10 @@ def build_site(audio: Path, output: Path, *, source_commit: str, companion_commi
             raise ValueError('Release demo must describe one genuine master, not invented stems')
         if not all(item['dynamic'] for item in report['candidates']):
             raise ValueError('The release demo contains a static movement')
+        compress_downloads(gallery/'index.html', report['harness'], enabled=compress_recordings)
+        if compress_recordings:
+            for candidate in report['candidates']:
+                candidate['file'] += '.gz'
         notice = (
             f'{title} — Kieran Simkin\n'
             'Bundled source audio, publicly included at the artist\'s request for this demo.\n'
@@ -153,6 +164,7 @@ def build_site(audio: Path, output: Path, *, source_commit: str, companion_commi
             'All movements use filtered/unfiltered versions of the master; no separated stems.\n'
             'The original MP3 is copied unchanged; no synthesised substitute, looping or autoplay.\n'
             'Native C++/WebAssembly playback uses DanceRudiments\' shared visualizer.\n'
+            'Recording downloads may be losslessly compressed JSON (.json.gz); no samples are removed.\n'
             f'StemLab commit: {source_commit}\nDanceRudiments commit: {companion_commit}\n'
         )
         (gallery / 'SOURCE-NOTICE.txt').write_text(notice, encoding='utf-8')
@@ -245,8 +257,8 @@ def verify_site(site: Path, *, expected_sha256: str = ARCADIANS_SHA256,
         payload['audio']['range_end'] - provenance['source']['duration_seconds']
     ) > 1e-6:
         raise ValueError('Demo must cover the entire source track')
-    records = {p.name for p in (gallery / 'recordings').glob('*.json')}
-    if records != {p['name'] + '.json' for p in payload['pack']['patterns']}:
+    records = {p.name for p in (gallery / 'recordings').glob('*')}
+    if records != {Path(p['recording_path']).name for p in payload['pack']['patterns']}:
         raise ValueError('Missing or unlisted authoritative recording file')
     if (site / 'timeline').exists() or provenance.get('timeline'):
         from stemlab.static_timeline import read_json, verify_snapshot
@@ -267,6 +279,13 @@ def verify_site(site: Path, *, expected_sha256: str = ARCADIANS_SHA256,
             if (not stamp or stamp.get('provenance_sha256') != digest(site/name/'release-demo.json')
                     or stamp.get('candidate_count') != extra['candidate_count']):
                 raise ValueError('Additional gallery provenance mismatch')
+    stamp = provenance.get('fourier_gallery')
+    if (site/'arcadians-fourier').exists() or stamp is not None:
+        from build_arcadians_fourier_demo import verify_fourier_gallery
+        verify_fourier_gallery(site/'arcadians-fourier', expected_sha=expected_sha256,
+                               source_commit=provenance['stemlab_commit'])
+        if not stamp or stamp.get('provenance_sha256') != digest(site/'arcadians-fourier/release-demo.json'):
+            raise ValueError('Fourier gallery provenance mismatch')
     if not (site / '.nojekyll').is_file() or not (site / 'index.html').is_file():
         raise ValueError('Missing Pages entry point')
     return dict(files=len(files), total_bytes=sum(p.stat().st_size for p in files), candidates=count,
@@ -324,7 +343,7 @@ def main() -> int:
         if args.command == 'build':
             result = build_site(args.audio, args.output, source_commit=args.source_commit,
                                 companion_commit=args.companion_commit, release_tag=args.release_tag,
-                                companion_license=args.companion_license.read_text(encoding='utf-8'))
+                                companion_license=args.companion_license.read_text(encoding='utf-8'), compress_recordings=True)
         elif args.command == 'verify':
             result = verify_site(args.site)
         else:

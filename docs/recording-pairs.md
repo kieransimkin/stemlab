@@ -138,7 +138,7 @@ the comparison page additionally checks pair filtering. Publication checks compa
 JSON records against the actual UI's binary columns, fixed-pair settings and input
 hashes. The publisher requires both new QA reports and verifies the public HTML,
 provenance and partial MP3 response for each new page. An old two-viewer artifact
-cannot silently pass the updated publisher. All four viewers are deployed together.
+cannot silently pass the updated publisher. All five viewers are deployed together.
 
 The combined site's bound is 900 MiB, with a 90 MiB individual-file limit. This
 allows the additional full-song JSON while remaining below GitHub Pages' 1 GB

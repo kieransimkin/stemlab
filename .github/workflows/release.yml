@@ -224,7 +224,7 @@ jobs:
       - name: Deploy Arcadians visualizer and original MP3
         id: deployment
         uses: actions/deploy-pages@v4
-      - name: Verify all four public viewers and their seekable audio
+      - name: Verify all five public viewers and their seekable audio
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
@@ -239,6 +239,7 @@ jobs:
           echo "${PAGE_URL}arcadians-stems/" >> "$GITHUB_STEP_SUMMARY"
           echo "${PAGE_URL}arcadians-averages/" >> "$GITHUB_STEP_SUMMARY"
           echo "${PAGE_URL}arcadians/" >> "$GITHUB_STEP_SUMMARY"
+          echo "${PAGE_URL}arcadians-fourier/" >> "$GITHUB_STEP_SUMMARY"
           echo '48 master movements, 60 stem pairs, 180 averaging comparisons and complete timeline; original MP3, 145 BPM; beat phase unverified.' >> "$GITHUB_STEP_SUMMARY"
 
   container-publish:

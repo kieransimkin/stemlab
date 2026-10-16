@@ -1,8 +1,7 @@
 # Arcadians release demos and GitHub Pages
 
 The public site now combines the movement comparison described here with a
-[complete full-song analysis timeline](arcadians-timeline.md). The root links to
-both; neither publisher deploys a movement-only artifact over the combined site.
+[complete full-song analysis timeline](arcadians-timeline.md). The root links to all five pages; neither publisher deploys a movement-only artifact over the combined site.
 
 Every new StemLab release builds a **48-movement Arcadians comparison** using the
 same packaged DanceRudiments visualizer and C++/WebAssembly recording sampler as
@@ -75,7 +74,7 @@ notes](arcadians-timeline.md). Its subsequent movement job:
    non-looping completion. End-of-track checks wait for the real media event
    rather than assuming it must arrive within a fixed 180 ms delay.
 4. Verifies the timeline snapshot and its separate HTTP browser QA, binds it to
-   the same source revision, and assembles all four viewers plus a landing page.
+   the same source revision, and assembles all five viewers plus a landing page.
    Packages only the combined verified site. The normal release archive/manifest assembly
    includes the new assets before GitHub publication.
 
@@ -92,7 +91,7 @@ The release demo itself always uses the checked-in pin.
 
 The new release assets are:
 
-- `StemLab-Arcadians-visualizer.zip`: all four viewers and their audio/data; the timeline needs static HTTP(S) hosting, not a running StemLab server.
+- `StemLab-Arcadians-visualizer.zip`: all five viewers and their audio/data; the timeline needs static HTTP(S) hosting, not a running StemLab server.
 - `StemLab-Arcadians-files.sha256`: hashes of every public file.
 - `StemLab-Arcadians-build.json`: input/build provenance and archive checksum.
 
@@ -279,3 +278,41 @@ The publisher rejects older artifacts without these new galleries and reports.
 
 See [recording-pairs.md](recording-pairs.md) for CLI commands, centering/edge rules,
 fixed normalization references, exact default windows and publication budgets.
+
+## Full-master Fourier page
+
+`arcadians-fourier/` offers 4, 8, 16, 32, 64 and 128 frequency bands, one dimension
+per band. `scripts/build_arcadians_fourier_demo.py` uses `fourier_axes` and the
+mandatory `EnvelopeBank.compose` route, with no second DSP engine or model run.
+Each resolution covers the complete checksum-locked original MP3 at 145 BPM,
+64 pips per beat and unverified beat-zero phase. A centered periodic-Hann
+2048-point rFFT supplies window-corrected one-sided band RMS across independent
+channel powers. Bands span zero to Nyquist with linear spacing. Global
+normalization retains relative strength within a resolution; resolutions are not
+level-calibrated against each other. These are energy envelopes, not band WAVs.
+
+The overview selector loads one released shared DanceRudiments harness at a time
+(`bands-4.html` through `bands-128.html`), sharing one unchanged MP3. Switching
+resolution starts a fresh paused player. Each harness supports all-dimensional
+bars and arbitrary X/Y/Z projections. No autoplay or implicit looping is added.
+All six resolutions must pass HTTP source/range, native samples at first/middle/
+last pips, complete bars, play/pause, seeks, restart and end-of-recording checks.
+The combined publisher requires exact revision/hash-bound receipts for all six,
+then verifies the public overview and each view after deployment.
+
+The existing four pages stay in the same artifact. To retain the 900 MiB site
+and 90 MiB per-file budgets, all movement galleries provide losslessly gzip-
+compressed authoritative recording JSON downloads (`.json.gz`). Decompress before
+calling the native recording loader. Compression changes no samples, clocks,
+provenance, embedded sampler or audio. The archive retains every recording.
+The trusted artifact selection limit matches the same 900 MiB site budget.
+For the largest full-song downloads, use the object API after bounded JSON decoding
+(the companion's convenience file loader has its own 64 MiB text-file guard):
+
+```python
+import gzip, json
+from dancerudiments_authoring.recording import Recording
+with gzip.open('candidate_0128.json.gz', 'rt', encoding='utf-8') as stream:
+    recording = Recording.from_dict(json.load(stream))
+native = recording.to_native()  # validates the shared native value budget
+```

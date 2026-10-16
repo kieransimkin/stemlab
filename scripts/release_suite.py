@@ -329,7 +329,7 @@ class ReleaseSuite:
             print(f"  {name}: v{item['version']} [{item['phase']}]")
         print('First the two companions; then refresh the latest published packages, rebuild, test and release StemLab.')
         print('No force-push, moved tag, credentials change, automatic merge or deployment-protection change.')
-        print('The final check requires all four Arcadians pages and HTTP/audio validation, not just a green tag job.\n')
+        print('The final check requires all five Arcadians pages and HTTP/audio validation, not just a green tag job.\n')
 
     def wait_runs(self, name, sha, branch, required):
         deadline = time.monotonic() + self.timeout
@@ -478,7 +478,7 @@ class ReleaseSuite:
                      '--url', f'https://{OWNER}.github.io/stemlab/', '--source-sha', item['sha']], repo)
         self.state['complete'] = True
         self.save()
-        print('Release workflows, public registries, four Arcadians pages and seekable audio verified. Browser synchronization evidence was generated in CI; this does not claim subjective listening QA.')
+        print('Release workflows, public registries, five Arcadians pages and seekable audio verified. Browser synchronization evidence was generated in CI; this does not claim subjective listening QA.')
 
     def execute(self):
         if not self.args.resume:

@@ -243,9 +243,9 @@ See **[installation, all options, limits, timing, demo and validation](docs/rudi
 inference. Restricted-environment QA used in-memory loading; normal file loading
 and audible listening are not claimed by that screenshot.*
 
-## Arcadians: complete analysis timeline and three movement demos
+## Arcadians: complete analysis timeline and four movement demos
 
-Every new release builds **one public site containing four working examples**, all
+Every new release builds **one public site containing five working examples**, all
 covering the full original Arcadians song:
 
 - **[Analysis timeline](https://kieransimkin.github.io/stemlab/timeline/arcadians/)**:
@@ -263,7 +263,14 @@ covering the full original Arcadians song:
   30 fixed input/filter pairs, each with peak, average and four moving-average
   windows: 180 recordings on shared normalization references.
 
-The root landing page links to all four. These are deployment destinations; a patch
+- **[Fourier frequency bands](https://kieransimkin.github.io/stemlab/arcadians-fourier/)**:
+  select 4, 8, 16, 32, 64 or 128 dimensions derived from the full original master.
+  Each equal-width band supplies one dimension through a centered Hann 2048-point
+  rFFT and window-corrected band RMS. Global normalization preserves relative
+  band strengths within each resolution; it does not calibrate resolutions against
+  each other. Choose any X/Y/Z axes or see every band in the shared Bars view.
+
+The root landing page links to all five. These are deployment destinations; a patch
 or a green build alone does not establish that the new page is live.
 
 The timeline's **`arcadians-core-v2` recipe** runs all the selected core families
@@ -275,17 +282,17 @@ synthetic fallback. Artist-confirmed 145 BPM, lyrics, manually edited lyric timi
 and artist sections stay distinct from machine estimates. A completed loop scan
 may legitimately return zero accepted loops and explain unresolved sections.
 
-### Build and publish all four examples
+### Build and publish all five examples
 
 Start **Actions → Arcadians release demo → Run workflow → main**. The workflow
 first runs the full CPU analysis in StemLab's existing Docker environment, then
 exports and browser-tests the timeline. It also builds/tests the original movement example and both new comparison
-pages, reusing the exact separated float WAVs, and combines all four into a
+pages, reusing the exact separated float WAVs, plus all six full-master Fourier resolutions, and combines all five into a
 single verified Pages artifact. The model analysis is
 substantially heavier than master-peak extraction; upstream model downloads and
 inference must succeed. A new tagged release calls the same combined workflow.
 
-All four examples include audio playback, without autoplay. The timeline
+All five examples include audio playback, without autoplay. The timeline
 needs **no live StemLab API, Socket.IO connection or CDN**: the original React
 renderer loads precomputed local data, waveform envelopes and spectrogram strips.
 It supports play/pause, seeking, zoom/Fit, and saved-loop audition when loops exist.
@@ -298,16 +305,16 @@ automatic publication after a successful manual demo or a tagged release. Preser
 `github-pages` environment approvals and allow the relevant `main`/tag refs.
 Alternatively, **Publish Arcadians demo to Pages → Run workflow → main** publishes
 a selected successful combined demo (blank run ID chooses the latest), without
-rerunning models or making a package release. Old artifacts without both new galleries and the timeline are
-rejected so they cannot overwrite the complete four-example site. The standalone **Arcadians
+rerunning models or making a package release. Old artifacts without all three additional galleries and the timeline are
+rejected so they cannot overwrite the complete five-example site. The standalone **Arcadians
 complete analysis timeline** job is build-only, not a separate Pages deployment.
 
 The publisher verifies all viewers' provenance, artifact checksums and successful
 HTTP browser reports, then probes the actual public pages, timeline assets/data
 and partial MP3 responses. Failed or in-memory-only QA cannot authorize publication.
 QA files, private folders, model caches and runtime logs stay outside the public
-upload. Both examples are included in **`StemLab-Arcadians-visualizer.zip`**, with
-file hashes and build provenance. An incomplete build never replaces the live site.
+upload. All five examples are included in **`StemLab-Arcadians-visualizer.zip`**, with
+file hashes and build provenance. Native recording downloads are losslessly compressed as `.json.gz`; decompress before loading with the native recording API. No samples are discarded or quantized. Every resolution has mandatory native/bar/browser/audio QA. An incomplete build never replaces the live site.
 
 ### Export an existing analysis as a static timeline
 
@@ -860,13 +867,13 @@ change the 64-pips-per-beat / float64 recording format. It is also available in
 `record-rudiment` and `generate-batch` via `--mode moving-average` and
 `--moving-average-beats`; individual axes use `--axis-window-beats NAME=BEATS`.
 
-The Arcadians workflow now assembles **four** examples: the existing
+The Arcadians workflow now assembles **five** examples: the existing
 `arcadians/` movements and `timeline/arcadians/` analysis, plus
 `arcadians-stems/` (60 separated-stem movements) and `arcadians-averages/`
 (30 pairs × six settings). It hands off the timeline analysis's real float stems,
 without rerunning separation, and bundles the original song for synchronized
 playback. Both new galleries have mandatory native/browser/audio checks and
-public-URL verification before success is reported. All pages remain in one
+public-URL verification before success is reported. The Fourier page adds six full-master resolutions without rerunning separation. All pages remain in one
 Pages deployment. See [settings, boundaries, budgets and examples](docs/recording-pairs.md).
 
 ### Beat detection after separation: master and percussion hypotheses
@@ -942,7 +949,7 @@ than an automatic stash/reset or guessed recovery.
 StemLab's helper updates npm manifests/lock, optional native dependency minimum,
 release/build metadata and the genuinely rebuilt JS/CSS together. Its daily
 release-update workflow proposes subsequent updates by PR without auto-merging.
-A tagged StemLab release generates all four Arcadians pages and validates actual
+A tagged StemLab release generates all five Arcadians pages and validates actual
 Pages deployment, live HTML and seekable audio. Do not start a duplicate manual
 Arcadians analysis during that tagged build. Read
 **[the full release, resume, verification and troubleshooting guide](docs/released-viewers.md)**

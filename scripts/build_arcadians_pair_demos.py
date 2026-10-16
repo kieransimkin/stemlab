@@ -22,6 +22,7 @@ import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'src'))
 from stemlab.static_timeline import read_json, write_json, safe_file, digest
 from build_arcadians_demo import ARCADIANS_BPM, ARCADIANS_SHA256, read_payload, validate_revision
+from recording_downloads import compress_downloads, read_recording
 
 GALLERIES = ('arcadians-stems', 'arcadians-averages')
 STEM_NAMES = {'vocals', 'drums', 'bass', 'guitar', 'piano', 'other'}
@@ -116,7 +117,8 @@ def verify_sources(source: Path, source_commit: str, *, expected_sha=ARCADIANS_S
 
 def build_pair_demos(sources: Path, site: Path, *, source_commit: str, companion_commit: str,
                      companion_license: str, release_tag='main', expected_sha=ARCADIANS_SHA256,
-                     title='Arcadians', stem_candidates=60, comparison_pairs=30, progress=print) -> dict:
+                     title='Arcadians', stem_candidates=60, comparison_pairs=30, progress=print,
+                     compress_recordings=False) -> dict:
     from dancerudiments_authoring.harness import render_template
     from stemlab.analysis.rudiment_pairs import generate_stem_batch, generate_average_comparison_batch
     validate_revision(companion_commit)
@@ -144,6 +146,10 @@ def build_pair_demos(sources: Path, site: Path, *, source_commit: str, companion
             expected_count = stem_candidates if name == 'arcadians-stems' else comparison_pairs*6
             if report['candidate_count'] != expected_count:
                 raise ValueError('Pair demo did not generate all requested candidates/groups')
+            compress_downloads(gallery/'index.html', report['harness'], enabled=compress_recordings)
+            if compress_recordings:
+                for candidate in report['candidates']:
+                    candidate['file'] += '.gz'
             description = ('X and Y use different actual separated stems; raw and independently filtered routes.'
                 if name == 'arcadians-stems' else 'Fixed input pairs: peak, per-pip average, and centered moving averages '
                 'over 1/8, 1/4, 1/2 and 1 beat. Every variant shares the same peak-normalization reference.')
@@ -152,6 +158,7 @@ def build_pair_demos(sources: Path, site: Path, *, source_commit: str, companion
                 'MIT software licensing does not relicense the song.\n'
                 '145 BPM: artist-confirmed. Beat-zero phase: unverified. No autoplay or implicit looping.\n'
                 'Inputs reuse the full timeline analysis\'s normalized floating-point stems, not FLAC listening derivatives.\n'
+                'Recording downloads may be losslessly compressed JSON (.json.gz); no samples are removed.\n'
                 f'StemLab commit: {source_commit}\nDanceRudiments commit: {companion_commit}\n')
             (gallery/'SOURCE-NOTICE.txt').write_text(notice, encoding='utf-8')
             (gallery/'DANCERUDIMENTS-LICENSE.txt').write_text(companion_license, encoding='utf-8')
@@ -224,14 +231,14 @@ def verify_pair_gallery(gallery: Path, *, expected_sha=ARCADIANS_SHA256, source_
             or harness['html_sha256'] != digest(gallery/'index.html') or report['harness'] != harness):
         raise ValueError('Pair demo candidate/checksum mismatch')
     patterns = {p['name']: p for p in payload['pack']['patterns']}
-    files = {p.name for p in (gallery/'recordings').glob('*.json')}
-    if files != {c['name']+'.json' for c in report['candidates']}:
+    files = {p.name for p in (gallery/'recordings').glob('*')}
+    if files != {Path(c['file']).name for c in report['candidates']}:
         raise ValueError('Missing or unlisted pair recordings')
     raw = base64.b64decode(payload['recording_data'], validate=True)
     sources = {s['key']: s['sha256'] for s in provenance['stem_sources']}
     records = {}
     for candidate in report['candidates']:
-        document = read_json(safe_file(gallery, candidate['file']))
+        document = read_recording(safe_file(gallery, candidate['file']))
         pattern = patterns[candidate['name']]
         if document['clock'] != clock or document['dimensions'] != ['x', 'y'] or pattern['dimensions'] != ['x', 'y']:
             raise ValueError('Pair recordings must have exactly two dimensions on one clock')
@@ -294,7 +301,7 @@ def main():
     args = parser.parse_args()
     result = build_pair_demos(args.sources, args.site, source_commit=args.source_commit,
         companion_commit=args.companion_commit, companion_license=args.companion_license.read_text(encoding='utf-8'),
-        release_tag=args.release_tag)
+        release_tag=args.release_tag, compress_recordings=True)
     print(json.dumps({name: value['candidate_count'] for name, value in result.items()}, indent=2))
 
 
