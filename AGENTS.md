@@ -88,3 +88,5 @@ illustrate the difference; word coverage is not acoustic accuracy.
 Full-audio transcription uses faster-whisper's own decoder and NumPy/file
 writing without importing Torch. Preserve this route and its no-Torch test;
 automatic device selection queries the actual CTranslate2 backend.
+Observed single-word edge punctuation may normalize for lexical comparison;
+never change canonical text/evidence or split a multiword stamp into invented times.

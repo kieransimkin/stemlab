@@ -6,18 +6,18 @@
   "rows": [
     {
       "label": "Public master A",
-      "speech_mask": 0.06182795698924731,
-      "full_audio": 0.8870967741935484
+      "speech_mask": 0.06451612903225806,
+      "full_audio": 0.9032258064516129
     },
     {
       "label": "Public master B",
       "speech_mask": 0.20253164556962025,
-      "full_audio": 0.9662447257383966
+      "full_audio": 0.9683544303797469
     }
   ],
   "scope": "Two public masters, anonymized; audio and transcripts stay private",
   "limits": "Word reconciliation coverage is not acoustic accuracy, complete line timing or listening approval. Missing lines remain unavailable.",
   "video_omission": "The batch produces timestamp evidence rather than a visual performance. The measured chart and existing real timeline captures explain the result; a video of progress adds no useful evidence.",
   "generated_illustration_omission": "Measured output is sufficient; a generated illustration would not establish evidence.",
-  "png_sha256": "90c1c361e1ef9eead5d8accacf8441f6ceb28da17937a51506209ed4dc3edac7"
+  "png_sha256": "5e38a9b2ed61e4ec3160ffde7fba53ee04def16adf7d9e45bc3f01ca3dd7134e"
 }

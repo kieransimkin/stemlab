@@ -25,3 +25,21 @@ def test_invalid_timings_flagged():
 def test_short_words_not_fuzzily_matched():
     r = reconcile('in', [dict(word='it',start=1,end=2)], 5)
     assert r['matched_words'] == 0
+
+
+def test_punctuation_on_observed_short_words_preserves_canonical_text_and_exact_times():
+    observed = [dict(word=' Oh!', start=.125, end=.3), dict(word='Go,', start=.5, end=.7),
+                dict(word='go.', start=1, end=1.2)]
+    before = [dict(word) for word in observed]
+    result = reconcile('Oh!\nGo, go.', observed, 2)
+    assert result['exact_words'] == 3
+    assert result['canonical_text'] == 'Oh!\nGo, go.'
+    assert [word['start'] for word in result['words']] == [.125, .5, 1]
+    assert observed == before
+    assert result['listening_qa'] == 'pending' and not result['accepted']
+
+
+def test_multiword_asr_stamp_is_not_split_to_invent_word_times():
+    result = reconcile('go home', [dict(word='go home', start=1, end=2)], 3)
+    assert result['matched_words'] == 0
+    assert all(word['start'] is None for word in result['words'])
