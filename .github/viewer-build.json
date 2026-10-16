@@ -38,16 +38,18 @@
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "0419696ca365d51c07b7c7e20d0191eb0ad274705685d2b7e266d3a5e101ac93",
+    "src/stemlab/web/app.js": "eee63be258dd23ed24ce880623b456477fd0405738f8bdf791d14c022638f1a1",
     "src/stemlab/web/timeline.css": "c820bdd38f8b0014f4dec166585855fa87d7ba7e0270c5560e78e4a5e136cbfd"
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
     "package-lock.json": "a4d9a8c29e4240d0436aba4a5e1621ab202c32ee0c45f00cb7eef5fecb11d3ff",
     "package.json": "af5705cbfffb9fd26c3228f93b7f9edabadfc984744b9a5f47722886a12683b1",
-    "web-client/src/app.jsx": "ea2708b439f430f9e58a32d99962e2d9a4f0002e6e523eeb866bc83213bfe128",
+    "web-client/src/app.jsx": "1753fee0f9b8a4d0be98a4de0454bc62dc2af0b85ad93d6a814acce837b67cdb",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
-    "web-client/src/loops.jsx": "86217f690484b3560b4b9df1d035c0db056172265894f1344815bcc3f21df54e",
+    "web-client/src/beat-offset-controls.jsx": "7f6f6ee4bcbb1cd3dbb8966a19ceb904a28422a3eed62619cfbac80cf4195833",
+    "web-client/src/beat-offsets.js": "ecede43b1d49493332efc0ab08efbcd64a46291875e6e453f2c431ff6ff67b18",
+    "web-client/src/loops.jsx": "79b5d4f0169231a5c683346eb1854176023fab2595e05f94edd4f074b350591b",
     "web-client/vite.config.js": "69f08644b1761c13d8af6f5b5e2e85ed1ba140e71d5371dc5221ebd14bd6476d"
   }
 }

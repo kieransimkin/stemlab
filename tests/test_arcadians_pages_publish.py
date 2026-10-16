@@ -128,6 +128,7 @@ def test_full_http_qa_is_accepted():
 
 
 def test_verify_artifacts_reuses_site_verifier_and_checks_provenance(tmp_path, monkeypatch):
+    monkeypatch.setattr(pages, 'verify_reference_artifacts', lambda *args: None)
     (tmp_path / 'arcadians').mkdir()
     (tmp_path / 'arcadians/audio.mp3').write_bytes(b'publicaudio')
     provenance_file = tmp_path / 'arcadians/release-demo.json'

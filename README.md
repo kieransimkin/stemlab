@@ -243,6 +243,28 @@ See **[installation, all options, limits, timing, demo and validation](docs/rudi
 inference. Restricted-environment QA used in-memory loading; normal file loading
 and audible listening are not claimed by that screenshot.*
 
+## First-beat alignment and tempo families
+
+Compare the saved consensus and every individual detector/source at canonical
+and combined BPM, with exact signed **64-pip** offsets that map the first detected
+beat to pip 0. Half- and double-time are normal interpretations: observed beats
+remain intact, alongside ×½ / ×1 / ×2 comparisons and an explicitly estimated
+constant-grid fit. The real timeline shows a **blue dashed original grid** and an
+**amber solid offset grid**, with independent BPM and detector selectors.
+
+```sh
+stemlab beat-offset path/to/results --audio path/to/exact-master.mp3 --output new-offset-report
+```
+
+![The Truth is a Virus in StemLab: actual beat-offset controls and original/offset grids.](docs/screenshots/beat-offsets-truth.png)
+
+[The Truth is a Virus reference](https://kieransimkin.github.io/stemlab/timeline/the-truth-is-a-virus/)
+uses real saved BeatThis/BeatNet detections and consensus. Its fitted tempo is
+109.0013 BPM; 95% of consensus timestamps are within 17.627 ms of that grid.
+The guarded grade remains loose because first-anchored end drift is 67.114 ms.
+Its raw median tempo and unconfirmed canonical BPM remain visible.
+[Read the exact mapping, workflow and limitations](docs/beat-offsets.md).
+
 ## Arcadians: complete analysis timeline and four movement demos
 
 Every new release builds **one public site containing five working examples**, all
@@ -272,6 +294,12 @@ covering the full original Arcadians song:
 
 The root landing page links to all five. These are deployment destinations; a patch
 or a green build alone does not establish that the new page is live.
+
+![Actual Arcadians Fourier frequency-band view, with selectable 4 to 128 dimensions.](docs/screenshots/fourier-bands-arcadians.png)
+
+The same CI publication also retains the separate The Truth is a Virus beat
+reference. Its frozen detections are disclosed; current CI generates its fits,
+offsets and real timeline rather than asserting a fresh learned-model run.
 
 The timeline's **`arcadians-core-v2` recipe** runs all the selected core families
 on the complete checksum-verified MP3. It is not the five-separator `full`

@@ -73,9 +73,11 @@ def public_value(value, root: Path):
         return None
     if isinstance(value, str):
         # Absolute paths inside this analysis become relative artifact references.
-        prefix = str(root.resolve()) + '/'
-        if value.startswith(prefix):
-            return value[len(prefix):]
+        # pathlib uses backslashes on Windows; return portable relative references.
+        prefix = root.resolve().as_posix() + '/'
+        portable = value.replace('\\', '/')
+        if portable.startswith(prefix):
+            return portable[len(prefix):]
         if value.startswith(('/', '\\')) or re.match(r'^[A-Za-z]:[\\/]', value):
             return '[local path omitted]'
     return value
@@ -219,10 +221,13 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
                     route(f'/{sha}/deep/loops/{loop["file"]}', name)
                 loop_count += 1
         first, detector = _first_detected_beat(results)
+        from .analysis.beat_offsets import timeline_beat_offsets
         snapshot = dict(hash=sha, duration_seconds=info['duration_seconds'], files=rows,
                         status={'state': 'completed_with_errors' if errors else 'completed',
                                 'error_count': len(errors), 'message': coverage['scope']},
-                        canonical=public_value(canonical, results), first_detected_beat=first,
+                        canonical=public_value(canonical, results),
+                        beat_offsets=public_value(timeline_beat_offsets(results, canonical.get('bpm')), results),
+                        first_detected_beat=first,
                         first_detected_beat_source=detector, source_url=audio_name)
         write_json(stage / 'data/timeline.json', snapshot)
         write_json(stage / 'data/canonical.json', snapshot['canonical'])
@@ -230,6 +235,8 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
         route(api + '/canonical', 'data/canonical.json')
         # An absent loop report remains absent, never fabricated as "zero loops".
         if not loop_report.exists():
+            write_json(stage/'data/loops-unavailable.json', {'schema': 'stemlab.loop-availability.v1',
+                'status': 'not-analysed', 'reason': 'Loop discovery was not run in this retained analysis. No zero-loop result is asserted.'})
             route(f'/{sha}/deep/loops/loops.json', 'data/loops-unavailable.json')
         (stage / 'assets').mkdir()
         for name in ('style.css', 'timeline.css', 'arcadians-cover.jpg', 'arcadians-reference.json', 'static-timeline.js'):

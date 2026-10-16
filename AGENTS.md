@@ -52,3 +52,23 @@ one-sided band RMS, independent channel powers, source-rate/excerpt boundaries a
 frequency-bin provenance. Empty/unresolved buckets are errors, not invented data.
 Run `tests/test_frequency_bands.py` with the mandatory released native recording
 API in the recording CI job when changing this feature.
+
+## Beat alignment and public reference
+
+`beat-offset` must preserve source hashes, canonical authority, all actual saved
+detector/source runs and raw consensus tempo. Keep half/double-time interpretations
+normal and explicit; do not fabricate beats or approve a new BPM/phase. Reuse
+`constant_beat_fit` for the separately labelled estimated grid, including its
+end-drift guards. Keep 64-pip offsets distinct from 16-tick browser clocks, exact
+fractional offsets distinct from integer rounding, and beat phase distinct from
+audio/lyric/cue/recording source time.
+
+Use released shared marker `className` APIs for both grids; genuinely rebuild and
+record the frontend. Test selectors, exact backend rows, painted colours/styles
+and unchanged transport. Run `tests/test_beat_offsets.py`, both `tests/web` suites
+and static/server integration checks. Keep the five Arcadians pages plus the
+checksum-pinned The Truth is a Virus reference together. Require matching HTTP
+playback/grid QA for the reference before release/Pages publication. Its CI-built
+viewer consumes frozen real detections; never relabel those as fresh inference.
+Demonstrations and screenshots on the artist website belong on the WordPress
+StemLab page, preserving its independent exact-payload public-save requirement.

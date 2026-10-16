@@ -1,0 +1,20 @@
+{
+  "public_audio_url": "https://kieransimkin.co.uk/wp-content/uploads/2026/08/The-Truth-is-a-Virus-320kbps.mp3",
+  "public_file_sha256": "b11ac7c48df227ac51d94c05a245d3138acf1a002f851c55d98fd7fb7f0de510",
+  "public_bytes": 8666420,
+  "analysed_tagged_mp3_sha256": "b11ac7c48df227ac51d94c05a245d3138acf1a002f851c55d98fd7fb7f0de510",
+  "audio_payload_sha256": "70ec8cc9e0da9cfeca43280a09573ddcaf3437ae13ef0792e6954f81dba524d6",
+  "relationship": "Exact tagged MP3 bytes match the current public EPK audio; MPEG payload identity is also retained.",
+  "release_date": "2026-09-04",
+  "software_licence_does_not_license_audio": true,
+  "inference": "Frozen real BeatThis/BeatNet master results and majority-vote consensus. CI regenerates offsets, fits and the real timeline; it does not rerun learned models.",
+  "selection": "Explicitly selected by Kieran on 2026-10-16 after new bounded catalogue beat analysis.",
+  "files": {
+    "analysis.json": "66186bac3302e7c685346c4933f422b9d3ecfb8e26fcf88f9a2e1936221d035e",
+    "beats/beat_this.json": "480230a0d4a53e49d8b903b02aac25ed9d7a45713d453693a59aad945de679dd",
+    "beats/beatnet.json": "e7a3bda7a47382614e422629f3f1e6af05b447565b58c8f5df63cc3a0cf4b290",
+    "beats/consensus.json": "d8bac18cbfc51de34b315770430404e00ee0f22d637b3af589578f68832eaf4e",
+    "canonical.json": "aa6e85e0961ad04d5f47b5653a15af838414bdd0839bb5677c0f8eaaaf9c1139",
+    "master.mp3": "b11ac7c48df227ac51d94c05a245d3138acf1a002f851c55d98fd7fb7f0de510"
+  }
+}

@@ -92,6 +92,16 @@ def test_export_requires_audio_opt_in_and_new_output(analysis, tmp_path):
         export_timeline(analysis, output, include_audio=True)
 
 
+def test_missing_loop_analysis_is_explicit_not_a_missing_route_or_zero_result(analysis, tmp_path):
+    (analysis/'deep/loops/loops.json').unlink()
+    site = tmp_path/'site'
+    export_timeline(analysis, site, include_audio=True)
+    assert verify_snapshot(site)['status'] == 'passed'
+    availability = read_json(site/'data/loops-unavailable.json')
+    assert availability['status'] == 'not-analysed'
+    assert 'loop_count' not in availability
+
+
 def test_source_mismatch_does_not_leave_a_site(analysis, tmp_path):
     (analysis / 'input/synthetic.wav').write_bytes(b'not-the-source')
     with pytest.raises(ValueError, match='SHA-256'):
