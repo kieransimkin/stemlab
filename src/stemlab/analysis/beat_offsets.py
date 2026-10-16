@@ -102,7 +102,7 @@ def compare_beat_offsets(results: Path, *, canonical_bpm=None, audio: Path | Non
             expected = (source.get('audio') or {}).get(field)
             if expected is not None and expected != info[field]:
                 raise ValueError('Audio metadata differs from the saved analysis: '+field)
-        source_info.update(audio_verified=True, verified_audio=path.name)
+        source_info.update(audio=info, audio_verified=True, verified_audio=path.name)
     canonical_hash = None
     if canonical_bpm is not None:
         if _bpm(canonical_bpm) is None or not 1 <= canonical_bpm <= 400:
@@ -250,7 +250,7 @@ def alignment_from_report(report: dict, *, analysis_id='consensus', bpm_basis='c
         bpm=row['bpm'], exact_bpm=row['exact_bpm'], bpm_basis=bpm_basis,
         bpm_status='canonical' if bpm_basis == 'canonical' else 'estimated',
         phase_status='estimated', analysis_id=analysis_id, evidence_sha256=detector['evidence_sha256'],
-        first_beat_seconds=row['first_beat_seconds'], first_beat_exact_seconds=row['first_beat_exact_seconds'],
+        first_beat_seconds=row['first_beat_seconds'], first_beat_exact_seconds=str(first),
         offset_pips=row['offset_pips'], exact_offset_pips=row['exact_offset_pips'],
         pips_per_beat=64, canonical_first_beat_pip=0, report_sha256=report_sha256,
         mapping='aligned_pip = source_seconds * bpm / 60 * 64 + offset_pips',
