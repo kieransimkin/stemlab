@@ -248,7 +248,7 @@ def test_workflow_builds_both_before_publication_and_never_requires_backend_at_r
     assert 'examples/arcadians:/opt/stemlab/examples/arcadians:ro' in str(timeline)
     steps = demo['jobs']['build']['steps']
     names = [s.get('name', '') for s in steps]
-    assert names.index('Assemble all four verified viewers into one Pages site') < names.index('Freeze the tested public site as release assets')
+    assert names.index('Assemble all five verified viewers into one Pages site') < names.index('Freeze the tested public site as release assets')
     qa_upload = next(s for s in timeline['jobs']['build']['steps'] if s.get('with', {}).get('name') == 'stemlab-arcadians-timeline-qa')
     assert qa_upload['with']['path'].endswith('/qa/') and '\n' not in qa_upload['with']['path']
     publication = release['jobs']['arcadians-pages']['steps']

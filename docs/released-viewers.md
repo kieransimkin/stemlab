@@ -119,15 +119,16 @@ capability marker to old JavaScript merely to satisfy a test.
 ## Publication and Pages verification
 
 StemLab's tagged release invokes the existing combined Arcadians workflow. It
-keeps all four examples in one deployment:
+keeps all five examples in one deployment:
 
 - `timeline/arcadians/`: complete analysis with master and drum/percussion beat
   hypotheses, overlaid audio lanes and time/height controls;
 - `arcadians/`: the original 48 master-derived recordings;
 - `arcadians-stems/`: 60 actual different-stem two-dimensional recordings;
+- `arcadians-fourier/`: full master, 4/8/16/32/64/128-band shared viewers with every-resolution native/bar/audio checks.
 - `arcadians-averages/`: 180 peak/average/moving-average comparisons.
 
-The three movement galleries use the released shared X–Y/bar harness. Each bar
+The four movement galleries use the released shared X–Y/bar harness. Each bar
 corresponds to one stored dimension. Native sampling, complete-analysis checks,
 audio-clock seeking, browser controls, HTTP range responses and post-deployment
 public checks remain required. BeatNet and BeatThis run **after separation**, on

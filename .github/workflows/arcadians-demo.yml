@@ -14,6 +14,10 @@ on:
       - '.github/workflows/arcadians-timeline.yml'
       - 'scripts/build_arcadians_timeline.py'
       - 'scripts/build_arcadians_pair_demos.py'
+      - 'scripts/build_arcadians_fourier_demo.py'
+      - 'scripts/recording_downloads.py'
+      - 'src/stemlab/analysis/frequency_bands.py'
+      - 'tests/test_arcadians_fourier_demo.py'
       - 'scripts/check_viewer_build.py'
       - 'scripts/timeline_display_checks.py'
       - 'web-client/**'
@@ -115,7 +119,7 @@ jobs:
           python -m pip install --no-deps -e .
           python -c "from dancerudiments import SampledRecording; from dancerudiments_authoring.harness import build_recording_harness, HARNESS_DISPLAY_API_VERSION; assert HARNESS_DISPLAY_API_VERSION == 1"
       - name: Run release-demo and recording regression tests
-        run: python -m pytest tests/test_arcadians_http.py tests/test_arcadians_release_demo.py tests/test_rudiment_recordings.py tests/test_rudiment_matches.py tests/test_rudiment_pairs.py tests/test_arcadians_pair_demos.py
+        run: python -m pytest tests/test_arcadians_http.py tests/test_arcadians_release_demo.py tests/test_rudiment_recordings.py tests/test_frequency_bands.py tests/test_rudiment_matches.py tests/test_rudiment_pairs.py tests/test_arcadians_pair_demos.py tests/test_arcadians_fourier_demo.py
       - name: Generate 48 full-song movements with the original MP3 included
         env:
           RELEASE_LABEL: ${{ github.ref_name }}
@@ -163,18 +167,32 @@ jobs:
         with:
           name: stemlab-arcadians-timeline-pages
           path: timeline-site
+      - name: Generate all six full-master Fourier resolutions through the shared recording API
+        env:
+          COMPANION_SHA: ${{ steps.companion.outputs.ref }}
+        run: |
+          python scripts/build_arcadians_fourier_demo.py --site dist/arcadians-pages \
+            --source-commit "$GITHUB_SHA" --companion-commit "$COMPANION_SHA" \
+            --companion-license .recording-dancerudiments/LICENSE
+      - name: Verify every Fourier resolution, full-dimensional native samples, bars and audio transport
+        shell: bash
+        run: |
+          for BANDS in 4 8 16 32 64 128; do
+            python scripts/check_arcadians_audio.py dist/arcadians-pages --gallery arcadians-fourier --channels "$BANDS" \
+              --report "dist/arcadians-fourier-${BANDS}-audio-browser.json" --screenshot "dist/arcadians-fourier-${BANDS}.png"
+          done
       - name: Retrieve timeline QA separately, never into the public site
         uses: actions/download-artifact@v5
         with:
           name: stemlab-arcadians-timeline-qa
           path: dist/timeline-qa
-      - name: Assemble all four verified viewers into one Pages site
+      - name: Assemble all five verified viewers into one Pages site
         run: |
           python scripts/assemble_arcadians_site.py --site dist/arcadians-pages \
             --timeline timeline-site --qa dist/timeline-qa/arcadians-timeline-browser.json \
             --source-sha "$GITHUB_SHA"
           cp dist/timeline-qa/arcadians-timeline-browser.json dist/arcadians-timeline-browser.json
-      - name: Require matching HTTP QA for the complete four-viewer site
+      - name: Require matching HTTP QA for the complete five-viewer site
         run: |
           python scripts/publish_arcadians_pages.py verify --site dist/arcadians-pages \
             --qa dist/arcadians-audio-browser.json --source-sha "$GITHUB_SHA"
@@ -207,4 +225,6 @@ jobs:
             dist/arcadians-averages-audio-browser.json
             dist/arcadians-stems-comparison.png
             dist/arcadians-averages-comparison.png
+            dist/arcadians-fourier-*-audio-browser.json
+            dist/arcadians-fourier-*.png
           if-no-files-found: warn

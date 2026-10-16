@@ -71,6 +71,11 @@ Audio and lyrics retain their original rights; software licensing does not licen
 <p>30 fixed input pairs, six settings each: peak, average and 1/8, 1/4, 1/2 and 1-beat smoothing.
 The inputs, filters and amplitude scales stay fixed within each comparison.</p></article>
 <p>Artist references''')
+    if (site/'arcadians-fourier/index.html').is_file():
+        landing = landing.replace('<p>Artist references', '''<article><h2><a href="arcadians-fourier/">Explore Fourier frequency bands</a></h2>
+<p>The full original master mapped into 4, 8, 16, 32, 64 and 128 dimensions.
+Choose a resolution and inspect all frequency-band bars in the shared player.</p></article>
+<p>Artist references''')
     (site/'index.html').write_text(landing, encoding='utf-8')
     return verify_site(site)
 

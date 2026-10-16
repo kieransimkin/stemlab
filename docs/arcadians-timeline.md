@@ -1,6 +1,6 @@
 # Complete Arcadians timeline on GitHub Pages
 
-The Arcadians demo workflow builds **four viewers in one public site**:
+The Arcadians demo workflow builds **five viewers in one public site**:
 
 - `timeline/arcadians/`: StemLab's existing React timeline, with the full song and
   a completed `arcadians-core-v2` analysis.
@@ -8,7 +8,9 @@ The Arcadians demo workflow builds **four viewers in one public site**:
 - `arcadians-stems/`: 60 movements using different real stems for X and Y.
 - `arcadians-averages/`: 180 fixed-pair peak/average/moving-average comparisons.
 
-The root is a landing page linking to all four examples. Both the manual Pages publisher and
+The Fourier page (`arcadians-fourier/`) adds full-master 4/8/16/32/64/128-dimensional energy envelopes, with all-resolution native/bar/audio QA.
+
+The root is a landing page linking to all five examples. Both the manual Pages publisher and
 release publisher upload this same combined artifact. No source checkout, model
 cache, backend server or separate Pages branch is published. These paths describe
 what this change deploys; a code patch alone does not make the new timeline live.
@@ -62,7 +64,7 @@ The sequence is:
 4. The movement build generates/tests the existing 48 full-song movements, then
    reuses the exact float stems for the 60 stem-pair and 180 mode-comparison
    recordings. It validates both new galleries separately before adding the
-   verified timeline and four-example landing page. The source revisions,
+   verified timeline and five-example landing page. The source revisions,
    the original MP3 hash and timeline snapshot checksum must agree.
 5. The existing publisher deploys the combined site and verifies public HTML,
    timeline JavaScript/CSS/data and partial MP3 responses after deployment.
@@ -90,7 +92,7 @@ models” publication path. No neural inference runs in a visitor's browser.
 
 The combined workflow publishes these artifacts:
 
-- `stemlab-arcadians-pages`: the only public upload tree, containing all four viewers.
+- `stemlab-arcadians-pages`: the only public upload tree, containing all five viewers.
 - `stemlab-arcadians-browser-qa`: separate movement and timeline browser reports.
 - `stemlab-arcadians-release-assets`: the combined `StemLab-Arcadians-visualizer.zip`,
   file checksums and build provenance, also attached to tagged releases.
@@ -181,7 +183,7 @@ the runner's ownership of the dedicated Arcadians output tree before browser tes
 and artifact uploads. Permissions stay private; neither `chmod 777` nor access to
 unrelated runner directories is required. The full-analysis gate remains mandatory.
 
-Use **Arcadians release demo** to build and publish all four examples. The standalone
+Use **Arcadians release demo** to build and publish all five examples. The standalone
 **Arcadians complete analysis timeline** is for diagnostic builds and its own
 artifacts, not a second required dispatch. Start a fresh `main` run after changing
 code; retrying an older run keeps its original revision.
@@ -208,4 +210,4 @@ The `--recording-sources` option exports an exact-float-stem handoff **outside**
 the public timeline. The combined demo workflow uses it for the separate stem
 pair and smoothing comparison galleries, without rerunning separation. These
 recordings are not driven by the timeline's quantized FLAC listening copies.
-See [the four-page deployment](recording-pairs.md) and [beat input policy](beat-inputs.md).
+See [the five-page deployment](recording-pairs.md) and [beat input policy](beat-inputs.md).

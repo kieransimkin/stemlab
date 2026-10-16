@@ -20,6 +20,7 @@ from urllib.request import Request, urlopen
 from build_arcadians_demo import ARCADIANS_SHA256, digest, validate_revision, verify_site
 from assemble_arcadians_site import verify_timeline_qa
 from build_arcadians_pair_demos import GALLERIES, verify_pair_gallery
+from build_arcadians_fourier_demo import CHANNELS, GALLERY as FOURIER_GALLERY, verify_fourier_gallery
 
 REPOSITORY = 'kieransimkin/stemlab'
 WORKFLOW = '.github/workflows/arcadians-demo.yml'
@@ -77,7 +78,7 @@ def select_run(requested: str = '') -> dict:
             raise ValueError(f'Expected exactly one {name} artifact for run {identifier}')
         artifact = artifacts[0]
         if (artifact.get('name') != name or artifact.get('expired') is not False
-                or not 0 < artifact.get('size_in_bytes', 0) <= 512 * 1024 * 1024
+                or not 0 < artifact.get('size_in_bytes', 0) <= 900 * 1024 * 1024
                 or artifact.get('workflow_run', {}).get('id') != identifier
                 or artifact.get('workflow_run', {}).get('head_sha') != sha):
             raise ValueError(f'Invalid, expired or mismatched artifact: {name}')
@@ -124,7 +125,24 @@ def verify_artifacts(site: Path, qa_path: Path, source_sha: str) -> dict:
     verify_timeline_qa(site / 'timeline/arcadians',
                        qa_path.with_name('arcadians-timeline-browser.json'), source_sha)
     verify_pair_artifacts(site, qa_path.parent, source_sha)
+    verify_fourier_artifacts(site, qa_path.parent, source_sha)
     return dict(verified, source_sha=source_sha, browser_qa='passed', timeline_qa='passed', pair_galleries_qa='passed')
+
+
+def verify_fourier_artifacts(site: Path, qa_dir: Path, source_sha: str) -> None:
+    gallery = site/FOURIER_GALLERY
+    provenance = verify_fourier_gallery(gallery, source_commit=source_sha)
+    report = json.loads((gallery/'report.json').read_text(encoding='utf-8'))
+    for item in report['candidates']:
+        n = item['bands']
+        qa = json.loads((qa_dir/f'arcadians-fourier-{n}-audio-browser.json').read_text(encoding='utf-8'))
+        verify_qa(qa, provenance, expected_candidates=1)
+        if (qa.get('gallery') != FOURIER_GALLERY or qa.get('channels') != n or qa.get('view') != item['view']
+                or qa.get('html_sha256') != digest(gallery/item['view'])
+                or qa['http_ranges'].get('audio_bytes') != (gallery/'audio.mp3').stat().st_size
+                or qa.get('view_modes') != ['xy', 'bars'] or qa.get('all_dimension_bars') is not True
+                or qa.get('bar_channels_checked') != n or qa.get('resolution_selector') is not True):
+            raise ValueError('Fourier browser QA is stale or belongs to a different resolution')
 
 
 def verify_pair_artifacts(site: Path, qa_dir: Path, source_sha: str) -> None:
@@ -190,6 +208,8 @@ def verify_live(base_url: str, site: Path, source_sha: str, *, attempts: int = 1
             for name in GALLERIES:
                 if (site/name).exists():
                     verify_live_pair(base, site/name, name, source_sha)
+            if (site/FOURIER_GALLERY).exists():
+                verify_live_fourier(base, site/FOURIER_GALLERY, source_sha)
             return dict(status='passed', url=gallery, source_sha=source_sha,
                         html_matches_tested_artifact=True, public_audio_range_verified=True,
                         live_browser_playback_tested=False)
@@ -199,6 +219,16 @@ def verify_live(base_url: str, site: Path, source_sha: str, *, attempts: int = 1
                 print(f'Waiting for Pages propagation ({attempt + 1}/{attempts}): {exc}', flush=True)
                 time.sleep(delay)
     raise RuntimeError(f'Pages deployment was submitted but the live URL did not verify: {last_error}')
+
+
+def verify_live_fourier(base: str, gallery: Path, source_sha: str) -> None:
+    # Reuse exact-file and byte-range checks for the overview/source/report/audio.
+    verify_live_pair(base, gallery, FOURIER_GALLERY, source_sha)
+    for n in CHANNELS:
+        file = f'bands-{n}.html'
+        status, _, content = public_request(base.rstrip('/')+'/'+FOURIER_GALLERY+'/'+file)
+        if status != 200 or hashlib.sha256(content).hexdigest() != digest(gallery/file):
+            raise ValueError('Public Fourier view differs from tested build: '+file)
 
 
 def verify_live_pair(base: str, gallery: Path, name: str, source_sha: str) -> None:
