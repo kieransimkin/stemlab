@@ -72,6 +72,8 @@ def analyze(
     model: Annotated[list[str] | None, typer.Option("--model", help="Override profile; repeat for multiple models")] = None,
     device: Annotated[str, typer.Option(help="auto, cpu, cuda, cuda:N or mps where supported")] = "auto",
     whisper_model: Annotated[str, typer.Option(help="faster-whisper model id")] = "large-v3",
+    whisper_vad_mode: Annotated[str, typer.Option(help="speech: Silero speech mask; full: retain all singing/music samples")] = "speech",
+    whisper_language: Annotated[str | None, typer.Option(help="Optional lower-case language code, e.g. en; otherwise detect")] = None,
     whisper_condition_on_previous_text: Annotated[
         bool,
         typer.Option(
@@ -119,6 +121,11 @@ def analyze(
     beat_transformer_single_fold: Annotated[bool, typer.Option("--beat-transformer-single-fold", help="Use one released fold instead of all eight")]=False,
 ):
     """Run separation plus sonic, speech, structure, harmony, rhythm and semantic analysis."""
+    from .speech import validate_speech_options
+    try:
+        validate_speech_options(whisper_vad_mode, whisper_language)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     if snap_cues is not None:
         from .cues import CueSnapConfig, read_lrc
         try:
@@ -170,6 +177,8 @@ def analyze(
         device=device,
         whisper_model=whisper_model,
         whisper_condition_on_previous_text=whisper_condition_on_previous_text,
+        whisper_vad_mode=whisper_vad_mode,
+        whisper_language=whisper_language,
         continue_on_error=not strict,
         bootstrap_external=not no_bootstrap,
         make_spectrograms=not no_spectrograms,

@@ -19,7 +19,7 @@ from .manifest import write_manifest
 from .models import MODEL_REGISTRY
 from .separators import make_backend
 from .sonic_visualiser import build_session
-from .speech import isolate_and_transcribe
+from .speech import isolate_and_transcribe, validate_speech_options
 from .spectrogram import generate_spectrogram
 from .types import BeatResult, PipelineConfig, SeparationResult, StemArtifact
 from .util import sha256_file, slugify, write_json
@@ -50,6 +50,7 @@ def _error_record(stage: str, exc: Exception) -> dict:
 
 
 def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> dict:
+    validate_speech_options(config.whisper_vad_mode, config.whisper_language)
     from .analysis.loops import LoopConfig
     LoopConfig(max_seconds=config.loop_max_seconds)
     if config.export_loops and (not config.run_loops or not config.run_deep_analysis):
@@ -224,6 +225,8 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     whisper_model=config.whisper_model,
                     device=config.device,
                     condition_on_previous_text=config.whisper_condition_on_previous_text,
+                    vad_mode=config.whisper_vad_mode,
+                    language=config.whisper_language,
                 )
                 analysis["speech"] = {
                     "source_vocals": str(Path(whisper_result["source_vocals"]).relative_to(out)),
@@ -238,17 +241,21 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     "condition_on_previous_text": whisper_result["condition_on_previous_text"],
                     "repetition_safe_mode": whisper_result["repetition_safe_mode"],
                     "repetition_diagnostics": whisper_result["repetition_diagnostics"],
+                    "vad_mode": whisper_result["vad_mode"],
+                    "speech_mask_applied": whisper_result["speech_mask_applied"],
+                    "requested_language": whisper_result["requested_language"],
                 }
                 spoken = Path(whisper_result["spoken_word_wav"])
-                all_stems.append(StemArtifact("speech", "spoken_word", spoken, 16000, 1))
+                speech_stem = "spoken_word" if whisper_result["speech_mask_applied"] else "transcription_input"
+                all_stems.append(StemArtifact("speech", speech_stem, spoken, 16000, 1))
                 if config.make_spectrograms:
                     rec = generate_spectrogram(
                         spoken,
-                        spec_dir / "speech" / "spoken_word.png",
-                        spec_dir / "speech" / "spoken_word.npz",
+                        spec_dir / "speech" / f"{speech_stem}.png",
+                        spec_dir / "speech" / f"{speech_stem}.npz",
                     )
                     rec["model"] = "speech"
-                    rec["stem"] = "spoken_word"
+                    rec["stem"] = speech_stem
                     analysis["spectrograms"].append(rec)
             except Exception as exc:
                 analysis["errors"].append(_error_record("speech", exc))

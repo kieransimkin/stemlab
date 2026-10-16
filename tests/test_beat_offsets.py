@@ -52,6 +52,21 @@ def test_half_double_interpretations_preserve_raw_tempo():
     assert tempo_family(None, 120)['status'] == 'unavailable'
 
 
+def test_missing_detection_candidate_preserves_original_beats_and_raw_combined_tempo(results):
+    path = results/'beats/consensus.json'
+    save(results, 'beats/consensus.json', {'model': 'consensus', 'tempo_bpm': 120,
+        'beats': [.125, .625, 1.125, 2.125, 2.625, 3.125]})
+    before = path.read_bytes()
+    report = compare_beat_offsets(results)
+    consensus = next(row for row in report['analyses'] if row['analysis_id'] == 'consensus')
+    assert consensus['sequential_grid_fit']['precision_grade'] == 'poor'
+    assert consensus['constant_grid_fit']['inferred_missing_beats'] == 1
+    assert consensus['constant_grid_fit']['proposed_bpm'] == 120
+    assert report['bpm_bases'][1]['bpm'] == 120
+    assert report['bpm_bases'][3]['bpm'] == 120
+    assert path.read_bytes() == before
+
+
 def test_full_matrix_uses_each_actual_first_beat_and_saved_consensus(results):
     before = {p: p.read_bytes() for p in results.rglob('*.json')}
     report = compare_beat_offsets(results)

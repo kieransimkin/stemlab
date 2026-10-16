@@ -79,6 +79,8 @@ jobs:
       - name: Test static timeline, completeness validation, HTTP and publication
         run: |
           python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py tests/test_arcadians_runtime.py tests/test_beat_inputs.py tests/test_beat_consensus.py tests/test_viewer_controls.py tests/test_beat_offsets.py tests/test_beat_reference.py
+      - name: Build the frozen beat reference before expensive inference
+        run: python scripts/build_beat_example.py --output "$RUNNER_TEMP/truth-beat-preflight" --source-commit "${{ github.sha }}"
 
   timeline:
     if: github.event_name != 'pull_request'
@@ -118,7 +120,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes libsndfile1 ffmpeg
-          python -m pip install numpy scipy 'soundfile>=0.12' matplotlib rich 'typer>=0.12' platformdirs pytest pyyaml playwright
+          python -m pip install numpy scipy 'soundfile>=0.12' matplotlib 'fastapi>=0.115,<1' rich 'typer>=0.12' platformdirs pytest pyyaml playwright
           python scripts/viewer_releases.py install
           python -m pip install --no-deps -e .
           python -c "from dancerudiments import SampledRecording; from dancerudiments_authoring.harness import build_recording_harness, HARNESS_DISPLAY_API_VERSION; assert HARNESS_DISPLAY_API_VERSION == 1"

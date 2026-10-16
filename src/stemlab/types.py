@@ -51,6 +51,8 @@ class PipelineConfig:
     device: str = "auto"
     whisper_model: str = "large-v3"
     whisper_condition_on_previous_text: bool = False
+    whisper_vad_mode: str = "speech"
+    whisper_language: str | None = None
     continue_on_error: bool = True
     bootstrap_external: bool = True
     make_spectrograms: bool = True

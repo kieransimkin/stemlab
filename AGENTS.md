@@ -59,7 +59,10 @@ API in the recording CI job when changing this feature.
 detector/source runs and raw consensus tempo. Keep half/double-time interpretations
 normal and explicit; do not fabricate beats or approve a new BPM/phase. Reuse
 `constant_beat_fit` for the separately labelled estimated grid, including its
-end-drift guards. Keep 64-pip offsets distinct from 16-tick browser clocks, exact
+end-drift guards. Preserve sequential and inferred integer-gap hypotheses when
+missing detections explain a poor fit; never add timestamps or relabel inferred
+ordinals as detections. Require the first-anchored error guard before selecting
+that fitted hypothesis. Keep 64-pip offsets distinct from 16-tick browser clocks, exact
 fractional offsets distinct from integer rounding, and beat phase distinct from
 audio/lyric/cue/recording source time.
 
@@ -70,5 +73,18 @@ and static/server integration checks. Keep the five Arcadians pages plus the
 checksum-pinned The Truth is a Virus reference together. Require matching HTTP
 playback/grid QA for the reference before release/Pages publication. Its CI-built
 viewer consumes frozen real detections; never relabel those as fresh inference.
+The lightweight combined-site job must install FastAPI, required by the static
+timeline adapter's shared display helpers. Build the frozen beat reference in
+the early model-free preflight before expensive full-song inference.
 Demonstrations and screenshots on the artist website belong on the WordPress
 StemLab page, preserving its independent exact-payload public-save requirement.
+
+For lyric recovery, the speech mask is a speech-activity hypothesis and may
+remove singing. Compare the explicit full-audio mode when warranted, preserve
+the original evidence and source clock, retain repetition-safe decoding and
+keep canonical wording, observed anchors, the 70% threshold and listening QA
+authoritative. [Measured example and limits](docs/screenshots/lyric-input-comparison.png)
+illustrate the difference; word coverage is not acoustic accuracy.
+Full-audio transcription uses faster-whisper's own decoder and NumPy/file
+writing without importing Torch. Preserve this route and its no-Torch test;
+automatic device selection queries the actual CTranslate2 backend.

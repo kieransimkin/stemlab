@@ -25,6 +25,11 @@ Created by Kieran Simkin — https://kieransimkin.co.uk/my-songs/
 5. Start an analysis only when necessary. Retain repetition-safe Whisper behavior.
    Text semantics defaults off in this integration. MuQ audio semantics is separately
    opt-in with non-commercial weights; never enable it just to fill an empty report.
+   When a speech mask removes singing, the CLI/Python speech API supports an
+   explicit `full` VAD-mode comparison and an optional known language code.
+   Keep original evidence and source timestamps; no MCP input exposes these
+   options yet. Read the [measured mode comparison](https://github.com/kieransimkin/stemlab/blob/main/README.md#speech-transcription)
+   and its retained chart; a word-match score does not approve lyric timing.
 6. A returned job ID means submitted, not completed. Poll `stemlab_job_status`, read
    diagnostics, and distinguish `completed_with_errors`, `failed`, `cancelled`,
    `timed_out` and `unmanaged`. Do not promise future autonomous updates.
