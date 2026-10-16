@@ -279,6 +279,32 @@ See **[installation, all options, limits, timing, demo and validation](docs/rudi
 inference. Restricted-environment QA used in-memory loading; normal file loading
 and audible listening are not claimed by that screenshot.*
 
+### Export a master or stem as a signed waveform rudiment
+
+The existing `record-rudiment` exporter also supports **`--mode waveform`**.
+It downsamples actual signed PCM onto DanceRudiments' **64-pips-per-beat**
+recording clock, using zero-phase anti-alias filtering and pip-centre sampling.
+Unlike rectified peak/average/Fourier envelopes, negative waveform values
+remain negative and silence stays at zero. Source-rate low/high/band-pass
+filtering is applied **before** anti-aliased downsampling.
+
+```sh
+# Master, with optional low-pass before downsampling.
+stemlab record-rudiment master.wav --bpm 145 --mode waveform \
+  --axis x=master --low-pass x=35 --output ./master-waveform
+# A saved stem from an existing analysis, reusing its BPM evidence.
+stemlab record-rudiment ./analysis --mode waveform \
+  --axis x=htdemucs_6s/bass --high-pass x=12 --output ./bass-waveform
+```
+
+Use `--axis-mode x=waveform` to mix signed PCM and envelope axes in one
+recording. High audio frequencies do not survive a genuine downsample to a
+roughly 100–200 Hz movement clock; for instrument *energy* use `--mode peak`
+or `average` instead. Signed stereo channels are averaged (opposite phase
+can cancel); the native DanceRudiments recording JSON, WASM viewer, source
+hashes, normalization and existing transactional exports are reused.
+See [signed waveform resampling](docs/rudiment-recordings.md#signed-waveform-resampling).
+
 ## First-beat alignment and tempo families
 
 Compare the saved consensus and every individual detector/source at canonical

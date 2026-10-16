@@ -130,6 +130,51 @@ default 2048-frame window may be too coarse; a larger window can resolve the
 requested buckets, with the documented loss of temporal precision. This is a
 resolution limit, not missing source audio; do not invent/interpolate a band.
 
+## Signed waveform resampling
+
+For a master or separated stem, `--mode waveform` exports actual **signed
+PCM** as `dancerudiments.recording` float64 samples at **64 pips per beat**:
+`64 * BPM / 60` samples/second (128 Hz at 120 BPM). It is not a fixed 64 Hz
+rate. An explicit BPM is required for standalone audio; saved analyses can
+reuse detected beat evidence. Every output retains the original beat origin,
+BPM provenance, and the recording's non-looping playback semantics.
+
+```sh
+stemlab record-rudiment master.wav --bpm 145 --mode waveform \
+  --axis x=master --low-pass x=35 --output ./master-waveform
+stemlab record-rudiment ./analysis --mode waveform \
+  --axis x=htdemucs_6s/bass --high-pass x=12 --output ./bass-waveform
+# Combine modes on a shared clock, applying filter only to waveform X.
+stemlab record-rudiment ./analysis --axis x=master --axis-mode x=waveform \
+  --axis y=htdemucs_6s/drums --axis-mode y=peak \
+  --low-pass x=30 --output ./wave-and-energy
+```
+
+For output index `i`, the signal is sampled at the **centre of native pip i**:
+`beat_zero_seconds + (start_pip + i + 0.5) * 60 / (64 * BPM)`.
+Positions are computed from the absolute rational BPM clock (no accumulating
+rounded frame hops), then linearly interpolated. User-specified low/high-pass
+Butterworth filters (or both as a band-pass) operate on original-rate audio
+**before** the mandatory 12th-order anti-alias low-pass at 75% of the
+movement Nyquist. `--filter-phase zero` is the zero-phase default;
+`--filter-phase causal` permits phase delay. The source remains unchanged.
+
+Channels are averaged as **signed** PCM before resampling, so antiphase
+stereo can cancel; use peak/average/Fourier for channel-independent energy.
+Values outside the requested excerpt/source are zero-padded, with boundary
+and filter details recorded in axis provenance. `--normalize none` preserves
+PCM unity, `global` uses one absolute peak across axes, and `per-axis` uses
+independent absolute peaks; `--gain` multiplies signed coordinates. Waveform
+zero remains 0, negative half-cycles remain negative, values clip to [-1,1].
+The original envelope/Fourier modes continue to map non-silent zero *energy*
+to -1 instead. Both routes share `EnvelopeBank.compose`, native JSON output,
+bounded caching and the DanceRudiments HTML/WASM harness.
+
+The destination Nyquist is far below standard audio frequencies: higher
+frequencies **must** be removed to prevent aliasing. A high-pass cutoff above
+that Nyquist may produce an almost silent waveform after downsampling; this
+is expected. Use envelope modes to drive motion from higher-frequency music.
+
 ## Single recording: bass on X, treble on Y
 
 ```sh

@@ -1,4 +1,4 @@
-"""Native-rate amplitude extraction on the optional DanceRudiments recording clock."""
+"""Native-rate signed waveform and envelope extraction on the DanceRudiments clock."""
 from __future__ import annotations
 from dataclasses import dataclass, asdict
 from fractions import Fraction
@@ -49,8 +49,8 @@ class AxisSpec:
         if not isinstance(self.name, str) or not re.fullmatch(r'[a-z][a-z0-9_]{0,127}', self.name):
             raise ValueError('Axis names must match [a-z][a-z0-9_]{0,127}')
         object.__setattr__(self, 'source', Path(self.source).expanduser().resolve())
-        if self.mode not in ('peak', 'average', 'moving-average', 'fourier'):
-            raise ValueError('Mode must be peak, average, moving-average or fourier')
+        if self.mode not in ('peak', 'average', 'moving-average', 'waveform', 'fourier'):
+            raise ValueError('Mode must be peak, average, moving-average, waveform or fourier')
         if (self.fourier is not None and not isinstance(self.fourier, FourierBand)) or (self.mode == 'fourier') != (self.fourier is not None):
             raise ValueError('Fourier mode requires a FourierBand specification; other modes cannot use it')
         if self.fourier is not None and (self.low_pass is not None or self.high_pass is not None):
@@ -204,6 +204,51 @@ def sample_edges(clock, count, sr):
         raise ValueError('Clock exceeds supported audio-frame range') from exc
 
 
+def sample_signed_waveform(path, clock, count, *, start, end, sr, frames,
+                           user_sos=None, phase='zero', block_frames=BLOCK_FRAMES):
+    """Anti-aliased signed PCM on the 64-pips-per-beat clock, at pip centres."""
+    native_rate = 1. / float(clock.pip_seconds)
+    cutoff = native_rate * .375  # 75% of the output Nyquist
+    antialias = butter(12, cutoff, btype='lowpass', fs=sr, output='sos')
+    sos = antialias if user_sos is None else np.vstack((user_sos, antialias))
+    origin = (Fraction(str(clock.beat_zero_seconds)) +
+              (clock.start_pip + Fraction(1, 2)) * clock.pip_seconds) * sr
+    step = clock.pip_seconds * sr
+    if step < 1:
+        raise ValueError('BPM-synchronised sampling rate exceeds the input audio rate')
+    centres = float(origin) + np.arange(count, dtype=np.float64) * float(step)
+    valid = ((centres >= float(start * sr)) & (centres < float(end * sr)) &
+             (centres >= 0.) & (centres < frames))
+    floor = np.floor(centres).astype(np.int64)
+    fraction = centres - floor
+    left, right = np.zeros(count), np.zeros(count)
+    position = 0
+    for block in audio_blocks(path, sos, phase, block_frames):
+        # One signed movement coordinate: mean the PCM channels BEFORE sampling.
+        mono = block.mean(axis=1, dtype=np.float64)
+        lo, hi = np.searchsorted(floor, [position, position + len(mono)])
+        indices = np.arange(lo, hi)
+        indices = indices[valid[indices]]
+        left[indices] = mono[floor[indices] - position]
+        # Fetch the right interpolation frame even across disk-block boundaries.
+        lo, hi = np.searchsorted(floor, [position - 1, position + len(mono) - 1])
+        indices = np.arange(lo, hi)
+        indices = indices[valid[indices]]
+        right[indices] = mono[floor[indices] + 1 - position]
+        position += len(mono)
+    values = checked((1. - fraction) * left + fraction * right)
+    return values, dict(
+        sampled_centres=int(np.count_nonzero(valid)),
+        padded_centres=int(count - np.count_nonzero(valid)),
+        native_rate_hz=native_rate,
+        antialias_cutoff_hz=cutoff,
+        antialias_filter_order=12,
+        waveform_sample_position='pip centre (beat_zero + (start_pip + index + 0.5) * 60/(64*BPM))',
+        waveform_resampler='anti-aliased linear interpolation of signed PCM',
+        waveform_channels='arithmetic mean of signed source channels',
+    )
+
+
 class EnvelopeBank:
     """Cache each source/filter pass once, producing both peak and average envelopes."""
     def __init__(self, sources, *, bpm=None, bpm_source='user', bpm_status='estimated',
@@ -242,11 +287,31 @@ class EnvelopeBank:
         self.cache = {}
         self.smoothing_cache = {}
         self.fourier_cache = {}
+        self.waveform_cache = {}
         self.filter_phase, self.length_policy = filter_phase, length_policy
         self.progress, self.block_frames = progress or (lambda message: None), block_frames
         self.cache_hits = 0
 
+    def waveform(self, axis):
+        key = (axis.source, axis.low_pass, axis.high_pass, axis.filter_order)
+        if key not in self.waveform_cache:
+            if self.cached_values + self.count > MAX_CACHED_VALUES:
+                raise ValueError('Waveform-cache budget exceeded; shorten the excerpt')
+            info = self.infos[axis.source]
+            user_sos = filter_sos(axis, info.samplerate)
+            self.progress(f'Resampling signed waveform {axis.source.name}: '
+                          f'low-pass={axis.low_pass}, high-pass={axis.high_pass}')
+            self.waveform_cache[key] = sample_signed_waveform(
+                axis.source, self.clock, self.count, start=self.start, end=self.end,
+                sr=info.samplerate, frames=info.frames, user_sos=user_sos,
+                phase=self.filter_phase, block_frames=self.block_frames)
+        else:
+            self.cache_hits += 1
+        return self.waveform_cache[key]
+
     def envelope(self, axis):
+        if axis.mode == 'waveform':
+            return self.waveform(axis)
         if axis.fourier is not None:
             spec = axis.fourier
             key = (axis.source, spec.fft_size, spec.edges_hz)
@@ -316,7 +381,9 @@ class EnvelopeBank:
 
     @property
     def cached_values(self):
-        return self.count*(2*len(self.cache) + len(self.smoothing_cache)) + sum(v[0].size for v in self.fourier_cache.values())
+        return (self.count*(2*len(self.cache) + len(self.smoothing_cache)) +
+                sum(v[0].size for v in self.fourier_cache.values()) +
+                sum(v[0].size for v in self.waveform_cache.values()))
 
     def compose(self, axes, *, name='audio_recording', normalization='none', metadata=None,
                 normalization_reference='self', _data_only=False):
@@ -338,11 +405,16 @@ class EnvelopeBank:
             provenance.append(item)
         if normalization_reference not in ('self', 'peak'):
             raise ValueError('Normalization reference must be self or peak')
-        peaks = values.max(axis=0)
+        # Unlike rectified envelopes, waveforms can be entirely negative.
+        peaks = np.array([np.max(np.abs(values[:, j])) if a.mode == 'waveform'
+                          else np.max(values[:, j]) for j, a in enumerate(axes)])
         reference = peaks
         if normalization_reference == 'peak':
             from dataclasses import replace
-            reference = np.array([self.envelope(a if a.fourier is not None else replace(a, mode='peak'))[0].max() for a in axes])
+            refs = [self.envelope(a if a.fourier is not None or a.mode in ('peak', 'waveform')
+                                  else replace(a, mode='peak'))[0] for a in axes]
+            reference = np.array([np.max(np.abs(v)) if a.mode == 'waveform'
+                                  else np.max(v) for a, v in zip(axes, refs)])
         denominators = reference if normalization == 'per-axis' else np.full(len(axes), reference.max() if normalization == 'global' else 1.)
         for j, axis in enumerate(axes):
             scale = float(denominators[j])
@@ -354,12 +426,13 @@ class EnvelopeBank:
             else:
                 if not math.isfinite(scale) or scale <= 0:
                     raise ValueError('Normalization reference must be finite and positive for non-silent axes')
-                # Every DanceRudiments movement coordinate is bipolar.
-                # Existing normalization choices select the amplitude reference:
-                # 0 amplitude -> -1; selected reference -> +1.
-                # Signed gain is then applied so negative gain reverses the axis.
+                # Signed waveform coordinates retain polarity and zero at zero;
+                # rectified envelope/Fourier axes use the original affine map.
                 with np.errstate(over='ignore', invalid='ignore'):
-                    values[:, j] = (2.*(values[:, j]/scale)-1.)*axis.gain
+                    if axis.mode == 'waveform':
+                        values[:, j] = (values[:, j] / scale) * axis.gain
+                    else:
+                        values[:, j] = (2. * (values[:, j] / scale) - 1.) * axis.gain
                 clipped = int(np.count_nonzero(np.abs(values[:, j]) > 1))
             provenance[j].update(
                 normalization_divisor=scale,
@@ -368,13 +441,20 @@ class EnvelopeBank:
                 output_scale='bipolar',
                 output_range=[-1., 1.],
                 silent_axis=signal_peak <= 0,
+                output_mapping=('signed PCM / normalization reference; zero remains zero'
+                                if axis.mode == 'waveform' else
+                                '0 amplitude -> -1; normalization reference -> +1'),
             )
         values = np.round(np.clip(values, -1., 1.), 12)
         meta = dict(metadata or {})
         meta.update(producer='StemLab', axes=provenance, normalization=normalization,
                     normalization_reference=normalization_reference,
                     output_scale='bipolar', output_range=[-1., 1.],
-                    output_mapping='0 amplitude -> -1; selected normalization reference -> +1; signed gain applied after mapping; silent axes -> 0',
+                    output_mapping=('waveform: signed PCM/reference with zero at 0; '
+                                    'envelope/Fourier: 0 amplitude -> -1, reference -> +1; '
+                                    'gain and clipping after mapping; silent axes -> 0'
+                                    if any(a.mode == 'waveform' for a in axes) else
+                                    '0 amplitude -> -1; selected normalization reference -> +1; signed gain applied after mapping; silent axes -> 0'),
                     filter_phase=self.filter_phase, length_policy=self.length_policy,
                     requested_start_seconds=float(self.start), requested_end_seconds=float(self.end),
                     mean_definition='mean absolute amplitude across observed frames and channels',

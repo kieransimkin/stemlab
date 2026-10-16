@@ -274,3 +274,52 @@ def test_ambiguous_stems_and_unknown_axes(tmp_path):
         resolve_axes(p,catalogue,axes=['x=bass'])
     with pytest.raises(ValueError,match='unknown axes'):
         resolve_axes(p,catalogue,axes=['x=master'],low_pass=['typo=100'])
+
+
+def test_signed_waveform_and_envelope_composition(tmp_path):
+    sr = 8000
+    t = np.arange(sr * 2) / sr
+    p = audio(tmp_path, .5 * np.sin(2 * np.pi * 8 * t))
+    axes = [AxisSpec('signed', p, mode='waveform'),
+            AxisSpec('level', p, mode='average')]
+    r = extract_recording(axes, bpm=120, block_frames=17)
+    samples = np.asarray(r.samples)
+    assert samples[40:200, 0].min() < -.45
+    assert samples[40:200, 0].max() > .45
+    assert r.provenance['axes'][0]['output_mapping'].startswith('signed PCM')
+    assert r.provenance['axes'][1]['output_mapping'].startswith('0 amplitude')
+    assert r.provenance['axes'][0]['antialias_filter_order'] == 12
+    assert r.to_native().sample(r.clock.start_pip + 50) == list(r.samples[50])
+
+
+def test_cli_signed_waveform_saved_stem_and_master(tmp_path):
+    root, _ = saved(tmp_path)
+    from stemlab.cli import app
+    runner = CliRunner()
+    stem_out = tmp_path / 'stem-waveform'
+    result = runner.invoke(app, [
+        'record-rudiment', str(root), '--mode', 'waveform',
+        '--axis', 'x=test/bass', '--high-pass', 'x=12',
+        '--no-harness', '-o', str(stem_out),
+    ])
+    assert result.exit_code == 0, result.output
+    r = load_recording(stem_out / 'recordings/audio_recording.json')
+    assert r.dimensions == ('x',) and r.clock.bpm == 120
+    assert r.provenance['axes'][0]['high_pass'] == 12
+    assert json.loads((stem_out / 'report.json').read_text())['extraction_passes'] == 1
+    master_out = tmp_path / 'master-waveform'
+    result = runner.invoke(app, [
+        'record-rudiment', str(root / 'master.wav'), '--bpm', '120',
+        '--mode', 'waveform', '--axis', 'x=master', '--low-pass', 'x=35',
+        '--no-harness', '-o', str(master_out),
+    ])
+    assert result.exit_code == 0, result.output
+    r = load_recording(master_out / 'recordings/audio_recording.json')
+    assert r.provenance['axes'][0]['low_pass'] == 35
+    refused = tmp_path / 'invalid-waveform'
+    result = runner.invoke(app, [
+        'record-rudiment', str(root / 'master.wav'), '--bpm', '120',
+        '--mode', 'waveform', '--axis', 'x=master', '--high-pass', 'x=4000',
+        '--no-harness', '-o', str(refused),
+    ])
+    assert result.exit_code != 0 and not refused.exists()

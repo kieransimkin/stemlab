@@ -68,7 +68,7 @@ def export_single(master, output, axes, *, timing, normalization='none', name='a
         report = dict(schema='stemlab.rudiment-recording-run.v1', clock=asdict(bank.clock),
                       sources=[dict(name=p.name, sha256=h) for p, h in bank.hashes.items()],
                       candidates=[dict(name=r.name, dimensions=list(r.dimensions), file='recordings/'+r.name+'.json')],
-                      extraction_passes=len(bank.cache)+len(bank.fourier_cache), cached_values=bank.cached_values)
+                      extraction_passes=len(bank.cache)+len(bank.fourier_cache)+len(bank.waveform_cache), cached_values=bank.cached_values)
         if renderer:
             report['harness'] = renderer.build_recording_harness([r], stage/'index.html', audio=audio)
         bank.verify_sources()
@@ -245,7 +245,7 @@ def generate_batch(source, output, *, bpm=None, confirmed=False, beat_zero=None,
         if report['limit_reason'] is None:
             report['limit_reason'] = 'max_candidates' if len(report['candidates']) >= maximum else 'attempt_budget'
         report.update(total_values=int(total_values), attempts=attempts,
-                      extraction_passes=len(bank.cache), cache_hits=bank.cache_hits,
+                      extraction_passes=len(bank.cache)+len(bank.waveform_cache), cache_hits=bank.cache_hits,
                       cached_values=bank.cached_values,
                       candidate_count=len(report['candidates']), harness_file='index.html' if renderer else None)
         (stage/'report.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
