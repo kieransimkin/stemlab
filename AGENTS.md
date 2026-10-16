@@ -70,5 +70,15 @@ and static/server integration checks. Keep the five Arcadians pages plus the
 checksum-pinned The Truth is a Virus reference together. Require matching HTTP
 playback/grid QA for the reference before release/Pages publication. Its CI-built
 viewer consumes frozen real detections; never relabel those as fresh inference.
+The lightweight combined-site job must install FastAPI, required by the static
+timeline adapter's shared display helpers. Build the frozen beat reference in
+the early model-free preflight before expensive full-song inference.
 Demonstrations and screenshots on the artist website belong on the WordPress
 StemLab page, preserving its independent exact-payload public-save requirement.
+
+For lyric recovery, the speech mask is a speech-activity hypothesis and may
+remove singing. Compare the explicit full-audio mode when warranted, preserve
+the original evidence and source clock, retain repetition-safe decoding and
+keep canonical wording, observed anchors, the 70% threshold and listening QA
+authoritative. [Measured example and limits](docs/screenshots/lyric-input-comparison.png)
+illustrate the difference; word coverage is not acoustic accuracy.
