@@ -6,6 +6,12 @@ By **[Kieran Simkin](https://kieransimkin.co.uk/)** · [DanceFlow ecosystem](htt
 
 Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/
 
+The real-song reference timeline preserves its explicitly hash-pinned public
+detector JSON byte for byte, including newlines, on Windows and Linux. Generic
+exports still remove private paths. Container model weights and model-specific
+caches live under the owning project's ignored `/opt/stemlab/models/` directory;
+they are excluded from the build context and source/package artifacts.
+
 
 <!-- mcp-name: io.github.kieransimkin/stemlab -->
 

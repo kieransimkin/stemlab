@@ -43,6 +43,7 @@ def build(output: Path, source_commit: str, *, fixture: Path = FIXTURE):
         raise ValueError('Require an exact source commit')
     evidence, _ = verify_evidence(fixture)
     result = export_timeline(fixture, output, include_audio=True, source_commit=source_commit,
+        byte_exact_json={name: sha for name, sha in evidence['files'].items() if name.endswith('.json')},
         coverage={'status': 'saved-snapshot', 'recipe': 'reference-beat-analysis-v1',
                   'scope': 'Real frozen BeatThis/BeatNet master evidence and consensus; CI regenerates fits, pip offsets and this viewer. No other model-family completeness or artist BPM approval is claimed.',
                   'evidence_sha256': digest(fixture/'evidence.json'), 'evidence_files': evidence['files']})

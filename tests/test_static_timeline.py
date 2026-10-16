@@ -239,3 +239,17 @@ def test_content_revision_invalidates_stale_same_song_analysis(analysis, tmp_pat
     html = (tmp_path / 'second/index.html').read_text()
     assert 'assets/app.js?v=' + two['asset_revision'] in html
     assert 'assets/static-timeline.js?v=' + two['asset_revision'] in html
+
+
+def test_byte_exact_public_evidence_preserves_crlf_and_rejects_private_data(analysis, tmp_path):
+    relative = 'beats/consensus.json'
+    path = analysis / relative
+    raw = b'{"model":"synthetic","beats":[0,0.5,1,1.5]}\r\n'
+    path.write_bytes(raw)
+    export_timeline(analysis, tmp_path/'pinned', include_audio=True, byte_exact_json={relative: digest(path)})
+    assert (tmp_path/'pinned/data'/relative).read_bytes() == raw
+    with pytest.raises(ValueError, match='public-safe'):
+        export_timeline(analysis, tmp_path/'private', include_audio=True,
+                        byte_exact_json={'analysis.json': digest(analysis/'analysis.json')})
+    with pytest.raises(ValueError, match='hash'):
+        export_timeline(analysis, tmp_path/'tampered', include_audio=True, byte_exact_json={relative: 'a'*64})
