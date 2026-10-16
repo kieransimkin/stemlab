@@ -1,0 +1,23 @@
+{
+  "context": "Measured retained local runs; chart is analysis output, not a frontend screenshot",
+  "model": "Systran/faster-whisper-large-v3",
+  "revision": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+  "model_sha256": "69f74147e3334731bc3a76048724833325d2ec74642fb52620eda87352e3d4f1",
+  "rows": [
+    {
+      "label": "Public master A",
+      "speech_mask": 0.06182795698924731,
+      "full_audio": 0.8870967741935484
+    },
+    {
+      "label": "Public master B",
+      "speech_mask": 0.20253164556962025,
+      "full_audio": 0.9662447257383966
+    }
+  ],
+  "scope": "Two public masters, anonymized; audio and transcripts stay private",
+  "limits": "Word reconciliation coverage is not acoustic accuracy, complete line timing or listening approval. Missing lines remain unavailable.",
+  "video_omission": "The batch produces timestamp evidence rather than a visual performance. The measured chart and existing real timeline captures explain the result; a video of progress adds no useful evidence.",
+  "generated_illustration_omission": "Measured output is sufficient; a generated illustration would not establish evidence.",
+  "png_sha256": "90c1c361e1ef9eead5d8accacf8441f6ceb28da17937a51506209ed4dc3edac7"
+}

@@ -66,18 +66,21 @@ def isolate_and_transcribe(
     whisper_model: str = "large-v3",
     device: str = "auto",
     condition_on_previous_text: bool = False,
+    vad_mode: str = "speech",
+    language: str | None = None,
 ) -> dict[str, Any]:
-    """Use faster-whisper's Silero VAD to make a timeline-preserving spoken-word stem,
-    then run Whisper with word timestamps over that isolated stem.
-    """
+    """Transcribe a source-clock-preserving speech mask or full singing input."""
+    validate_speech_options(vad_mode, language)
     from faster_whisper import WhisperModel
-    from faster_whisper.vad import VadOptions, get_speech_timestamps
 
     output_dir.mkdir(parents=True, exist_ok=True)
     wav16, _ = load_audio(vocal_path, target_sr=16000, mono=True)
     mono = wav16[0].cpu().numpy().astype(np.float32)
-    vad_opts = VadOptions(min_silence_duration_ms=300, speech_pad_ms=120)
-    raw_regions = get_speech_timestamps(mono, vad_opts)
+    raw_regions = []
+    if vad_mode == "speech":
+        from faster_whisper.vad import VadOptions, get_speech_timestamps
+        vad_opts = VadOptions(min_silence_duration_ms=300, speech_pad_ms=120)
+        raw_regions = get_speech_timestamps(mono, vad_opts)
     regions = [
         {"start": r["start"] / 16000.0, "end": r["end"] / 16000.0, "start_sample": int(r["start"]), "end_sample": int(r["end"])}
         for r in raw_regions
@@ -85,7 +88,7 @@ def isolate_and_transcribe(
     write_json(output_dir / "speech_regions.json", regions)
 
     # Keep original timing so transcript/beat/session data share one time axis.
-    spoken = np.zeros_like(mono)
+    spoken = np.zeros_like(mono) if vad_mode == "speech" else mono.copy()
     fade = int(0.010 * 16000)
     for r in raw_regions:
         s, e = int(r["start"]), int(r["end"])
@@ -96,7 +99,7 @@ def isolate_and_transcribe(
             spoken[s:s+n] *= ramp
             spoken[e-n:e] *= ramp[::-1]
     import torch
-    spoken_path = output_dir / "spoken_word.wav"
+    spoken_path = output_dir / ("spoken_word.wav" if vad_mode == "speech" else "transcription_input.wav")
     save_audio(spoken_path, torch.from_numpy(spoken).unsqueeze(0), 16000)
     normalization = normalize_audio_file(spoken_path)
 
@@ -116,6 +119,7 @@ def isolate_and_transcribe(
         vad_filter=False,
         word_timestamps=True,
         condition_on_previous_text=condition_on_previous_text,
+        **({"language": language} if language else {}),
     )
     segments = []
     words = []
@@ -132,6 +136,10 @@ def isolate_and_transcribe(
     result = {
         "source_vocals": str(vocal_path),
         "spoken_word_wav": str(spoken_path),
+        "transcription_input_wav": str(spoken_path),
+        "vad_mode": vad_mode,
+        "speech_mask_applied": vad_mode == "speech",
+        "requested_language": language,
         "normalization": normalization,
         "model": whisper_model,
         "language": info.language,
@@ -157,3 +165,10 @@ def isolate_and_transcribe(
         for i, s in enumerate(segments, 1):
             f.write(f"{i}\n{_fmt_srt(s['start'])} --> {_fmt_srt(s['end'])}\n{s['text'].strip()}\n\n")
     return result
+
+
+def validate_speech_options(vad_mode: str, language: str | None) -> None:
+    if vad_mode not in {"speech", "full"}:
+        raise ValueError("Whisper VAD mode must be speech or full")
+    if language is not None and (not isinstance(language, str) or not re.fullmatch(r"[a-z]{2,3}", language)):
+        raise ValueError("Whisper language must be a lower-case two/three-letter language code")

@@ -80,7 +80,25 @@ Full-resolution spectrogram evidence stays in the `.npz`; the PNG renderer is bo
 stemlab repair-spectrograms "path\to\analysis-results"
 ```
 
+## Speech transcription
+
 The preferred vocal stem is passed through the Silero VAD implementation bundled with `faster-whisper`. Speech regions are used to create a timeline-preserving `spoken_word.wav` (non-speech is zeroed rather than concatenated), then Whisper is run with word timestamps. Outputs include `whisper.json`, `speech_regions.json`, `transcript.txt`, `transcript.srt`, and `words.tsv`.
+
+For singing, compare `--whisper-vad-mode full` when the speech mask removes
+musical vocal phrases. This retains every input sample in a separate normalized
+16 kHz mono `transcription_input.wav`; it does not concatenate regions or change
+source timestamps. The default remains `speech`. Optionally set
+`--whisper-language en` when the language is known. Saved evidence records the
+mode, whether a mask was applied and the requested language. The public Python
+API `isolate_and_transcribe(..., vad_mode="full", language="en")` also accepts
+an exact master mix or saved vocal stem and a local model-directory path.
+
+![Measured canonical-word matches for two retained local runs: speech masking gives 6.2 and 20.3 percent, while full audio gives 88.7 and 96.6 percent](docs/screenshots/lyric-input-comparison.png)
+
+These are measured word-reconciliation scores from the same pinned large-v3
+model, not acoustic accuracy or listening approval. Canonical wording stays
+locked; the 70% threshold and observed-anchor requirements still apply. A line
+with no observed timing remains a hold. [Chart context and hashes](docs/screenshots/lyric-input-comparison.json).
 
 Whisper runs in repetition-safe mode by default (`condition_on_previous_text=False`) to prevent a repeated syllable in one window contaminating later windows. `whisper.json` records that setting and includes repeated-token diagnostics. Use `--whisper-condition-on-previous-text` only for an explicit comparison run; a flagged transcript remains evidence requiring section-wise recovery or listening QA, not a trustworthy lyric source.
 
