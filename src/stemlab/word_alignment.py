@@ -16,7 +16,11 @@ TOKEN = re.compile(r"[\w]+(?:['’][\w]+)?", re.UNICODE)
 
 
 def normal(word):
-    return word.casefold().replace('’', "'")
+    # ASR word strings commonly retain trailing punctuation. Match one literal
+    # lexical word without changing its evidence or splitting a multiword stamp.
+    tokens = TOKEN.findall(word)
+    value = tokens[0] if len(tokens) == 1 else word
+    return value.casefold().replace('’', "'")
 
 
 def reconcile(text, observed, duration):
