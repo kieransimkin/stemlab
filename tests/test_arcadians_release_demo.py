@@ -14,6 +14,7 @@ import pytest
 import soundfile as sf
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts'))
 spec = importlib.util.spec_from_file_location('arcadians_release_builder', ROOT / 'scripts/build_arcadians_demo.py')
 builder = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = builder
