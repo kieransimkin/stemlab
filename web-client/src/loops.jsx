@@ -48,6 +48,10 @@ export function useAnalysisLoops(hash) {
         } else {
           if (!response.ok) throw new Error(`Loop report: HTTP ${response.status}`);
           const report = await response.json();
+          if (report.schema === 'stemlab.loop-availability.v1' && report.status === 'not-analysed') {
+            setSnapshot({report: null, error: '', note: report.reason});
+            return;
+          }
           if (report.schema !== "stemlab.loops.v1") throw new Error("Unsupported loop report schema");
           const signature = JSON.stringify(report);
           if (active && signature !== previous) {
@@ -74,6 +78,7 @@ export function useAnalysisLoops(hash) {
 export function LoopSummary({ state, hash }) {
   const report = state.report;
   if (state.error) return <p role="alert" className="stemlab-loop-summary">{state.error}</p>;
+  if (state.note) return <p className="stemlab-loop-summary">{state.note}</p>;
   if (!report) return <p className="stemlab-loop-summary">No loop report yet. New analyses discover loops automatically; for existing results run <code>stemlab loops RESULTS_DIR</code>.</p>;
   return <details className="stemlab-loop-summary" open={report.unresolved_sections.length > 0}>
     <summary>{report.loop_count} loop(s) · {report.unresolved_sections.length} unresolved section(s) · <a href={`/${hash}/deep/loops/loops.json`} target="_blank" rel="noopener">Sample report</a></summary>

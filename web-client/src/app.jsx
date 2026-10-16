@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createRoot } from "react-dom/client";
 import { TimelineSequence, formatTimelineTime, TIMELINE_DISPLAY_API_VERSION } from "react-timeline-sequence";
 import { groupAudioLanes } from "./audio-channels.js";
+import { beatGridComparison } from "./beat-offsets.js";
+import { BeatOffsetControls } from "./beat-offset-controls.jsx";
 if (TIMELINE_DISPLAY_API_VERSION !== 1) throw new Error("Install the shared timeline display-controls update before building StemLab");
 import "react-timeline-sequence/styles.css";
 import { LoopSummary, useAnalysisLoops } from "./loops";
@@ -220,17 +222,8 @@ async function laneFromFile(hash, file) {
   return { id, title: prettyPath(path), meta: `${extension || "file"} · ${Number(file.bytes || 0).toLocaleString()} bytes`, kind: "artifact", content: artifact(hash, path) };
 }
 
-function canonicalLayers(canonical, anchor, anchorSource, duration) {
+function canonicalLayers(canonical) {
   const lanes = [];
-  const bpm = Number(canonical?.bpm);
-  if (Number.isFinite(bpm) && bpm > 0) {
-    const markers = [];
-    if (Number.isFinite(anchor) && duration > 0) {
-      const interval = 60 / bpm;
-      for (let time = anchor, index = 0; time <= duration + 1e-7; time += interval, index += 1) markers.push({ time, emphasis: index === 0, label: `Canonical beat ${index + 1}` });
-    }
-    lanes.push({ id: "canonical:bpm", title: "Canonical BPM", meta: Number.isFinite(anchor) ? `${bpm} BPM · anchor ${anchor.toFixed(3)}s · ${anchorSource || "detected beat"}` : `${bpm} BPM · waiting for first detected beat`, kind: "canonical-bpm", height: 104, content: markers.length ? { type: "markers", items: markers } : { type: "artifact", note: `${bpm} BPM — grid will begin at the first detected beat` } });
-  }
   if (canonical?.lyrics) lanes.push({ id: "canonical:lyrics", title: "Canonical lyrics", meta: "known reference text", kind: "canonical-lyrics", height: 104, content: { type: "text", text: canonical.lyrics } });
   const timing = Array.isArray(canonical?.lyric_timing) ? canonical.lyric_timing : [];
   if (timing.length) lanes.push({ id: "canonical:timing", title: "Canonical lyric timing", meta: `${timing.length} timed lyric event${timing.length === 1 ? "" : "s"}`, kind: "canonical-timing", height: 104, content: { type: "blocks", items: timing.flatMap(event => {
@@ -238,8 +231,7 @@ function canonicalLayers(canonical, anchor, anchorSource, duration) {
     const end = Number(event.end);
     return Number.isFinite(start) && start >= 0 ? [{ start, end: Number.isFinite(end) && end > start ? end : start + 0.75, label: String(event.text || ""), className: "stemlab-canonical-lyric" }] : [];
   }) } });
-  const grid = lanes.find(lane => lane.id === "canonical:bpm")?.content?.items || [];
-  return { lanes, grid };
+  return { lanes };
 }
 
 function Log({ lines }) {
@@ -252,8 +244,9 @@ function StemLabTimeline({ hash, filename }) {
   const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState({ state: "submitted" });
   const [canonical, setCanonical] = useState({ bpm: null, lyrics: null, lyric_timing: [] });
-  const [anchor, setAnchor] = useState(null);
-  const [anchorSource, setAnchorSource] = useState(null);
+  const [beatOffsets, setBeatOffsets] = useState(null);
+  const [gridBasis, setGridBasis] = useState("canonical");
+  const [gridAnalysis, setGridAnalysis] = useState("consensus");
   const [logs, setLogs] = useState([]);
   const filesSeen = useRef(new Set());
 
@@ -278,17 +271,16 @@ function StemLabTimeline({ hash, filename }) {
     setStatus(state.status || { state: "submitted" });
     if (state.duration_seconds) setDuration(Number(state.duration_seconds));
     if (state.canonical) setCanonical(state.canonical);
-    const nextAnchor = state.first_detected_beat == null ? NaN : Number(state.first_detected_beat);
-    if (Number.isFinite(nextAnchor) && nextAnchor >= 0) {
-      setAnchor(nextAnchor);
-      setAnchorSource(state.first_detected_beat_source || "detected beat");
-    }
+    setBeatOffsets(state.beat_offsets || null);
     for (const file of state.files || []) void addFile(file);
   }, [addFile, hash]);
 
   useEffect(() => {
     filesSeen.current = new Set();
     setLanes([]);
+    setBeatOffsets(null);
+    setGridBasis("canonical");
+    setGridAnalysis("consensus");
     waveformLane(hash, "__source__", "MASTER · uploaded source", filename, "__source__").then(lane => {
       if (lane.duration) setDuration(lane.duration);
       setLanes(previous => [lane, ...previous.filter(item => item.id !== lane.id)]);
@@ -327,13 +319,18 @@ function StemLabTimeline({ hash, filename }) {
     };
   }, [addFile, appendLog, filename, hash, refresh]);
 
-  const references = useMemo(() => canonicalLayers(canonical, anchor, anchorSource, duration), [anchor, anchorSource, canonical, duration]);
+  const references = useMemo(() => canonicalLayers(canonical), [canonical]);
+  const comparison = useMemo(() => beatGridComparison(beatOffsets, canonical.bpm, duration, gridBasis, gridAnalysis), [beatOffsets, canonical.bpm, duration, gridBasis, gridAnalysis]);
   // File discovery is asynchronous. Keep the musical evidence above raw artifacts.
   const lanePriority = lane => lane.id === "__source__" ? 0
     : lane.kind === "deep-structure" ? 10 : lane.kind === "events" ? 20
     : lane.kind === "audio" ? 1 : lane.kind === "spectrogram" ? 30 : lane.kind === "waveform" ? 40 : 90;
   const displayLanes = useMemo(() => groupAudioLanes(lanes), [lanes]);
-  const allLanes = [...references.lanes, ...[...displayLanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
+  const gridLanes = comparison.basis ? [
+    { id: "canonical:bpm", title: "BPM grid · original", meta: `${comparison.basis.bpm.toFixed(4)} BPM · source time 0`, kind: "canonical-bpm", height: 74, content: { type: "markers", items: comparison.original } },
+    { id: "bpm:aligned", title: "BPM grid · offset", meta: comparison.row ? `${comparison.row.offset_pips.toFixed(6)} pips · ${comparison.analysis.analysis_id}` : "Waiting for detected first beat", kind: "canonical-bpm", height: 74, content: { type: "markers", items: comparison.aligned } },
+  ] : [];
+  const allLanes = [...gridLanes, ...references.lanes, ...[...displayLanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
   const state = status.state || "submitted";
   return <TimelineSequence
     className="stemlab-timeline"
@@ -345,11 +342,11 @@ function StemLabTimeline({ hash, filename }) {
     subtitle={hash}
     loops={loopState.loops}
     lanes={allLanes}
-    grid={references.grid}
+    grid={comparison.grid}
     onDurationChange={setDuration}
     onPlaybackError={error => appendLog("stderr", error instanceof Error ? error.message : String(error))}
     headerEnd={<><span className={`badge ${state}`}>{state}</span><span className="small">{allLanes.length} lane{allLanes.length === 1 ? "" : "s"}</span></>}
-    footer={<><LoopSummary state={loopState} hash={hash} /><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
+    footer={<><BeatOffsetControls comparison={comparison} onBasis={setGridBasis} onAnalysis={setGridAnalysis} /><LoopSummary state={loopState} hash={hash} /><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
   />;
 }
 

@@ -73,9 +73,11 @@ def public_value(value, root: Path):
         return None
     if isinstance(value, str):
         # Absolute paths inside this analysis become relative artifact references.
-        prefix = str(root.resolve()) + '/'
-        if value.startswith(prefix):
-            return value[len(prefix):]
+        # pathlib uses backslashes on Windows; return portable relative references.
+        prefix = root.resolve().as_posix() + '/'
+        portable = value.replace('\\', '/')
+        if portable.startswith(prefix):
+            return portable[len(prefix):]
         if value.startswith(('/', '\\')) or re.match(r'^[A-Za-z]:[\\/]', value):
             return '[local path omitted]'
     return value
@@ -107,7 +109,8 @@ def adapt_bundle(source: str) -> tuple[str, int]:
 
 
 def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
-                    source_commit: str = '', coverage: dict | None = None) -> dict:
+                    source_commit: str = '', coverage: dict | None = None,
+                    byte_exact_json: dict[str, str] | None = None) -> dict:
     """Export to a NEW directory; explicit audio inclusion authorizes local copying.
 
     Generic snapshots may be incomplete and are labelled as such. Arcadians'
@@ -119,6 +122,14 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
     if not include_audio:
         raise ValueError('Use --include-audio to explicitly include source/stem audio and lyrics')
     results, output = Path(results).resolve(), Path(output).absolute()
+    byte_exact_json = byte_exact_json or {}
+    if not isinstance(byte_exact_json, dict) or len(byte_exact_json) > 128:
+        raise ValueError('Byte-exact evidence requires a bounded explicit hash inventory')
+    for relative, expected in byte_exact_json.items():
+        path = safe_file(results, relative)
+        value = read_json(path)
+        if (path.suffix != '.json' or digest(path) != expected or public_value(value, results) != value):
+            raise ValueError('Byte-exact JSON must match its hash and already be public-safe: ' + relative)
     if output.exists() or output.is_symlink():
         raise FileExistsError('Timeline output must be a new directory')
     if output.resolve().is_relative_to(results):
@@ -144,7 +155,14 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
             routes[key] = relative
         def json_artifact(relative, value):
             name = 'data/' + relative
-            write_json(stage / name, public_value(value, results))
+            if relative in byte_exact_json:
+                path = safe_file(results, relative)
+                if digest(path) != byte_exact_json[relative] or read_json(path) != value:
+                    raise ValueError('Byte-exact evidence changed during export: ' + relative)
+                (stage/name).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(path, stage/name)
+            else:
+                write_json(stage / name, public_value(value, results))
             route(f'/{sha}/{relative}', name)
         def audio_artifact(relative, path, name):
             destination = stage / name
@@ -219,17 +237,22 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
                     route(f'/{sha}/deep/loops/{loop["file"]}', name)
                 loop_count += 1
         first, detector = _first_detected_beat(results)
+        from .analysis.beat_offsets import timeline_beat_offsets
         snapshot = dict(hash=sha, duration_seconds=info['duration_seconds'], files=rows,
                         status={'state': 'completed_with_errors' if errors else 'completed',
                                 'error_count': len(errors), 'message': coverage['scope']},
-                        canonical=public_value(canonical, results), first_detected_beat=first,
+                        canonical=public_value(canonical, results),
+                        beat_offsets=public_value(timeline_beat_offsets(results, canonical.get('bpm')), results),
+                        first_detected_beat=first,
                         first_detected_beat_source=detector, source_url=audio_name)
         write_json(stage / 'data/timeline.json', snapshot)
-        write_json(stage / 'data/canonical.json', snapshot['canonical'])
+        json_artifact('canonical.json', snapshot['canonical'])
         route(api + '/timeline', 'data/timeline.json')
         route(api + '/canonical', 'data/canonical.json')
         # An absent loop report remains absent, never fabricated as "zero loops".
         if not loop_report.exists():
+            write_json(stage/'data/loops-unavailable.json', {'schema': 'stemlab.loop-availability.v1',
+                'status': 'not-analysed', 'reason': 'Loop discovery was not run in this retained analysis. No zero-loop result is asserted.'})
             route(f'/{sha}/deep/loops/loops.json', 'data/loops-unavailable.json')
         (stage / 'assets').mkdir()
         for name in ('style.css', 'timeline.css', 'arcadians-cover.jpg', 'arcadians-reference.json', 'static-timeline.js'):

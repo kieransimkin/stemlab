@@ -61,11 +61,13 @@ def public_files(site: Path) -> list[Path]:
     files = []
     total = 0
     timeline_files = set()
-    timeline_root = site / 'timeline/arcadians'
     if (site / 'timeline').exists():
         from stemlab.static_timeline import verify_snapshot
-        verify_snapshot(timeline_root)
-        timeline_files = {p.relative_to(site).as_posix() for p in timeline_root.rglob('*') if p.is_file()}
+        for name in ('arcadians', 'the-truth-is-a-virus'):
+            timeline_root = site/'timeline'/name
+            if timeline_root.exists():
+                verify_snapshot(timeline_root)
+                timeline_files.update(p.relative_to(site).as_posix() for p in timeline_root.rglob('*') if p.is_file())
     timeline_dirs = {str(Path(name).parent).replace('\\', '/') for name in timeline_files}
     for directory in list(timeline_dirs):
         timeline_dirs.update(p.as_posix() for p in Path(directory).parents if str(p) != '.')
@@ -288,6 +290,9 @@ def verify_site(site: Path, *, expected_sha256: str = ARCADIANS_SHA256,
             raise ValueError('Fourier gallery provenance mismatch')
     if not (site / '.nojekyll').is_file() or not (site / 'index.html').is_file():
         raise ValueError('Missing Pages entry point')
+    if (site/'timeline/the-truth-is-a-virus').exists():
+        from build_beat_example import verify_example
+        verify_example(site/'timeline/the-truth-is-a-virus', provenance['stemlab_commit'])
     return dict(files=len(files), total_bytes=sum(p.stat().st_size for p in files), candidates=count,
                 audio_sha256=expected_sha256, audio_included=True)
 

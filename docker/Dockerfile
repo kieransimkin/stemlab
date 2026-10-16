@@ -25,8 +25,10 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     PYTHONUNBUFFERED=1 \
     STEMLAB_BUILD_REF=${STEMLAB_BUILD_REF} \
-    HF_HOME=/root/.cache/huggingface \
-    TORCH_HOME=/root/.cache/torch \
+    HF_HOME=/opt/stemlab/models/huggingface \
+    TORCH_HOME=/opt/stemlab/models/torch \
+    XDG_CACHE_HOME=/opt/stemlab/models/cache \
+    STEMLAB_CACHE=/opt/stemlab/models/stemlab \
     VAMP_PATH=/root/.vamp
 
 RUN apt-get -o Acquire::Retries=3 update \

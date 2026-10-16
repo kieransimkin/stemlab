@@ -9,6 +9,7 @@ from typing import Any, Callable
 from urllib.parse import quote
 
 from .canonical import load_canonical, save_canonical
+from .analysis.beat_offsets import timeline_beat_offsets
 
 try:
     from fastapi import FastAPI, HTTPException, Request
@@ -293,13 +294,15 @@ def install_routes(
             pass
 
         first_beat, first_beat_source = _first_detected_beat(root)
+        canonical = load_canonical(root)
         return {
             "hash": song_hash,
             "status": scheduler_provider().status(song_hash),
             "duration_seconds": duration_seconds,
             "source_url": f"/api/{song_hash}/source",
             "files": files,
-            "canonical": load_canonical(root),
+            "canonical": canonical,
+            "beat_offsets": timeline_beat_offsets(root, canonical.get('bpm')),
             "first_detected_beat": first_beat,
             "first_detected_beat_source": first_beat_source,
         }

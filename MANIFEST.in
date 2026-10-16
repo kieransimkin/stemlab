@@ -22,6 +22,10 @@ include scripts/benchmark_evidence_corpus.py
 
 recursive-include docs/branding *.svg *.png *.md
 include AGENTS.md CONTRIBUTING.md
+include docs/beat-offsets.md
+include scripts/build_beat_example.py scripts/beat_offset_browser_checks.py
+recursive-include examples/the-truth-is-a-virus *.json *.md *.mp3
+include docs/screenshots/beat-offsets-truth.png docs/screenshots/fourier-bands-arcadians.png
 
 include docs/rudiment-recordings.md
 include docs/screenshots/recording-comparison.png

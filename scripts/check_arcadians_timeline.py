@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 from arcadians_http import ProjectHandler, _byte_range
 from check_arcadians_audio import verify_audio_ranges
 from timeline_display_checks import expected_display_layout, check_display_controls
+from beat_offset_browser_checks import check_beat_offset_controls
 from stemlab.static_timeline import digest, read_json, verify_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -98,6 +99,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 audio = page.locator('audio').first
                 assert audio.evaluate('(a)=>a.paused && !a.autoplay')
                 report['no_autoplay'] = True
+                stage = 'Original and offset BPM grids'
+                report['beat_offsets'] = check_beat_offset_controls(page, state)
                 duration = audio.evaluate('(a)=>a.duration')
                 assert abs(duration - snapshot['duration_seconds']) < .2
                 stage = 'Full-song play/pause and audio clock'
@@ -196,6 +199,9 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 raise
             finally:
                 browser.close()
+                report['browser_cleanup'] = dict(close_acknowledged=True, connected=browser.is_connected(),
+                                                contexts=len(browser.contexts))
+                assert not browser.is_connected() and not browser.contexts
     except Exception as exc:
         report.setdefault('error', str(exc))
         report.setdefault('stage', stage)

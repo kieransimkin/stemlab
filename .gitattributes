@@ -5,6 +5,10 @@
 # Canonical lyric timing files are byte-sensitive reference assets.
 examples/arcadians/*.lrc binary
 
+# Frozen detector evidence is byte-pinned, including its original newlines.
+examples/the-truth-is-a-virus/*.json -text
+examples/the-truth-is-a-virus/beats/*.json -text
+
 # Keep original DanceFlow artwork byte-identical across platform packages.
 **/branding/*.svg text eol=lf
 **/branding/*.png binary

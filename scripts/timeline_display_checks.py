@@ -50,7 +50,10 @@ def expected_display_layout(state: dict, snapshot: dict, analysis: dict) -> dict
                             + int('png' in kinds and 'spec' not in kinds)
                             for kinds in groups.values())
     canonical = state.get('canonical', {})
-    count += sum(bool(canonical.get(key)) for key in ('bpm', 'lyrics', 'lyric_timing'))
+    count += sum(bool(canonical.get(key)) for key in ('lyrics', 'lyric_timing'))
+    bases = state.get('beat_offsets', {}).get('bpm_bases', [])
+    if canonical.get('bpm') or any(row.get('status') == 'available' for row in bases):
+        count += 2  # source-zero and independently offset BPM grids
     count += int(snapshot.get('loop_count', 0) > 0)
     paired = [key for key, kinds in groups.items() if {'wave', 'spec'} <= kinds]
     return {'lane_count': count, 'audio_count': sum(bool(k & {'wave', 'spec'}) for k in groups.values()),
@@ -65,6 +68,7 @@ def set_range(locator, value):
 
 
 def check_display_controls(page, *, paired_count: int) -> dict:
+    from playwright.sync_api import expect
     audio = page.locator('audio').first
     paused = audio.evaluate('(a)=>a.paused')
     before = audio.evaluate('(a)=>a.currentTime')
@@ -77,12 +81,13 @@ def check_display_controls(page, *, paired_count: int) -> dict:
     lane.scroll_into_view_if_needed()
     selector = lane.locator('select')
     for mode, wave_count, spec_count in (('waveform', 1, 0), ('spectrogram', 0, 1), ('both', 1, 1)):
-        if selector.locator(f'option[value={mode}]').is_disabled():
+        # OPTION.disabled is the native UI state; avoids engine differences in
+        # accessibility disabled-state matching for native select options.
+        if selector.locator(f'option[value={mode}]').evaluate('(option)=>option.disabled'):
             continue
         selector.select_option(mode)
-        page.wait_for_timeout(70)
-        assert lane.locator('canvas.rts-waveform').count() == wave_count
-        assert lane.locator('img.rts-image').count() == spec_count
+        expect(lane.locator('.rts-waveform')).to_have_count(wave_count, timeout=10000)
+        expect(lane.locator('img.rts-image')).to_have_count(spec_count, timeout=10000)
     height = lane.locator('input[type=range]')
     initial = int(height.input_value())
     # Keep the lane in view and drive the actual DOM wheel event path. Chromium's

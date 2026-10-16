@@ -35,6 +35,10 @@ on:
       - 'scripts/check_arcadians_timeline.py'
       - 'scripts/assemble_arcadians_site.py'
       - 'src/stemlab/static_timeline.py'
+      - 'src/stemlab/analysis/beat_offsets.py'
+      - 'scripts/build_beat_example.py'
+      - 'scripts/beat_offset_browser_checks.py'
+      - 'examples/the-truth-is-a-virus/**'
       - 'src/stemlab/web/**'
       - 'tests/test_static_timeline.py'
       - 'tests/test_arcadians_timeline.py'
@@ -74,7 +78,7 @@ jobs:
         run: python -m ruff check src tests scripts
       - name: Test static timeline, completeness validation, HTTP and publication
         run: |
-          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py tests/test_arcadians_runtime.py tests/test_beat_inputs.py tests/test_beat_consensus.py tests/test_viewer_controls.py
+          python -m pytest tests/test_static_timeline.py tests/test_arcadians_timeline.py tests/test_arcadians_http.py tests/test_arcadians_pages_publish.py tests/test_arcadians_runtime.py tests/test_beat_inputs.py tests/test_beat_consensus.py tests/test_viewer_controls.py tests/test_beat_offsets.py tests/test_beat_reference.py
 
   timeline:
     if: github.event_name != 'pull_request'
@@ -192,7 +196,14 @@ jobs:
             --timeline timeline-site --qa dist/timeline-qa/arcadians-timeline-browser.json \
             --source-sha "$GITHUB_SHA"
           cp dist/timeline-qa/arcadians-timeline-browser.json dist/arcadians-timeline-browser.json
-      - name: Require matching HTTP QA for the complete five-viewer site
+      - name: Build and browser-test The Truth is a Virus beat reference
+        # The reference is generated from frozen real detections, not synthetic beats.
+        run: |
+          python scripts/build_beat_example.py --output dist/arcadians-pages/timeline/the-truth-is-a-virus \
+            --source-commit "$GITHUB_SHA"
+          python scripts/check_arcadians_timeline.py dist/arcadians-pages/timeline/the-truth-is-a-virus \
+            --report dist/truth-beat-browser.json
+      - name: Require matching HTTP QA for both timelines and all Fourier resolutions
         run: |
           python scripts/publish_arcadians_pages.py verify --site dist/arcadians-pages \
             --qa dist/arcadians-audio-browser.json --source-sha "$GITHUB_SHA"
@@ -221,6 +232,8 @@ jobs:
             dist/arcadians-comparison.png
             dist/arcadians-audio-browser.json
             dist/arcadians-timeline-browser.json
+            dist/truth-beat-browser.json
+            dist/truth-beat-browser.png
             dist/arcadians-stems-audio-browser.json
             dist/arcadians-averages-audio-browser.json
             dist/arcadians-stems-comparison.png

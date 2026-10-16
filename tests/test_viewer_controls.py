@@ -15,7 +15,7 @@ def test_layout_combines_master_and_stems_but_retains_beats():
         'spectrograms/model/drums.npz', 'spectrograms/model/drums.png',
         'beats/beatnet.json', 'beats/beatnet__model-drums.json')]
     result = expected_display_layout({'files': files, 'canonical': {'bpm': 145}}, {}, {})
-    assert result['lane_count'] == 5  # master, drums, two detectors, canonical BPM
+    assert result['lane_count'] == 6  # master, drums, two detectors, original/offset BPM grids
     assert result['paired_count'] == 2
     assert result['audio_count'] == 2
 

@@ -126,7 +126,26 @@ def verify_artifacts(site: Path, qa_path: Path, source_sha: str) -> dict:
                        qa_path.with_name('arcadians-timeline-browser.json'), source_sha)
     verify_pair_artifacts(site, qa_path.parent, source_sha)
     verify_fourier_artifacts(site, qa_path.parent, source_sha)
+    verify_reference_artifacts(site, qa_path.parent, source_sha)
     return dict(verified, source_sha=source_sha, browser_qa='passed', timeline_qa='passed', pair_galleries_qa='passed')
+
+
+def verify_reference_artifacts(site: Path, qa_dir: Path, source_sha: str) -> None:
+    from build_beat_example import SOURCE_SHA, SLUG, verify_example
+    timeline = site/'timeline'/SLUG
+    verify_example(timeline, source_sha)
+    qa = json.loads((qa_dir/'truth-beat-browser.json').read_text(encoding='utf-8'))
+    required = ('no_autoplay', 'play_pause', 'seek', 'audio_clock', 'zoom_fit',
+                'images_loaded', 'all_expected_lanes', 'no_backend_requests')
+    if (qa.get('format') != 'stemlab.timeline-browser-check' or qa.get('status') != 'passed'
+            or qa.get('mode') != 'http-project-pages-prefix'
+            or qa.get('source_sha256') != SOURCE_SHA
+            or qa.get('snapshot_sha256') != digest(timeline/'snapshot.json')
+            or any(qa.get(key) is not True for key in required)
+            or qa.get('beat_offsets', {}).get('status') != 'passed'
+            or qa['beat_offsets'].get('comparisons_checked') != 6
+            or any(qa.get(key) != [] for key in ('page_errors', 'bad_responses', 'external_requests'))):
+        raise ValueError('Reference beat example requires matching real HTTP playback and offset-grid QA')
 
 
 def verify_fourier_artifacts(site: Path, qa_dir: Path, source_sha: str) -> None:
@@ -205,6 +224,9 @@ def verify_live(base_url: str, site: Path, source_sha: str, *, attempts: int = 1
                 raise ValueError('The public MP3 is unavailable or does not honour byte ranges')
             if (site / 'timeline/arcadians').is_dir():
                 verify_live_timeline(base, site / 'timeline/arcadians', source_sha)
+            if (site/'timeline/the-truth-is-a-virus').is_dir():
+                verify_live_timeline(base, site/'timeline/the-truth-is-a-virus', source_sha,
+                                     name='the-truth-is-a-virus')
             for name in GALLERIES:
                 if (site/name).exists():
                     verify_live_pair(base, site/name, name, source_sha)
@@ -249,11 +271,13 @@ def verify_live_pair(base: str, gallery: Path, name: str, source_sha: str) -> No
         raise ValueError('Public pair gallery audio is not seekable')
 
 
-def verify_live_timeline(base: str, timeline: Path, source_sha: str) -> None:
+def verify_live_timeline(base: str, timeline: Path, source_sha: str, *, name='arcadians') -> None:
     snapshot = json.loads((timeline / 'snapshot.json').read_text(encoding='utf-8'))
     if snapshot['source_commit'] != source_sha:
         raise ValueError('Timeline export is stale')
-    prefix = base.rstrip('/') + '/timeline/arcadians/'
+    if name not in ('arcadians', 'the-truth-is-a-virus'):
+        raise ValueError('Unknown public timeline')
+    prefix = base.rstrip('/') + '/timeline/'+name+'/'
     for name in ('index.html', 'snapshot.json', 'data/timeline.json', 'assets/app.js',
                  'assets/static-timeline.js', 'assets/style.css', 'assets/timeline.css'):
         status, _, data = public_request(prefix + name)
