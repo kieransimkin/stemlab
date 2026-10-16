@@ -20,6 +20,8 @@ def test_speech_mask_and_full_music_keep_source_clock_and_decoder_settings(tmp_p
     torch.from_numpy = lambda values: SimpleNamespace(unsqueeze=lambda axis: values)
     monkeypatch.setitem(sys.modules, "torch", torch)
     faster = ModuleType("faster_whisper")
+    audio = ModuleType("faster_whisper.audio")
+    audio.decode_audio = lambda path, sampling_rate: original.copy()
     vad = ModuleType("faster_whisper.vad")
     vad.VadOptions = lambda **kwargs: kwargs
     def detect(*args):
@@ -35,6 +37,13 @@ def test_speech_mask_and_full_music_keep_source_clock_and_decoder_settings(tmp_p
     faster.WhisperModel = Model
     monkeypatch.setitem(sys.modules, "faster_whisper", faster)
     monkeypatch.setitem(sys.modules, "faster_whisper.vad", vad)
+    monkeypatch.setitem(sys.modules, "faster_whisper.audio", audio)
+    if mode == "full":
+        soundfile = ModuleType("soundfile")
+        soundfile.write = lambda path, values, rate, **kwargs: saved.update(path=path, values=values, rate=rate)
+        monkeypatch.setitem(sys.modules, "soundfile", soundfile)
+        # Full-mode decoding and writing must not import Torch at all.
+        monkeypatch.setitem(sys.modules, "torch", None)
     result = speech.isolate_and_transcribe(tmp_path/"input.wav", tmp_path/"out",
         whisper_model="/project/models/pinned-whisper", device="cpu", vad_mode=mode, language="en")
     assert len(saved["values"]) == len(original)
@@ -48,7 +57,7 @@ def test_speech_mask_and_full_music_keep_source_clock_and_decoder_settings(tmp_p
         np.testing.assert_array_equal(saved["values"], original)
         assert not vad_calls
         assert result["regions"] == []
-        assert saved["path"].name == "transcription_input.wav"
+        assert saved["path"].endswith("transcription_input.wav")
     else:
         assert vad_calls == [True]
         assert np.all(saved["values"][:320] == 0)

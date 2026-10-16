@@ -26,22 +26,30 @@ def _bic(sse: float, n: int, parameters: int) -> float:
     return n * math.log(max(1e-10, sse / max(1, n))) + parameters * math.log(max(2, n))
 
 
-def constant_beat_fit(beat_times: np.ndarray) -> dict[str, Any] | None:
+def constant_beat_fit(beat_times: np.ndarray, *, beat_indexes=None) -> dict[str, Any] | None:
     """Fit one fixed-period grid and quantify how precisely beats align to it."""
     if beat_times.size < 3:
         return None
     indexes = np.arange(beat_times.size, dtype=np.float64)
+    if beat_indexes is not None:
+        indexes = np.asarray(beat_indexes, dtype=np.float64)
+        if (indexes.shape != beat_times.shape or not np.all(np.isfinite(indexes))
+                or np.any(indexes != np.rint(indexes)) or np.any(np.diff(indexes) <= 0)):
+            raise ValueError('Beat indexes must be finite, strictly increasing integer ordinals')
+        indexes = indexes - indexes[0]
+        if indexes[-1] > 2**31 - 1:
+            raise ValueError('Beat index span exceeds the supported bound')
     period, phase = np.polyfit(indexes, beat_times, 1)
     if period <= 0:
         return None
     predicted = phase + period * indexes
     residual_ms = (beat_times - predicted) * 1000.0
     absolute_ms = np.abs(residual_ms)
-    interval_error_ms = np.abs(np.diff(beat_times) - period) * 1000.0
+    interval_error_ms = np.abs(np.diff(beat_times) - period * np.diff(indexes)) * 1000.0
     p95_ms = float(np.percentile(absolute_ms, 95))
     p95_fraction = p95_ms / (period * 1000.0)
     end_drift_ms = float(
-        (beat_times[-1] - (beat_times[0] + period * (beat_times.size - 1))) * 1000.0
+        (beat_times[-1] - (beat_times[0] + period * indexes[-1])) * 1000.0
     )
     if p95_fraction <= 0.02 and abs(end_drift_ms) <= period * 50.0:
         grade = "tight"
@@ -70,6 +78,36 @@ def constant_beat_fit(beat_times: np.ndarray) -> dict[str, Any] | None:
             "with end-drift guards for tight/good"
         ),
     }
+
+
+def missing_detection_fit(beat_times: np.ndarray) -> dict[str, Any] | None:
+    """Interpret integer detection gaps without adding any observed beat events."""
+    times = np.asarray(beat_times, dtype=np.float64)
+    if times.ndim != 1 or times.size < 3 or not np.all(np.isfinite(times)):
+        return None
+    intervals = np.diff(times)
+    if np.any(intervals <= 0):
+        return None
+    reference = float(np.median(intervals))
+    steps = np.maximum(1, np.rint(intervals / reference))
+    indexes = np.r_[0, np.cumsum(steps)]
+    if indexes[-1] > 2**31 - 1:
+        return None
+    missing = int(indexes[-1] + 1 - times.size)
+    if not missing:
+        return None
+    result = constant_beat_fit(times, beat_indexes=indexes)
+    if result is None:
+        return None
+    period = result['fitted_period_ms'] / 1000
+    anchored_p95 = float(np.percentile(np.abs(times - (times[0] + period * indexes)), 95))
+    result.update(index_method='inferred integer gaps from median observed interval',
+                  inferred_beat_indexes=indexes.astype(int).tolist(), inferred_missing_beats=missing,
+                  first_anchored_p95_error_ms=round(anchored_p95 * 1000, 3),
+                  first_anchored_p95_fraction_of_beat=anchored_p95 / period,
+                  observed_timestamps_unchanged=True,
+                  policy='Inferred ordinal gaps are hypotheses, not newly detected beats or musical metre/downbeat approval.')
+    return result
 
 
 def _fit_models(values: np.ndarray, minimum: int) -> dict[str, Any]:

@@ -80,13 +80,21 @@ Full-resolution spectrogram evidence stays in the `.npz`; the PNG renderer is bo
 stemlab repair-spectrograms "path\to\analysis-results"
 ```
 
+Beat-grid comparison also retains an explicit inferred-index hypothesis when
+saved detections skip whole beats. It reuses the constant-grid fitter with
+integer gaps, preserving every observed timestamp and the raw half/double-time
+tempo. A poor sequential fit is replaced only by a better first-anchored gap
+fit within the existing error guard; both fits remain in the comparison report.
+Missing detections are not newly detected beats or canonical approval.
+
 ## Speech transcription
 
 The preferred vocal stem is passed through the Silero VAD implementation bundled with `faster-whisper`. Speech regions are used to create a timeline-preserving `spoken_word.wav` (non-speech is zeroed rather than concatenated), then Whisper is run with word timestamps. Outputs include `whisper.json`, `speech_regions.json`, `transcript.txt`, `transcript.srt`, and `words.tsv`.
 
 For singing, compare `--whisper-vad-mode full` when the speech mask removes
 musical vocal phrases. This retains every input sample in a separate normalized
-16 kHz mono `transcription_input.wav`; it does not concatenate regions or change
+16 kHz mono `transcription_input.wav` using faster-whisper's own PyAV decoder;
+this full-audio path needs no Torch import. It does not concatenate regions or change
 source timestamps. The default remains `speech`. Optionally set
 `--whisper-language en` when the language is known. Saved evidence records the
 mode, whether a mask was applied and the requested language. The public Python

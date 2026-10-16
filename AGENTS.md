@@ -59,7 +59,10 @@ API in the recording CI job when changing this feature.
 detector/source runs and raw consensus tempo. Keep half/double-time interpretations
 normal and explicit; do not fabricate beats or approve a new BPM/phase. Reuse
 `constant_beat_fit` for the separately labelled estimated grid, including its
-end-drift guards. Keep 64-pip offsets distinct from 16-tick browser clocks, exact
+end-drift guards. Preserve sequential and inferred integer-gap hypotheses when
+missing detections explain a poor fit; never add timestamps or relabel inferred
+ordinals as detections. Require the first-anchored error guard before selecting
+that fitted hypothesis. Keep 64-pip offsets distinct from 16-tick browser clocks, exact
 fractional offsets distinct from integer rounding, and beat phase distinct from
 audio/lyric/cue/recording source time.
 
@@ -82,3 +85,6 @@ the original evidence and source clock, retain repetition-safe decoding and
 keep canonical wording, observed anchors, the 70% threshold and listening QA
 authoritative. [Measured example and limits](docs/screenshots/lyric-input-comparison.png)
 illustrate the difference; word coverage is not acoustic accuracy.
+Full-audio transcription uses faster-whisper's own decoder and NumPy/file
+writing without importing Torch. Preserve this route and its no-Torch test;
+automatic device selection queries the actual CTranslate2 backend.

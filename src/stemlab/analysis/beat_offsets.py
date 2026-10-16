@@ -12,7 +12,7 @@ import re
 import tempfile
 
 from stemlab.beats.common import tempo_from_beats
-from stemlab.analysis.tempo_regimes import constant_beat_fit
+from stemlab.analysis.tempo_regimes import constant_beat_fit, missing_detection_fit
 from stemlab.cues import CueSnapConfig, _json, load_grid, select_grid
 from stemlab.util import sha256_file
 
@@ -169,6 +169,15 @@ def compare_beat_offsets(results: Path, *, canonical_bpm=None, audio: Path | Non
                 detector=metadata.get('detector', model), input_source=metadata.get('source'), warnings=grid.warnings)
             import numpy as np
             record['constant_grid_fit'] = constant_beat_fit(np.asarray(grid.times, dtype=float))
+            gap_fit = missing_detection_fit(np.asarray(grid.times, dtype=float))
+            if gap_fit is not None:
+                record['sequential_grid_fit'] = record['constant_grid_fit']
+                record['missing_detection_fit'] = gap_fit
+                previous_fit = record['constant_grid_fit'] or {}
+                if (previous_fit.get('precision_grade') == 'poor'
+                        and gap_fit['precision_grade'] != 'poor'
+                        and gap_fit['first_anchored_p95_fraction_of_beat'] <= .1):
+                    record['constant_grid_fit'] = gap_fit
             if model == 'consensus':
                 combined_fit = record['constant_grid_fit']
                 combined_bpm = _bpm(data.get('tempo_bpm'))
@@ -194,7 +203,7 @@ def compare_beat_offsets(results: Path, *, canonical_bpm=None, audio: Path | Non
              dict(id='combined_family', bpm=float(family_bpm) if family_bpm is not None else None,
                   source='closest half/same/double metrical interpretation of the combined estimate',
                   multiplier=family.get('closest_multiplier'), status='available' if family_bpm is not None else 'unavailable'),
-             dict(id='combined_fit', bpm=fitted_bpm, source='existing constant_beat_fit on unchanged consensus timestamps',
+             dict(id='combined_fit', bpm=fitted_bpm, source='constant_beat_fit on unchanged consensus timestamps; eligible inferred detection gaps are explicitly retained',
                   fit=combined_fit, status='available' if fitted_bpm is not None else 'unavailable')]
     for record in records:
         record['tempo_family'] = tempo_family(record.get('detector_bpm'), canonical_bpm)

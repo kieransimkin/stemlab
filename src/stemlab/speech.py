@@ -74,8 +74,12 @@ def isolate_and_transcribe(
     from faster_whisper import WhisperModel
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    wav16, _ = load_audio(vocal_path, target_sr=16000, mono=True)
-    mono = wav16[0].cpu().numpy().astype(np.float32)
+    if vad_mode == "full":
+        from faster_whisper.audio import decode_audio
+        mono = decode_audio(str(vocal_path), sampling_rate=16000).astype(np.float32)
+    else:
+        wav16, _ = load_audio(vocal_path, target_sr=16000, mono=True)
+        mono = wav16[0].cpu().numpy().astype(np.float32)
     raw_regions = []
     if vad_mode == "speech":
         from faster_whisper.vad import VadOptions, get_speech_timestamps
@@ -98,15 +102,19 @@ def isolate_and_transcribe(
             ramp = np.linspace(0.0, 1.0, n, dtype=np.float32)
             spoken[s:s+n] *= ramp
             spoken[e-n:e] *= ramp[::-1]
-    import torch
     spoken_path = output_dir / ("spoken_word.wav" if vad_mode == "speech" else "transcription_input.wav")
-    save_audio(spoken_path, torch.from_numpy(spoken).unsqueeze(0), 16000)
+    if vad_mode == "full":
+        import soundfile as sf
+        sf.write(str(spoken_path), spoken, 16000, subtype="FLOAT")
+    else:
+        import torch
+        save_audio(spoken_path, torch.from_numpy(spoken).unsqueeze(0), 16000)
     normalization = normalize_audio_file(spoken_path)
 
     if device == "auto":
         try:
-            import torch as _torch
-            fw_device = "cuda" if _torch.cuda.is_available() else "cpu"
+            from ctranslate2 import get_cuda_device_count
+            fw_device = "cuda" if get_cuda_device_count() > 0 else "cpu"
         except Exception:
             fw_device = "cpu"
     else:
@@ -140,6 +148,7 @@ def isolate_and_transcribe(
         "vad_mode": vad_mode,
         "speech_mask_applied": vad_mode == "speech",
         "requested_language": language,
+        "audio_decode_backend": "faster-whisper PyAV" if vad_mode == "full" else "StemLab TorchAudio",
         "normalization": normalization,
         "model": whisper_model,
         "language": info.language,
