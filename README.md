@@ -1164,3 +1164,28 @@ python scripts/check_viewer_build.py
 Commit the released npm/lock/version receipt, generated `src/stemlab/web/app.js`
 and `timeline.css`, source, docs and tests together; never commit patch payloads,
 model weights or local development dependency overrides.
+
+## Windows pytest temporary-directory permissions
+
+StemLab configures a writable, repository-local **`.pytest-tmp/`** directory for
+pytest's `tmp_path` and `tmp_path_factory` fixtures. This avoids Windows
+`PermissionError: [WinError 5] Access is denied` failures caused by an
+inaccessible, stale `%TEMP%\pytest-of-<username>` directory. The cache is
+already excluded by `.gitignore`; it is never packaged or committed. Pytest
+creates separate numbered directories for concurrent runs and retains only its
+normal recent sessions. The fix applies to `pytest` and `python -m pytest`,
+including runs launched from subdirectories, without requiring administrator
+privileges or deleting the system's existing temporary files.
+
+Run tests as usual:
+
+```powershell
+python -m pytest tests/test_timing_edits.py tests/test_beat_map.py
+python -m pytest
+```
+
+To override the default for a particular run, pass `--basetemp=PATH` or set
+`PYTEST_DEBUG_TEMPROOT` before invoking pytest. Explicit overrides are not
+changed. Avoid choosing a directory shared with unrelated processes for
+`--basetemp`, because pytest intentionally clears that directory at the start
+of a run. The repository-local numbered root does not have that problem.
