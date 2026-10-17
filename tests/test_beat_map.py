@@ -1,5 +1,6 @@
 """Variable-tempo and phase handoff tests; no source audio or detector modifications."""
 import hashlib
+import io
 import json
 import sys
 from pathlib import Path
@@ -14,15 +15,17 @@ from stemlab.beat_map import (SCHEMA, seed_from_consensus, preview, save,
 
 
 def fixture(tmp_path, *, times=(.125, .625, 1.125, 1.77, 2.26), sr=8000):
-    root = tmp_path / ('a'*64)
-    (root/'.source').mkdir(parents=True)
-    (root/'beats').mkdir()
+    # Encode once in memory, hash those exact bytes, then create the SHA-named
+    # folder directly. Windows cloud sync can lock a populated folder on rename.
     wave = np.zeros(sr * 3, dtype=np.float32)
-    src = root/'.source/upload.wav'
-    sf.write(src, wave, sr, subtype='FLOAT')
-    actual_sha = hashlib.sha256(src.read_bytes()).hexdigest()
+    buffer = io.BytesIO()
+    sf.write(buffer, wave, sr, format='WAV', subtype='FLOAT')
+    audio_bytes = buffer.getvalue()
+    actual_sha = hashlib.sha256(audio_bytes).hexdigest()
     final = tmp_path/actual_sha
-    root.rename(final)
+    (final/'.source').mkdir(parents=True)
+    (final/'beats').mkdir()
+    (final/'.source/upload.wav').write_bytes(audio_bytes)
     (final/'beats/consensus.json').write_text(json.dumps({'model':'consensus','beats':list(times)}))
     return final, actual_sha
 

@@ -1167,25 +1167,30 @@ model weights or local development dependency overrides.
 
 ## Windows pytest temporary-directory permissions
 
-StemLab configures a writable, repository-local **`.pytest-tmp/`** directory for
-pytest's `tmp_path` and `tmp_path_factory` fixtures. This avoids Windows
-`PermissionError: [WinError 5] Access is denied` failures caused by an
-inaccessible, stale `%TEMP%\pytest-of-<username>` directory. The cache is
-already excluded by `.gitignore`; it is never packaged or committed. Pytest
-creates separate numbered directories for concurrent runs and retains only its
-normal recent sessions. The fix applies to `pytest` and `python -m pytest`,
-including runs launched from subdirectories, without requiring administrator
-privileges or deleting the system's existing temporary files.
+StemLab configures a dedicated, **non-synchronised Windows test folder** at
+`%LOCALAPPDATA%\StemLab\pytest\<checkout-fingerprint>`, instead of the global
+`%TEMP%\pytest-of-<username>` folder or `.pytest-tmp/` inside OneDrive. This
+avoids recurring Windows `PermissionError: [WinError 5]` failures caused by
+stale global temp permissions and cloud-sync locks on test directories. Each
+checkout has its own short, stable base path; pytest continues to create
+separate numbered per-run folders for isolation. No administrator permissions,
+registry changes or deletion of the old temp folder are required.
 
-Run tests as usual:
+On Linux and macOS, pytest continues to use StemLab's ignored `.pytest-tmp/`
+directory. An explicit `--basetemp=PATH` or `PYTEST_DEBUG_TEMPROOT` setting
+always takes precedence. Avoid sharing an explicit `--basetemp` across
+concurrent runs because pytest clears that path at startup.
+
+The beat-map synthetic audio fixture additionally computes its WAV SHA-256 from
+an in-memory, closed WAV stream **before creating the hash-named analysis
+folder**. It no longer renames a populated directory, which OneDrive or
+antivirus software may temporarily lock on Windows. This affects only test
+setup, not beat-analysis logic or the source-audio verification contract.
+
+Run the regression tests without special environment setup:
 
 ```powershell
-python -m pytest tests/test_timing_edits.py tests/test_beat_map.py
-python -m pytest
+python -m pytest tests/test_pytest_temp_root.py tests/test_beat_map.py tests/test_timing_edits.py
 ```
 
-To override the default for a particular run, pass `--basetemp=PATH` or set
-`PYTEST_DEBUG_TEMPROOT` before invoking pytest. Explicit overrides are not
-changed. Avoid choosing a directory shared with unrelated processes for
-`--basetemp`, because pytest intentionally clears that directory at the start
-of a run. The repository-local numbered root does not have that problem.
+Temporary files are local test data, not repository artefacts or published music.
