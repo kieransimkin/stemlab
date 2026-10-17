@@ -28,7 +28,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path -LiteralPath $ProjectsRoot).Path
-$Python = (Get-Command python -CommandType Application -ErrorAction Stop).Source
+$Python = (Get-Command python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $Runner = Join-Path $PSScriptRoot 'release_suite.py'
 if (-not (Test-Path -LiteralPath $Runner -PathType Leaf)) {
     throw "Missing release_suite.py beside this script. Extract the complete release kit."
