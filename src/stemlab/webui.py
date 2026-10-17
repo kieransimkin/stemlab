@@ -55,7 +55,9 @@ def _public_result_path(results_dir: Path, song_hash: str, rel_path: str) -> tup
         raise FileNotFoundError(song_hash)
 
     rel = Path(rel_path)
-    if rel.is_absolute() or any(part in {"", ".", ".."} or part.startswith(".") for part in rel.parts):
+    if rel.is_absolute() or any(
+        part in {"", ".", ".."} or part.startswith(".") for part in rel.parts
+    ):
         raise ValueError("invalid public result path")
 
     target = (root / rel).resolve()
@@ -307,7 +309,7 @@ def install_routes(
             "source_url": f"/api/{song_hash}/source",
             "files": files,
             "canonical": canonical,
-            "beat_offsets": timeline_beat_offsets(root, canonical.get('bpm')),
+            "beat_offsets": timeline_beat_offsets(root, canonical.get("bpm")),
             "first_detected_beat": first_beat,
             "first_detected_beat_source": first_beat_source,
         }
@@ -316,6 +318,7 @@ def install_routes(
     async def read_beat_timeline(song_hash: str) -> dict[str, Any]:
         """Saved corrections or exact consensus anchors, never rewritten evidence."""
         from .beat_map import read_or_seed
+
         try:
             song_hash = _normalise_hash(song_hash)
         except ValueError as exc:
@@ -327,12 +330,18 @@ def install_routes(
             document, saved, revision = await asyncio.to_thread(read_or_seed, root, song_hash)
         except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
             # While analysis is in progress consensus may not exist yet.
-            return {"available": False, "reason": str(exc), "map": None,
-                    "saved": False, "revision": None}
+            return {
+                "available": False,
+                "reason": str(exc),
+                "map": None,
+                "saved": False,
+                "revision": None,
+            }
         return {"available": True, "map": document, "saved": saved, "revision": revision}
 
     async def _beat_json_body(request: Request) -> dict[str, Any]:
         from .beat_map import MAX_JSON_BYTES
+
         body = await request.body()
         if len(body) > MAX_JSON_BYTES:
             raise HTTPException(status_code=413, detail="Beat timeline exceeds 32 MiB")
@@ -348,11 +357,12 @@ def install_routes(
     async def preview_beat_timeline(song_hash: str, request: Request) -> dict[str, Any]:
         """Authoritative validation and single-document export, without saving."""
         from .beat_map import preview
+
         try:
             song_hash = _normalise_hash(song_hash)
             root = (results_dir_provider() / song_hash).resolve()
             if not root.is_dir():
-                raise FileNotFoundError('analysis not found')
+                raise FileNotFoundError("analysis not found")
             payload = await _beat_json_body(request)
             return await asyncio.to_thread(preview, root, song_hash, payload)
         except FileNotFoundError as exc:
@@ -364,20 +374,23 @@ def install_routes(
     async def update_beat_timeline(song_hash: str, request: Request) -> dict[str, Any]:
         """Atomic separate correction file with optimistic edit revision guard."""
         from .beat_map import save
+
         try:
             song_hash = _normalise_hash(song_hash)
             root = (results_dir_provider() / song_hash).resolve()
             if not root.is_dir():
-                raise FileNotFoundError('analysis not found')
+                raise FileNotFoundError("analysis not found")
             payload = await _beat_json_body(request)
-            if not isinstance(payload.get('map'), dict):
-                raise ValueError('The map must be a beat-timeline JSON object')
-            expected = payload.get('expected_revision')
-            if expected is not None and (not isinstance(expected, str)
-                                         or not _HASH_RE.fullmatch(expected)):
-                raise ValueError('Expected revision must be a SHA-256 or null')
+            if not isinstance(payload.get("map"), dict):
+                raise ValueError("The map must be a beat-timeline JSON object")
+            expected = payload.get("expected_revision")
+            if expected is not None and (
+                not isinstance(expected, str) or not _HASH_RE.fullmatch(expected)
+            ):
+                raise ValueError("Expected revision must be a SHA-256 or null")
             document, revision = await asyncio.to_thread(
-                save, root, song_hash, payload['map'], expected)
+                save, root, song_hash, payload["map"], expected
+            )
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except FileExistsError as exc:
@@ -385,50 +398,75 @@ def install_routes(
         except (ValueError, OSError, TypeError, KeyError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         if socketio_server is not None:
-            await socketio_server.emit('beat_timeline_saved',
-                {'hash': song_hash, 'revision': revision}, room=song_hash)
-        return {'map': document, 'revision': revision, 'saved': True}
+            await socketio_server.emit(
+                "beat_timeline_saved", {"hash": song_hash, "revision": revision}, room=song_hash
+            )
+        return {"map": document, "revision": revision, "saved": True}
 
     @app.get("/api/{song_hash}/song-timing")
     async def read_song_timing(song_hash: str) -> dict[str, Any]:
         """Exact source-frame editorial proposal or saved artist corrections."""
         from .timing_edits import read_or_seed
+
         try:
             song_hash = _normalise_hash(song_hash)
             root = (results_dir_provider() / song_hash).resolve()
             if not root.is_dir():
-                raise FileNotFoundError('analysis not found')
+                raise FileNotFoundError("analysis not found")
             doc, saved, revision, warnings = await asyncio.to_thread(read_or_seed, root, song_hash)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
-        except (ValueError, OSError, FileExistsError, KeyError, TypeError, json.JSONDecodeError) as exc:
-            return {'available': False, 'reason': str(exc), 'document': None,
-                    'saved': False, 'revision': None, 'warnings': []}
-        return {'available': True, 'document': doc, 'saved': saved,
-                'revision': revision, 'warnings': warnings}
+        except (
+            ValueError,
+            OSError,
+            FileExistsError,
+            KeyError,
+            TypeError,
+            json.JSONDecodeError,
+        ) as exc:
+            return {
+                "available": False,
+                "reason": str(exc),
+                "document": None,
+                "saved": False,
+                "revision": None,
+                "warnings": [],
+            }
+        return {
+            "available": True,
+            "document": doc,
+            "saved": saved,
+            "revision": revision,
+            "warnings": warnings,
+        }
 
     async def _timing_body(request: Request) -> dict[str, Any]:
         from .timing_edits import MAX_BYTES
+
         raw = await request.body()
         if len(raw) > MAX_BYTES:
-            raise HTTPException(status_code=413, detail='Timing JSON exceeds 12 MiB')
+            raise HTTPException(status_code=413, detail="Timing JSON exceeds 12 MiB")
         try:
             payload = json.loads(raw)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise HTTPException(status_code=400, detail='Expected UTF-8 timing JSON') from exc
-        if not isinstance(payload, dict) or not isinstance(payload.get('document'), dict):
-            raise HTTPException(status_code=400, detail='Document must be a timing-edits JSON object')
+            raise HTTPException(status_code=400, detail="Expected UTF-8 timing JSON") from exc
+        if not isinstance(payload, dict) or not isinstance(payload.get("document"), dict):
+            raise HTTPException(
+                status_code=400, detail="Document must be a timing-edits JSON object"
+            )
         return payload
 
     @app.post("/api/{song_hash}/song-timing/preview")
     async def preview_song_timing(song_hash: str, request: Request) -> dict[str, Any]:
         from .timing_edits import export_document
+
         try:
             song_hash = _normalise_hash(song_hash)
             root = (results_dir_provider() / song_hash).resolve()
-            if not root.is_dir(): raise FileNotFoundError('analysis not found')
+            if not root.is_dir():
+                raise FileNotFoundError("analysis not found")
             body = await _timing_body(request)
-            return await asyncio.to_thread(export_document, root, song_hash, body['document'])
+            return await asyncio.to_thread(export_document, root, song_hash, body["document"])
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except FileExistsError as exc:
@@ -439,14 +477,23 @@ def install_routes(
     @app.post("/api/{song_hash}/song-timing/import")
     async def import_song_timing(song_hash: str, request: Request) -> dict[str, Any]:
         from .timing_edits import import_text
+
         try:
             song_hash = _normalise_hash(song_hash)
             root = (results_dir_provider() / song_hash).resolve()
-            if not root.is_dir(): raise FileNotFoundError('analysis not found')
+            if not root.is_dir():
+                raise FileNotFoundError("analysis not found")
             body = await _timing_body(request)
-            doc = await asyncio.to_thread(import_text, root, song_hash, body['document'],
-                                          kind=body.get('kind'),text=body.get('text'),format=body.get('format'))
-            return {'document': doc}
+            doc = await asyncio.to_thread(
+                import_text,
+                root,
+                song_hash,
+                body["document"],
+                kind=body.get("kind"),
+                text=body.get("text"),
+                format=body.get("format"),
+            )
+            return {"document": doc}
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except FileExistsError as exc:
@@ -457,15 +504,21 @@ def install_routes(
     @app.put("/api/{song_hash}/song-timing")
     async def update_song_timing(song_hash: str, request: Request) -> dict[str, Any]:
         from .timing_edits import save
+
         try:
             song_hash = _normalise_hash(song_hash)
             root = (results_dir_provider() / song_hash).resolve()
-            if not root.is_dir(): raise FileNotFoundError('analysis not found')
+            if not root.is_dir():
+                raise FileNotFoundError("analysis not found")
             body = await _timing_body(request)
-            expected = body.get('expected_revision')
-            if expected is not None and (not isinstance(expected, str) or not _HASH_RE.fullmatch(expected)):
-                raise ValueError('Expected edit revision must be SHA-256 or null')
-            doc, revision = await asyncio.to_thread(save, root, song_hash, body['document'], expected)
+            expected = body.get("expected_revision")
+            if expected is not None and (
+                not isinstance(expected, str) or not _HASH_RE.fullmatch(expected)
+            ):
+                raise ValueError("Expected edit revision must be SHA-256 or null")
+            doc, revision = await asyncio.to_thread(
+                save, root, song_hash, body["document"], expected
+            )
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except FileExistsError as exc:
@@ -473,9 +526,10 @@ def install_routes(
         except (ValueError, OSError, TypeError, KeyError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         if socketio_server is not None:
-            await socketio_server.emit('song_timing_saved',
-                {'hash': song_hash, 'revision': revision},room=song_hash)
-        return {'document': doc, 'revision': revision, 'saved': True}
+            await socketio_server.emit(
+                "song_timing_saved", {"hash": song_hash, "revision": revision}, room=song_hash
+            )
+        return {"document": doc, "revision": revision, "saved": True}
 
     @app.get("/api/{song_hash}/canonical")
     async def canonical_metadata(song_hash: str) -> dict[str, Any]:
@@ -531,10 +585,14 @@ def install_routes(
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except (ValueError, KeyError, OSError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
-        return Response(data, media_type="audio/wav", headers={
-            "Cache-Control": "no-cache",
-            "Content-Disposition": f'inline; filename="{filename}"',
-        })
+        return Response(
+            data,
+            media_type="audio/wav",
+            headers={
+                "Cache-Control": "no-cache",
+                "Content-Disposition": f'inline; filename="{filename}"',
+            },
+        )
 
     @app.get("/api/{song_hash}/source")
     async def source_audio(song_hash: str):
@@ -578,7 +636,11 @@ def install_routes(
             results_dir = results_dir_provider()
             root, data_path = _public_result_path(results_dir, song_hash, path)
             rel = data_path.relative_to(root)
-            if not rel.parts or rel.parts[0] != "spectrograms" or data_path.suffix.lower() != ".npz":
+            if (
+                not rel.parts
+                or rel.parts[0] != "spectrograms"
+                or data_path.suffix.lower() != ".npz"
+            ):
                 raise ValueError("path is not a StemLab spectrogram dataset")
             if not data_path.is_file():
                 raise FileNotFoundError(data_path)
