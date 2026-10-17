@@ -38,21 +38,24 @@
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "976f938df695e3ffbf642c539e83abec48ad00dc9b6a284d6c6b2b7381f08319",
-    "src/stemlab/web/timeline.css": "9a93f6ded92775892925e8465fb170b9bdd69efadc3b3bec73688b0ce4b6eaa6"
+    "src/stemlab/web/app.js": "1606762a5e5643cd25927ffff537d1efd21c77fefac4ff449a08a2327f87ee48",
+    "src/stemlab/web/timeline.css": "2a567109cfb29bf8363a5dcdd6610b0eacba40a521471b11d61431f9e6558396"
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
     "package-lock.json": "a4d9a8c29e4240d0436aba4a5e1621ab202c32ee0c45f00cb7eef5fecb11d3ff",
     "package.json": "af5705cbfffb9fd26c3228f93b7f9edabadfc984744b9a5f47722886a12683b1",
-    "web-client/src/app.jsx": "ae3fd3d5873e03d5222287e6a8c1f66a9be0bce8b87e4171d2f897e1a3390e72",
+    "web-client/src/app.jsx": "c3cc3f72f8f59afa731bcbcec002faf9aa3e8c3584f6583b7689717c371ed0a9",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
-    "web-client/src/beat-map-editor.jsx": "dde8081853657ddf7964f94a3022ce899ea6b988fe49d2d068b9773053d87949",
+    "web-client/src/beat-map-editor.jsx": "2a98a668563d04c3cce53ee279a6914884596ee8ccc7b06e0dfa14fe1027cbac",
     "web-client/src/beat-map.css": "743ecb248e880371d52d7e776c9c48a2d1b7ba4654f578baaa57552b9cfacd09",
     "web-client/src/beat-map.js": "714ea0d7b12c48c736fa9fb21880558c631275628d3507c341ea87e79f249795",
     "web-client/src/beat-offset-controls.jsx": "7f6f6ee4bcbb1cd3dbb8966a19ceb904a28422a3eed62619cfbac80cf4195833",
     "web-client/src/beat-offsets.js": "ecede43b1d49493332efc0ab08efbcd64a46291875e6e453f2c431ff6ff67b18",
     "web-client/src/loops.jsx": "79b5d4f0169231a5c683346eb1854176023fab2595e05f94edd4f074b350591b",
+    "web-client/src/timing-editor.css": "dc41ad32c8cb90389b9ae42b79c5ed1e23aeabf152aec9ed5ad52e945b879474",
+    "web-client/src/timing-editor.jsx": "654c0bed31be07bf8d82c22592b6730387fa629a30c8d102c4af20391260e870",
+    "web-client/src/timing-workflow.js": "3a56d0659c7c40baa2a38ec284f5ad8358fa144ca32c7d35869bb0171c0230d0",
     "web-client/vite.config.js": "69f08644b1761c13d8af6f5b5e2e85ed1ba140e71d5371dc5221ebd14bd6476d"
   }
 }

@@ -1,0 +1,16 @@
+.stemlab-timing-panel{margin:.75rem 0;padding:.7rem;background:#151b27;color:#d7e7f5;border:1px solid #40536b;border-radius:7px}
+.stemlab-timing-panel header{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.stemlab-timing-panel header span{font-size:.82rem;opacity:.8;margin-left:auto}
+.stemlab-timing-panel button,.stemlab-timing-panel select,.stemlab-timing-panel input{font:inherit}
+.stemlab-timing-fields,.stemlab-timing-actions{display:flex;align-items:end;gap:.5rem;flex-wrap:wrap;margin:.7rem 0}
+.stemlab-timing-fields>label,.stemlab-timing-actions>label{display:flex;flex-direction:column;gap:.2rem;font-size:.82rem}
+.stemlab-timing-fields>label:has(input[type=checkbox]){flex-direction:row;align-items:center;gap:.4rem}
+.stemlab-timing-panel select,.stemlab-timing-panel input{max-width:260px;min-width:80px;padding:.3rem;color:inherit;background:#202b3b;border:1px solid #64738a;border-radius:4px}
+.stemlab-timing-panel button{padding:.35rem .65rem;color:inherit;background:#2c3d53;border:1px solid #60758a;border-radius:5px;cursor:pointer}
+.stemlab-timing-panel button:disabled{opacity:.4;cursor:not-allowed}
+.stemlab-timing-panel button:focus-visible{outline:2px solid #f5d58f}
+.stemlab-timing-panel small{display:block;opacity:.7}
+.stemlab-timing-status{display:block;margin-top:.4rem;color:#a3d5e5;white-space:normal}
+.stemlab-timeline .rts-lane-timing-word{background:#1e1925}
+.stemlab-timeline .rts-lane-timing-cue{background:#241c18}
+@media (prefers-reduced-motion:reduce){.stemlab-timing-panel *{transition:none!important}}

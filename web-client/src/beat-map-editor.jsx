@@ -271,11 +271,11 @@ export function useBeatMapEditor(hash, duration) {
         <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={importMap}/>
         <button type="button" onClick={()=>load()}>Reload saved/consensus</button>
       </div>
-      <small>Current local BPM: {selectionBpm?.toFixed(3)??'last anchor'} · original consensus matches remain labelled separately. Native timebase: 64 pips/beat, imported DanceMoves clocks use 16 ticks/beat. Existing DanceMoves beat-alignment.v1 is constant-tempo only; a beat-timeline.v1 consumer update is required for irregular timing.</small>
+      <small>Current local BPM: {selectionBpm?.toFixed(3)??'last anchor'} · original consensus matches remain labelled separately. Native timebase: 64 pips/beat, imported DanceMoves clocks use 16 ticks/beat. DanceMoves supports optional beat-timeline.v1 variable playback where its new consumer is installed; beat-alignment.v1 remains a separate fixed-tempo format.</small>
     </>}
     {!ready && opened && <p>Waiting for an available consensus beat list (and exact master audio). No timing is invented.</p>}
     {note && <output role="status" className="stemlab-beatmap-status">{note}</output>}
   </section>;
-  return {lanes:anchors,grid,panel:supported?panel:null,
+  return {map,revision,saved,ready,dirty,lanes:anchors,grid,panel:supported?panel:null,
     onWindowChange:setVisible, onTimeChange:t=>{playheadRef.current=t;}};
 }

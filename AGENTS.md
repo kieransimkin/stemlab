@@ -103,3 +103,14 @@ lyric/cue and recording time on the untouched original source clock. New web
 features use the released shared timeline's custom lane API; rebuild/commit its
 real compiled assets. DanceMoves 3.3.x only understands constant-tempo beat
 alignment v1: never mislabel an irregular v1 timeline as that older schema.
+
+## Lyric and cue timing edits
+
+Use the source-bound, separately revisioned `timing/song-timing-edits.json`.
+Keep original canonical lyrics, ASR, cues and master unchanged. Word starts and
+ends are restricted to their own line; cue names must be [SECTION: VERSE 1],
+[ENTRY: VOCAL INTRO], [DROP: CHORUS 1] etc. Validate on the server before
+saving/importing/exporting, and do not invent a beat in a variable-map gap.
+Never substitute a development shared timeline for its latest stable released
+version. Regenerate viewer receipts and built assets after the new timeline
+release is officially published.

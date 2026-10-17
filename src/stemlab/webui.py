@@ -260,6 +260,9 @@ def install_routes(
             "spectrogram": "GET /api/{sha256}/spectrogram?path=...",
             "canonical": "GET/PUT /api/{sha256}/canonical",
             "beat_timeline": "GET/PUT /api/{sha256}/beat-timeline",
+            "song_timing": "GET/PUT /api/{sha256}/song-timing",
+            "song_timing_preview": "POST /api/{sha256}/song-timing/preview",
+            "song_timing_import": "POST /api/{sha256}/song-timing/import",
             "beat_timeline_export": "POST /api/{sha256}/beat-timeline/preview",
             "results_root": str(results_dir_provider()),
         }
@@ -385,6 +388,94 @@ def install_routes(
             await socketio_server.emit('beat_timeline_saved',
                 {'hash': song_hash, 'revision': revision}, room=song_hash)
         return {'map': document, 'revision': revision, 'saved': True}
+
+    @app.get("/api/{song_hash}/song-timing")
+    async def read_song_timing(song_hash: str) -> dict[str, Any]:
+        """Exact source-frame editorial proposal or saved artist corrections."""
+        from .timing_edits import read_or_seed
+        try:
+            song_hash = _normalise_hash(song_hash)
+            root = (results_dir_provider() / song_hash).resolve()
+            if not root.is_dir():
+                raise FileNotFoundError('analysis not found')
+            doc, saved, revision, warnings = await asyncio.to_thread(read_or_seed, root, song_hash)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except (ValueError, OSError, FileExistsError, KeyError, TypeError, json.JSONDecodeError) as exc:
+            return {'available': False, 'reason': str(exc), 'document': None,
+                    'saved': False, 'revision': None, 'warnings': []}
+        return {'available': True, 'document': doc, 'saved': saved,
+                'revision': revision, 'warnings': warnings}
+
+    async def _timing_body(request: Request) -> dict[str, Any]:
+        from .timing_edits import MAX_BYTES
+        raw = await request.body()
+        if len(raw) > MAX_BYTES:
+            raise HTTPException(status_code=413, detail='Timing JSON exceeds 12 MiB')
+        try:
+            payload = json.loads(raw)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise HTTPException(status_code=400, detail='Expected UTF-8 timing JSON') from exc
+        if not isinstance(payload, dict) or not isinstance(payload.get('document'), dict):
+            raise HTTPException(status_code=400, detail='Document must be a timing-edits JSON object')
+        return payload
+
+    @app.post("/api/{song_hash}/song-timing/preview")
+    async def preview_song_timing(song_hash: str, request: Request) -> dict[str, Any]:
+        from .timing_edits import export_document
+        try:
+            song_hash = _normalise_hash(song_hash)
+            root = (results_dir_provider() / song_hash).resolve()
+            if not root.is_dir(): raise FileNotFoundError('analysis not found')
+            body = await _timing_body(request)
+            return await asyncio.to_thread(export_document, root, song_hash, body['document'])
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except FileExistsError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/{song_hash}/song-timing/import")
+    async def import_song_timing(song_hash: str, request: Request) -> dict[str, Any]:
+        from .timing_edits import import_text
+        try:
+            song_hash = _normalise_hash(song_hash)
+            root = (results_dir_provider() / song_hash).resolve()
+            if not root.is_dir(): raise FileNotFoundError('analysis not found')
+            body = await _timing_body(request)
+            doc = await asyncio.to_thread(import_text, root, song_hash, body['document'],
+                                          kind=body.get('kind'),text=body.get('text'),format=body.get('format'))
+            return {'document': doc}
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except FileExistsError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.put("/api/{song_hash}/song-timing")
+    async def update_song_timing(song_hash: str, request: Request) -> dict[str, Any]:
+        from .timing_edits import save
+        try:
+            song_hash = _normalise_hash(song_hash)
+            root = (results_dir_provider() / song_hash).resolve()
+            if not root.is_dir(): raise FileNotFoundError('analysis not found')
+            body = await _timing_body(request)
+            expected = body.get('expected_revision')
+            if expected is not None and (not isinstance(expected, str) or not _HASH_RE.fullmatch(expected)):
+                raise ValueError('Expected edit revision must be SHA-256 or null')
+            doc, revision = await asyncio.to_thread(save, root, song_hash, body['document'], expected)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except FileExistsError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if socketio_server is not None:
+            await socketio_server.emit('song_timing_saved',
+                {'hash': song_hash, 'revision': revision},room=song_hash)
+        return {'document': doc, 'revision': revision, 'saved': True}
 
     @app.get("/api/{song_hash}/canonical")
     async def canonical_metadata(song_hash: str) -> dict[str, Any]:

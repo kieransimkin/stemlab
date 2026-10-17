@@ -106,29 +106,22 @@ segments):
 
 The example is illustrative only, not a complete schema-valid document.
 
-## DanceMoves integration requirement
+## DanceMoves fixed and variable tempo handoff
 
-**Important:** DanceMoves 3.3's currently deployed WordPress EPK reading expects
-`stemlab.beat-alignment.v1` — a **constant-BPM phase reading** with a 16 KiB
-limit, SHA-bound attachment and exact rational identity checks. It cannot
-execute this variable-tempo `beat-timeline.v1` directly. Pasting this new JSON
-into its existing Beat alignment field will be rejected; attempting to disguise
-it as the older format would silently discard irregular beat timing.
+The older `stemlab.beat-alignment.v1` remains a **fixed-BPM** reading; do not
+paste full beat maps into that field. DanceMoves also implements an **optional**
+`stemlab.beat-timeline.v1` importer. Select the exact analysed WordPress master
+attachment (matching SHA-256), enable the corrected variable-tempo map and paste
+the full JSON into the separate timeline field. If disabled, the old BPM/offset
+clock remains unchanged. Each audio master uses source seconds for lyrics and
+cues; the irregular beat anchors change rhythmic motion only. Refer to
+DanceMoves' own source/WordPress documentation and release status before
+installing this feature on a site.
 
-To support the new export, DanceMoves needs a companion feature: recognise the
-versioned `beat-timeline.v1` schema, validate the associated WordPress media
-attachment hash, source frames, monotonicity, rational phase and the complete
-input size (with a separate safe bound); preserve the full beat map after
-sanitisation; and integrate the piecewise phase into its existing `sourceTick`
-/ 16-tick, `rhythmicTime`, native-rudiment and playback-pulse consumers **only**
-for that verified master. Clip/video offsets must be mapped to master time
-first. Audio, lyric/cue and recording transport times must remain unchanged.
-This requires DanceMoves tests for variable tempo, seek, loop, pause, player
-switching and WordPress REST/editor approval. No automatic WordPress deployment
-or writing to other repositories occurs from the StemLab export.
-
-The existing StemLab `stemlab beat-offset` and DanceMoves v1 reading continue to
-work for tracks that truly use a constant tempo.
+Stemlab's Song timing editor additionally exports standalone line-LRC,
+word-TSV/JSON, and cue-LRC, with separate source-bound fixed or variable clock
+metadata. WordPress pages must attach each to the matching song, using the
+separate line, word and cue fields. Music/cue timestamps are not time-warped.
 
 ## Developer checks
 
@@ -144,3 +137,77 @@ Commit the **rebuilt** `src/stemlab/web/app.js` and
 exact agreement. The published shared timeline dependency is unchanged; the
 editor uses its supported `type: "custom"` lane, `onWindowChange`, playhead and
 transport callbacks rather than duplicating the timeline renderer.
+
+## Editable song timing: fixed/variable BPM, lyrics, words and cue sections
+
+The Stemlab browser workspace has **Song timing** alongside **Beat correction**.
+It uses the shared `react-timeline-sequence` 0.4+ timing lanes, not a second
+playhead or bespoke renderer. Its three editable tracks are per-line lyric
+blocks, words belonging to the selected line, and cue section boundaries.
+The same original master audio, transport and zoom apply to all three.
+
+The timing clock is either an explicit **fixed BPM + Beat 1 offset** or the
+current SHA-bound **corrected variable BPM** timeline. Variable mapping integrates
+the exact existing consensus/corrected sample frames, and never inserts
+imaginary beats into missing spans. Switching clock mode does not move cue,
+line, or word timestamps. An optional 150-ms snap tolerance (editable) applies
+*only to edits that the user makes*; it is disabled by default. Timing tooltips
+show whether and by how many signed milliseconds a marker misses a real or
+fixed-grid beat. A changed beat map must be saved before saving timing edits
+bound to that variable map.
+
+Editable word starts/ends are constrained within the selected lyric line.
+Dragging a complete line carries its words; changing a line boundary never
+silently clips words. The editor includes add-at-playhead, delete, section
+rename, line/word text, import, artist review status and save/reload controls.
+Cue renames are restricted to `[TYPE: STANDARD SECTION]`: the supported types
+are `SECTION`, `ENTRY`, `DROP`, `BREAK`. Names use the recognised INTRO, VERSE,
+PRE-CHORUS, CHORUS, BUILD, DROP, FINAL DROP, BREAKDOWN, OUTRO, etc., with
+optional numbering. Examples:
+
+```text
+[00:00.125][SECTION: INTRO]
+[00:57.460][SECTION: VERSE 1]
+[01:25.000][ENTRY: VOCAL INTRO]
+[01:44.010][DROP: CHORUS 1]
+[02:34.440][BREAK: SPOKEN BREAKDOWN]
+```
+
+The edit document is stored separately as `timing/song-timing-edits.json`,
+schema `stemlab.timing-edits.v1`: source SHA-256, sample rate/frame count,
+`fixed_clock`, clock mode, revision-pinned beat map, lines/words/cues with
+integer native source frames, and artist review status. **Original audio,
+`canonical.json`, ASR evidence, source LRC and beat detector results remain
+unchanged.** The web service supports:
+
+- `GET/PUT /api/{sha256}/song-timing` (optimistic revision guard),
+- `POST /api/{sha256}/song-timing/import` (LRC lyric lines, LRC/TSV/JSON words,
+  canonical cue-section LRC; importing lines with existing words is refused),
+- `POST /api/{sha256}/song-timing/preview` (strict validation and export without saving).
+
+**Export DanceMoves timing bundle** provides a JSON source identity and fixed
+or full variable BPM map alongside line-LRC, per-word TSV and JSON, and cue-LRC
+content. For DanceMoves' separate full beat-map field, use the original Beat
+correction editor's `stemlab.beat-timeline.v1` export (or the bundle's nested
+`clock.beat_timeline`), not the enclosing song-timing bundle JSON. Word timings are kept in original source seconds; LRC/TSV representations
+round to compatible decimal positions while the JSON retains exact native
+frames. Uploaded word and cue files are independently validated by DanceMoves;
+pasting a full variable timeline into the old fixed beat-alignment field is
+not supported. Users must assign each file to the matching verified song.
+
+For a fresh checkout, **release `react-timeline-sequence` v0.4+ first**. Stemlab
+only consumes the latest *published* stable shared component, never an untagged
+source copy. After publication run `python scripts/configure_viewer_build.py`
+(which updates official viewer receipts and compiled assets), then run:
+
+```bash
+python -m pytest tests/test_timing_edits.py tests/test_beat_map.py
+node --test tests/web/timing-workflow.test.mjs tests/web/beat-map.test.mjs
+python scripts/check_viewer_build.py --latest
+npm ci && npm run build:web
+python scripts/check_viewer_build.py
+```
+
+Commit the released npm/lock/version receipt, generated `src/stemlab/web/app.js`
+and `timeline.css`, source, docs and tests together; never commit patch payloads,
+model weights or local development dependency overrides.

@@ -1090,3 +1090,77 @@ executable with an empty external StemLab cache. `--help`, `models`, and
 Main-branch release coordination requires `binary.yml` to pass before tagging.
 Tagged releases call the same reusable workflow and cannot publish a fallback
 `STEMLAB-BINARY-NOTE.txt`; absence or failure of the executable fails the release.
+
+## Editable song timing: fixed/variable BPM, lyrics, words and cue sections
+
+The Stemlab browser workspace has **Song timing** alongside **Beat correction**.
+It uses the shared `react-timeline-sequence` 0.4+ timing lanes, not a second
+playhead or bespoke renderer. Its three editable tracks are per-line lyric
+blocks, words belonging to the selected line, and cue section boundaries.
+The same original master audio, transport and zoom apply to all three.
+
+The timing clock is either an explicit **fixed BPM + Beat 1 offset** or the
+current SHA-bound **corrected variable BPM** timeline. Variable mapping integrates
+the exact existing consensus/corrected sample frames, and never inserts
+imaginary beats into missing spans. Switching clock mode does not move cue,
+line, or word timestamps. An optional 150-ms snap tolerance (editable) applies
+*only to edits that the user makes*; it is disabled by default. Timing tooltips
+show whether and by how many signed milliseconds a marker misses a real or
+fixed-grid beat. A changed beat map must be saved before saving timing edits
+bound to that variable map.
+
+Editable word starts/ends are constrained within the selected lyric line.
+Dragging a complete line carries its words; changing a line boundary never
+silently clips words. The editor includes add-at-playhead, delete, section
+rename, line/word text, import, artist review status and save/reload controls.
+Cue renames are restricted to `[TYPE: STANDARD SECTION]`: the supported types
+are `SECTION`, `ENTRY`, `DROP`, `BREAK`. Names use the recognised INTRO, VERSE,
+PRE-CHORUS, CHORUS, BUILD, DROP, FINAL DROP, BREAKDOWN, OUTRO, etc., with
+optional numbering. Examples:
+
+```text
+[00:00.125][SECTION: INTRO]
+[00:57.460][SECTION: VERSE 1]
+[01:25.000][ENTRY: VOCAL INTRO]
+[01:44.010][DROP: CHORUS 1]
+[02:34.440][BREAK: SPOKEN BREAKDOWN]
+```
+
+The edit document is stored separately as `timing/song-timing-edits.json`,
+schema `stemlab.timing-edits.v1`: source SHA-256, sample rate/frame count,
+`fixed_clock`, clock mode, revision-pinned beat map, lines/words/cues with
+integer native source frames, and artist review status. **Original audio,
+`canonical.json`, ASR evidence, source LRC and beat detector results remain
+unchanged.** The web service supports:
+
+- `GET/PUT /api/{sha256}/song-timing` (optimistic revision guard),
+- `POST /api/{sha256}/song-timing/import` (LRC lyric lines, LRC/TSV/JSON words,
+  canonical cue-section LRC; importing lines with existing words is refused),
+- `POST /api/{sha256}/song-timing/preview` (strict validation and export without saving).
+
+**Export DanceMoves timing bundle** provides a JSON source identity and fixed
+or full variable BPM map alongside line-LRC, per-word TSV and JSON, and cue-LRC
+content. For DanceMoves' separate full beat-map field, use the original Beat
+correction editor's `stemlab.beat-timeline.v1` export (or the bundle's nested
+`clock.beat_timeline`), not the enclosing song-timing bundle JSON. Word timings are kept in original source seconds; LRC/TSV representations
+round to compatible decimal positions while the JSON retains exact native
+frames. Uploaded word and cue files are independently validated by DanceMoves;
+pasting a full variable timeline into the old fixed beat-alignment field is
+not supported. Users must assign each file to the matching verified song.
+
+For a fresh checkout, **release `react-timeline-sequence` v0.4+ first**. Stemlab
+only consumes the latest *published* stable shared component, never an untagged
+source copy. After publication run `python scripts/configure_viewer_build.py`
+(which updates official viewer receipts and compiled assets), then run:
+
+```bash
+python -m pytest tests/test_timing_edits.py tests/test_beat_map.py
+node --test tests/web/timing-workflow.test.mjs tests/web/beat-map.test.mjs
+python scripts/check_viewer_build.py --latest
+npm ci && npm run build:web
+python scripts/check_viewer_build.py
+```
+
+Commit the released npm/lock/version receipt, generated `src/stemlab/web/app.js`
+and `timeline.css`, source, docs and tests together; never commit patch payloads,
+model weights or local development dependency overrides.
