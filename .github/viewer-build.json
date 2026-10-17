@@ -38,15 +38,18 @@
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "eee63be258dd23ed24ce880623b456477fd0405738f8bdf791d14c022638f1a1",
-    "src/stemlab/web/timeline.css": "c820bdd38f8b0014f4dec166585855fa87d7ba7e0270c5560e78e4a5e136cbfd"
+    "src/stemlab/web/app.js": "976f938df695e3ffbf642c539e83abec48ad00dc9b6a284d6c6b2b7381f08319",
+    "src/stemlab/web/timeline.css": "9a93f6ded92775892925e8465fb170b9bdd69efadc3b3bec73688b0ce4b6eaa6"
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
     "package-lock.json": "a4d9a8c29e4240d0436aba4a5e1621ab202c32ee0c45f00cb7eef5fecb11d3ff",
     "package.json": "af5705cbfffb9fd26c3228f93b7f9edabadfc984744b9a5f47722886a12683b1",
-    "web-client/src/app.jsx": "1753fee0f9b8a4d0be98a4de0454bc62dc2af0b85ad93d6a814acce837b67cdb",
+    "web-client/src/app.jsx": "ae3fd3d5873e03d5222287e6a8c1f66a9be0bce8b87e4171d2f897e1a3390e72",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
+    "web-client/src/beat-map-editor.jsx": "dde8081853657ddf7964f94a3022ce899ea6b988fe49d2d068b9773053d87949",
+    "web-client/src/beat-map.css": "743ecb248e880371d52d7e776c9c48a2d1b7ba4654f578baaa57552b9cfacd09",
+    "web-client/src/beat-map.js": "714ea0d7b12c48c736fa9fb21880558c631275628d3507c341ea87e79f249795",
     "web-client/src/beat-offset-controls.jsx": "7f6f6ee4bcbb1cd3dbb8966a19ceb904a28422a3eed62619cfbac80cf4195833",
     "web-client/src/beat-offsets.js": "ecede43b1d49493332efc0ab08efbcd64a46291875e6e453f2c431ff6ff67b18",
     "web-client/src/loops.jsx": "79b5d4f0169231a5c683346eb1854176023fab2595e05f94edd4f074b350591b",

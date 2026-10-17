@@ -1,5 +1,4 @@
 """Variable-tempo and phase handoff tests; no source audio or detector modifications."""
-from fractions import Fraction
 import hashlib
 import json
 import sys
@@ -11,7 +10,7 @@ import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parents[1] / 'src'))
 from stemlab.beat_map import (SCHEMA, seed_from_consensus, preview, save,
-                              read_or_seed, validate_map, phase_at_frame, export_document)
+                              read_or_seed, phase_at_frame, export_document)
 
 
 def fixture(tmp_path, *, times=(.125, .625, 1.125, 1.77, 2.26), sr=8000):
