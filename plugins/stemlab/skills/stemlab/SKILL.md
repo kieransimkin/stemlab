@@ -25,6 +25,11 @@ Created by Kieran Simkin — https://kieransimkin.co.uk/my-songs/
 5. Start an analysis only when necessary. Retain repetition-safe Whisper behavior.
    Text semantics defaults off in this integration. MuQ audio semantics is separately
    opt-in with non-commercial weights; never enable it just to fill an empty report.
+   When a speech mask removes singing, the CLI/Python speech API supports an
+   explicit `full` VAD-mode comparison and an optional known language code.
+   Keep original evidence and source timestamps; no MCP input exposes these
+   options yet. Read the [measured mode comparison](https://github.com/kieransimkin/stemlab/blob/main/README.md#speech-transcription)
+   and its retained chart; a word-match score does not approve lyric timing.
 6. A returned job ID means submitted, not completed. Poll `stemlab_job_status`, read
    diagnostics, and distinguish `completed_with_errors`, `failed`, `cancelled`,
    `timed_out` and `unmanaged`. Do not promise future autonomous updates.
@@ -49,6 +54,22 @@ Created by Kieran Simkin — https://kieransimkin.co.uk/my-songs/
     ratings and song material out of public examples and packages.
 
 ## Evidence and privacy
+
+For first-beat alignment, use the local CLI `stemlab beat-offset RESULTS --audio
+EXACT_MASTER --output NEW_DIRECTORY`. Compare canonical and raw combined BPM,
+the canonical half/same/double tempo family and the separately labelled fitted
+consensus grid, across consensus and every available individual detector/source.
+Half- and double-time readings are normal; keep observed timestamps and precision
+grades, and distinguish generated subdivisions from detected beats. In the real
+timeline, inspect the blue dashed original and amber offset grids using both
+selectors. Missing canonical BPM and failed detectors stay explicit.
+
+Use `--alignment-analysis consensus --alignment-bpm-basis canonical` to export
+the source-bound `stemlab.beat-alignment.v1` handoff; choose an estimated basis
+explicitly when canonical BPM is unavailable. Verify master/report hashes and
+preserve estimated phase. Apply 64-pip offsets once to rhythmic clocks after
+source/excerpt mapping; audio, lyrics, cues and source-captured recordings keep
+their original time. See `docs/beat-offsets.md` and the real released-song reference.
 
 Local audio stays on the server filesystem unless a separate user-authorized tool
 shares it. Report text and PNGs returned by MCP enter the model conversation and

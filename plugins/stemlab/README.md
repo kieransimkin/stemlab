@@ -9,6 +9,14 @@ Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopabl
 StemLab by **Kieran Simkin** — https://kieransimkin.co.uk/my-songs/
 Part of the DanceFlow BPM and motion-response workflow, alongside WordPress DanceMoves.
 
+The local CLI `stemlab beat-offset RESULTS --audio EXACT_MASTER --output NEW_DIR`
+compares saved consensus/individual first beats against canonical and estimated
+tempos. The actual shared timeline shows original/offset grids and both selectors.
+Add `--alignment-bpm-basis canonical` for a source-bound renderer/playback handoff;
+keep detector phase estimated and source audio/lyric/cue timestamps unchanged.
+Half/double-time interpretations and fitted-grid error remain explicit. See the
+[alignment guide](../../docs/beat-offsets.md).
+
 This plugin bundles a skill and a local stdio MCP connection. It requires the
 **patched StemLab checkout**, installed in a Python environment that Codex can launch.
 It does not include Python or model weights. The installed StemLab Python runtime
