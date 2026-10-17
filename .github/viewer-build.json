@@ -29,22 +29,22 @@
     "policy": "latest-stable",
     "schema": "stemlab.viewer-releases.v1",
     "timeline": {
-      "commit": "39ecb4079a3c610d376cdd6b0d62dc093b6c582c",
-      "integrity": "sha512-jhPNs+TFzwMF4kZHEcEBsfEi6mmKcf/HMnksfBtF+rWwf5JonWa/Pyjlj9aNpUQLmsBMEy08++uowcCf5l5Tpg==",
+      "commit": "e8ef859126f7d3c9abd07f371cef46b624d36ebc",
+      "integrity": "sha512-I61SrPjij7n65oPehI90KftWe2AvtMd267w5icLfRgtCU1ww8JdZ58OHDLBMjrkEbkvUroaoKGDqgMA6SNBk0A==",
       "repository": "kieransimkin/react-timeline-sequence",
-      "tag": "v0.3.0",
-      "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.3.0.tgz",
-      "version": "0.3.0"
+      "tag": "v0.4.0",
+      "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.4.0.tgz",
+      "version": "0.4.0"
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "1606762a5e5643cd25927ffff537d1efd21c77fefac4ff449a08a2327f87ee48",
-    "src/stemlab/web/timeline.css": "2a567109cfb29bf8363a5dcdd6610b0eacba40a521471b11d61431f9e6558396"
+    "src/stemlab/web/app.js": "beef925064d2d2307e4a2ff1e5e752392a721a4e27b456042244cdaffe465a4f",
+    "src/stemlab/web/timeline.css": "9b2c9e0a28b732a0ca3b2456c2437f00de6be5d7286c19fcae3c1fa2f8bb036a"
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
-    "package-lock.json": "a4d9a8c29e4240d0436aba4a5e1621ab202c32ee0c45f00cb7eef5fecb11d3ff",
-    "package.json": "af5705cbfffb9fd26c3228f93b7f9edabadfc984744b9a5f47722886a12683b1",
+    "package-lock.json": "2e9077757bbd0e0bf94538113bf5f010ea66e353ef7b1f2182f2c2554d2eb33c",
+    "package.json": "ab7909f132cb6b6b39b569a1c46cddd3a345c5334b14fd2b18326874aa1ceeba",
     "web-client/src/app.jsx": "c3cc3f72f8f59afa731bcbcec002faf9aa3e8c3584f6583b7689717c371ed0a9",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
     "web-client/src/beat-map-editor.jsx": "2a98a668563d04c3cce53ee279a6914884596ee8ccc7b06e0dfa14fe1027cbac",
