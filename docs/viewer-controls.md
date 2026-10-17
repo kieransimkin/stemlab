@@ -98,3 +98,18 @@ The static-export loop test compares decoded samples, channel count, sample rate
 frame count and FLOAT/WAV encoding exactly. It no longer requires independently
 written WAV files' PEAK-chunk creation timestamps to match. The audio exporter,
 loop bounds and sample tolerances are unchanged.
+
+## Editable nonuniform beat correction
+
+The browser's Beat correction lanes make an independent source-frame-accurate
+beat map: the default anchors are the **real consensus beats at their original
+timestamps**, without a constant BPM fit, and the local BPM/phase envelopes
+preserve tempo changes and intentional irregularity. Editors can drag, nudge,
+insert or remove anchors, define Beat 1, undo/redo, and restore consensus. The
+original detector evidence and all source/lyric/cue timestamps are immutable.
+
+Export one `stemlab.beat-timeline.v1` JSON document with the complete corrected
+beats, interval BPMs, signed sync phase/Beat 1 start pips, 16-tick conversion,
+source and consensus SHA-256 identities. See [beat timeline guide](beat-timeline.md).
+DanceMoves' current `beat-alignment.v1` importer is fixed-tempo only; a
+versioned DanceMoves consumer update is required to use the full irregular map.

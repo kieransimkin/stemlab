@@ -4,6 +4,7 @@ import { TimelineSequence, formatTimelineTime, TIMELINE_DISPLAY_API_VERSION } fr
 import { groupAudioLanes } from "./audio-channels.js";
 import { beatGridComparison } from "./beat-offsets.js";
 import { BeatOffsetControls } from "./beat-offset-controls.jsx";
+import { useBeatMapEditor } from "./beat-map-editor.jsx";
 if (TIMELINE_DISPLAY_API_VERSION !== 1) throw new Error("Install the shared timeline display-controls update before building StemLab");
 import "react-timeline-sequence/styles.css";
 import { LoopSummary, useAnalysisLoops } from "./loops";
@@ -242,6 +243,7 @@ function StemLabTimeline({ hash, filename }) {
   const loopState = useAnalysisLoops(hash);
   const [lanes, setLanes] = useState([]);
   const [duration, setDuration] = useState(0);
+  const beatEditor = useBeatMapEditor(hash, duration);
   const [status, setStatus] = useState({ state: "submitted" });
   const [canonical, setCanonical] = useState({ bpm: null, lyrics: null, lyric_timing: [] });
   const [beatOffsets, setBeatOffsets] = useState(null);
@@ -330,7 +332,7 @@ function StemLabTimeline({ hash, filename }) {
     { id: "canonical:bpm", title: "BPM grid · original", meta: `${comparison.basis.bpm.toFixed(4)} BPM · source time 0`, kind: "canonical-bpm", height: 74, content: { type: "markers", items: comparison.original } },
     { id: "bpm:aligned", title: "BPM grid · offset", meta: comparison.row ? `${comparison.row.offset_pips.toFixed(6)} pips · ${comparison.analysis.analysis_id}` : "Waiting for detected first beat", kind: "canonical-bpm", height: 74, content: { type: "markers", items: comparison.aligned } },
   ] : [];
-  const allLanes = [...gridLanes, ...references.lanes, ...[...displayLanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
+  const allLanes = [...gridLanes, ...beatEditor.lanes, ...references.lanes, ...[...displayLanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
   const state = status.state || "submitted";
   return <TimelineSequence
     className="stemlab-timeline"
@@ -342,11 +344,13 @@ function StemLabTimeline({ hash, filename }) {
     subtitle={hash}
     loops={loopState.loops}
     lanes={allLanes}
-    grid={comparison.grid}
+    grid={[...comparison.grid, ...beatEditor.grid]}
     onDurationChange={setDuration}
+    onWindowChange={beatEditor.onWindowChange}
+    onTimeChange={beatEditor.onTimeChange}
     onPlaybackError={error => appendLog("stderr", error instanceof Error ? error.message : String(error))}
     headerEnd={<><span className={`badge ${state}`}>{state}</span><span className="small">{allLanes.length} lane{allLanes.length === 1 ? "" : "s"}</span></>}
-    footer={<><BeatOffsetControls comparison={comparison} onBasis={setGridBasis} onAnalysis={setGridAnalysis} /><LoopSummary state={loopState} hash={hash} /><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
+    footer={<><BeatOffsetControls comparison={comparison} onBasis={setGridBasis} onAnalysis={setGridAnalysis} />{beatEditor.panel}<LoopSummary state={loopState} hash={hash} /><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
   />;
 }
 

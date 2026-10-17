@@ -94,3 +94,18 @@ that keeps BPM estimated. A canonical BPM does not make detector phase confirmed
 Consumers must verify their exact source and apply the rhythmic offset once,
 after mapping excerpts/repeats/preroll into original song time. A missing or
 unavailable selection fails without inventing an offset.
+
+## Editable nonuniform beat correction
+
+The browser's Beat correction lanes make an independent source-frame-accurate
+beat map: the default anchors are the **real consensus beats at their original
+timestamps**, without a constant BPM fit, and the local BPM/phase envelopes
+preserve tempo changes and intentional irregularity. Editors can drag, nudge,
+insert or remove anchors, define Beat 1, undo/redo, and restore consensus. The
+original detector evidence and all source/lyric/cue timestamps are immutable.
+
+Export one `stemlab.beat-timeline.v1` JSON document with the complete corrected
+beats, interval BPMs, signed sync phase/Beat 1 start pips, 16-tick conversion,
+source and consensus SHA-256 identities. See [beat timeline guide](beat-timeline.md).
+DanceMoves' current `beat-alignment.v1` importer is fixed-tempo only; a
+versioned DanceMoves consumer update is required to use the full irregular map.

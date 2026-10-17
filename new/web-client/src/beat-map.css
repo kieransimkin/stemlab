@@ -1,0 +1,35 @@
+/* StemLab-only beat editor: share the released timeline transport, don't fork it. */
+.stemlab-beatmap-track,.stemlab-beatmap-tempo {position:absolute;inset:0;overflow:hidden;touch-action:pan-y;}
+.stemlab-beatmap-anchor{position:absolute;top:7px;height:calc(100% - 14px);width:9px;transform:translateX(-50%);border:1px solid #3bdac7;background:#24b3a7bb;border-radius:4px;cursor:ew-resize;z-index:4;touch-action:none;padding:0;color:transparent;}
+.stemlab-beatmap-anchor.corrected {border-color:#f2b868;background:#f3b359bb;}
+.stemlab-beatmap-anchor.manual {border-color:#dbb3f9;background:#b38cf1b3;}
+.stemlab-beatmap-anchor.origin {width:14px;outline:1px dashed #fff;}
+.stemlab-beatmap-anchor.selected,.stemlab-beatmap-anchor:focus-visible {outline:2px solid #fff;box-shadow:0 0 9px #bde;z-index:5;}
+.stemlab-beatmap-anchor.origin span {font-size:9px;color:#10151e;}
+.stemlab-beatmap-tempo {background:repeating-linear-gradient(to bottom, transparent,transparent 24%,#ffffff0b 24%,#ffffff0b 25%);}
+.stemlab-beatmap-tempo-node {position:absolute;transform:translate(-50%,-50%);height:18px;min-width:42px;border:1px solid #f4d76e;background:#272531;color:#ffe9a6;font-size:10px;border-radius:7px;cursor:ns-resize;touch-action:none;z-index:4;}
+.stemlab-beatmap-tempo-node.selected,.stemlab-beatmap-tempo-node:focus-visible {outline:2px solid #fff;z-index:5;}
+.stemlab-beatmap-extent{pointer-events:none;position:sticky;left:4px;width:max-content;line-height:70px;font-size:9px;color:#a4a3ac;z-index:2;}
+.stemlab-timeline .rts-grid-line.stemlab-grid-corrected {border-left:2px solid #2ce4cd;background:none;opacity:.75;}
+.stemlab-beatmap-panel {display:grid;gap:7px;width:100%;color:#cfe1e3;border-top:1px solid #4b515d;padding:8px 12px;font-size:11px;}
+.stemlab-beatmap-panel header {display:flex;align-items:center;flex-wrap:wrap;gap:9px;}
+.stemlab-beatmap-panel header strong{color:#dbf7ef;font-size:13px;}
+.stemlab-beatmap-panel header span{color:#9ad9d0;}
+.stemlab-beatmap-panel header button{margin-left:auto;}
+.stemlab-beatmap-panel p{margin:0;color:#a7b4c1;}
+.stemlab-beatmap-fields,.stemlab-beatmap-actions,.stemlab-beatmap-export {display:flex;flex-wrap:wrap;align-items:center;gap:7px;}
+.stemlab-beatmap-panel label{display:inline-flex;align-items:center;gap:5px;}
+.stemlab-beatmap-panel input[type=number] {width:92px;}
+.stemlab-beatmap-panel select {max-width:105px;}
+.stemlab-beatmap-panel button,.stemlab-beatmap-panel select,.stemlab-beatmap-panel input[type=number] {padding:4px 7px;border:1px solid #53616d;background:#19232d;color:#dceaf4;border-radius:5px;}
+.stemlab-beatmap-panel button {cursor:pointer;}
+.stemlab-beatmap-panel button:disabled {opacity:.45;cursor:default;}
+.stemlab-beatmap-panel button:focus-visible,.stemlab-beatmap-panel input:focus-visible {outline:2px solid #dceaff;}
+.stemlab-beatmap-panel small{display:block;color:#a9b5c0;}
+.stemlab-beatmap-status{color:#ffdeb5;white-space:normal;}
+/* Allow the editor and old beat-offset controls to coexist in the shared footer. */
+.stemlab-timeline .rts-footer {max-height:min(560px,65vh);}
+.stemlab-timeline .rts-footer > div:first-child {max-height:min(550px,64vh);overflow:auto;}
+@media (forced-colors:active){.stemlab-beatmap-anchor,.stemlab-beatmap-tempo-node,.stemlab-timeline .rts-grid-line.stemlab-grid-corrected {forced-color-adjust:auto;border-color:CanvasText;}}
+
+.stemlab-beatmap-tempo-line{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}

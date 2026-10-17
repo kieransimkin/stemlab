@@ -259,6 +259,8 @@ def install_routes(
             "waveform": "GET /api/{sha256}/waveform?path=...",
             "spectrogram": "GET /api/{sha256}/spectrogram?path=...",
             "canonical": "GET/PUT /api/{sha256}/canonical",
+            "beat_timeline": "GET/PUT /api/{sha256}/beat-timeline",
+            "beat_timeline_export": "POST /api/{sha256}/beat-timeline/preview",
             "results_root": str(results_dir_provider()),
         }
 
@@ -306,6 +308,83 @@ def install_routes(
             "first_detected_beat": first_beat,
             "first_detected_beat_source": first_beat_source,
         }
+
+    @app.get("/api/{song_hash}/beat-timeline")
+    async def read_beat_timeline(song_hash: str) -> dict[str, Any]:
+        """Saved corrections or exact consensus anchors, never rewritten evidence."""
+        from .beat_map import read_or_seed
+        try:
+            song_hash = _normalise_hash(song_hash)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        root = (results_dir_provider() / song_hash).resolve()
+        if not root.is_dir():
+            raise HTTPException(status_code=404, detail="analysis not found")
+        try:
+            document, saved, revision = await asyncio.to_thread(read_or_seed, root, song_hash)
+        except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+            # While analysis is in progress consensus may not exist yet.
+            return {"available": False, "reason": str(exc), "map": None,
+                    "saved": False, "revision": None}
+        return {"available": True, "map": document, "saved": saved, "revision": revision}
+
+    async def _beat_json_body(request: Request) -> dict[str, Any]:
+        from .beat_map import MAX_JSON_BYTES
+        body = await request.body()
+        if len(body) > MAX_JSON_BYTES:
+            raise HTTPException(status_code=413, detail="Beat timeline exceeds 32 MiB")
+        try:
+            payload = json.loads(body)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise HTTPException(status_code=400, detail="Expected UTF-8 JSON") from exc
+        if not isinstance(payload, dict):
+            raise HTTPException(status_code=400, detail="Beat timeline JSON must be an object")
+        return payload
+
+    @app.post("/api/{song_hash}/beat-timeline/preview")
+    async def preview_beat_timeline(song_hash: str, request: Request) -> dict[str, Any]:
+        """Authoritative validation and single-document export, without saving."""
+        from .beat_map import preview
+        try:
+            song_hash = _normalise_hash(song_hash)
+            root = (results_dir_provider() / song_hash).resolve()
+            if not root.is_dir():
+                raise FileNotFoundError('analysis not found')
+            payload = await _beat_json_body(request)
+            return await asyncio.to_thread(preview, root, song_hash, payload)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.put("/api/{song_hash}/beat-timeline")
+    async def update_beat_timeline(song_hash: str, request: Request) -> dict[str, Any]:
+        """Atomic separate correction file with optimistic edit revision guard."""
+        from .beat_map import save
+        try:
+            song_hash = _normalise_hash(song_hash)
+            root = (results_dir_provider() / song_hash).resolve()
+            if not root.is_dir():
+                raise FileNotFoundError('analysis not found')
+            payload = await _beat_json_body(request)
+            if not isinstance(payload.get('map'), dict):
+                raise ValueError('The map must be a beat-timeline JSON object')
+            expected = payload.get('expected_revision')
+            if expected is not None and (not isinstance(expected, str)
+                                         or not _HASH_RE.fullmatch(expected)):
+                raise ValueError('Expected revision must be a SHA-256 or null')
+            document, revision = await asyncio.to_thread(
+                save, root, song_hash, payload['map'], expected)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except FileExistsError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if socketio_server is not None:
+            await socketio_server.emit('beat_timeline_saved',
+                {'hash': song_hash, 'revision': revision}, room=song_hash)
+        return {'map': document, 'revision': revision, 'saved': True}
 
     @app.get("/api/{song_hash}/canonical")
     async def canonical_metadata(song_hash: str) -> dict[str, Any]:

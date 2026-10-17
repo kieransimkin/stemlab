@@ -305,6 +305,35 @@ can cancel); the native DanceRudiments recording JSON, WASM viewer, source
 hashes, normalization and existing transactional exports are reused.
 See [signed waveform resampling](docs/rudiment-recordings.md#signed-waveform-resampling).
 
+## Correct beats and export variable-tempo synchronisation
+
+The timeline now includes a **Beat correction** editor, automatically seeded at
+all exact **consensus beat** sample frames. Drag beats individually against the
+master/stem waveform, nudge at single-sample precision, insert missing beats,
+edit the **local BPM envelope**, inspect the **phase CV curve**, shift global
+phase, and explicitly select the anchor for **Beat 1**. The original detector
+output is never modified. Corrections live separately at
+`timing/beat-timeline.json` with undo/redo and revision-safe saving.
+
+**Export Beat 1 + full beat timeline JSON** downloads **one** versioned
+`stemlab.beat-timeline.v1` object containing every corrected beat, locally
+varying BPM intervals, original master/consensus hashes, `beat_1_start_seconds`,
+`beat_1_start_pips` and the signed `sync_phase_offset_pips` (plus DanceMoves
+16-tick conversions). The viewer also supports copying this whole JSON value,
+importing previously edited versions, and restoring original consensus anchors.
+Export preserves irregular timing; no constant tempo approximation is substituted.
+
+**DanceMoves compatibility:** the existing WordPress `beat-alignment.v1`
+importer is **constant BPM only** and rejects this schema. To drive variable
+rhythm in DanceMoves, add the corresponding `beat-timeline.v1` import/scheduler
+support (including WordPress exact-audio hash checks) before pasting/using it.
+The old beat-offset handoff remains available for true constant-BPM songs.
+
+Read [editable beat timelines, schemas and consumer requirements](docs/beat-timeline.md).
+Rebuild `src/stemlab/web/app.js` and `timeline.css` from the unchanged published
+React timeline dependency after applying source changes:
+`npm ci && npm run build:web`; check in both outputs with the source.
+
 ## First-beat alignment and tempo families
 
 Compare the saved consensus and every individual detector/source at canonical

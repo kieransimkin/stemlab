@@ -90,3 +90,16 @@ writing without importing Torch. Preserve this route and its no-Torch test;
 automatic device selection queries the actual CTranslate2 backend.
 Observed single-word edge punctuation may normalize for lexical comparison;
 never change canonical text/evidence or split a multiword stamp into invented times.
+
+## User-edited variable tempo and Beat 1 alignment
+
+The corrected beat timeline (`stemlab.beat-timeline.v1`) preserves all original
+consensus detector timestamps as read-only evidence and places any user edits in
+`timing/beat-timeline.json`. Clock corrections use exact source sample frames,
+strictly ordered beat indices, 64 pips/beat, and integrated piecewise phase.
+The first-beat sync phase offset is **signed**, may be fractional, and must not
+be rounded to integer pips (or 16-tick DanceMoves units) silently. Keep audio,
+lyric/cue and recording time on the untouched original source clock. New web
+features use the released shared timeline's custom lane API; rebuild/commit its
+real compiled assets. DanceMoves 3.3.x only understands constant-tempo beat
+alignment v1: never mislabel an irregular v1 timeline as that older schema.
