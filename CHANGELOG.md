@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.0 - 2026-10-17
+
+- Add fixed and variable BPM matching with source-bound beat maps.
+- Add editable per-line and per-word lyric timings.
+- Add cue positioning and enforced musical section naming.
+- Integrate React Timeline Sequence 0.4.0.
+- Improve Windows pytest temporary-directory reliability.
+
 ## 1.6.0 - 2026-10-16
 
 - Add a CI-generated full-master Arcadians Fourier page with 4/8/16/32/64/128-channel shared viewers, every-resolution native/bar/audio QA and combined five-page publication. Losslessly compress native recording downloads to preserve the Pages size budget.
