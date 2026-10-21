@@ -1,8 +1,8 @@
 # Audition lyric timings in StemLab
 
-The live and exported viewers use released React Timeline Sequence 0.6.0's
+The live and exported viewers use released React Timeline Sequence 0.7.0's
 `lyricAudition` API. Enable **Audition lyrics** in the transport to see the active
-line as a subtitle over the cover. Playback, paused seeks, buffered loops and
+line as a subtitle over the cover and the current timed word highlighted. Playback, paused seeks, buffered loops and
 lyric edits use the same source clock as the timeline playhead.
 
 ![Actual Arcadians timeline audition with the selected audio and cover artwork](screenshots/lyric-audition-arcadians.png)
@@ -19,6 +19,16 @@ seconds; it cannot reuse a master-only loop excerpt or download label.
 
 Live edits consume the complete line track, including unsaved changes, regardless
 of editor visibility or timeline scrolling. Empty edited tracks stay empty.
+The complete word track is supplied separately, so selecting one line in the
+editor does not hide other words from audition. Exact `line_id` associations
+keep simultaneous lead and backing-vocal words separate. Missing word evidence
+falls back to whole-line display rather than fabricated equal-width timing.
+
+![Actual shared audition UI with the active synthetic word highlighted](screenshots/lyric-audition-active-word.png)
+
+Actual React Timeline Sequence 0.7.0 browser capture using its original synthetic
+tone, text and vector-art fixture. It demonstrates the integrated active-word
+state; it is not song-timing or attended-listening evidence.
 Before an editable document exists, saved canonical lyric timings are used.
 Static exports use their saved timing source and remain read-only.
 

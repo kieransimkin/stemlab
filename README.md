@@ -1164,10 +1164,11 @@ Temporary files are local test data, not repository artefacts or published music
 
 ### Arcadians timeline CI decoder and artifact checks
 
-The 1.9.0 viewer snapshot uses the published React Timeline Sequence 0.6.0
+The current viewer snapshot uses the published React Timeline Sequence 0.7.0
 and DanceRudiments 0.3.0. The genuine rebuilt bundle preserves the existing
-transport, beat-grid controls and five MIDI note lanes. Cover subtitles and the
-master/stem selector use that same source-clock transport.
+transport, beat-grid controls and five MIDI note lanes. Cover subtitles, exact
+active-word highlighting and the master/stem selector use that same source-clock
+transport.
 
 The complete Arcadians demo checks lint before expensive analysis. Its Docker
 runtime includes pinned TorchCodec and performs a synthetic MP3 decoder smoke

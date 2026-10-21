@@ -16,7 +16,7 @@
 
 ## Released viewers and coordinated CI/CD
 
-- The 1.9.0 snapshot consumes React Timeline Sequence 0.6.0 and DanceRudiments
+- The current source snapshot consumes React Timeline Sequence 0.7.0 and DanceRudiments
   0.3.0. Preserve real HTTP audio, beat-control and MIDI-lane verification when
   synchronizing newer releases; do not enable unrelated opt-in UI implicitly.
 - Read [docs/released-viewers.md](docs/released-viewers.md) before changing dependency, build or release behaviour. The sibling layout is `DanceRudiments/`, `react-timeline-sequence/`, and `stemlab/` under one parent.
@@ -112,6 +112,9 @@ alignment v1: never mislabel an irregular v1 timeline as that older schema.
 Use the released shared `lyricAudition` API in live and exported timelines. Feed
 it the complete edited line list, independently of editor visibility and viewport
 filtering; canonical lines are the fallback only before an edit document exists.
+Feed the complete source-frame word list as a separate track so the active word
+can be highlighted. Retain line identity for overlapping backing-vocal words;
+never derive fake word intervals by splitting line text.
 Offer only full-duration source-bound audio channels. Stem loops must decode that
 stem, never a master-only excerpt. Static artwork is local and hash-inventoried;
 keep extra lyric-reference metadata separate from frozen scientific evidence.
