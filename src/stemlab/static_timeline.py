@@ -148,6 +148,17 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
                     not isinstance(item.get('end'), (int, float)) or
                     not math.isfinite(item['end']) or item['end'] <= item['start']):
                 raise ValueError('Lyric audition requires finite explicit line intervals')
+        words = audition.get('words', [])
+        if not isinstance(words, list):
+            raise ValueError('Lyric audition words must be a list')
+        line_ids = {item.get('id') for item in audition['items'] if isinstance(item.get('id'), str)}
+        for word in words:
+            if (not isinstance(word.get('id'), str) or not isinstance(word.get('lineId'), str)
+                    or word['lineId'] not in line_ids or not isinstance(word.get('label'), str)
+                    or not isinstance(word.get('start'), (int, float)) or not math.isfinite(word['start'])
+                    or word['start'] < 0 or not isinstance(word.get('end'), (int, float))
+                    or not math.isfinite(word['end']) or word['end'] <= word['start']):
+                raise ValueError('Lyric audition requires finite line-associated word intervals')
     # The bundled Arcadians artwork belongs only to its checksum-locked master.
     # Other exports require an explicit local artwork input; no network download.
     if artwork is None and sha == '5a3d17d8b5b27d62a6bb9fa1f654c403db0341da826d650cc282dfa5758ee6de':
@@ -165,6 +176,8 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
         raise ValueError('Empty source audio')
     if audition is not None and any(item['end'] > info['duration_seconds'] + .05 for item in audition['items']):
         raise ValueError('Lyric audition exceeds the source duration')
+    if audition is not None and any(word['end'] > info['duration_seconds'] + .05 for word in audition.get('words', [])):
+        raise ValueError('Lyric audition word exceeds the source duration')
     canonical = read_json(results / 'canonical.json') if (results / 'canonical.json').exists() else {}
     errors = list(analysis.get('errors') or []) + list((analysis.get('deep_analysis') or {}).get('errors') or [])
     coverage = coverage or {'status': 'saved-snapshot', 'scope': 'Existing evidence only; not a completeness claim'}
@@ -309,7 +322,8 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
         revision = hashlib.sha256(json.dumps({path.relative_to(stage).as_posix(): digest(path)
             for path in sorted(stage.rglob('*')) if path.is_file()}, sort_keys=True).encode()).hexdigest()[:16]
         payload = dict(schema='stemlab.static-timeline.v1', hash=sha, routes=routes, version=revision,
-                       artwork=artwork_name, lyric_items=audition['items'] if audition else None)
+                       artwork=artwork_name, lyric_items=audition['items'] if audition else None,
+                       lyric_words=audition.get('words') if audition else None)
         html_payload = json.dumps(payload, ensure_ascii=True).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
         index = (WEB_ROOT / 'index.html').read_text(encoding='utf-8')
         index = re.sub(r'<script\b[^>]*\bsrc=["\']https?://[^"\']+["\'][^>]*>\s*</script>', '', index, flags=re.I)

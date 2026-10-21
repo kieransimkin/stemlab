@@ -13,6 +13,20 @@ export function auditionLines(canonical, edited = null) {
   });
 }
 
+/** Adapt the complete source-frame word track for Timeline audition. This is
+ * independent of the selected editor line and visible timeline window. */
+export function auditionWords(document) {
+  const sampleRate = Number(document?.sample_rate);
+  if (!Number.isFinite(sampleRate) || sampleRate <= 0 || !Array.isArray(document?.words)) return [];
+  return document.words.flatMap(row => {
+    const start = Number(row.start_frame) / sampleRate;
+    const end = Number(row.end_frame) / sampleRate;
+    const label = String(row.word ?? "").trim();
+    if (!row.id || !row.line_id || !label || !Number.isFinite(start) || !Number.isFinite(end) || end <= start) return [];
+    return [{id:String(row.id),lineId:String(row.line_id),start,end,label}];
+  });
+}
+
 /** Only full-duration channels discovered from this analysis share lyric time. */
 export function auditionChannels(lanes, duration) {
   return lanes.filter(lane => typeof lane.audioSrc === "string" && lane.audioSrc &&

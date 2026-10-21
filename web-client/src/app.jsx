@@ -8,7 +8,7 @@ import { BeatOffsetControls } from "./beat-offset-controls.jsx";
 import { useBeatMapEditor } from "./beat-map-editor.jsx";
 import { useTimingEditor } from "./timing-editor.jsx";
 if (TIMELINE_DISPLAY_API_VERSION !== 1) throw new Error("Install the shared timeline display-controls update before building StemLab");
-if (TIMELINE_LYRIC_AUDITION_API_VERSION !== 1) throw new Error("Install the released timeline lyric audition API before building StemLab");
+if (TIMELINE_LYRIC_AUDITION_API_VERSION !== 2) throw new Error("Install the released active-word lyric audition API before building StemLab");
 import "react-timeline-sequence/styles.css";
 import { LoopSummary, useAnalysisLoops } from "./loops";
 
@@ -365,7 +365,8 @@ function StemLabTimeline({ hash, filename }) {
     audioSrc={channel?.audioSrc || `/api/${hash}/source`}
     lyricAudition={{artworkSrc, artworkAlt:`${canonical.title || filename} cover artwork`,
       audioLabel:channel?.title || "MASTER · uploaded source",
-      items:auditionLines(canonical, timingEditor.lyricItems ?? window.__stemlabStatic?.lyricItems ?? null)}}
+      items:auditionLines(canonical, timingEditor.lyricItems ?? window.__stemlabStatic?.lyricItems ?? null),
+      words:timingEditor.lyricWords ?? window.__stemlabStatic?.lyricWords ?? []}}
     duration={duration}
     title={canonical.title || filename}
     subtitle={hash}

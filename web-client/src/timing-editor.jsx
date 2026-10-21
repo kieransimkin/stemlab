@@ -1,5 +1,6 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {SECTION_NAMES,CUE_TYPES,canonicalCue,createAtPlayhead,deleteTimingEvent,shortWordTransitions,updateTimingEvent,toFrame} from './timing-workflow.js';
+import {auditionWords} from './lyric-audition.js';
 import './timing-editor.css';
 
 const api = async (hash,method='GET',body=null,endpoint='')=>{
@@ -228,6 +229,8 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
   {open&&!doc&&<p>Waiting for decoded source audio; no lyric or cue times are invented.</p>}
   {note&&<output role="status" className="stemlab-timing-status">{note}</output>}
  </section>;
- return {clock,lanes,panel,gridVisible,lyricItems:doc ? lineRows.map(row=>toEvent(row,'line')) : null,
+ return {clock,lanes,panel,gridVisible,
+   lyricItems:doc ? lineRows.map(row=>toEvent(row,'line')) : null,
+   lyricWords:doc ? auditionWords(doc) : null,
    onWindowChange:setVisible,onTimeChange:t=>{playhead.current=t;}};
 }

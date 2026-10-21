@@ -4,6 +4,8 @@
 
 - Extend the released timeline's source-synchronised cover-art lyric audition
   with a complete all-words timing lane and a focused selected-line mode.
+- Synchronize React Timeline Sequence 0.7.0 and highlight the exact active word
+  from the complete source-frame word track, including overlapping vocal lines.
 - Add clickable warning/severe diagnostics for word-onset transitions below five or
   three DanceMoves ticks. Diagnostics never rewrite artist timing automatically.
 - Keep saved source-frame corrections retrievable through the existing API and

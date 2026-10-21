@@ -29,6 +29,7 @@
     sourceHash: data.hash,
     artworkUrl: data.artwork ? new URL(data.artwork, base).href : undefined,
     lyricItems: data.lyric_items ?? null,
+    lyricWords: data.lyric_words ?? null,
     search: "?hash=" + data.hash,
     apiRequired: false,
   }), writable: false});
