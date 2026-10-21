@@ -87,18 +87,25 @@ def capture_workflow(page, output: Path, report: dict) -> dict:
     page.wait_for_timeout(250)
 
     # A ruler click seeks within the selected loop and resumes shared playback.
-    seek_time = (verse['start_sample'] + (verse['end_sample'] - verse['start_sample']) / 3) / sr
-    point = page.evaluate("""seconds => {
-        const ruler = document.querySelector('.rts-ruler-track').getBoundingClientRect();
+    point = page.evaluate("""() => {
+        const scroller = document.querySelector('.rts-scroller').getBoundingClientRect();
+        const label = document.querySelector('.rts-ruler-label').getBoundingClientRect();
+        const rulerNode = document.querySelector('.rts-ruler-track');
+        const ruler = rulerNode.getBoundingClientRect();
         const duration = Number(document.querySelector('audio').duration);
-        return {x:ruler.x + seconds * ruler.width / duration,
-                y:ruler.y + ruler.height / 2};
-    }""", seek_time)
+        const visible = [...rulerNode.querySelectorAll('.rts-tick-major')]
+          .map(node => ({node, rect:node.getBoundingClientRect()}))
+          .filter(({rect}) => rect.x > label.right + 8 && rect.x < scroller.right - 8);
+        if (!visible.length) throw new Error('No visible numbered ruler tick');
+        const chosen = visible[Math.floor(visible.length / 2)];
+        return {x:chosen.rect.x + 1, y:ruler.y + ruler.height / 2,
+                seconds:chosen.node.offsetLeft * duration / rulerNode.offsetWidth};
+    }""")
     page.mouse.click(point['x'], point['y'])
     page.wait_for_function("([t]) => !document.querySelector('audio').paused"
-                           " && document.querySelector('audio').currentTime >= t", arg=[seek_time])
+                           " && document.querySelector('audio').currentTime >= t", arg=[point['seconds']])
     current = clock_seconds(page)
-    assert seek_time <= current < seek_time + .75
+    assert point['seconds'] <= current < point['seconds'] + .75
     page.get_by_role('button', name='Pause', exact=True).click()
     page.screenshot(path=str(output / 'loops-inspect.png'))
 
