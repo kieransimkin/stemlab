@@ -14,3 +14,6 @@
 .stemlab-timeline .rts-lane-timing-word{background:#1e1925}
 .stemlab-timeline .rts-lane-timing-cue{background:#241c18}
 @media (prefers-reduced-motion:reduce){.stemlab-timing-panel *{transition:none!important}}
+.stemlab-timeline .rts-header-end { min-width: 0; flex-wrap: wrap; }
+.stemlab-audition-channel { min-width: 0; max-width: 100%; display: flex; align-items: center; gap: 6px; }
+.stemlab-audition-channel select { min-width: 0; max-width: 32ch; width: 100%; font: inherit; }

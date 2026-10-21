@@ -20,3 +20,11 @@ stemlab beat-offset examples/the-truth-is-a-virus --audio examples/the-truth-is-
 ```
 
 See [the interpretation and limitations](../../docs/beat-offsets.md).
+
+The subtitle audition adds a separate `lyric-audition.json` and approved `cover.jpg`.
+It preserves all six frozen evidence files unchanged. The 57 explicit lyric
+intervals come from the artist-confirmed canonical LRC adopted on 5 September
+2026; source and artwork hashes are retained in that reference. This adds no BPM
+or detector authority. See [the illustrated audition guide](../../docs/lyric-audition.md).
+
+![Actual rebuilt lyric audition for this reference](../../docs/screenshots/lyric-audition-truth.png)

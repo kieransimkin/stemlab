@@ -4,6 +4,10 @@
 
 - Synchronize the published React Timeline Sequence 0.6.0, registry lock and
   genuine compiled viewer while retaining the analysis and transport controls.
+- Use released React Timeline Sequence 0.6.0 for live/static cover-art lyric
+  auditioning, full edited-line updates and full-duration master/stem selection.
+- Bundle source-bound artwork and separate canonical lyric-reference metadata in
+  static exports; verify actual subtitle and selected-channel playback over HTTP.
 - Extend the complete Arcadians CI/Pages recipe with five genuine pitched-stem
   Basic Pitch transcriptions, painted note lanes and byte-preserved MIDI downloads.
   Validate source hashes, sample clocks, native MIDI and matching note tables.

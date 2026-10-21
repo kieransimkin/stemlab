@@ -214,5 +214,6 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
   {open&&!doc&&<p>Waiting for decoded source audio; no lyric or cue times are invented.</p>}
   {note&&<output role="status" className="stemlab-timing-status">{note}</output>}
  </section>;
- return {clock,lanes,panel,gridVisible,onWindowChange:setVisible,onTimeChange:t=>{playhead.current=t;}};
+ return {clock,lanes,panel,gridVisible,lyricItems:doc ? lineRows.map(row=>toEvent(row,'line')) : null,
+   onWindowChange:setVisible,onTimeChange:t=>{playhead.current=t;}};
 }
