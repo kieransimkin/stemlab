@@ -89,18 +89,14 @@ def capture_workflow(page, output: Path, report: dict) -> dict:
     # A ruler click seeks within the selected loop and resumes shared playback.
     seek_time = (verse['start_sample'] + (verse['end_sample'] - verse['start_sample']) / 3) / sr
     point = page.evaluate("""seconds => {
-        const s = document.querySelector('.rts-scroller');
-        const r = s.getBoundingClientRect();
-        const label = document.querySelector('.rts-label').getBoundingClientRect().width;
-        const trackWidth = document.querySelector('.rts-ruler-track').getBoundingClientRect().width;
-        const duration = Number(document.querySelector('audio').duration);
         const ruler = document.querySelector('.rts-ruler-track').getBoundingClientRect();
-        return {x:r.left + label + seconds * trackWidth / duration - s.scrollLeft,
-                y:ruler.top + ruler.height / 2};
+        const duration = Number(document.querySelector('audio').duration);
+        return {x:ruler.x + seconds * ruler.width / duration,
+                y:ruler.y + ruler.height / 2};
     }""", seek_time)
     page.mouse.click(point['x'], point['y'])
-    page.wait_for_function("() => !document.querySelector('audio').paused")
-    page.wait_for_timeout(150)
+    page.wait_for_function("([t]) => !document.querySelector('audio').paused"
+                           " && document.querySelector('audio').currentTime >= t", arg=[seek_time])
     current = clock_seconds(page)
     assert seek_time <= current < seek_time + .75
     page.get_by_role('button', name='Pause', exact=True).click()
