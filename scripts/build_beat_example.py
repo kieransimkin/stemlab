@@ -42,7 +42,13 @@ def build(output: Path, source_commit: str, *, fixture: Path = FIXTURE):
     if not re.fullmatch('[a-f0-9]{40}', source_commit):
         raise ValueError('Require an exact source commit')
     evidence, _ = verify_evidence(fixture)
+    audition_path = fixture / 'lyric-audition.json'
+    audition = read_json(audition_path) if audition_path.is_file() else None
+    artwork = fixture / 'cover.jpg' if (fixture / 'cover.jpg').is_file() else None
+    if audition is not None and (artwork is None or digest(artwork) != audition.get('artwork_sha256')):
+        raise ValueError('Reference artwork differs from its audition identity')
     result = export_timeline(fixture, output, include_audio=True, source_commit=source_commit,
+        artwork=artwork, audition=audition,
         byte_exact_json={name: sha for name, sha in evidence['files'].items() if name.endswith('.json')},
         coverage={'status': 'saved-snapshot', 'recipe': 'reference-beat-analysis-v1',
                   'scope': 'Real frozen BeatThis/BeatNet master evidence and consensus; CI regenerates fits, pip offsets and this viewer. No other model-family completeness or artist BPM approval is claimed.',

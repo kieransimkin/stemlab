@@ -142,24 +142,20 @@ transport callbacks rather than duplicating the timeline renderer.
 
 The Stemlab browser workspace has **Lyric timing audition & correction** alongside
 **Beat correction**. The word lane defaults to all timed words and can be reduced to
-the selected line for close editing. **Open lyric audition** displays the canonical
-cover artwork with the active line and highlighted current word. It follows the
-existing Timeline Sequence playhead, so seeking and playback use the same master
-transport as the editable lanes. Overlapping lead and backing-vocal lines are
-shown together rather than silently selecting only the first line.
+the selected line for close editing. The timeline's **Audition lyrics** control
+displays canonical cover artwork and source-bound subtitles. It follows the existing
+Timeline Sequence playhead, so seeking, playback, loops and selected audio channels
+use the same master transport as the editable lanes.
 
-![Actual timeline-synchronised lyric audition for Light Will Win](screenshots/lyric-audition-light-will-win.png)
-
-Actual local browser output at 41.348 seconds. A video is not embedded because it
-would redistribute release audio in the public software documentation; the
-timestamped screenshot and automated shared-playhead check document the UI route.
+See [the lyric-audition guide](lyric-audition.md) for actual desktop/mobile
+screenshots, a silent demonstration video and the shared transport checks.
 
 For a fixed clock, the editor reports consecutive word onsets below five native
 DanceMoves ticks and marks intervals below three ticks severe. The complete list is
 clickable and the implicated destination word is outlined. These diagnostics are
 review prompts only; StemLab does not lengthen rapid words automatically.
 
-It uses the shared `react-timeline-sequence` 0.4+ timing lanes, not a second
+It uses the shared `react-timeline-sequence` 0.6+ timing lanes, not a second
 playhead or bespoke renderer. Its three editable tracks are per-line lyric
 blocks, all words or words belonging to the selected line, and cue section boundaries.
 The same original master audio, transport and zoom apply to all three.

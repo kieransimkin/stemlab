@@ -484,18 +484,13 @@ Its raw median tempo and unconfirmed canonical BPM remain visible.
 
 The Stemlab browser workspace has **Lyric timing audition & correction** alongside
 **Beat correction**. The timing lanes show all words by default, with an optional
-selected-line view for close editing. **Open lyric audition** reveals the approved
-cover artwork and renders the active lyric line with its current word highlighted.
-Overlapping lead and backing-vocal lines remain visible together.
-The audition reads the existing timeline playhead callback: play, pause and seek
-remain owned by the one master transport, with no second audio element or clock.
+selected-line view for close editing. The timeline's **Audition lyrics** control
+reveals the approved cover artwork and renders source-bound subtitles. Play, pause,
+seek, looping and channel selection remain owned by the one timeline transport.
 
-![Actual StemLab lyric audition over the Light Will Win cover at 41.348 seconds](docs/screenshots/lyric-audition-light-will-win.png)
-
-Actual local browser output using the public release artwork and source-bound timing
-document. The screenshot contains no release audio; an embedded demonstration video
-is omitted because redistributing the master inside the public software repository
-would add no interface evidence beyond the shared transport and timestamp shown here.
+The actual screenshots and silent demonstration video in
+[the lyric-audition guide](docs/lyric-audition.md) show the released shared control
+in desktop and mobile layouts without redistributing a release master.
 
 Fixed-clock timing also flags consecutive word onsets below five DanceMoves ticks;
 below three ticks is severe. The editor outlines those destination words, lists every
@@ -503,7 +498,7 @@ flag with seconds and tick distance, and lets the reviewer jump to its parent li
 Flags never alter timestamps automatically, because a rapid backing-vocal or
 coarticulated phrase may be correct.
 
-It uses the shared `react-timeline-sequence` 0.4+ timing lanes, not a second
+It uses the shared `react-timeline-sequence` 0.6+ timing lanes, not a second
 playhead or bespoke renderer. Its three editable tracks are per-line lyric
 blocks, all words or words belonging to the selected line, and cue section boundaries.
 The same original master audio, transport and zoom apply to all three.
@@ -961,6 +956,19 @@ not production dependencies. Existing exported pages must be regenerated.
 
 ## Web service
 
+Live and static timeline viewers enable **Audition lyrics** using the released
+React Timeline Sequence control. Timed subtitles appear over the song's cover,
+following Play/Pause, seeks, loops and the selected **Audio channel**. Choose the
+master or a full-duration stem; changing channels pauses playback and resets the
+playhead. Unsaved line edits update subtitles immediately, even with the timing
+editor hidden. Frozen exports remain read-only.
+
+![Actual Arcadians viewer with cover-art lyric subtitles](docs/screenshots/lyric-audition-arcadians.png)
+
+[Play the actual silent viewer demonstration](docs/screenshots/lyric-audition-demo.webm).
+See [the audition guide](docs/lyric-audition.md) for both examples, timing authority,
+artwork export, local preview commands and verification limits.
+
 StemLab includes an upload/timeline web UI plus HTTP and Socket.IO APIs for
 content-addressed analysis jobs. See [docs/web.md](docs/web.md) for launchers,
 endpoints, events and the Arcadians reference workflow.
@@ -1155,6 +1163,11 @@ Temporary files are local test data, not repository artefacts or published music
 `analysis.json` records model/backend metadata and errors; `manifest.json` hashes every output artifact. Model checkpoints, research code and datasets retain their upstream terms. In particular, do not assume that an MIT-licensed inference wrapper automatically grants redistribution rights for every checkpoint it can download.
 
 ### Arcadians timeline CI decoder and artifact checks
+
+The 1.9.0 viewer snapshot uses the published React Timeline Sequence 0.6.0
+and DanceRudiments 0.3.0. The genuine rebuilt bundle preserves the existing
+transport, beat-grid controls and five MIDI note lanes. Optional cover-subtitle
+APIs in the shared release do not change this analysis viewer's presentation.
 
 The complete Arcadians demo checks lint before expensive analysis. Its Docker
 runtime includes pinned TorchCodec and performs a synthetic MP3 decoder smoke

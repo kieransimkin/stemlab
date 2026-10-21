@@ -16,6 +16,9 @@
 
 ## Released viewers and coordinated CI/CD
 
+- The 1.9.0 snapshot consumes React Timeline Sequence 0.6.0 and DanceRudiments
+  0.3.0. Preserve real HTTP audio, beat-control and MIDI-lane verification when
+  synchronizing newer releases; do not enable unrelated opt-in UI implicitly.
 - Read [docs/released-viewers.md](docs/released-viewers.md) before changing dependency, build or release behaviour. The sibling layout is `DanceRudiments/`, `react-timeline-sequence/`, and `stemlab/` under one parent.
 - Release the two companions first (React Timeline Sequence, then DanceRudiments), verify their configured publication workflows and public registries, then synchronize/rebuild/test/release StemLab. A merge or tag alone is not a verified release.
 - StemLab must target the **latest stable official releases**. No unreleased main commit, mutable development override, local `file:` archive or vendor package may substitute for a missing release. Latest is resolved before the build and locked to exact published versions, release commits and registry hashes for that run; fail visibly on stale or incompatible dependencies rather than falling back silently.
@@ -105,6 +108,14 @@ real compiled assets. DanceMoves 3.3.x only understands constant-tempo beat
 alignment v1: never mislabel an irregular v1 timeline as that older schema.
 
 ## Lyric and cue timing edits
+
+Use the released shared `lyricAudition` API in live and exported timelines. Feed
+it the complete edited line list, independently of editor visibility and viewport
+filtering; canonical lines are the fallback only before an edit document exists.
+Offer only full-duration source-bound audio channels. Stem loops must decode that
+stem, never a master-only excerpt. Static artwork is local and hash-inventoried;
+keep extra lyric-reference metadata separate from frozen scientific evidence.
+Run the lyric adapter and real HTTP subtitle/channel browser checks on rebuilds.
 
 Use the source-bound, separately revisioned `timing/song-timing-edits.json`.
 Keep original canonical lyrics, ASR, cues and master unchanged. Word starts and

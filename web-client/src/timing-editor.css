@@ -22,16 +22,6 @@
 .stemlab-timing-diagnostics li{break-inside:avoid;margin:.25rem 0}
 .stemlab-timing-diagnostics button{padding:0;border:0;background:none;color:#b9d8ff;text-align:left;text-decoration:underline;cursor:pointer}
 @media(max-width:760px){.stemlab-timing-diagnostics ul{columns:1}}
-.stemlab-lyric-audition{position:relative;isolation:isolate;width:min(100%,720px);aspect-ratio:16/9;margin:.8rem 0;overflow:hidden;border:1px solid #bd8b3c;border-radius:.8rem;background:#160824;box-shadow:0 14px 36px #0008}
-.stemlab-lyric-audition>img,.stemlab-lyric-audition-placeholder{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.stemlab-lyric-audition-placeholder{display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,#63245a,#170825 70%);color:#f9d989}
-.stemlab-lyric-audition-shade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,#14051ad9 78%,#0b020fed)}
-.stemlab-lyric-audition-copy{position:absolute;z-index:1;inset:auto 5% 7%;text-align:center;text-shadow:0 2px 8px #000}
-.stemlab-lyric-audition-copy>strong{display:block;margin-bottom:.5rem;color:#f0b92d;letter-spacing:.04em}
-.stemlab-lyric-audition-copy p{min-height:2.7em;margin:.25rem auto;font-size:clamp(1.2rem,3vw,2rem);font-weight:800;line-height:1.28;color:#fff3c2}
-.stemlab-lyric-audition-copy p span{display:inline-block;padding:0 .04em}
-.stemlab-lyric-audition-copy p .current{color:#ffd23f;text-shadow:0 0 10px #ff9d20,0 2px 8px #000;transform:translateY(-.04em)}
-.stemlab-lyric-audition-copy .empty{opacity:.65;font-style:italic}
-.stemlab-lyric-audition-copy small{color:#d7c8e3}
-@media(max-width:600px){.stemlab-lyric-audition{aspect-ratio:4/3}.stemlab-lyric-audition-copy{inset:auto 4% 6%}}
-@media(prefers-reduced-motion:reduce){.stemlab-lyric-audition-copy p .current{transform:none}}
+.stemlab-timeline .rts-header-end { min-width: 0; flex-wrap: wrap; }
+.stemlab-audition-channel { min-width: 0; max-width: 100%; display: flex; align-items: center; gap: 6px; }
+.stemlab-audition-channel select { min-width: 0; max-width: 32ch; width: 100%; font: inherit; }

@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { TimelineSequence, formatTimelineTime, TIMELINE_DISPLAY_API_VERSION } from "react-timeline-sequence";
+import { TimelineSequence, formatTimelineTime, TIMELINE_DISPLAY_API_VERSION, TIMELINE_LYRIC_AUDITION_API_VERSION } from "react-timeline-sequence";
+import { auditionLines, auditionChannels, channelLoops } from "./lyric-audition.js";
 import { groupAudioLanes } from "./audio-channels.js";
 import { beatGridComparison } from "./beat-offsets.js";
 import { BeatOffsetControls } from "./beat-offset-controls.jsx";
 import { useBeatMapEditor } from "./beat-map-editor.jsx";
 import { useTimingEditor } from "./timing-editor.jsx";
 if (TIMELINE_DISPLAY_API_VERSION !== 1) throw new Error("Install the shared timeline display-controls update before building StemLab");
+if (TIMELINE_LYRIC_AUDITION_API_VERSION !== 1) throw new Error("Install the released timeline lyric audition API before building StemLab");
 import "react-timeline-sequence/styles.css";
 import { LoopSummary, useAnalysisLoops } from "./loops";
 
@@ -133,7 +135,8 @@ async function waveformLane(hash, id, title, meta, path) {
   const response = await fetch(`/api/${hash}/waveform?${parameters}`);
   if (!response.ok) return { id, title, meta, kind: "artifact", content: artifact(hash, path, `waveform unavailable (${response.status})`) };
   const data = await response.json();
-  return { id, title, meta, kind: "waveform", content: { type: "waveform", min: data.min || [], max: data.max || [] }, duration: Number(data.duration_seconds) || 0 };
+  return { id, title, meta, kind: "waveform", content: { type: "waveform", min: data.min || [], max: data.max || [] }, duration: Number(data.duration_seconds) || 0,
+    audioSrc: path === "__source__" ? `/api/${hash}/source` : resultUrl(hash, path) };
 }
 
 async function laneFromFile(hash, file) {
@@ -252,11 +255,12 @@ function Log({ lines }) {
 function StemLabTimeline({ hash, filename }) {
   const loopState = useAnalysisLoops(hash);
   const [lanes, setLanes] = useState([]);
+  const [audioChannelId, setAudioChannelId] = useState("__source__");
   const [duration, setDuration] = useState(0);
   const editable = !window.__stemlabStatic;
   const beatEditor = useBeatMapEditor(hash, duration, editable);
   const [canonical, setCanonical] = useState({ bpm: null, lyrics: null, lyric_timing: [] });
-  const timingEditor = useTimingEditor(hash, duration, beatEditor, editable, canonical);
+  const timingEditor = useTimingEditor(hash, duration, beatEditor, editable);
   const [status, setStatus] = useState({ state: "submitted" });
   const [beatOffsets, setBeatOffsets] = useState(null);
   const [gridBasis, setGridBasis] = useState("canonical");
@@ -292,6 +296,7 @@ function StemLabTimeline({ hash, filename }) {
   useEffect(() => {
     filesSeen.current = new Set();
     setLanes([]);
+    setAudioChannelId("__source__");
     setBeatOffsets(null);
     setGridBasis("canonical");
     setGridAnalysis("consensus");
@@ -348,16 +353,23 @@ function StemLabTimeline({ hash, filename }) {
     { id: "bpm:aligned", title: "BPM grid · offset", meta: comparison.row ? `${comparison.row.offset_pips.toFixed(6)} pips · ${comparison.analysis.analysis_id}` : "Waiting for detected first beat", kind: "canonical-bpm", height: 74, content: { type: "markers", items: comparison.aligned } },
   ] : [];
   const allLanes = [...gridLanes, ...beatEditor.lanes, ...timingEditor.lanes, ...references.lanes, ...[...displayLanes].sort((a, b) => lanePriority(a) - lanePriority(b) || a.id.localeCompare(b.id))];
+  const channels = auditionChannels(lanes, duration);
+  const channel = channels.find(row => row.id === audioChannelId);
+  const isMaster = !channel || channel.id === "__source__";
+  const artworkSrc = window.__stemlabStatic ? window.__stemlabStatic.artworkUrl : canonical.cover_art_url;
   const state = status.state || "submitted";
   return <TimelineSequence
     className="stemlab-timeline"
     laneControls
     wheelNavigation
-    audioSrc={`/api/${hash}/source`}
+    audioSrc={channel?.audioSrc || `/api/${hash}/source`}
+    lyricAudition={{artworkSrc, artworkAlt:`${canonical.title || filename} cover artwork`,
+      audioLabel:channel?.title || "MASTER · uploaded source",
+      items:auditionLines(canonical, timingEditor.lyricItems ?? window.__stemlabStatic?.lyricItems ?? null)}}
     duration={duration}
     title={canonical.title || filename}
     subtitle={hash}
-    loops={loopState.loops}
+    loops={channelLoops(loopState.loops, isMaster)}
     lanes={allLanes}
     grid={[...comparison.grid, ...beatEditor.grid]}
     beatClock={timingEditor.clock}
@@ -366,7 +378,11 @@ function StemLabTimeline({ hash, filename }) {
     onWindowChange={range=>{beatEditor.onWindowChange(range);timingEditor.onWindowChange(range);}}
     onTimeChange={time=>{beatEditor.onTimeChange(time);timingEditor.onTimeChange(time);}}
     onPlaybackError={error => appendLog("stderr", error instanceof Error ? error.message : String(error))}
-    headerEnd={<><span className={`badge ${state}`}>{state}</span><span className="small">{allLanes.length} lane{allLanes.length === 1 ? "" : "s"}</span></>}
+    headerEnd={<><label className="small stemlab-audition-channel">Audio channel <select aria-label="Audio channel" value={channel?.id || "__source__"}
+      onChange={event=>setAudioChannelId(event.target.value)}>
+      {!channels.length && <option value="__source__">MASTER · uploaded source</option>}
+      {channels.map(row=><option key={row.id} value={row.id}>{row.title}</option>)}
+    </select></label><span className={`badge ${state}`}>{state}</span><span className="small">{allLanes.length} lane{allLanes.length === 1 ? "" : "s"}</span></>}
     footer={<><BeatOffsetControls comparison={comparison} onBasis={setGridBasis} onAnalysis={setGridAnalysis} />{editable && beatEditor.panel}{editable && timingEditor.panel}<LoopSummary state={loopState} hash={hash} /><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
   />;
 }

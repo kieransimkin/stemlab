@@ -38,14 +38,14 @@
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "5f69a3fc24635e0555f55d2479907deac98fdbdcac59f2fb083f9df76d3b167c",
-    "src/stemlab/web/timeline.css": "1e2351e1f713064602903ced95deac89bd7f9b688b949ec9542ceaffbc737b16"
+    "src/stemlab/web/app.js": "a248d98db5a98dd50034f4082ab20b363141ac85942c3fe8a784ddc1f49b5899",
+    "src/stemlab/web/timeline.css": "99b4f4c76d103bfaa7c2ce6eb212818d16f6db499045ce40056992b7d13e51b6"
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
-    "package-lock.json": "9f66c9af41e6df4143df25bb842873c5dfa19332eb58f0185b727ed14c71fc7d",
+    "package-lock.json": "a11526c1fb7a91063adefcd0afc5e4cfbeb69e3999fb9632757f90ae4ef0c1bf",
     "package.json": "5229f6ff1708f645bb6ae9a721f83dc85f795c72bff8dbfd6ec1f2cc98d8a801",
-    "web-client/src/app.jsx": "22b90895dfae13f6a918a9a183b37d83ee70b225f55c942862ca86a093f8fef8",
+    "web-client/src/app.jsx": "6ca0288d2021e722db5219777f184e5265123bf8a59d838819779ba016ee494d",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
     "web-client/src/beat-map-editor.jsx": "82c500254a58edd5c5b0ce53895526e0177b86ecd3aadf4d0edbbc5b30004ee5",
     "web-client/src/beat-map.css": "743ecb248e880371d52d7e776c9c48a2d1b7ba4654f578baaa57552b9cfacd09",
@@ -53,8 +53,9 @@
     "web-client/src/beat-offset-controls.jsx": "7f6f6ee4bcbb1cd3dbb8966a19ceb904a28422a3eed62619cfbac80cf4195833",
     "web-client/src/beat-offsets.js": "ecede43b1d49493332efc0ab08efbcd64a46291875e6e453f2c431ff6ff67b18",
     "web-client/src/loops.jsx": "79b5d4f0169231a5c683346eb1854176023fab2595e05f94edd4f074b350591b",
-    "web-client/src/timing-editor.css": "f83e5992fb1126cebf0df8c16e17908fb1ce4c6b67ccff253a1ff7c6caf6d4a5",
-    "web-client/src/timing-editor.jsx": "3522dbf467ba833c0aad79d5880705e6eaac339232bddc2c30c15a6f43796a6a",
+    "web-client/src/lyric-audition.js": "56b4c997d87d0d0d055140f006e5b7872b1aba396ed671b24dc024fdb02d275d",
+    "web-client/src/timing-editor.css": "d68307a9f46ef8e909863c6b471e2de1d9fb1288732a0eb9a45863e43cf9ac4f",
+    "web-client/src/timing-editor.jsx": "f82b25cd72d2c852f0e0add22426e3ffe2588e90cc1fd37d6c1252a51515ff05",
     "web-client/src/timing-workflow.js": "b1f0e04b535606e057a2470000e6887cff955034ce37bf7d9b1ee965781b07c7",
     "web-client/vite.config.js": "69f08644b1761c13d8af6f5b5e2e85ed1ba140e71d5371dc5221ebd14bd6476d"
   }

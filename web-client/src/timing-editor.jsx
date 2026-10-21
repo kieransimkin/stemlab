@@ -18,14 +18,13 @@ function download(body,name,mime){
  finally{window.setTimeout(()=>URL.revokeObjectURL(url),1000);}
 }
 
-export function useTimingEditor(hash,duration,beatEditor,enabled=true,canonical={}){
+export function useTimingEditor(hash,duration,beatEditor,enabled=true){
  const [doc,setDoc]=useState(null),[saved,setSaved]=useState(false),[revision,setRevision]=useState(null);
  const [dirty,setDirty]=useState(false),[working,setWorking]=useState(false),[open,setOpen]=useState(true);
  const [wordScope,setWordScope]=useState('all');
  const [selected,setSelected]=useState({kind:'line',id:null}),[note,setNote]=useState('');
  const [snap,setSnap]=useState(false),[snapTolerance,setSnapTolerance]=useState(.15);
  const [gridVisible,setGridVisible]=useState(false);
- const [auditionOpen,setAuditionOpen]=useState(false),[auditionTime,setAuditionTime]=useState(0);
  const [visible,setVisible]=useState({start:0,end:Infinity});
  const [newText,setNewText]=useState(''),[newWord,setNewWord]=useState(''),[newType,setNewType]=useState('SECTION'),[newSection,setNewSection]=useState('INTRO');
  const [fileKind,setFileKind]=useState('lines');
@@ -127,8 +126,6 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true,canonical=
   ...(kind==='cue'?{}:{end:sourceSeconds(row.end_frame,sr)}),
   ...(kind==='word'?{parentId:row.line_id,className:flaggedWords.has(row.id)?`stemlab-short-transition-${flaggedWords.get(row.id)}`:''}:{})});
  const lineRows=doc?.lines||[],wordRows=wordScope==='all'?(doc?.words||[]):(doc?.words||[]).filter(row=>row.line_id===selectedLine?.id);
- const auditionLines=(doc?.lines||[]).filter(row=>row.start_frame/sr<=auditionTime&&row.end_frame/sr>auditionTime);
- const auditionWordsByLine=new Map(auditionLines.map(line=>[line.id,(doc?.words||[]).filter(word=>word.line_id===line.id)]));
  const lane=(kind,rows,parent=null)=>({
   id:`timing:${kind}`,kind:`timing-${kind}`,title:kind==='line'?'Lyric lines · editable':kind==='word'?(wordScope==='all'?'Words · all lyrics':`Words · ${selectedLine?.text||'select a line'}`):'Cue sections · editable',
   meta:`${rows.length} ${kind} events · drag or arrow to adjust · ${clock?.mode||'no clock'} match`,height:kind==='word'?88:94,
@@ -148,7 +145,7 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true,canonical=
    <button type="button" onClick={()=>setOpen(v=>!v)}>{open?'Hide timing editor':'Show timing editor'}</button>
   </header>
   {open&&doc&&<>
-   <p>All words are visible in the audition lane by default. Switch to the selected line for a less crowded editing view. Line, word and cue edits are kept in a separate source-bound document. Cue names must follow the established [SECTION: VERSE 1] / [DROP: CHORUS 1] convention.</p>
+   <p>All words are visible by default. Switch to the selected line for a less crowded editing view. Line, word and cue edits are kept in a separate source-bound document. Cue names must follow the established [SECTION: VERSE 1] / [DROP: CHORUS 1] convention.</p>
    <div className="stemlab-timing-fields">
     <label>Timing clock <select aria-label="Timing clock" value={doc.clock_mode} onChange={e=>setClockMode(e.target.value)}>
       <option value="fixed">Fixed BPM + Beat 1 offset</option>
@@ -174,19 +171,6 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true,canonical=
       {' '}<strong>{flag.severity}</strong> · {flag.ticks.toFixed(2)} ticks · {flag.seconds.toFixed(3)}s
     </li>)}</ul>
    </details>}
-   <div className="stemlab-timing-actions">
-    <button type="button" aria-expanded={auditionOpen} onClick={()=>setAuditionOpen(value=>!value)}>{auditionOpen?'Close lyric audition':'Open lyric audition'}</button>
-    <span>The audition follows this timeline's existing master player and playhead.</span>
-   </div>
-   {auditionOpen&&<section className="stemlab-lyric-audition" aria-label="Timeline-synchronised lyric audition">
-    {canonical.cover_art_url?<img src={canonical.cover_art_url} alt={`${canonical.title||'Song'} cover artwork`}/>:<div className="stemlab-lyric-audition-placeholder" role="img" aria-label="Cover artwork unavailable">Cover artwork unavailable</div>}
-    <div className="stemlab-lyric-audition-shade"></div>
-    <div className="stemlab-lyric-audition-copy">
-     <strong>{canonical.title||'Lyric timing audition'}</strong>
-     {auditionLines.length?auditionLines.map(line=><p key={line.id}>{auditionWordsByLine.get(line.id).map(word=><span key={word.id} className={word.start_frame/sr<=auditionTime&&word.end_frame/sr>auditionTime?'current':''}>{word.word}{' '}</span>)}</p>):<p><span className="empty">Instrumental / lyric gap</span></p>}
-     <small>{auditionTime.toFixed(3)}s · shared timeline playback</small>
-    </div>
-   </section>}
    {variableSelected&&!canVariable&&<p role="alert">Variable BPM is selected but its source-bound beat map is unavailable; no silent fixed-BPM downgrade.</p>}
    {variableSelected&&beatEditor?.dirty&&<p role="alert">Save the beat-map corrections before saving/exporting lyric and cue timing changes.</p>}
    {variableSelected&&canVariable&&doc.beat_revision!==beatRevision&&<p role="alert">The saved beat-map revision has changed. Review its timing, then explicitly rebind these lyrics and cues to that revision. <button type="button" disabled={beatEditor.dirty} onClick={()=>edit(x=>({...x,beat_revision:beatRevision,review_status:'draft'}))}>Rebind to reviewed beat-map revision</button></p>}
@@ -244,5 +228,6 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true,canonical=
   {open&&!doc&&<p>Waiting for decoded source audio; no lyric or cue times are invented.</p>}
   {note&&<output role="status" className="stemlab-timing-status">{note}</output>}
  </section>;
- return {clock,lanes,panel,gridVisible,onWindowChange:setVisible,onTimeChange:t=>{playhead.current=t;setAuditionTime(t);}};
+ return {clock,lanes,panel,gridVisible,lyricItems:doc ? lineRows.map(row=>toEvent(row,'line')) : null,
+   onWindowChange:setVisible,onTimeChange:t=>{playhead.current=t;}};
 }

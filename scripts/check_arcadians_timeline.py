@@ -21,6 +21,7 @@ from arcadians_http import ProjectHandler, _byte_range
 from check_arcadians_audio import verify_audio_ranges
 from timeline_display_checks import expected_display_layout, check_display_controls
 from beat_offset_browser_checks import check_beat_offset_controls
+from lyric_audition_browser_checks import check_lyric_audition
 from stemlab.static_timeline import digest, read_json, verify_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -194,6 +195,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                     report['loop_audition'] = True
                 else:
                     report['loop_audition'] = 'no accepted loops; not fabricated'
+                stage = 'Lyric subtitles, cover artwork and selected audio channel'
+                report['lyric_audition'] = check_lyric_audition(page, state)
                 page.screenshot(path=str(report_path.with_suffix('.png')))
                 # Inspect only the generated root; no live /api, socket or CDN.
                 assert not errors and not bad, (errors, bad)

@@ -2,17 +2,22 @@
 
 ## 1.10.0 - 2026-10-21
 
-- Add a cover-art lyric audition panel inside the song-timing editor. It follows
-  the existing master timeline playhead and highlights the current timed word
-  without creating a second player or clock.
-- Show all timed words by default, retain a focused selected-line mode, and add
+- Extend the released timeline's source-synchronised cover-art lyric audition
+  with a complete all-words timing lane and a focused selected-line mode.
+- Add
   clickable warning/severe diagnostics for word-onset transitions below five or
   three DanceMoves ticks. Diagnostics never rewrite artist timing automatically.
-- Document the real Light Will Win audition UI with a cropped screenshot and keep
-  saved source-frame corrections retrievable through the existing API and exports.
+- Keep saved source-frame corrections retrievable through the existing API and
+  exports while the shared audition remains bound to the one master transport.
 
 ## 1.9.0 - 2026-10-21
 
+- Synchronize the published React Timeline Sequence 0.6.0, registry lock and
+  genuine compiled viewer while retaining the analysis and transport controls.
+- Use released React Timeline Sequence 0.6.0 for live/static cover-art lyric
+  auditioning, full edited-line updates and full-duration master/stem selection.
+- Bundle source-bound artwork and separate canonical lyric-reference metadata in
+  static exports; verify actual subtitle and selected-channel playback over HTTP.
 - Extend the complete Arcadians CI/Pages recipe with five genuine pitched-stem
   Basic Pitch transcriptions, painted note lanes and byte-preserved MIDI downloads.
   Validate source hashes, sample clocks, native MIDI and matching note tables.

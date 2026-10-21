@@ -1,0 +1,294 @@
+{
+  "schema": "stemlab.lyric-audition-reference.v1",
+  "source_sha256": "b11ac7c48df227ac51d94c05a245d3138acf1a002f851c55d98fd7fb7f0de510",
+  "timing_sha256": "539792f56dc6956230d3f39cc2b53de98a4572d7b0fb2f0c398d123a1debae5d",
+  "authority": "Artist-confirmed canonical line timing, adopted 2026-09-05; explicit lyric ends preserved. Public full-length master fixture retains its original source clock. No BPM/beat authority is added.",
+  "artwork_sha256": "12988fe46171063004acc8fc950af8b72adb52e5f72d7ab4b8e41cc9ef0d6c37",
+  "items": [
+    {
+      "start": 0.56,
+      "end": 3.23,
+      "label": "Ten o’clock…"
+    },
+    {
+      "start": 3.25,
+      "end": 5.32,
+      "label": "Ninety-two FM…"
+    },
+    {
+      "start": 5.39,
+      "end": 8.13,
+      "label": "Whitebread Land, are you listening?"
+    },
+    {
+      "start": 8.32,
+      "end": 11.44,
+      "label": "The truth is a virus, virus, virus,"
+    },
+    {
+      "start": 12.33,
+      "end": 14.37,
+      "label": "Shut us down, but you can’t keep us quiet."
+    },
+    {
+      "start": 14.38,
+      "end": 15.32,
+      "label": "Talk hard, steal the air,"
+    },
+    {
+      "start": 15.34,
+      "end": 17.07,
+      "label": "Turn the dial up higher—"
+    },
+    {
+      "start": 17.51,
+      "end": 21.37,
+      "label": "The truth is a virus,"
+    },
+    {
+      "start": 21.52,
+      "end": 26.94,
+      "label": "The truth is a virus."
+    },
+    {
+      "start": 27.24,
+      "end": 28.94,
+      "label": "Ten o’clock and the red light glows,"
+    },
+    {
+      "start": 28.96,
+      "end": 30.98,
+      "label": "Wild Cherry can by the radio,"
+    },
+    {
+      "start": 30.99,
+      "end": 33.27,
+      "label": "Ninety-two FM where nobody knows,"
+    },
+    {
+      "start": 33.36,
+      "end": 35.48,
+      "label": "One quiet kid with a voice that grows."
+    },
+    {
+      "start": 35.56,
+      "end": 37.7,
+      "label": "Neat front lawns and a town after dark,"
+    },
+    {
+      "start": 37.77,
+      "end": 39.89,
+      "label": "Homework waiting but the airwaves spark,"
+    },
+    {
+      "start": 39.97,
+      "end": 42.17,
+      "label": "Everybody knows, but nobody starts—"
+    },
+    {
+      "start": 42.18,
+      "end": 44.62,
+      "label": "So. be. it. — switch it on, talk hard."
+    },
+    {
+      "start": 44.63,
+      "end": 46.59,
+      "label": "Bootleg tapes in the schoolyard hands,"
+    },
+    {
+      "start": 46.7,
+      "end": 48.75,
+      "label": "Spray-painted words across Whitebread Land,"
+    },
+    {
+      "start": 48.79,
+      "end": 50.89,
+      "label": "You can cut the wire, you can chase the car,"
+    },
+    {
+      "start": 50.92,
+      "end": 53.28,
+      "label": "But a voice gets loud when it travels far."
+    },
+    {
+      "start": 53.28,
+      "end": 55.64,
+      "label": "The truth is a virus, virus, virus,"
+    },
+    {
+      "start": 56.26,
+      "end": 58.52,
+      "label": "Shut us down, but you can’t keep us quiet."
+    },
+    {
+      "start": 58.54,
+      "end": 59.44,
+      "label": "Talk hard, steal the air,"
+    },
+    {
+      "start": 59.49,
+      "end": 61.17,
+      "label": "Turn the dial up higher—"
+    },
+    {
+      "start": 61.62,
+      "end": 65.54,
+      "label": "The truth is a virus,"
+    },
+    {
+      "start": 65.81,
+      "end": 71.44,
+      "label": "The truth is a virus."
+    },
+    {
+      "start": 71.6,
+      "end": 73.31,
+      "label": "Perfect school with a polished name,"
+    },
+    {
+      "start": 73.35,
+      "end": 75.51,
+      "label": "Push the wrong kids out to protect the grade,"
+    },
+    {
+      "start": 75.6,
+      "end": 77.82,
+      "label": "Local news needs somebody to blame,"
+    },
+    {
+      "start": 77.86,
+      "end": 80.22,
+      "label": "Blue lights flashing at the end of the lane."
+    },
+    {
+      "start": 80.22,
+      "end": 82.3,
+      "label": "No more hiding, let the real voice through,"
+    },
+    {
+      "start": 82.3,
+      "end": 84.54,
+      "label": "One bootleg tape turns one into two,"
+    },
+    {
+      "start": 84.54,
+      "end": 86.84,
+      "label": "From one red light to a hundred new—"
+    },
+    {
+      "start": 86.84,
+      "end": 88.88,
+      "label": "Steal the air, let them hear the truth."
+    },
+    {
+      "start": 88.88,
+      "end": 91.02,
+      "label": "Why-bother generation—not tonight,"
+    },
+    {
+      "start": 91.02,
+      "end": 93.38,
+      "label": "Hang on, hang in, keep the signal bright,"
+    },
+    {
+      "start": 93.38,
+      "end": 95.72,
+      "label": "From a basement whisper to a town-wide choir,"
+    },
+    {
+      "start": 95.73,
+      "end": 99.17,
+      "label": "Pass the word and pass the fire."
+    },
+    {
+      "start": 99.23,
+      "end": 101.18,
+      "label": "Talk hard!"
+    },
+    {
+      "start": 101.19,
+      "end": 103.74,
+      "label": "Steal the air!"
+    },
+    {
+      "start": 103.75,
+      "end": 105.46,
+      "label": "Talk hard!"
+    },
+    {
+      "start": 105.46,
+      "end": 106.84,
+      "label": "Everywhere!"
+    },
+    {
+      "start": 106.85,
+      "end": 110.06,
+      "label": "The truth is a virus, virus, virus,"
+    },
+    {
+      "start": 110.08,
+      "end": 114.78,
+      "label": "Shut us down, but you can’t keep us quiet."
+    },
+    {
+      "start": 114.8,
+      "end": 118.24,
+      "label": "Talk hard, steal the air,"
+    },
+    {
+      "start": 118.24,
+      "end": 120.64,
+      "label": "Turn the dial up higher—"
+    },
+    {
+      "start": 120.64,
+      "end": 122.78,
+      "label": "The truth is a virus"
+    },
+    {
+      "start": 122.78,
+      "end": 126.68,
+      "label": "The truth is a virus, virus, virus,"
+    },
+    {
+      "start": 126.69,
+      "end": 128.84,
+      "label": "Shut us down, but you can’t keep us quiet."
+    },
+    {
+      "start": 128.88,
+      "end": 130.15,
+      "label": "Talk hard, steal the air,"
+    },
+    {
+      "start": 130.2,
+      "end": 131.66,
+      "label": "Turn the dial up higher—"
+    },
+    {
+      "start": 131.89,
+      "end": 135.8,
+      "label": "The truth is a virus,"
+    },
+    {
+      "start": 136.4,
+      "end": 138.83,
+      "label": "The truth is a virus."
+    },
+    {
+      "start": 140.9,
+      "end": 148.56,
+      "label": "Kill one signal, ten more come around…"
+    },
+    {
+      "start": 149.37,
+      "end": 157.18,
+      "label": "The truth is a virus…"
+    },
+    {
+      "start": 157.19,
+      "end": 160.0,
+      "label": "Talk hard."
+    }
+  ]
+}
