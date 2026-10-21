@@ -3,7 +3,7 @@
 The Arcadians demo workflow builds **five viewers in one public site**:
 
 - `timeline/arcadians/`: StemLab's existing React timeline, with the full song and
-  a completed `arcadians-core-v2` analysis.
+  a completed `arcadians-core-v3` analysis with five pitched-stem MIDI lanes.
 - `arcadians/`: the existing 48-movement DanceRudiments comparison and original MP3.
 - `arcadians-stems/`: 60 movements using different real stems for X and Y.
 - `arcadians-averages/`: 180 fixed-pair peak/average/moving-average comparisons.
@@ -14,6 +14,12 @@ The root is a landing page linking to all five examples. Both the manual Pages p
 release publisher upload this same combined artifact. No source checkout, model
 cache, backend server or separate Pages branch is published. These paths describe
 what this change deploys; a code patch alone does not make the new timeline live.
+
+![Actual local Arcadians timeline with inferred MIDI](screenshots/arcadians-midi-real-local.png)
+
+Local implementation capture using published PCM24 stems and fresh Basic Pitch
+inference, not evidence of a deployed v3 build. The [complete-analysis guide](arcadians-complete-analysis.md)
+includes the source limits, piano-roll plot and user-controlled screen recording.
 
 ## What “complete” means
 
@@ -29,6 +35,7 @@ experimental model has been run.
 | Beat timing | BeatNet and BeatThis on master and each percussion stem, BeatTransformer on the demixed streams, All-In-One and detector-family consensus outputs. The artist-confirmed 145 BPM remains a distinct reference, not a substitute for detection. |
 | Words and structure | Whisper `small`, word timestamps, previous-text conditioning disabled; Silero VAD; All-In-One functional sections; artist-edited lyrics, timing and sections retained separately. |
 | Harmony and pitch | All 13 existing curated Vamp outputs: Chordino, NNLS chroma/bass chroma/tuning, QM key/tonal-change/bar/beat, pYIN pitch/notes, Silvet notes and Segmentino. |
+| MIDI | Basic Pitch on bass, guitar, piano, vocals and other. Native MIDI must parse and agree with its note table, exact stem hash and sample clock. Drum audio is retained without claiming drum-class MIDI. |
 | Derived analysis | Loudness/dynamics/timbre/stereo, rhythm/groove, harmony, lyric rhyme/prosody, MiniLM text semantics, song map and loop discovery. |
 
 Optional alternate separator comparisons, additional MIDI transcribers, specialist
@@ -60,14 +67,16 @@ The sequence is:
    `/stemlab/timeline/arcadians/`. The test requires all expected lanes, loaded
    images, working original audio, play/pause, display/audio clock agreement,
    forward/backward seeking, Fit/Zoom and accepted-loop playback when available.
-   It rejects backend, Socket.IO and external CDN requests.
+   It also requires five painted MIDI lanes and native MIDI downloads, and
+   rejects backend, Socket.IO and external CDN requests or server-editing UI.
 4. The movement build generates/tests the existing 48 full-song movements, then
    reuses the exact float stems for the 60 stem-pair and 180 mode-comparison
    recordings. It validates both new galleries separately before adding the
    verified timeline and five-example landing page. The source revisions,
    the original MP3 hash and timeline snapshot checksum must agree.
 5. The existing publisher deploys the combined site and verifies public HTML,
-   timeline JavaScript/CSS/data and partial MP3 responses after deployment.
+   timeline JavaScript/CSS/data, native MIDI/note/report bytes and partial MP3
+   responses after deployment.
 
 Keep **Pages → Source → GitHub Actions**, `STEMLAB_PAGES_ENABLED=true` for automatic
 publication, and the existing `github-pages` environment rules for `main`/release
@@ -97,7 +106,7 @@ The combined workflow publishes these artifacts:
 - `stemlab-arcadians-release-assets`: the combined `StemLab-Arcadians-visualizer.zip`,
   file checksums and build provenance, also attached to tagged releases.
 - `stemlab-arcadians-complete-analysis`: original analysis outputs, including the
-  original float stem WAVs, retained as an Actions artifact for seven days. This is
+  original float stem WAVs and native MIDI, retained as an Actions artifact for seven days. This is
   not the public Pages directory and does not include downloaded model weights.
 
 The complete timeline also has its own intermediate site and QA artifacts. Failed
@@ -146,9 +155,11 @@ python scripts/build_arcadians_timeline.py --reuse \
   --source-commit "$(git rev-parse HEAD)"
 ```
 
-Reuse requires the original `core-run.json` recipe stamp and all completeness
+Reuse requires the original v3 `core-run.json` recipe stamp and all completeness
 checks. The analysis commit and dependency versions are preserved independently
 of the current export commit, rather than relabelling old inference as a new run.
+An older v2 public snapshot lacks the required original evidence and five MIDI
+transcriptions; adding local note files alone does not make it a complete v3 run.
 
 ## Browser implementation and QA scope
 
