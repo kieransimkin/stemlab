@@ -86,7 +86,7 @@ def capture_workflow(page, output: Path, report: dict) -> dict:
     page.get_by_role('button', name='Zoom to loop', exact=True).click()
     page.wait_for_timeout(250)
 
-    # A paused timeline click seeks within the currently selected loop.
+    # A ruler click seeks within the selected loop and resumes shared playback.
     seek_time = (verse['start_sample'] + (verse['end_sample'] - verse['start_sample']) / 3) / sr
     point = page.evaluate("""seconds => {
         const s = document.querySelector('.rts-scroller');
@@ -99,8 +99,11 @@ def capture_workflow(page, output: Path, report: dict) -> dict:
                 y:ruler.top + ruler.height / 2};
     }""", seek_time)
     page.mouse.click(point['x'], point['y'])
-    page.wait_for_timeout(250)
-    assert abs(clock_seconds(page) - seek_time) < .1
+    page.wait_for_function("() => !document.querySelector('audio').paused")
+    page.wait_for_timeout(150)
+    current = clock_seconds(page)
+    assert seek_time <= current < seek_time + .75
+    page.get_by_role('button', name='Pause', exact=True).click()
     page.screenshot(path=str(output / 'loops-inspect.png'))
 
     # Disabling loops restores the existing native full-song transport.
@@ -114,7 +117,7 @@ def capture_workflow(page, output: Path, report: dict) -> dict:
         'fixture': 'synthetic audio and supplied beat/section annotations; no learned models',
         'loop_count': report['loop_count'], 'unresolved_sections': len(report['unresolved_sections']),
         'checks': ['no autoplay', 'region selection', 'enable and play', 'native repeat wrap',
-                   'switch while playing', 'pause freezes clock', 'paused seek', 'full-song restore'],
+                   'switch while playing', 'pause freezes clock', 'ruler seek and play', 'full-song restore'],
     }
 
 
