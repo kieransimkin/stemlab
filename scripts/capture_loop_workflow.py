@@ -86,21 +86,34 @@ def capture_workflow(page, output: Path, report: dict) -> dict:
     page.get_by_role('button', name='Zoom to loop', exact=True).click()
     page.wait_for_timeout(250)
 
-    # A paused timeline click seeks within the currently selected loop.
-    seek_time = (verse['start_sample'] + (verse['end_sample'] - verse['start_sample']) / 3) / sr
-    point = page.evaluate("""seconds => {
-        const s = document.querySelector('.rts-scroller');
-        const r = s.getBoundingClientRect();
-        const label = document.querySelector('.rts-label').getBoundingClientRect().width;
-        const trackWidth = document.querySelector('.rts-ruler-track').getBoundingClientRect().width;
+    # A ruler click seeks within the selected loop and resumes shared playback.
+    verse_start = verse['start_sample'] / sr
+    verse_end = verse['end_sample'] / sr
+    point = page.evaluate("""([start, end]) => {
+        const scroller = document.querySelector('.rts-scroller').getBoundingClientRect();
+        const label = document.querySelector('.rts-ruler-label').getBoundingClientRect();
+        const rulerNode = document.querySelector('.rts-ruler-track');
+        const ruler = rulerNode.getBoundingClientRect();
         const duration = Number(document.querySelector('audio').duration);
-        const ruler = document.querySelector('.rts-ruler-track').getBoundingClientRect();
-        return {x:r.left + label + seconds * trackWidth / duration - s.scrollLeft,
-                y:ruler.top + ruler.height / 2};
-    }""", seek_time)
+        const visible = [...rulerNode.querySelectorAll('.rts-tick-major')]
+          .map(node => ({node, rect:node.getBoundingClientRect(),
+                         seconds:node.offsetLeft * duration / rulerNode.offsetWidth}))
+          .filter(({rect, seconds}) => rect.x > label.right + 8 && rect.x < scroller.right - 8
+                   && seconds > start && seconds < end);
+        if (!visible.length) throw new Error('No visible numbered ruler tick');
+        const chosen = visible[Math.floor(visible.length / 2)];
+        return {x:chosen.rect.x + 1, y:ruler.y + ruler.height / 2,
+                seconds:chosen.seconds};
+    }""", [verse_start, verse_end])
     page.mouse.click(point['x'], point['y'])
-    page.wait_for_timeout(250)
-    assert abs(clock_seconds(page) - seek_time) < .1
+    # Loop playback is owned by the component's decoded-buffer transport, not
+    # the page's hidden full-song audio element.  Assert the public transport
+    # state and shared source clock rather than an implementation detail.
+    page.get_by_role('button', name='Pause', exact=True).wait_for()
+    wait_for_audio(page, verse, sr)
+    current = clock_seconds(page)
+    assert point['seconds'] <= current < point['seconds'] + .75
+    page.get_by_role('button', name='Pause', exact=True).click()
     page.screenshot(path=str(output / 'loops-inspect.png'))
 
     # Disabling loops restores the existing native full-song transport.
@@ -114,7 +127,7 @@ def capture_workflow(page, output: Path, report: dict) -> dict:
         'fixture': 'synthetic audio and supplied beat/section annotations; no learned models',
         'loop_count': report['loop_count'], 'unresolved_sections': len(report['unresolved_sections']),
         'checks': ['no autoplay', 'region selection', 'enable and play', 'native repeat wrap',
-                   'switch while playing', 'pause freezes clock', 'paused seek', 'full-song restore'],
+                   'switch while playing', 'pause freezes clock', 'ruler seek and play', 'full-song restore'],
     }
 
 

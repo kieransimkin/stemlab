@@ -16,7 +16,7 @@
 
 ## Released viewers and coordinated CI/CD
 
-- The current source snapshot consumes React Timeline Sequence 0.7.0 and DanceRudiments
+- The current source snapshot consumes React Timeline Sequence 0.8.0 and DanceRudiments
   0.3.0. Preserve real HTTP audio, beat-control and MIDI-lane verification when
   synchronizing newer releases; do not enable unrelated opt-in UI implicitly.
 - Read [docs/released-viewers.md](docs/released-viewers.md) before changing dependency, build or release behaviour. The sibling layout is `DanceRudiments/`, `react-timeline-sequence/`, and `stemlab/` under one parent.

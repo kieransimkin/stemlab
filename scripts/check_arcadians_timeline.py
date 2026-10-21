@@ -152,6 +152,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 tolerance = max(.04, duration / point['width'] + .01)
                 report['pointer_seek_tolerance_seconds'] = tolerance
                 page.wait_for_function('([t,e])=>!document.querySelector("audio").seeking && Math.abs(document.querySelector("audio").currentTime-t)<e', arg=[target,tolerance])
+                page.wait_for_function('!document.querySelector("audio").paused')
                 assert_clock()
                 # Seek backwards using the visible ruler too. The library owns the
                 # hidden media element; external DOM mutation is not its public UI.
@@ -164,6 +165,16 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 page.wait_for_timeout(100)
                 assert_clock()
                 report['seek'] = True
+                report['ruler_seek_and_play'] = True
+                scroller = page.locator('.rts-scroller')
+                scroller.focus()
+                page.keyboard.press('Space')
+                page.wait_for_function('document.querySelector("audio").paused')
+                page.keyboard.press('Space')
+                page.wait_for_function('!document.querySelector("audio").paused')
+                page.keyboard.press('Space')
+                page.wait_for_function('document.querySelector("audio").paused')
+                report['space_play_pause'] = True
                 zoom = page.get_by_label('Zoom', exact=True)
                 if zoom.count() == 0:
                     zoom = page.locator('input[type=range]').first
@@ -175,6 +186,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 }""")
                 page.wait_for_timeout(200)
                 assert page.locator('.rts-ruler-track').bounding_box()['width'] > before
+                assert zoom.get_attribute('max') == '180'
+                report['precision_zoom_1024x_fit'] = True
                 page.get_by_role('button', name='Fit', exact=True).click()
                 report['zoom_fit'] = True
                 stage = 'Saved loop preview'

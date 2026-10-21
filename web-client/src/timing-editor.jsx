@@ -13,10 +13,13 @@ const api = async (hash,method='GET',body=null,endpoint='')=>{
 };
 const sourceSeconds=(row,sr)=>row/sr;
 const filename=(kind,hash)=>`stemlab-${hash.slice(0,12)}-${kind}`;
-function download(body,name,mime){
- const blob=new Blob([body],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');
- try{a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();}
- finally{window.setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function prepareDownload(body,name,mime){
+ const blob=new Blob([body],{type:mime});
+ return {url:URL.createObjectURL(blob),name,mime,bytes:blob.size};
+}
+function triggerDownload(item){
+ const a=document.createElement('a');
+ a.href=item.url;a.download=item.name;document.body.appendChild(a);a.click();a.remove();
 }
 
 export function useTimingEditor(hash,duration,beatEditor,enabled=true){
@@ -30,6 +33,7 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
  const [newText,setNewText]=useState(''),[newWord,setNewWord]=useState(''),[newType,setNewType]=useState('SECTION'),[newSection,setNewSection]=useState('INTRO');
  const [fileKind,setFileKind]=useState('lines');
  const [exportKind,setExportKind]=useState('bundle');
+ const [lastExport,setLastExport]=useState(null);
  const playhead=useRef(0),input=useRef(null),docRef=useRef(null),activeHash=useRef(hash),busy=useRef(false);
  docRef.current=doc;
  const reload=useCallback(async(force=false)=>{
@@ -48,6 +52,7 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
    const timer=window.setInterval(()=>{if(!docRef.current&&!busy.current)void reload(true);},5000);
    return()=>window.clearInterval(timer);
  },[hash]);
+ useEffect(()=>()=>{if(lastExport?.url)URL.revokeObjectURL(lastExport.url);},[lastExport?.url]);
  const edit=useCallback(fn=>{
   try{const source=docRef.current;if(!source)return;const next=fn(source);setDoc(next);setDirty(true);setNote('Unsaved song timing edits · original evidence preserved');}
   catch(e){setNote(e.message);}
@@ -101,8 +106,9 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
      wordjson:[JSON.stringify(exported.word_json,null,2)+'\n',filename('words',hash)+'.json','application/json'],
      cues:[exported.cue_lrc,filename('cues',hash)+'.lrc','text/plain;charset=utf-8'],
    };
-   download(...items[exportKind]);
-   setNote(`Exported ${exportKind} · source-bound clock and all timing forms remain available via the bundle`);
+   const item=prepareDownload(...items[exportKind]);
+   setLastExport(item);triggerDownload(item);
+   setNote(`Download started: ${item.name} (${item.bytes.toLocaleString()} bytes) · use the ready link below if the browser hid or blocked the automatic download`);
   }catch(e){setNote(e.message)}finally{setWorking(false);busy.current=false;}
  };
  const importFile=async event=>{
@@ -216,7 +222,8 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
      <option value="words">Word TSV</option><option value="wordjson">Word JSON</option>
      <option value="cues">Named cue LRC</option>
     </select></label>
-    <button type="button" disabled={working} onClick={exportAll}>Download selection</button>
+    <button type="button" disabled={working} onClick={exportAll}>Download selected format</button>
+    {lastExport&&<a className="stemlab-download-ready" href={lastExport.url} download={lastExport.name}>Download ready: {lastExport.name}</a>}
     <label>Import track <select value={fileKind} onChange={e=>setFileKind(e.target.value)}>
      <option value="lines">Per-line LRC</option><option value="words">Per-word LRC/TSV/JSON</option><option value="cues">Section-cue LRC</option>
     </select></label>

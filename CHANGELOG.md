@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.11.0 - 2026-10-21
+
+- Synchronize React Timeline Sequence 0.8.0 and its verified registry identity.
+- Extend timing-edit zoom to 1,024 times the fitted scale for short word boundaries.
+- Add focus-aware Space play/pause and ruler-click seek-and-play to the shared
+  master/stem transport, with full-song browser regression coverage.
+- Make timing export completion visible: the selected format now reports its
+  exact filename and byte count and leaves a reusable download-ready link when
+  the browser hides or blocks the automatic download.
+
 ## 1.10.0 - 2026-10-21
 
 - Extend the released timeline's source-synchronised cover-art lyric audition

@@ -29,23 +29,23 @@
     "policy": "latest-stable",
     "schema": "stemlab.viewer-releases.v1",
     "timeline": {
-      "commit": "573f92a76629d84a2b53b285154304b00555b3e3",
-      "integrity": "sha512-c1EV1WnT5vas1+fE/m8cN/6YFSqv/+2bZBWOnaQJhr1UQ9XvRxKJR0BlTbb0bewiu7f8GsgDVCcyM3h6/CfNpw==",
+      "commit": "169edf420bc4eb5c0664a10fb962421a5afe0814",
+      "integrity": "sha512-RMxUowcR9FlXqS1qkr/6Rzof38fuCS2T8onZ0RNhR0W6NwIb88qCZNhmehz9o3padda00bb32JDzMTxAquI4oQ==",
       "repository": "kieransimkin/react-timeline-sequence",
-      "tag": "v0.7.0",
-      "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.7.0.tgz",
-      "version": "0.7.0"
+      "tag": "v0.8.0",
+      "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.8.0.tgz",
+      "version": "0.8.0"
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "49a31cb71b90522d888ae3a3855794c6d981fdce45a234e66e08c21cac9b6207",
-    "src/stemlab/web/timeline.css": "712cf1f87c75dc1a386efb5bf6b7d1b150e949e2b364acddcc447d5c66f6c20d"
+    "src/stemlab/web/app.js": "9ac491036346abd8a43276b2d2113aeee09d27b92a4d7b74e399672ea5f8634d",
+    "src/stemlab/web/timeline.css": "3fc81c11c1fa01e91adade0820ebe420360dcebd8c3117185766908fed92b44b"
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
-    "package-lock.json": "3e4436974a99ce0896d0b58dd9fc92581623fda7d6b79aed79dc04e0599dbe0b",
-    "package.json": "273b34623f7f8e64c8d2d77e058fd5c2aa72d2cde1256f62f1a4b47fb68f45da",
-    "web-client/src/app.jsx": "7f421bd8fcd37fcaff78f0208b4afe05491fa2359d21f5c97798a08dac569696",
+    "package-lock.json": "7f58f8845e1df93096a15d84b43d4a68357696cd71ee002e469549c39dfe1585",
+    "package.json": "4ae19e074b522e65f1e461b1635f4b91ca65aac4a6b3812b7b439f1d95bbcc1d",
+    "web-client/src/app.jsx": "6b8ed30b846d20bf82ed06ee3f47f3510f878e082cde954c33ac36e5ab66c2ab",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
     "web-client/src/beat-map-editor.jsx": "82c500254a58edd5c5b0ce53895526e0177b86ecd3aadf4d0edbbc5b30004ee5",
     "web-client/src/beat-map.css": "743ecb248e880371d52d7e776c9c48a2d1b7ba4654f578baaa57552b9cfacd09",
@@ -55,7 +55,7 @@
     "web-client/src/loops.jsx": "79b5d4f0169231a5c683346eb1854176023fab2595e05f94edd4f074b350591b",
     "web-client/src/lyric-audition.js": "3e87a1865addc616ab7718a4f7e386b660f5f12541f0b108ae8081252105a77c",
     "web-client/src/timing-editor.css": "d68307a9f46ef8e909863c6b471e2de1d9fb1288732a0eb9a45863e43cf9ac4f",
-    "web-client/src/timing-editor.jsx": "b2c5f91d97935914103fb861e752ead4e550fbb92eb89dd5e32005551063d52c",
+    "web-client/src/timing-editor.jsx": "c6a5c3e80954c17bfe71eeb5c1af884bc44498b3013ab90d68d505e235314e06",
     "web-client/src/timing-workflow.js": "b1f0e04b535606e057a2470000e6887cff955034ce37bf7d9b1ee965781b07c7",
     "web-client/vite.config.js": "69f08644b1761c13d8af6f5b5e2e85ed1ba140e71d5371dc5221ebd14bd6476d"
   }

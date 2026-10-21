@@ -184,7 +184,7 @@ def test_sync_uses_registry_and_build_not_siblings(tmp_path, monkeypatch):
     module = tmp_path / 'node_modules/react-timeline-sequence'
     (module / 'dist').mkdir(parents=True)
     vr.write(module / 'package.json', {'version': '0.3.0'})
-    (module / 'dist/index.js').write_text('export const TIMELINE_DISPLAY_API_VERSION = 1; export const TIMELINE_LYRIC_AUDITION_API_VERSION = 1;')
+    (module / 'dist/index.js').write_text('export const TIMELINE_DISPLAY_API_VERSION = 2; export const TIMELINE_LYRIC_AUDITION_API_VERSION = 2;')
     calls = []
     monkeypatch.setattr(vr, 'executable', lambda name: name)
     vr.synchronize(tmp_path, fetch=fake_api().__getitem__, runner=lambda args, cwd: calls.append(args))
