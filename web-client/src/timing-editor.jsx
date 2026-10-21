@@ -18,7 +18,7 @@ function download(body,name,mime){
  finally{window.setTimeout(()=>URL.revokeObjectURL(url),1000);}
 }
 
-export function useTimingEditor(hash,duration,beatEditor){
+export function useTimingEditor(hash,duration,beatEditor,enabled=true){
  const [doc,setDoc]=useState(null),[saved,setSaved]=useState(false),[revision,setRevision]=useState(null);
  const [dirty,setDirty]=useState(false),[working,setWorking]=useState(false),[open,setOpen]=useState(false);
  const [selected,setSelected]=useState({kind:'line',id:null}),[note,setNote]=useState('');
@@ -40,6 +40,7 @@ export function useTimingEditor(hash,duration,beatEditor){
    }catch(e){setNote(e.message);}
  },[hash,dirty]);
  useEffect(()=>{
+   if(!enabled)return;
    activeHash.current=hash;setDoc(null);setRevision(null);setDirty(false);setSelected({kind:'line',id:null});
    void reload(true);
    const timer=window.setInterval(()=>{if(!docRef.current&&!busy.current)void reload(true);},5000);

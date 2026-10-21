@@ -283,6 +283,11 @@ def verify_live_timeline(base: str, timeline: Path, source_sha: str, *, name='ar
         status, _, data = public_request(prefix + name)
         if status != 200 or hashlib.sha256(data).hexdigest() != digest(timeline / name):
             raise ValueError('Public timeline/asset differs from tested snapshot: ' + name)
+    for name in snapshot['files']:
+        if name.startswith('data/deep/midi/') and name.endswith(('/transcription.mid', '/notes.json', '/report.json')):
+            status, _, data = public_request(prefix + name)
+            if status != 200 or hashlib.sha256(data).hexdigest() != digest(timeline / name):
+                raise ValueError('Public MIDI artifact differs from tested snapshot: ' + name)
     audio = timeline / snapshot['audio_path']
     status, headers, data = public_request(prefix + snapshot['audio_path'],
                                           headers={'Range': 'bytes=0-31'}, limit=32)

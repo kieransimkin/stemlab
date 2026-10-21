@@ -96,6 +96,24 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 report['all_expected_lanes'] = True
                 report['images_loaded'] = True
                 report['lanes'] = page.locator('.rts-lane').count()
+                assert page.get_by_text('Unmapped static timeline route:', exact=False).count() == 0
+                assert page.get_by_role('button', name='Show timing editor', exact=True).count() == 0
+                report['static_editors_disabled'] = True
+                midi_rows = [row for row in state['files'] if row['path'].startswith('deep/midi/')]
+                note_rows = [row for row in midi_rows if row['path'].endswith('/notes.json')]
+                native_rows = [row for row in midi_rows if row['path'].endswith('/transcription.mid')]
+                if note_rows or snapshot['coverage'].get('recipe') == 'arcadians-core-v3':
+                    assert len(note_rows) == len(native_rows)
+                    if snapshot['coverage'].get('recipe') == 'arcadians-core-v3':
+                        assert len(note_rows) == 5
+                    assert page.locator('.rts-lane-midi-notes').count() == len(note_rows)
+                    from urllib.parse import quote
+                    for row in native_rows:
+                        response = page.request.get(base + 'data/' + quote(row['path']))
+                        assert response.status == 200 and response.body().startswith(b'MThd')
+                    assert page.locator('.rts-lane-midi-notes .rts-note').count() > 0
+                    report['midi_note_lanes'] = len(note_rows)
+                    report['midi_downloads'] = len(native_rows)
                 audio = page.locator('audio').first
                 assert audio.evaluate('(a)=>a.paused && !a.autoplay')
                 report['no_autoplay'] = True

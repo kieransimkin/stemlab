@@ -22,6 +22,7 @@ def verify_timeline_qa(site: Path, qa_path: Path, source_sha: str) -> dict:
     required = ('no_autoplay', 'play_pause', 'seek', 'audio_clock', 'zoom_fit',
                 'images_loaded', 'all_expected_lanes', 'no_backend_requests')
     if (snapshot['coverage'].get('status') != 'complete'
+            or snapshot['coverage'].get('recipe') != 'arcadians-core-v3'
             or snapshot['source_sha256'] != ARCADIANS_SHA256
             or snapshot['source_commit'] != source_sha
             or qa.get('format') != 'stemlab.timeline-browser-check'
@@ -30,6 +31,7 @@ def verify_timeline_qa(site: Path, qa_path: Path, source_sha: str) -> dict:
             or qa.get('snapshot_sha256') != digest(site / 'snapshot.json')
             or qa.get('source_sha256') != ARCADIANS_SHA256
             or any(qa.get(k) is not True for k in required)
+            or qa.get('midi_note_lanes') != 5 or qa.get('midi_downloads') != 5
             or qa.get('page_errors') != [] or qa.get('bad_responses') != []
             or qa.get('external_requests') != []):
         raise ValueError('Only a complete, real Arcadians timeline with matching HTTP browser QA is publishable')
@@ -57,7 +59,9 @@ def assemble(site: Path, timeline: Path, qa: Path, source_sha: str) -> dict:
 <h1>Arcadians · StemLab</h1><p>Music by Kieran Simkin · 145 BPM · full song</p>
 <article><h2><a href="timeline/arcadians/">Open the complete analysis timeline</a></h2>
 <p>The real React timeline: master and six separated stems, spectrograms, beats, lyrics,
-structure, harmony, sonic evidence and loop discovery. Press Play to listen.</p></article>
+structure, harmony, sonic evidence, loop discovery and inferred MIDI note lanes.
+Five pitched stems have downloadable native MIDI; drum audio is separate and has no
+claimed drum transcription. Press Play to listen.</p></article>
 <article><h2><a href="arcadians/">Open the movement comparison</a></h2>
 <p>48 master-derived DanceRudiments movements, synchronized with the original MP3.</p></article>
 <p>Artist references and model hypotheses are distinct. Inferred results are not ground truth.

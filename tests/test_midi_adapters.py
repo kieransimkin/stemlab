@@ -78,6 +78,7 @@ def test_explicit_local_checkpoint_does_not_download(tmp_path):
     assert adapters.checkpoint_for('yourmt3', str(path), False) == path
 
 def test_basic_pitch_uses_returned_midi_and_bundled_weights(tmp_path, monkeypatch):
+    monkeypatch.setenv('STEMLAB_CACHE', str(tmp_path / 'models'))
     weights = tmp_path / 'basic.onnx'
     weights.write_bytes(b'fixture')
     calls = {}
@@ -99,10 +100,30 @@ def test_basic_pitch_uses_returned_midi_and_bundled_weights(tmp_path, monkeypatc
     module(monkeypatch, 'basic_pitch', ICASSP_2022_MODEL_PATH=weights)
     module(monkeypatch, 'basic_pitch.inference', Model=Model, predict=predict)
     result = adapters.run_backend(request('basic_pitch'), tmp_path / 'out.mid')
-    assert calls['weights'] == weights and str(calls['predict'][0]) == 'fixture.wav'
+    assert calls['weights'].is_relative_to(tmp_path / 'models')
+    assert calls['weights'].read_bytes() == weights.read_bytes() == b'fixture'
+    assert str(calls['predict'][0]) == 'fixture.wav'
     assert calls['output'] == str(tmp_path / 'out.mid')
     assert result['checkpoint_sha256'] == hashlib.sha256(b'fixture').hexdigest()
     assert result['runtime_type'] == 'fixture-onnx'
+
+
+@pytest.mark.parametrize('directory', [False, True])
+def test_bundled_basic_pitch_model_cache_preserves_original_and_rejects_corruption(tmp_path, monkeypatch, directory):
+    monkeypatch.setenv('STEMLAB_CACHE', str(tmp_path / 'models'))
+    origin = tmp_path / ('saved-model' if directory else 'model.onnx')
+    file = origin / 'variables/weight.bin' if directory else origin
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.write_bytes(b'original weights')
+    copied = adapters._bundled_basic_pitch_cache(origin)
+    assert copied.is_relative_to(tmp_path / 'models')
+    assert adapters._bundled_basic_pitch_cache(origin) == copied
+    target = copied / 'variables/weight.bin' if directory else copied
+    target.write_bytes(b'corrupted cache')
+    with pytest.raises(ValueError, match='checksum'):
+        adapters._bundled_basic_pitch_cache(origin)
+    assert target.read_bytes() == b'corrupted cache'
+    assert file.read_bytes() == b'original weights'
 
 @pytest.mark.parametrize('model', ['mr_mt3', 'yourmt3'])
 def test_mt3_explicit_model_no_wrapper_download_or_cache(tmp_path, monkeypatch, model):

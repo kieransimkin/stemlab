@@ -5,6 +5,15 @@ description: Use StemLab for audio timing analysis and loopable sections for Sho
 
 # StemLab / DanceFlow
 
+For the complete public Arcadians example, use the repository's
+`arcadians-core-v3` workflow (`scripts/build_arcadians_timeline.py`). It owns
+six-stem separation, complete core evidence and five pitched-stem Basic Pitch
+MIDI estimates, using new output directories. Require native MIDI/note/source
+validation and real HTTP browser QA before combining and publishing the Pages
+artifact. Preserve the other viewers and the independent beat reference. Drum
+audio is available; drum MIDI is not part of this recipe. Never promote inferred
+notes or MIDI tempo to canonical notes or song BPM.
+
 Created by Kieran Simkin — https://kieransimkin.co.uk/my-songs/
 
 ## Workflow

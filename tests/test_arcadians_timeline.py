@@ -72,6 +72,27 @@ def core_fixture(root: Path):
     canonical = read_json(root / 'canonical.json')
     canonical.update(bpm=145, sections=[{'start': 0, 'end': 4, 'label': 'Test reference'}])
     write_json(root / 'canonical.json', canonical)
+    import pretty_midi
+    from stemlab.analysis.midi.artifacts import read_performance, save_note_artifacts
+    midi_rows = []
+    for name in sorted(builder.MIDI_STEMS):
+        folder = root / 'deep/midi/basic_pitch' / name
+        folder.mkdir(parents=True)
+        performance = pretty_midi.PrettyMIDI()
+        instrument = pretty_midi.Instrument(0)
+        instrument.notes.append(pretty_midi.Note(100, 60, .5, 1))
+        performance.instruments.append(instrument)
+        performance.write(str(folder / 'transcription.mid'))
+        data = read_performance(folder / 'transcription.mid', 16000, 64000)
+        source_sha = digest(root / f'stems/htdemucs_6s/{name}.wav')
+        data.update(source_sha256=source_sha, source_stem=name, model='basic_pitch')
+        files = save_note_artifacts(folder, data, False)
+        midi_rows.append({'status': 'completed', 'model': 'basic_pitch', 'source_stem': name,
+            'source_sha256': source_sha, 'sample_rate': 16000, 'source_frames': 64000, 'note_count': 1,
+            'files': {key: (folder / value).relative_to(root / 'deep/midi').as_posix() for key, value in files.items()}})
+    write_json(root / 'deep/midi/report.json', {'schema': 'stemlab.midi-analysis.v1',
+        'source_sha256': report['source']['sha256'], 'models_requested': ['basic_pitch'],
+        'status': 'completed', 'analyses': midi_rows, 'errors': [], 'skipped': [], 'note_count': 5})
     return root, report['source']['sha256']
 
 
@@ -87,7 +108,9 @@ def test_recipe_runs_all_core_stages_and_no_implicit_optional_models(tmp_path):
     assert config.whisper_model == 'small' and config.whisper_condition_on_previous_text is False
     assert config.run_vamp and config.run_structure and config.run_beats and config.run_whisper
     assert config.run_text_semantics and config.run_deep_analysis and config.make_spectrograms and config.run_loops
-    assert not config.run_audio_semantics and not config.midi_models and not config.evidence_models
+    assert not config.run_audio_semantics and not config.evidence_models
+    assert config.midi_models == ('basic_pitch',) and config.midi_target == 'stems'
+    assert config.midi_allow_downloads is False
 
 
 def test_core_gate_accepts_complete_schema_and_legitimate_zero_loops(complete):
@@ -96,6 +119,33 @@ def test_core_gate_accepts_complete_schema_and_legitimate_zero_loops(complete):
     assert coverage['status'] == 'complete' and coverage['loop_count'] == 0
     assert len(coverage['stems']) == 6 and len(coverage['beat_models']) == 5
     assert coverage['vamp_transforms'] == 13 and coverage['source_frames'] == 64000
+    assert coverage['midi']['note_count'] == 5 and len(coverage['midi']['stems']) == 5
+
+
+@pytest.mark.parametrize('mutation', ['missing', 'failed', 'wrong_source', 'missing_stem', 'invalid_midi', 'changed_notes'])
+def test_core_rejects_incomplete_or_misattributed_midi(complete, mutation):
+    root, sha = complete
+    path = root / 'deep/midi/report.json'
+    report = read_json(path)
+    if mutation == 'missing':
+        path.unlink()
+    elif mutation == 'invalid_midi':
+        (root / 'deep/midi' / report['analyses'][0]['files']['midi']).write_bytes(b'not MIDI')
+    elif mutation == 'changed_notes':
+        notes = root / 'deep/midi' / report['analyses'][0]['files']['notes']
+        data = read_json(notes)
+        data['notes'][0]['midi_pitch'] += 1
+        write_json(notes, data)
+    else:
+        if mutation == 'failed':
+            report['analyses'][0]['status'] = 'failed'
+        elif mutation == 'wrong_source':
+            report['analyses'][0]['source_sha256'] = '0' * 64
+        else:
+            report['analyses'].pop()
+        write_json(path, report)
+    with pytest.raises((ValueError, OSError)):
+        builder.require_core(root, expected_sha=sha)
 
 
 def test_production_gate_rejects_synthetic_source(complete):
@@ -149,6 +199,7 @@ def qa_fixture(site):
     snapshot = read_json(site / 'snapshot.json')
     return {'format': 'stemlab.timeline-browser-check', 'status': 'passed', 'mode': 'http-project-pages-prefix',
             'snapshot_sha256': digest(site / 'snapshot.json'), 'source_sha256': snapshot['source_sha256'],
+            'midi_note_lanes': 5, 'midi_downloads': 5,
             **{k: True for k in ('no_autoplay', 'play_pause', 'seek', 'audio_clock', 'zoom_fit',
                                  'images_loaded', 'all_expected_lanes', 'no_backend_requests')},
             'page_errors': [], 'bad_responses': [], 'external_requests': []}
@@ -280,6 +331,9 @@ def test_combined_site_integrity_with_real_native_movement_builder(complete, tmp
         document['metadata']['source'] = beat_inputs(master, [])[0].metadata(root)
         write_json(path, document)
     write_json(root / 'analysis.json', analysis)
+    midi_report = read_json(root / 'deep/midi/report.json')
+    midi_report['source_sha256'] = sha
+    write_json(root / 'deep/midi/report.json', midi_report)
     loops = read_json(root / 'deep/loops/loops.json')
     loops['source_sha256'] = sha
     write_json(root / 'deep/loops/loops.json', loops)
