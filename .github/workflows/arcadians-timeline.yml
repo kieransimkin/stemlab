@@ -33,7 +33,7 @@ jobs:
             --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu \
             --build-arg STEMLAB_BUILD_REF="$GITHUB_SHA" \
             -t stemlab-timeline:ci .
-      - name: Run the complete core v3 recipe with six stems and five pitched MIDI transcriptions
+      - name: Run the complete core recipe v3 with six stems and five pitched MIDI transcriptions
         # Model downloads use upstream registries, as in the normal local pipeline.
         # Music is mounted because .dockerignore intentionally excludes audio.
         run: |

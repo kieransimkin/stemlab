@@ -250,7 +250,8 @@ def test_timeline_publication_checks_matching_html_bundle_data_and_audio(gate_fi
         return 200, {}, content
     monkeypatch.setattr(publisher, 'public_request', request)
     publisher.verify_live_timeline('https://example.github.io/stemlab/', site, SHA)
-    assert len(requested) == 8
+    assert len(requested) == 19  # Original page/assets/audio plus five MIDI, five notes and their report.
+    assert len([url for url in requested if url.endswith('/transcription.mid')]) == 5
     assert prefix + 'assets/app.js' in requested
     with pytest.raises(ValueError, match='stale'):
         publisher.verify_live_timeline('https://example.github.io/stemlab/', site, 'c'*40)
