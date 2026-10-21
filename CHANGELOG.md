@@ -2,6 +2,8 @@
 
 ## 1.9.0 - 2026-10-21
 
+- Synchronize the published React Timeline Sequence 0.6.0, registry lock and
+  genuine compiled viewer while retaining the analysis and transport controls.
 - Extend the complete Arcadians CI/Pages recipe with five genuine pitched-stem
   Basic Pitch transcriptions, painted note lanes and byte-preserved MIDI downloads.
   Validate source hashes, sample clocks, native MIDI and matching note tables.
