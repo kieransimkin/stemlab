@@ -26,12 +26,12 @@ def check_lyric_audition(page, state: dict) -> dict:
         page.mouse.click(ruler['x'] + ruler['width'] * target / duration,
                          ruler['y'] + ruler['height'] / 2)
         page.wait_for_function('(text)=>document.querySelector(".rts-audition-subtitles").textContent===text', arg=first['label'])
+        page.wait_for_function('!document.querySelector("audio").paused')
 
     seek_line()
     art = page.locator('.rts-audition-cover img')
     if art.count():
         page.wait_for_function('document.querySelector(".rts-audition-cover img").naturalWidth>0')
-    page.get_by_role('button', name='Play', exact=True).click()
     page.wait_for_function('(t)=>document.querySelector("audio").currentTime>t', arg=target + .15)
     assert page.locator('.rts-audition-subtitles').inner_text() == first['label']
     page.get_by_role('button', name='Pause', exact=True).click()
@@ -49,13 +49,13 @@ def check_lyric_audition(page, state: dict) -> dict:
         page.wait_for_function('document.querySelector("audio").paused && document.querySelector("audio").currentTime===0 && document.querySelector("audio").readyState>=1')
         assert page.locator('audio').get_attribute('src') != old
         seek_line()
-        page.get_by_role('button', name='Play', exact=True).click()
         page.wait_for_function('(t)=>document.querySelector("audio").currentTime>t', arg=target + .15)
         assert page.locator('.rts-audition-subtitles').inner_text() == first['label']
         page.get_by_role('button', name='Pause', exact=True).click()
         selector.select_option('__source__')
         page.wait_for_function('document.querySelector("audio").paused && document.querySelector("audio").readyState>=1')
         seek_line()
+        page.get_by_role('button', name='Pause', exact=True).click()
     return {'available': True, 'artwork_loaded': bool(art.count()), 'line_count': len(items),
             'source_clock_subtitle': True, 'toggle': True, 'audio_channels': len(options),
             'stem_playback_verified': tested_stem}

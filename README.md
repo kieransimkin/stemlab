@@ -552,6 +552,11 @@ frames. Uploaded word and cue files are independently validated by DanceMoves;
 pasting a full variable timeline into the old fixed beat-alignment field is
 not supported. Users must assign each file to the matching verified song.
 
+Choose the desired format and use **Download selected format**. StemLab reports
+the exact filename and byte count and keeps a **Download ready** link in the
+editor. Use that link if the browser suppresses or hides the automatic download;
+the link refers to the same in-memory export and does not save timing changes.
+
 For a fresh checkout, **release `react-timeline-sequence` v0.4+ first**. Stemlab
 only consumes the latest *published* stable shared component, never an untagged
 source copy. After publication run `python scripts/configure_viewer_build.py`
@@ -816,7 +821,9 @@ inference must succeed. A new tagged release calls the same combined workflow.
 All five examples include audio playback, without autoplay. The timeline
 needs **no live StemLab API, Socket.IO connection or CDN**: the original React
 renderer loads precomputed local data, waveform envelopes and spectrogram strips.
-It supports play/pause, seeking, zoom/Fit, and saved-loop audition when loops exist.
+It supports play/pause, ruler-click seek-and-play, Space-bar transport, 1,024×-fit
+precision zoom/Fit, and saved-loop audition when loops exist. The precision range
+lets short per-word boundaries occupy enough screen width for deliberate placement.
 The original MP3 is unchanged; public stem audio uses full-duration PCM24 FLAC
 listening derivatives with their conversion disclosed. Original float WAVs and
 raw results, native MIDI and note tables are kept in a separate seven-day Actions
@@ -1164,7 +1171,7 @@ Temporary files are local test data, not repository artefacts or published music
 
 ### Arcadians timeline CI decoder and artifact checks
 
-The current viewer snapshot uses the published React Timeline Sequence 0.7.0
+The current viewer snapshot uses the published React Timeline Sequence 0.8.0
 and DanceRudiments 0.3.0. The genuine rebuilt bundle preserves the existing
 transport, beat-grid controls and five MIDI note lanes. Cover subtitles, exact
 active-word highlighting and the master/stem selector use that same source-clock
