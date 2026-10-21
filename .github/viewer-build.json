@@ -38,14 +38,14 @@
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "a248d98db5a98dd50034f4082ab20b363141ac85942c3fe8a784ddc1f49b5899",
+    "src/stemlab/web/app.js": "59b0904876547185dbf3bc4c003ceed24f13bc0075c6b9930151b738e1715a30",
     "src/stemlab/web/timeline.css": "99b4f4c76d103bfaa7c2ce6eb212818d16f6db499045ce40056992b7d13e51b6"
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
     "package-lock.json": "a11526c1fb7a91063adefcd0afc5e4cfbeb69e3999fb9632757f90ae4ef0c1bf",
     "package.json": "5229f6ff1708f645bb6ae9a721f83dc85f795c72bff8dbfd6ec1f2cc98d8a801",
-    "web-client/src/app.jsx": "6ca0288d2021e722db5219777f184e5265123bf8a59d838819779ba016ee494d",
+    "web-client/src/app.jsx": "625a706e919a66b17d63d187f305e9f666fb4944756160453b0cd2ccd00d68ac",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
     "web-client/src/beat-map-editor.jsx": "82c500254a58edd5c5b0ce53895526e0177b86ecd3aadf4d0edbbc5b30004ee5",
     "web-client/src/beat-map.css": "743ecb248e880371d52d7e776c9c48a2d1b7ba4654f578baaa57552b9cfacd09",

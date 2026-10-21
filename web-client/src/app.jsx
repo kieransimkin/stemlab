@@ -259,9 +259,9 @@ function StemLabTimeline({ hash, filename }) {
   const [duration, setDuration] = useState(0);
   const editable = !window.__stemlabStatic;
   const beatEditor = useBeatMapEditor(hash, duration, editable);
-  const [canonical, setCanonical] = useState({ bpm: null, lyrics: null, lyric_timing: [] });
   const timingEditor = useTimingEditor(hash, duration, beatEditor, editable);
   const [status, setStatus] = useState({ state: "submitted" });
+  const [canonical, setCanonical] = useState({ bpm: null, lyrics: null, lyric_timing: [] });
   const [beatOffsets, setBeatOffsets] = useState(null);
   const [gridBasis, setGridBasis] = useState("canonical");
   const [gridAnalysis, setGridAnalysis] = useState("consensus");
