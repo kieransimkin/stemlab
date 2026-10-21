@@ -14,6 +14,14 @@
 .stemlab-timeline .rts-lane-timing-word{background:#1e1925}
 .stemlab-timeline .rts-lane-timing-cue{background:#241c18}
 @media (prefers-reduced-motion:reduce){.stemlab-timing-panel *{transition:none!important}}
+.stemlab-short-transition-warning{outline:2px solid #ffb347;outline-offset:-2px}
+.stemlab-short-transition-severe{outline:3px solid #ff5c6c;outline-offset:-3px}
+.stemlab-timing-diagnostics{margin:.7rem 0;padding:.65rem .8rem;border:1px solid #5d4a2b;border-radius:.55rem;background:#18150f}
+.stemlab-timing-diagnostics summary{cursor:pointer;font-weight:700;color:#ffd27a}
+.stemlab-timing-diagnostics ul{margin:.55rem 0 0;padding-left:1.25rem;columns:2;column-gap:1.5rem}
+.stemlab-timing-diagnostics li{break-inside:avoid;margin:.25rem 0}
+.stemlab-timing-diagnostics button{padding:0;border:0;background:none;color:#b9d8ff;text-align:left;text-decoration:underline;cursor:pointer}
+@media(max-width:760px){.stemlab-timing-diagnostics ul{columns:1}}
 .stemlab-timeline .rts-header-end { min-width: 0; flex-wrap: wrap; }
 .stemlab-audition-channel { min-width: 0; max-width: 100%; display: flex; align-items: center; gap: 6px; }
 .stemlab-audition-channel select { min-width: 0; max-width: 32ch; width: 100%; font: inherit; }

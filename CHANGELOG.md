@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.10.0 - 2026-10-21
+
+- Extend the released timeline's source-synchronised cover-art lyric audition
+  with a complete all-words timing lane and a focused selected-line mode.
+- Add clickable warning/severe diagnostics for word-onset transitions below five or
+  three DanceMoves ticks. Diagnostics never rewrite artist timing automatically.
+- Keep saved source-frame corrections retrievable through the existing API and
+  exports while the shared audition remains bound to the one master transport.
+
 ## 1.9.0 - 2026-10-21
 
 - Synchronize the published React Timeline Sequence 0.6.0, registry lock and

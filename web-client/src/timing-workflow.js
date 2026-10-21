@@ -7,6 +7,33 @@ export const SECTION_NAMES = Object.freeze([
 ]);
 export const toFrame = (seconds,sampleRate) => Math.round(Number(seconds)*sampleRate);
 export const fromFrame = (frame,sampleRate) => frame/sampleRate;
+export function shortWordTransitions(doc,{warningTicks=5,severeTicks=3,ticksPerBeat=16}={}){
+ if(!doc||doc.clock_mode!=='fixed')return [];
+ const sr=Number(doc.sample_rate),bpm=Number(doc.fixed_clock?.bpm);
+ if(!Number.isFinite(sr)||sr<=0||!Number.isFinite(bpm)||bpm<=0)return [];
+ const lines=new Map(doc.lines.map(row=>[row.id,row]));
+ const byLine=new Map();
+ for(const word of doc.words){
+  if(!byLine.has(word.line_id))byLine.set(word.line_id,[]);
+  byLine.get(word.line_id).push(word);
+ }
+ const flags=[];
+ for(const [lineId,words] of byLine){
+  words.sort((a,b)=>a.start_frame-b.start_frame);
+  for(let i=1;i<words.length;i++){
+   const previous=words[i-1],current=words[i];
+   const seconds=(current.start_frame-previous.start_frame)/sr;
+   const ticks=seconds*bpm/60*ticksPerBeat;
+   if(ticks>=warningTicks)continue;
+   flags.push({
+    lineId,line:lines.get(lineId)?.text||lineId,
+    fromId:previous.id,toId:current.id,fromWord:previous.word,toWord:current.word,
+    seconds,ticks,severity:ticks<severeTicks?'severe':'warning',
+   });
+  }
+ }
+ return flags;
+}
 export function canonicalCue(type,section){
  const kind=String(type).trim().toUpperCase();
  const name=String(section).trim().toUpperCase().replace(/ +/g,' ');

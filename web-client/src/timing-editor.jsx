@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {SECTION_NAMES,CUE_TYPES,canonicalCue,createAtPlayhead,deleteTimingEvent,updateTimingEvent,toFrame} from './timing-workflow.js';
+import {SECTION_NAMES,CUE_TYPES,canonicalCue,createAtPlayhead,deleteTimingEvent,shortWordTransitions,updateTimingEvent,toFrame} from './timing-workflow.js';
 import './timing-editor.css';
 
 const api = async (hash,method='GET',body=null,endpoint='')=>{
@@ -20,7 +20,8 @@ function download(body,name,mime){
 
 export function useTimingEditor(hash,duration,beatEditor,enabled=true){
  const [doc,setDoc]=useState(null),[saved,setSaved]=useState(false),[revision,setRevision]=useState(null);
- const [dirty,setDirty]=useState(false),[working,setWorking]=useState(false),[open,setOpen]=useState(false);
+ const [dirty,setDirty]=useState(false),[working,setWorking]=useState(false),[open,setOpen]=useState(true);
+ const [wordScope,setWordScope]=useState('all');
  const [selected,setSelected]=useState({kind:'line',id:null}),[note,setNote]=useState('');
  const [snap,setSnap]=useState(false),[snapTolerance,setSnapTolerance]=useState(.15);
  const [gridVisible,setGridVisible]=useState(false);
@@ -117,14 +118,16 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
   const start=row.start_frame??row.frame,end=row.end_frame??start;
   return start/sr<=visible.end+.01 && end/sr>=visible.start-.01;
  };
+ const shortTransitions=useMemo(()=>shortWordTransitions(doc),[doc]);
+ const flaggedWords=useMemo(()=>new Map(shortTransitions.map(flag=>[flag.toId,flag.severity])),[shortTransitions]);
  const toEvent=(row,kind)=>({id:row.id,label:kind==='cue'?`[${row.type}: ${row.section}]`:kind==='word'?row.word:row.text,
   ...(kind==='cue'?{type:row.type,section:row.section}:{}),
   start:sourceSeconds(row.start_frame??row.frame,sr),
   ...(kind==='cue'?{}:{end:sourceSeconds(row.end_frame,sr)}),
-  ...(kind==='word'?{parentId:row.line_id}:{})});
- const lineRows=doc?.lines||[],wordRows=(doc?.words||[]).filter(row=>row.line_id===selectedLine?.id);
+  ...(kind==='word'?{parentId:row.line_id,className:flaggedWords.has(row.id)?`stemlab-short-transition-${flaggedWords.get(row.id)}`:''}:{})});
+ const lineRows=doc?.lines||[],wordRows=wordScope==='all'?(doc?.words||[]):(doc?.words||[]).filter(row=>row.line_id===selectedLine?.id);
  const lane=(kind,rows,parent=null)=>({
-  id:`timing:${kind}`,kind:`timing-${kind}`,title:kind==='line'?'Lyric lines · editable':kind==='word'?`Words · ${selectedLine?.text||'select a line'}`:'Cue sections · editable',
+  id:`timing:${kind}`,kind:`timing-${kind}`,title:kind==='line'?'Lyric lines · editable':kind==='word'?(wordScope==='all'?'Words · all lyrics':`Words · ${selectedLine?.text||'select a line'}`):'Cue sections · editable',
   meta:`${rows.length} ${kind} events · drag or arrow to adjust · ${clock?.mode||'no clock'} match`,height:kind==='word'?88:94,
   content:{type:'timing',kind,clock,editable:true,snap,toleranceSeconds:snapTolerance,
    items:rows.filter(inView).slice(0,1600).map(row=>toEvent(row,kind)),
@@ -137,12 +140,12 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
   lane('line',lineRows),lane('word',wordRows,lineRows),lane('cue',doc.cues),
  ]:[];
  const panel=<section className="stemlab-timing-panel" aria-label="Editable lyric, word and cue timing">
-  <header><strong>Song timing · line lyrics, words &amp; cue sections</strong>
+  <header><strong>Lyric timing audition &amp; correction</strong>
    <span>{doc?`${doc.lines.length} lines · ${doc.words.length} words · ${doc.cues.length} cues · ${dirty?'unsaved':'saved/seeded'}`:'Awaiting master'}</span>
    <button type="button" onClick={()=>setOpen(v=>!v)}>{open?'Hide timing editor':'Show timing editor'}</button>
   </header>
   {open&&doc&&<>
-   <p>Line, word and cue edits are kept in a separate source-bound document. Choose a lyric line to adjust its individual words. Cue names must follow the established [SECTION: VERSE 1] / [DROP: CHORUS 1] convention.</p>
+   <p>All words are visible by default. Switch to the selected line for a less crowded editing view. Line, word and cue edits are kept in a separate source-bound document. Cue names must follow the established [SECTION: VERSE 1] / [DROP: CHORUS 1] convention.</p>
    <div className="stemlab-timing-fields">
     <label>Timing clock <select aria-label="Timing clock" value={doc.clock_mode} onChange={e=>setClockMode(e.target.value)}>
       <option value="fixed">Fixed BPM + Beat 1 offset</option>
@@ -156,7 +159,18 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
     <label>Snap tolerance (ms) <input type="number" min="0" max="1000" step="10" value={Math.round(snapTolerance*1000)}
       onChange={e=>setSnapTolerance(Math.max(0,Math.min(1,Number(e.target.value)/1000)))}/></label>
     <label><input type="checkbox" checked={gridVisible} onChange={e=>setGridVisible(e.target.checked)}/>Beat grid overlay</label>
+    <label>Word lane <select aria-label="Word lane scope" value={wordScope} onChange={e=>setWordScope(e.target.value)}>
+      <option value="all">All words</option><option value="selected">Selected line only</option>
+    </select></label>
    </div>
+   {shortTransitions.length>0&&<details className="stemlab-timing-diagnostics" open>
+    <summary>{shortTransitions.length} unusually short word transition{shortTransitions.length===1?'':'s'} to audition</summary>
+    <p>Orange is below five 16th-beat ticks; red is below three. These are review flags, not automatic timing changes.</p>
+    <ul>{shortTransitions.map(flag=><li key={`${flag.fromId}:${flag.toId}`}>
+      <button type="button" onClick={()=>{setSelected({kind:'word',id:flag.toId});setWordScope('selected');}}>{flag.line}: {flag.fromWord} → {flag.toWord}</button>
+      {' '}<strong>{flag.severity}</strong> · {flag.ticks.toFixed(2)} ticks · {flag.seconds.toFixed(3)}s
+    </li>)}</ul>
+   </details>}
    {variableSelected&&!canVariable&&<p role="alert">Variable BPM is selected but its source-bound beat map is unavailable; no silent fixed-BPM downgrade.</p>}
    {variableSelected&&beatEditor?.dirty&&<p role="alert">Save the beat-map corrections before saving/exporting lyric and cue timing changes.</p>}
    {variableSelected&&canVariable&&doc.beat_revision!==beatRevision&&<p role="alert">The saved beat-map revision has changed. Review its timing, then explicitly rebind these lyrics and cues to that revision. <button type="button" disabled={beatEditor.dirty} onClick={()=>edit(x=>({...x,beat_revision:beatRevision,review_status:'draft'}))}>Rebind to reviewed beat-map revision</button></p>}

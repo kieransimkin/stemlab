@@ -482,10 +482,25 @@ Its raw median tempo and unconfirmed canonical BPM remain visible.
 
 ## Editable song timing: fixed/variable BPM, lyrics, words and cue sections
 
-The Stemlab browser workspace has **Song timing** alongside **Beat correction**.
-It uses the shared `react-timeline-sequence` 0.4+ timing lanes, not a second
+The Stemlab browser workspace has **Lyric timing audition & correction** alongside
+**Beat correction**. The timing lanes show all words by default, with an optional
+selected-line view for close editing. The timeline's **Audition lyrics** control
+reveals the approved cover artwork and renders source-bound subtitles. Play, pause,
+seek, looping and channel selection remain owned by the one timeline transport.
+
+The actual screenshots and silent demonstration video in
+[the lyric-audition guide](docs/lyric-audition.md) show the released shared control
+in desktop and mobile layouts without redistributing a release master.
+
+Fixed-clock timing also flags consecutive word onsets below five DanceMoves ticks;
+below three ticks is severe. The editor outlines those destination words, lists every
+flag with seconds and tick distance, and lets the reviewer jump to its parent line.
+Flags never alter timestamps automatically, because a rapid backing-vocal or
+coarticulated phrase may be correct.
+
+It uses the shared `react-timeline-sequence` 0.6+ timing lanes, not a second
 playhead or bespoke renderer. Its three editable tracks are per-line lyric
-blocks, words belonging to the selected line, and cue section boundaries.
+blocks, all words or words belonging to the selected line, and cue section boundaries.
 The same original master audio, transport and zoom apply to all three.
 
 The timing clock is either an explicit **fixed BPM + Beat 1 offset** or the
