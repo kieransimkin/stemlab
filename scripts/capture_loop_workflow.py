@@ -87,23 +87,30 @@ def capture_workflow(page, output: Path, report: dict) -> dict:
     page.wait_for_timeout(250)
 
     # A ruler click seeks within the selected loop and resumes shared playback.
-    point = page.evaluate("""() => {
+    verse_start = verse['start_sample'] / sr
+    verse_end = verse['end_sample'] / sr
+    point = page.evaluate("""([start, end]) => {
         const scroller = document.querySelector('.rts-scroller').getBoundingClientRect();
         const label = document.querySelector('.rts-ruler-label').getBoundingClientRect();
         const rulerNode = document.querySelector('.rts-ruler-track');
         const ruler = rulerNode.getBoundingClientRect();
         const duration = Number(document.querySelector('audio').duration);
         const visible = [...rulerNode.querySelectorAll('.rts-tick-major')]
-          .map(node => ({node, rect:node.getBoundingClientRect()}))
-          .filter(({rect}) => rect.x > label.right + 8 && rect.x < scroller.right - 8);
+          .map(node => ({node, rect:node.getBoundingClientRect(),
+                         seconds:node.offsetLeft * duration / rulerNode.offsetWidth}))
+          .filter(({rect, seconds}) => rect.x > label.right + 8 && rect.x < scroller.right - 8
+                   && seconds > start && seconds < end);
         if (!visible.length) throw new Error('No visible numbered ruler tick');
         const chosen = visible[Math.floor(visible.length / 2)];
         return {x:chosen.rect.x + 1, y:ruler.y + ruler.height / 2,
-                seconds:chosen.node.offsetLeft * duration / rulerNode.offsetWidth};
-    }""")
+                seconds:chosen.seconds};
+    }""", [verse_start, verse_end])
     page.mouse.click(point['x'], point['y'])
-    page.wait_for_function("([t]) => !document.querySelector('audio').paused"
-                           " && document.querySelector('audio').currentTime >= t", arg=[point['seconds']])
+    # Loop playback is owned by the component's decoded-buffer transport, not
+    # the page's hidden full-song audio element.  Assert the public transport
+    # state and shared source clock rather than an implementation detail.
+    page.get_by_role('button', name='Pause', exact=True).wait_for()
+    wait_for_audio(page, verse, sr)
     current = clock_seconds(page)
     assert point['seconds'] <= current < point['seconds'] + .75
     page.get_by_role('button', name='Pause', exact=True).click()
