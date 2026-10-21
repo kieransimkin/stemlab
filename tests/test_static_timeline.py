@@ -275,3 +275,20 @@ def test_byte_exact_public_evidence_preserves_crlf_and_rejects_private_data(anal
                         byte_exact_json={'analysis.json': digest(analysis/'analysis.json')})
     with pytest.raises(ValueError, match='hash'):
         export_timeline(analysis, tmp_path/'tampered', include_audio=True, byte_exact_json={relative: 'a'*64})
+
+
+def test_artwork_and_audition_reference_are_local_hashed_and_source_bound(analysis, tmp_path):
+    artwork = WEB_ROOT / 'arcadians-cover.jpg'
+    audition = {'source_sha256': read_json(analysis/'analysis.json')['source']['sha256'],
+                'items': [{'start': 0, 'end': 1, 'label': 'Audition'}]}
+    result = export_timeline(analysis, tmp_path/'audition', include_audio=True, artwork=artwork, audition=audition)
+    assert result['files']['media/cover.jpg']['sha256'] == digest(artwork)
+    assert read_json(tmp_path/'audition/data/lyric-audition.json') == audition
+    payload = json.loads(re.search(r'id="stemlab-static-data">(.*?)</script>',
+                                  (tmp_path/'audition/index.html').read_text()).group(1))
+    assert payload['artwork'] == 'media/cover.jpg' and payload['lyric_items'] == audition['items']
+    with pytest.raises(ValueError, match='exact source'):
+        export_timeline(analysis, tmp_path/'wrong', include_audio=True, audition={**audition, 'source_sha256': 'a'*64})
+    with pytest.raises(ValueError, match='finite'):
+        export_timeline(analysis, tmp_path/'bad', include_audio=True,
+                        audition={**audition, 'items': [{'start': 0, 'end': float('nan'), 'label': 'Bad'}]})

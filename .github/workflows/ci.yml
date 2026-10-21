@@ -47,7 +47,7 @@ jobs:
         run: python scripts/check_viewer_build.py --latest
       - run: npm ci
       - run: npm run build:web
-      - run: node --test tests/web/audio-channels.test.mjs tests/web/beat-offsets.test.mjs tests/web/beat-map.test.mjs tests/web/timing-workflow.test.mjs
+      - run: node --test tests/web/audio-channels.test.mjs tests/web/beat-offsets.test.mjs tests/web/beat-map.test.mjs tests/web/timing-workflow.test.mjs tests/web/lyric-audition.test.mjs
       - run: python scripts/check_viewer_build.py
       - run: git diff --exit-code -- src/stemlab/web/app.js src/stemlab/web/timeline.css
 

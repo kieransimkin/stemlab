@@ -29,23 +29,23 @@
     "policy": "latest-stable",
     "schema": "stemlab.viewer-releases.v1",
     "timeline": {
-      "commit": "e8ef859126f7d3c9abd07f371cef46b624d36ebc",
-      "integrity": "sha512-I61SrPjij7n65oPehI90KftWe2AvtMd267w5icLfRgtCU1ww8JdZ58OHDLBMjrkEbkvUroaoKGDqgMA6SNBk0A==",
+      "commit": "f7311e1fe0a8ed7cac457fada49af150c2801245",
+      "integrity": "sha512-Kb62PAg1+Z0FQHBVAPHnzk9vwR7tm3VeUps3BUpwormuzWD4mLao+i32GGeUnRs3PxW1tsZXF+pmf4DbGfwJRw==",
       "repository": "kieransimkin/react-timeline-sequence",
-      "tag": "v0.4.0",
-      "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.4.0.tgz",
-      "version": "0.4.0"
+      "tag": "v0.6.0",
+      "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.6.0.tgz",
+      "version": "0.6.0"
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "8d06cf7dba4b68b5634b0456ee1b72d24c9a4408dcdd1ce603140629d53a4e61",
-    "src/stemlab/web/timeline.css": "9b2c9e0a28b732a0ca3b2456c2437f00de6be5d7286c19fcae3c1fa2f8bb036a"
+    "src/stemlab/web/app.js": "c3cd28396d56afbec6835e49c83cb55e93b188f904c4ee105d8cdbabaa2c6b07",
+    "src/stemlab/web/timeline.css": "c44f1ec2bb2a2ffef3b438f740c713e466d58885cf932d48c2dd27d119a74af2"
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
-    "package-lock.json": "2e9077757bbd0e0bf94538113bf5f010ea66e353ef7b1f2182f2c2554d2eb33c",
-    "package.json": "ab7909f132cb6b6b39b569a1c46cddd3a345c5334b14fd2b18326874aa1ceeba",
-    "web-client/src/app.jsx": "33043d8aac6a3e972dfe25f4be432fab9aa089f42118e7770348cf9725a31929",
+    "package-lock.json": "a11526c1fb7a91063adefcd0afc5e4cfbeb69e3999fb9632757f90ae4ef0c1bf",
+    "package.json": "5229f6ff1708f645bb6ae9a721f83dc85f795c72bff8dbfd6ec1f2cc98d8a801",
+    "web-client/src/app.jsx": "625a706e919a66b17d63d187f305e9f666fb4944756160453b0cd2ccd00d68ac",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
     "web-client/src/beat-map-editor.jsx": "82c500254a58edd5c5b0ce53895526e0177b86ecd3aadf4d0edbbc5b30004ee5",
     "web-client/src/beat-map.css": "743ecb248e880371d52d7e776c9c48a2d1b7ba4654f578baaa57552b9cfacd09",
@@ -53,8 +53,9 @@
     "web-client/src/beat-offset-controls.jsx": "7f6f6ee4bcbb1cd3dbb8966a19ceb904a28422a3eed62619cfbac80cf4195833",
     "web-client/src/beat-offsets.js": "ecede43b1d49493332efc0ab08efbcd64a46291875e6e453f2c431ff6ff67b18",
     "web-client/src/loops.jsx": "79b5d4f0169231a5c683346eb1854176023fab2595e05f94edd4f074b350591b",
-    "web-client/src/timing-editor.css": "dc41ad32c8cb90389b9ae42b79c5ed1e23aeabf152aec9ed5ad52e945b879474",
-    "web-client/src/timing-editor.jsx": "eb9a1e1354c88f1fb76de6a7a16638800b156e6e542e9c21dd41d7861251fe59",
+    "web-client/src/lyric-audition.js": "56b4c997d87d0d0d055140f006e5b7872b1aba396ed671b24dc024fdb02d275d",
+    "web-client/src/timing-editor.css": "8607987c8cc7b1ac69cf04317464c538f4efba3f98e632bad356c5d09caa8da0",
+    "web-client/src/timing-editor.jsx": "780a08105d593aec7445bac5be84205d3a2f9af43f13b9b3dbdf1373c5346f70",
     "web-client/src/timing-workflow.js": "3a56d0659c7c40baa2a38ec284f5ad8358fa144ca32c7d35869bb0171c0230d0",
     "web-client/vite.config.js": "69f08644b1761c13d8af6f5b5e2e85ed1ba140e71d5371dc5221ebd14bd6476d"
   }

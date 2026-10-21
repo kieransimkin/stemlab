@@ -29,7 +29,7 @@ SCHEMA = 'stemlab.viewer-releases.v1'
 REPOSITORIES = {'timeline': 'kieransimkin/react-timeline-sequence',
                 'dancerudiments': 'kieransimkin/DanceRudiments'}
 SEMVER = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\Z')
-MARKERS = ('rts-display-controls', 'rts-audio-layers', 'channel height')
+MARKERS = ('rts-display-controls', 'rts-audio-layers', 'channel height', 'rts-audition', 'Audition lyrics')
 
 
 def version(value: str) -> tuple[int, int, int]:
@@ -214,10 +214,12 @@ def synchronize(root: Path = ROOT, *, fetch=get_json, runner=run, if_needed: boo
     # Check what was installed, not a marker copied into the consuming app.
     module = root / 'node_modules/react-timeline-sequence/dist/index.js'
     installed = read(root / 'node_modules/react-timeline-sequence/package.json')
-    if installed.get('version') != info['timeline']['version'] or 'TIMELINE_DISPLAY_API_VERSION' not in module.read_text(encoding='utf-8'):
+    if installed.get('version') != info['timeline']['version'] or not all(
+            symbol in module.read_text(encoding='utf-8') for symbol in
+            ('TIMELINE_DISPLAY_API_VERSION', 'TIMELINE_LYRIC_AUDITION_API_VERSION')):
         raise ValueError('Published timeline package does not export the required display API')
     runner([npm, 'run', 'build:web'], root)
-    runner([node, '--test', 'tests/web/audio-channels.test.mjs'], root)
+    runner([node, '--test', 'tests/web/audio-channels.test.mjs', 'tests/web/lyric-audition.test.mjs'], root)
     bundle = root / 'src/stemlab/web/app.js'
     css = root / 'src/stemlab/web/timeline.css'
     if not all(marker in bundle.read_text(encoding='utf-8') for marker in MARKERS):

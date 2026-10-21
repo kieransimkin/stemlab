@@ -110,7 +110,8 @@ def adapt_bundle(source: str) -> tuple[str, int]:
 
 def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
                     source_commit: str = '', coverage: dict | None = None,
-                    byte_exact_json: dict[str, str] | None = None) -> dict:
+                    byte_exact_json: dict[str, str] | None = None,
+                    artwork: Path | None = None, audition: dict | None = None) -> dict:
     """Export to a NEW directory; explicit audio inclusion authorizes local copying.
 
     Generic snapshots may be incomplete and are labelled as such. Arcadians'
@@ -137,11 +138,33 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
     analysis = read_json(safe_file(results, 'analysis.json'))
     source = safe_file(results, analysis['source']['copied_path'])
     sha = analysis['source']['sha256']
+    if audition is not None:
+        if audition.get('source_sha256') != sha or not isinstance(audition.get('items'), list):
+            raise ValueError('Lyric audition reference must identify the exact source master')
+        for item in audition['items']:
+            if (not isinstance(item.get('label'), str) or
+                    not isinstance(item.get('start'), (int, float)) or
+                    not math.isfinite(item['start']) or item['start'] < 0 or
+                    not isinstance(item.get('end'), (int, float)) or
+                    not math.isfinite(item['end']) or item['end'] <= item['start']):
+                raise ValueError('Lyric audition requires finite explicit line intervals')
+    # The bundled Arcadians artwork belongs only to its checksum-locked master.
+    # Other exports require an explicit local artwork input; no network download.
+    if artwork is None and sha == '5a3d17d8b5b27d62a6bb9fa1f654c403db0341da826d650cc282dfa5758ee6de':
+        artwork = WEB_ROOT / 'arcadians-cover.jpg'
+    if artwork is not None:
+        artwork = Path(artwork)
+        if (artwork.is_symlink() or not artwork.is_file() or
+                artwork.suffix.lower() not in {'.png', '.jpg', '.jpeg', '.webp'} or
+                artwork.stat().st_size > 20 * 1024 * 1024):
+            raise ValueError('Artwork must be a local PNG/JPEG/WebP file up to 20 MiB')
     if source.suffix.lower() not in AUDIO or digest(source) != sha:
         raise ValueError('Copied master does not match the analysis SHA-256')
     info = audio_info(source)
     if info['num_frames'] <= 0:
         raise ValueError('Empty source audio')
+    if audition is not None and any(item['end'] > info['duration_seconds'] + .05 for item in audition['items']):
+        raise ValueError('Lyric audition exceeds the source duration')
     canonical = read_json(results / 'canonical.json') if (results / 'canonical.json').exists() else {}
     errors = list(analysis.get('errors') or []) + list((analysis.get('deep_analysis') or {}).get('errors') or [])
     coverage = coverage or {'status': 'saved-snapshot', 'scope': 'Existing evidence only; not a completeness claim'}
@@ -275,11 +298,18 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
             route('/assets/' + name, 'assets/' + name)
         bundle, count = adapt_bundle((WEB_ROOT / 'app.js').read_text(encoding='utf-8'))
         (stage / 'assets/app.js').write_text(bundle, encoding='utf-8')
+        artwork_name = None
+        if artwork is not None:
+            artwork_name = 'media/cover' + artwork.suffix.lower()
+            shutil.copyfile(artwork, stage / artwork_name)
+        if audition is not None:
+            write_json(stage / 'data/lyric-audition.json', audition)
         # The song hash alone does not change when its analysis is regenerated.
         # Version URLs by exported content so cached envelopes/data cannot mix runs.
         revision = hashlib.sha256(json.dumps({path.relative_to(stage).as_posix(): digest(path)
             for path in sorted(stage.rglob('*')) if path.is_file()}, sort_keys=True).encode()).hexdigest()[:16]
-        payload = dict(schema='stemlab.static-timeline.v1', hash=sha, routes=routes, version=revision)
+        payload = dict(schema='stemlab.static-timeline.v1', hash=sha, routes=routes, version=revision,
+                       artwork=artwork_name, lyric_items=audition['items'] if audition else None)
         html_payload = json.dumps(payload, ensure_ascii=True).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
         index = (WEB_ROOT / 'index.html').read_text(encoding='utf-8')
         index = re.sub(r'<script\b[^>]*\bsrc=["\']https?://[^"\']+["\'][^>]*>\s*</script>', '', index, flags=re.I)

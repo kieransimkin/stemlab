@@ -184,13 +184,13 @@ def test_sync_uses_registry_and_build_not_siblings(tmp_path, monkeypatch):
     module = tmp_path / 'node_modules/react-timeline-sequence'
     (module / 'dist').mkdir(parents=True)
     vr.write(module / 'package.json', {'version': '0.3.0'})
-    (module / 'dist/index.js').write_text('export const TIMELINE_DISPLAY_API_VERSION = 1;')
+    (module / 'dist/index.js').write_text('export const TIMELINE_DISPLAY_API_VERSION = 1; export const TIMELINE_LYRIC_AUDITION_API_VERSION = 1;')
     calls = []
     monkeypatch.setattr(vr, 'executable', lambda name: name)
     vr.synchronize(tmp_path, fetch=fake_api().__getitem__, runner=lambda args, cwd: calls.append(args))
     assert calls[0] == ['npm', 'install', '--save-exact', 'react-timeline-sequence@0.3.0', '--registry=https://registry.npmjs.org/']
     assert ['npm', 'run', 'build:web'] in calls
-    assert ['node', '--test', 'tests/web/audio-channels.test.mjs'] in calls
+    assert ['node', '--test', 'tests/web/audio-channels.test.mjs', 'tests/web/lyric-audition.test.mjs'] in calls
     assert vr.check(tmp_path) == info
     assert not (tmp_path / 'vendor').exists()
 

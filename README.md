@@ -941,6 +941,19 @@ not production dependencies. Existing exported pages must be regenerated.
 
 ## Web service
 
+Live and static timeline viewers enable **Audition lyrics** using the released
+React Timeline Sequence control. Timed subtitles appear over the song's cover,
+following Play/Pause, seeks, loops and the selected **Audio channel**. Choose the
+master or a full-duration stem; changing channels pauses playback and resets the
+playhead. Unsaved line edits update subtitles immediately, even with the timing
+editor hidden. Frozen exports remain read-only.
+
+![Actual Arcadians viewer with cover-art lyric subtitles](docs/screenshots/lyric-audition-arcadians.png)
+
+[Play the actual silent viewer demonstration](docs/screenshots/lyric-audition-demo.webm).
+See [the audition guide](docs/lyric-audition.md) for both examples, timing authority,
+artwork export, local preview commands and verification limits.
+
 StemLab includes an upload/timeline web UI plus HTTP and Socket.IO APIs for
 content-addressed analysis jobs. See [docs/web.md](docs/web.md) for launchers,
 endpoints, events and the Arcadians reference workflow.

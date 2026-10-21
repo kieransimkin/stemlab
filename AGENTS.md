@@ -106,6 +106,14 @@ alignment v1: never mislabel an irregular v1 timeline as that older schema.
 
 ## Lyric and cue timing edits
 
+Use the released shared `lyricAudition` API in live and exported timelines. Feed
+it the complete edited line list, independently of editor visibility and viewport
+filtering; canonical lines are the fallback only before an edit document exists.
+Offer only full-duration source-bound audio channels. Stem loops must decode that
+stem, never a master-only excerpt. Static artwork is local and hash-inventoried;
+keep extra lyric-reference metadata separate from frozen scientific evidence.
+Run the lyric adapter and real HTTP subtitle/channel browser checks on rebuilds.
+
 Use the source-bound, separately revisioned `timing/song-timing-edits.json`.
 Keep original canonical lyrics, ASR, cues and master unchanged. Word starts and
 ends are restricted to their own line; cue names must be [SECTION: VERSE 1],
