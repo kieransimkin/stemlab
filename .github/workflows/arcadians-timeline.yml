@@ -33,7 +33,7 @@ jobs:
             --build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu \
             --build-arg STEMLAB_BUILD_REF="$GITHUB_SHA" \
             -t stemlab-timeline:ci .
-      - name: Run the complete core recipe on the original Arcadians MP3
+      - name: Run the complete core recipe v3 with six stems and five pitched MIDI transcriptions
         # Model downloads use upstream registries, as in the normal local pipeline.
         # Music is mounted because .dockerignore intentionally excludes audio.
         run: |
@@ -84,7 +84,7 @@ jobs:
           name: stemlab-arcadians-timeline-qa
           path: ${{ runner.temp }}/arcadians-timeline/qa/
           if-no-files-found: warn
-      - name: Retain original analysis artifacts, not models or runtime caches
+      - name: Retain original analysis, float stems and MIDI artifacts without model caches
         if: always()
         uses: actions/upload-artifact@v7
         with:

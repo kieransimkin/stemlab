@@ -11,6 +11,7 @@ import importlib.metadata
 import importlib.resources
 import json
 import os
+import shutil
 import tempfile
 import urllib.request
 from pathlib import Path
@@ -82,6 +83,32 @@ def _fetch(url: str, target: Path, expected: str | None = None,
 def _cache() -> Path:
     from platformdirs import user_cache_path
     return Path(os.environ.get("STEMLAB_CACHE", str(user_cache_path("stemlab")))) / "midi"
+
+
+def _bundled_basic_pitch_cache(origin: Path) -> Path:
+    """Stage the bundled model under the owning project's configured model cache."""
+    files = sorted(p for p in origin.rglob('*') if p.is_file()) if origin.is_dir() else [origin]
+    if not files or any(p.is_symlink() for p in files):
+        raise ValueError('Basic Pitch checkpoint must contain regular files')
+    inventory = {(p.relative_to(origin).as_posix() if origin.is_dir() else p.name): digest(p) for p in files}
+    fingerprint = hashlib.sha256(json.dumps(inventory, sort_keys=True).encode()).hexdigest()
+    base = _cache() / 'basic_pitch' / fingerprint
+    target = base / origin.name
+    if not target.exists():
+        base.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='bundled-', dir=base) as temporary:
+            staged = Path(temporary) / origin.name
+            if origin.is_dir():
+                shutil.copytree(origin, staged)
+            else:
+                shutil.copyfile(origin, staged)
+            if not target.exists():
+                staged.rename(target)
+    for name, expected in inventory.items():
+        copied = target / name if origin.is_dir() else target
+        if not copied.is_file() or digest(copied) != expected:
+            raise ValueError('Cached Basic Pitch checkpoint checksum mismatch; original preserved')
+    return target
 
 
 def checkpoint_for(model: str, override: str | None, allow_downloads: bool) -> Path:
@@ -180,6 +207,8 @@ def run_backend(request: dict[str, Any], midi_path: Path) -> dict[str, Any]:
         weights = Path(custom) if custom else Path(ICASSP_2022_MODEL_PATH)
         if not weights.exists():
             raise RuntimeError("Basic Pitch's bundled checkpoint is missing; reinstall basic-pitch")
+        if not custom:
+            weights = _bundled_basic_pitch_cache(weights)
         model = Model(weights)
         _, midi, _ = predict(source, model)
         midi.write(str(midi_path))

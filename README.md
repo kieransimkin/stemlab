@@ -768,14 +768,25 @@ The same CI publication also retains the separate The Truth is a Virus beat
 reference. Its frozen detections are disclosed; current CI generates its fits,
 offsets and real timeline rather than asserting a fresh learned-model run.
 
-The timeline's **`arcadians-core-v2` recipe** runs all the selected core families
+The timeline's **`arcadians-core-v3` recipe** runs all the selected core families
 on the complete checksum-verified MP3. It is not the five-separator `full`
-comparison profile or every optional MIDI/evidence/NC model. Coverage, dependency
+comparison profile or every optional evidence/NC model. It also runs Basic Pitch
+on the five pitched stems (bass, guitar, piano, vocals and other), displays their
+inferred note lanes and includes each unchanged native MIDI file for download.
+Drum audio is separated; this recipe does not claim drum-class MIDI transcription.
+Coverage, dependency
 versions and source/export revisions are disclosed. Missing stems, beat results,
-Vamp plugins or required deep-analysis evidence fail the build; there is no
+Vamp plugins, MIDI transcriptions or required deep-analysis evidence fail the build; there is no
 synthetic fallback. Artist-confirmed 145 BPM, lyrics, manually edited lyric timing
 and artist sections stay distinct from machine estimates. A completed loop scan
 may legitimately return zero accepted loops and explain unresolved sections.
+
+![Actual local Arcadians MIDI note lanes, using retained stems and new inference](docs/screenshots/arcadians-midi-real-local.png)
+
+Actual local implementation capture: retained v1.8.0 public core evidence plus
+new Basic Pitch inference from its disclosed PCM24 FLAC stems. This is not a
+claim that a fresh CI run or v3 deployment has completed.
+[Video, inferred-note plot, workflow coverage and verification limits](docs/arcadians-complete-analysis.md).
 
 ### Build and publish all five examples
 
@@ -793,7 +804,11 @@ renderer loads precomputed local data, waveform envelopes and spectrogram strips
 It supports play/pause, seeking, zoom/Fit, and saved-loop audition when loops exist.
 The original MP3 is unchanged; public stem audio uses full-duration PCM24 FLAC
 listening derivatives with their conversion disclosed. Original float WAVs and
-raw results are kept in a separate seven-day Actions analysis artifact.
+raw results, native MIDI and note tables are kept in a separate seven-day Actions
+analysis artifact. Each MIDI note table is checked against its native MIDI and
+the hash of its actual separated input. MIDI tempo is not a new source BPM.
+Basic Pitch's bundled model is staged and checksum-checked under the configured
+project-local StemLab model cache; the installed original is retained.
 
 Keep **Pages Source = GitHub Actions** and **`STEMLAB_PAGES_ENABLED=true`** for
 automatic publication after a successful manual demo or a tagged release. Preserve
@@ -1192,7 +1207,7 @@ All-In-One structure remains master-based, and Beat Transformer runs once on its
 actual five demixed streams—not repeatedly on filenames it does not consume.
 Consensus allows **one vote per detector family**, not one per stem, preserving
 all source hypotheses without letting repeated drum runs dominate the vote.
-The `arcadians-core-v2` publication gate requires the new, correctly attributed
+The `arcadians-core-v3` publication gate requires the new, correctly attributed
 master/drum beat results. See [routing, provenance and failure handling](docs/beat-inputs.md).
 
 ## Agents and contributors

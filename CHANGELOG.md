@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.9.0 - 2026-10-21
+
+- Extend the complete Arcadians CI/Pages recipe with five genuine pitched-stem
+  Basic Pitch transcriptions, painted note lanes and byte-preserved MIDI downloads.
+  Validate source hashes, sample clocks, native MIDI and matching note tables.
+- Keep static Pages free of unavailable server-editing controls. Preserve all
+  existing demos, raw evidence, original recordings and source-adjacent new files.
+- Stage bundled Basic Pitch models in the configured project-local model cache;
+  preserve originals and reject corrupt copies. Keep numeric MIDI program values
+  numeric in JSON and reject cross-platform escaping saved-source paths.
+
 ## 1.8.0 - 2026-10-17
 
 - Add fixed and variable BPM matching with source-bound beat maps.

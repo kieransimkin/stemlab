@@ -157,6 +157,15 @@ async function laneFromFile(hash, file) {
       return {id, title:prettyPath(path), meta:"analysis provenance", kind:"artifact",
         sourceMap:data.spectrograms || [], content:artifact(hash, path)};
     }
+    if (path.startsWith("deep/midi/") && path.endsWith("/notes.json")) {
+      const data = await fetchJson(hash, path);
+      return { id, title: `MIDI · ${data.source_stem || prettyPath(path)}`,
+        meta: `${data.model_title || data.model || "Transcription"} · ${data.note_count || 0} inferred notes · original audio clock`,
+        kind: "midi-notes", content: { type: "notes", items: (data.notes || []).map(note => ({
+          start: note.start, end: note.end, value: note.midi_pitch,
+          label: `MIDI ${note.midi_pitch} · velocity ${note.velocity}`,
+        })) } };
+    }
     if (path.startsWith("beats/") && extension === "json") {
       const data = await fetchJson(hash, path);
       const downbeats = new Set((data.downbeats || []).map(value => Number(value).toFixed(3)));
@@ -244,8 +253,9 @@ function StemLabTimeline({ hash, filename }) {
   const loopState = useAnalysisLoops(hash);
   const [lanes, setLanes] = useState([]);
   const [duration, setDuration] = useState(0);
-  const beatEditor = useBeatMapEditor(hash, duration);
-  const timingEditor = useTimingEditor(hash, duration, beatEditor);
+  const editable = !window.__stemlabStatic;
+  const beatEditor = useBeatMapEditor(hash, duration, editable);
+  const timingEditor = useTimingEditor(hash, duration, beatEditor, editable);
   const [status, setStatus] = useState({ state: "submitted" });
   const [canonical, setCanonical] = useState({ bpm: null, lyrics: null, lyric_timing: [] });
   const [beatOffsets, setBeatOffsets] = useState(null);
@@ -312,10 +322,13 @@ function StemLabTimeline({ hash, filename }) {
       socket.on("job_status", event => { setStatus(event.status || {}); void refresh(); });
       socket.on("canonical_metadata", event => { if (event?.canonical) setCanonical(event.canonical); });
       socket.on("job_timeout", event => appendLog("stderr", `Job timeout: ${event.message || "analysis exceeded timeout"}`));
-    } else {
+    } else if (!window.__stemlabStatic) {
       connectionBadge.textContent = "polling";
       connectionBadge.classList.add("muted");
       appendLog("stderr", "Socket.IO browser client unavailable; timeline inventory polling remains active.");
+    } else {
+      connectionBadge.textContent = "static";
+      connectionBadge.classList.add("muted");
     }
     return () => {
       window.clearInterval(interval);
@@ -354,7 +367,7 @@ function StemLabTimeline({ hash, filename }) {
     onTimeChange={time=>{beatEditor.onTimeChange(time);timingEditor.onTimeChange(time);}}
     onPlaybackError={error => appendLog("stderr", error instanceof Error ? error.message : String(error))}
     headerEnd={<><span className={`badge ${state}`}>{state}</span><span className="small">{allLanes.length} lane{allLanes.length === 1 ? "" : "s"}</span></>}
-    footer={<><BeatOffsetControls comparison={comparison} onBasis={setGridBasis} onAnalysis={setGridAnalysis} />{beatEditor.panel}{timingEditor.panel}<LoopSummary state={loopState} hash={hash} /><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
+    footer={<><BeatOffsetControls comparison={comparison} onBasis={setGridBasis} onAnalysis={setGridAnalysis} />{editable && beatEditor.panel}{editable && timingEditor.panel}<LoopSummary state={loopState} hash={hash} /><Log lines={logs} /><span className="dock-links"><a href="https://kieransimkin.co.uk/my-songs/" target="_blank" rel="noopener">Kieran Simkin · My Songs ↗</a></span></>}
   />;
 }
 

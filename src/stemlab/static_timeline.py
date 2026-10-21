@@ -196,16 +196,27 @@ def export_timeline(results: Path, output: Path, *, include_audio: bool = False,
                 continue
             relative = path.relative_to(results).as_posix()
             ext = path.suffix.lower()
-            is_json = ext == '.json' and (relative in JSON_FILES or relative.startswith(JSON_DIRS))
+            is_midi_json = (relative == 'deep/midi/report.json' or
+                            relative.startswith('deep/midi/') and path.name == 'notes.json')
+            is_midi = relative.startswith('deep/midi/') and path.name == 'transcription.mid'
+            is_json = ext == '.json' and (relative in JSON_FILES or relative.startswith(JSON_DIRS) or is_midi_json)
             is_audio = ext in AUDIO and (relative.startswith('stems/') or relative == 'speech/spoken_word.wav')
             is_spec = ext == '.npz' and relative.startswith('spectrograms/')
-            if not (is_json or is_audio or is_spec):
+            if not (is_json or is_audio or is_spec or is_midi):
                 continue
             path = safe_file(results, relative)
             if is_json:
                 json_artifact(relative, read_json(path))
             elif is_audio:
                 audio_artifact(relative, path, 'media/' + relative)
+            elif is_midi:
+                with path.open('rb') as native:
+                    if native.read(4) != b'MThd':
+                        raise ValueError('Public MIDI must be a Standard MIDI File')
+                name = 'data/' + relative
+                (stage / name).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(path, stage / name)
+                route(f'/{sha}/{relative}', name)
             else:
                 name = 'spectrograms/' + hashlib.sha256(relative.encode()).hexdigest()[:24] + '.png'
                 (stage / name).parent.mkdir(parents=True, exist_ok=True)
@@ -323,7 +334,7 @@ def verify_snapshot(site: Path) -> dict:
         raise ValueError('Invalid static artifact inventory')
     actual = set()
     total = 0
-    allowed_extensions = {'.html', '.js', '.css', '.json', '.png', '.jpg', '.txt'} | AUDIO
+    allowed_extensions = {'.html', '.js', '.css', '.json', '.png', '.jpg', '.txt', '.mid'} | AUDIO
     for path in site.rglob('*'):
         if path.is_symlink():
             raise ValueError('Public snapshot contains a symlink')

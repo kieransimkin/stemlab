@@ -92,6 +92,28 @@ def test_export_requires_audio_opt_in_and_new_output(analysis, tmp_path):
         export_timeline(analysis, output, include_audio=True)
 
 
+def test_midi_export_keeps_native_bytes_and_omits_worker_requests(analysis, tmp_path):
+    import pretty_midi
+    folder = analysis / 'deep/midi/basic_pitch/bass'
+    folder.mkdir(parents=True)
+    performance = pretty_midi.PrettyMIDI()
+    instrument = pretty_midi.Instrument(32)
+    instrument.notes.append(pretty_midi.Note(90, 45, .3, .9))
+    performance.instruments.append(instrument)
+    native = folder / 'transcription.mid'
+    performance.write(str(native))
+    write_json(folder / 'notes.json', {'schema': 'stemlab.midi-notes.v1', 'notes': []})
+    write_json(folder / 'request.json', {'source': '/private/source.wav'})
+    (folder / 'backend.log').write_text('private diagnostics')
+    original = native.read_bytes()
+    site = tmp_path / 'midi-site'
+    record = export_timeline(analysis, site, include_audio=True)
+    assert (site / 'data/deep/midi/basic_pitch/bass/transcription.mid').read_bytes() == original
+    assert (site / 'data/deep/midi/basic_pitch/bass/notes.json').is_file()
+    assert not any(name.endswith(('request.json', 'backend.log')) for name in record['files'])
+    assert native.read_bytes() == original
+
+
 def test_missing_loop_analysis_is_explicit_not_a_missing_route_or_zero_result(analysis, tmp_path):
     (analysis/'deep/loops/loops.json').unlink()
     site = tmp_path/'site'

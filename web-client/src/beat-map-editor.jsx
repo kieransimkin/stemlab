@@ -96,7 +96,7 @@ function TempoEnvelope({map, duration, visible, selected, onSelect, onTempo}) {
   </div>;
 }
 
-export function useBeatMapEditor(hash, duration) {
+export function useBeatMapEditor(hash, duration, enabled = true) {
   const [map,setMap] = useState(null);
   const [saved,setSaved] = useState(false);
   const [revision,setRevision] = useState(null);
@@ -134,6 +134,7 @@ export function useBeatMapEditor(hash, duration) {
     }
   },[hash,dirty]);
   useEffect(()=>{
+    if (!enabled) return;
     let active=true;
     const start=async()=>{if(active)await load(true);};
     void start();

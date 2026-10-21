@@ -121,6 +121,16 @@ Before every new workflow run, check the latest stable official release and obse
 
 ## Preflight temporary-directory access
 
+The Arcadians publication recipe is `arcadians-core-v3`: preserve the existing
+six-stem/core evidence families and add genuine Basic Pitch outputs for all five
+pitched stems. Require source hashes, successful per-stem status, native MIDI
+parsing and matching note tables. Publish only the bounded report/note/MIDI
+allowlist; worker requests, logs and model caches remain private. Drum separation
+does not establish drum MIDI transcription. Preserve original files and export
+to new directories. Keep the existing five viewers and beat reference together.
+Rebuild the released timeline bundle after adding MIDI lanes, and require real
+HTTP MIDI-download and painted note-lane checks before Pages deployment.
+
 Before any long, costly, model-backed, media-rendering, build, test, packaging or release command that creates private or atomic temporary directories, run a disposable preflight with the exact runtime, user or sandbox, and intended output parent. The probe must create a unique directory, write and read a file, atomically rename it, then remove the file and directory.
 
 Keep temporary data and caches under the owning project on `Z:`; model weights and model-specific caches remain under that project's ignored `models/`. If the probe returns `WinError 5`, access denied, a rename failure or a cleanup failure, stop before the expensive command. Preserve the exact error and use the documented narrowly approved unrestricted recovery from the outset only when the task requires it. Use a fresh output directory and do not repeat the already-failing full job in the restricted shell.

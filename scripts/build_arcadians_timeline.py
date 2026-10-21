@@ -22,13 +22,15 @@ from stemlab.static_timeline import digest, export_timeline, read_json, safe_fil
 
 ROOT = Path(__file__).resolve().parents[1]
 
-RECIPE = 'arcadians-core-v2'
+RECIPE = 'arcadians-core-v3'
 STEMS = {'vocals', 'drums', 'bass', 'guitar', 'piano', 'other'}
+MIDI_STEMS = STEMS - {'drums'}
 BEATS = {'all_in_one', 'beatnet', 'beat_this', 'beat_transformer', 'consensus'}
 DEEP = {'structure', 'sonic', 'rhythm', 'harmony', 'lyrics', 'semantic_text', 'song_map', 'loops'}
 SCOPE = ('Complete full-song core analysis: HTDemucs six stems, master/stem spectrograms, '
          'Whisper small + VAD, master/percussion BeatNet and BeatThis, demixed Beat Transformer + All-In-One + detector-balanced consensus, '
-         '13 Vamp analyses, sonic/rhythm/harmony/lyrics/text semantics, song map and loop discovery')
+         '13 Vamp analyses, sonic/rhythm/harmony/lyrics/text semantics, song map, loop discovery '
+         'and independent Basic Pitch MIDI/note estimates for all five pitched stems')
 
 
 def recipe(audio: Path, results: Path):
@@ -37,7 +39,51 @@ def recipe(audio: Path, results: Path):
                           device='cpu', whisper_model='small', continue_on_error=False,
                           bootstrap_external=True, run_text_semantics=True,
                           run_audio_semantics=False, run_basic_pitch=False,
-                          run_loops=True, export_loops=False)
+                          run_loops=True, export_loops=False,
+                          midi_models=('basic_pitch',), midi_target='stems',
+                          midi_allow_downloads=False)
+
+
+def require_midi(results: Path, master_sha: str, stems: list[dict]) -> dict:
+    """Bind each genuine MIDI performance and note table to its separated input."""
+    from stemlab.analysis.midi.artifacts import read_performance
+    from stemlab.audio import audio_info
+    folder = results / 'deep/midi'
+    report = read_json(safe_file(results, 'deep/midi/report.json'))
+    rows = report.get('analyses', [])
+    if (report.get('schema') != 'stemlab.midi-analysis.v1'
+            or report.get('status') != 'completed' or report.get('errors') or report.get('skipped')
+            or report.get('source_sha256') != master_sha
+            or report.get('models_requested') != ['basic_pitch']
+            or len(rows) != len(MIDI_STEMS)
+            or {row.get('source_stem') for row in rows} != MIDI_STEMS):
+        raise ValueError('Complete source-bound MIDI estimates for all five pitched stems are required')
+    originals = {row['stem']: safe_file(results, row['path']) for row in stems}
+    count = 0
+    for row in rows:
+        if row.get('status') != 'completed' or row.get('model') != 'basic_pitch':
+            raise ValueError('A required MIDI transcription failed')
+        source = originals[row['source_stem']]
+        info = audio_info(source)
+        if (row.get('source_sha256') != digest(source)
+                or row.get('sample_rate') != info['sample_rate']
+                or row.get('source_frames') != info['num_frames']):
+            raise ValueError('MIDI input does not match the separated stem')
+        performance = read_performance(safe_file(folder, row['files']['midi']),
+                                       row['sample_rate'], row['source_frames'])
+        notes = read_json(safe_file(folder, row['files']['notes']))
+        if (notes.get('schema') != 'stemlab.midi-notes.v1'
+                or notes.get('source_sha256') != row['source_sha256']
+                or notes.get('note_count') != performance['note_count']
+                or notes.get('notes') != performance['notes']
+                or row.get('note_count') != performance['note_count']):
+            raise ValueError('MIDI note metadata differs from the native MIDI performance')
+        count += performance['note_count']
+    if not count or report.get('note_count') != count:
+        raise ValueError('No genuine MIDI notes or incorrect report note count')
+    return {'model': 'basic_pitch', 'stems': sorted(MIDI_STEMS), 'note_count': count,
+            'drum_midi': 'not requested: Basic Pitch estimates pitched notes, not drum classes',
+            'estimates_not_ground_truth': True}
 
 
 def require_core(results: Path, *, expected_sha: str = ARCADIANS_SHA256) -> dict:
@@ -147,12 +193,13 @@ def require_core(results: Path, *, expected_sha: str = ARCADIANS_SHA256) -> dict
             or loops.get('loop_count') != len(loops.get('loops', []))
             or not isinstance(loops.get('unresolved_sections'), list)):
         raise ValueError('Loop scan is not bound to the complete source')
+    midi = require_midi(results, expected_sha, model['stems'])
     return dict(status='complete', recipe=RECIPE, scope=SCOPE, stems=sorted(STEMS),
                 beat_models=sorted(BEATS), percussion_beat_models=percussion_models,
                 beat_input_sources=[source.metadata(results) for source in inputs], deep_stages=sorted(DEEP), vamp_transforms=len(VAMP_REQUIRED_OUTPUTS),
                 source_sha256=expected_sha, source_frames=info['num_frames'],
-                duration_seconds=info['duration_seconds'], loop_count=loops['loop_count'],
-                unselected=['alternate separation comparison models', 'optional MIDI transcribers',
+                duration_seconds=info['duration_seconds'], loop_count=loops['loop_count'], midi=midi,
+                unselected=['alternate separation comparison models', 'other optional MIDI transcribers and drum classification',
                             'specialist evidence backends', 'non-commercial MuQ audio semantics'],
                 listening_qa=False, hypotheses_not_ground_truth=True)
 
@@ -179,7 +226,8 @@ def build(results: Path, output: Path, source_commit: str, *, reuse: bool = Fals
         run_pipeline(cfg, progress=lambda line: print(line, flush=True))
         dependencies = {}
         for distribution in ('torch', 'torchaudio', 'torchcodec', 'demucs', 'faster-whisper', 'beat-this',
-                             'all-in-one-infer', 'sentence-transformers', 'librosa'):
+                             'all-in-one-infer', 'sentence-transformers', 'librosa',
+                             'basic-pitch', 'pretty-midi', 'onnxruntime'):
             dependencies[distribution] = importlib.metadata.version(distribution)
         # Provenance is not faked when --reuse exports an earlier completed analysis.
         write_json(results / 'core-run.json', {'recipe': RECIPE, 'analysis_commit': source_commit,
