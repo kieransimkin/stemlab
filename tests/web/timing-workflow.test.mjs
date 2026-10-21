@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {canonicalCue,createAtPlayhead,updateTimingEvent,deleteTimingEvent} from '../../web-client/src/timing-workflow.js';
+import {canonicalCue,createAtPlayhead,updateTimingEvent,deleteTimingEvent,shortWordTransitions} from '../../web-client/src/timing-workflow.js';
 const base=()=>({sample_rate:8000,num_frames:40000,clock_mode:'fixed',fixed_clock:{bpm:120,first_beat_frame:1000},
   review_status:'draft',lines:[{id:'line-0001',start_frame:8000,end_frame:16000,text:'Hello world'}],words:[],cues:[]});
 test('standard section names retain known entry, drop, break and numbered labels',()=>{
@@ -26,4 +26,17 @@ test('cue moves preserve order, even when the view supplies only id and time',()
  assert.equal(d.cues[0].section,'CHORUS 1');
  d=updateTimingEvent(d,'cue',{id:d.cues[0].id,start:1.6});
  assert.equal(d.cues[0].type,'DROP');assert.equal(d.cues[0].section,'CHORUS 1');
+});
+test('very short consecutive word onsets are flagged without changing timing',()=>{
+ const doc=base();
+ doc.words=[
+  {id:'word-1',line_id:'line-0001',start_frame:8000,end_frame:8800,word:'let'},
+  {id:'word-2',line_id:'line-0001',start_frame:8040,end_frame:9000,word:'the'},
+  {id:'word-3',line_id:'line-0001',start_frame:11000,end_frame:12000,word:'light'},
+ ];
+ const flags=shortWordTransitions(doc);
+ assert.equal(flags.length,1);
+ assert.equal(flags[0].toId,'word-2');
+ assert.equal(flags[0].severity,'severe');
+ assert.deepEqual(doc.words.map(row=>row.start_frame),[8000,8040,11000]);
 });

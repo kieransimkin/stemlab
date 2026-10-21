@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.10.0 - 2026-10-21
+
+- Add a cover-art lyric audition panel inside the song-timing editor. It follows
+  the existing master timeline playhead and highlights the current timed word
+  without creating a second player or clock.
+- Show all timed words by default, retain a focused selected-line mode, and add
+  clickable warning/severe diagnostics for word-onset transitions below five or
+  three DanceMoves ticks. Diagnostics never rewrite artist timing automatically.
+- Document the real Light Will Win audition UI with a cropped screenshot and keep
+  saved source-frame corrections retrievable through the existing API and exports.
+
 ## 1.9.0 - 2026-10-21
 
 - Extend the complete Arcadians CI/Pages recipe with five genuine pitched-stem

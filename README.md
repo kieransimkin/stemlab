@@ -482,10 +482,30 @@ Its raw median tempo and unconfirmed canonical BPM remain visible.
 
 ## Editable song timing: fixed/variable BPM, lyrics, words and cue sections
 
-The Stemlab browser workspace has **Song timing** alongside **Beat correction**.
+The Stemlab browser workspace has **Lyric timing audition & correction** alongside
+**Beat correction**. The timing lanes show all words by default, with an optional
+selected-line view for close editing. **Open lyric audition** reveals the approved
+cover artwork and renders the active lyric line with its current word highlighted.
+Overlapping lead and backing-vocal lines remain visible together.
+The audition reads the existing timeline playhead callback: play, pause and seek
+remain owned by the one master transport, with no second audio element or clock.
+
+![Actual StemLab lyric audition over the Light Will Win cover at 41.348 seconds](docs/screenshots/lyric-audition-light-will-win.png)
+
+Actual local browser output using the public release artwork and source-bound timing
+document. The screenshot contains no release audio; an embedded demonstration video
+is omitted because redistributing the master inside the public software repository
+would add no interface evidence beyond the shared transport and timestamp shown here.
+
+Fixed-clock timing also flags consecutive word onsets below five DanceMoves ticks;
+below three ticks is severe. The editor outlines those destination words, lists every
+flag with seconds and tick distance, and lets the reviewer jump to its parent line.
+Flags never alter timestamps automatically, because a rapid backing-vocal or
+coarticulated phrase may be correct.
+
 It uses the shared `react-timeline-sequence` 0.4+ timing lanes, not a second
 playhead or bespoke renderer. Its three editable tracks are per-line lyric
-blocks, words belonging to the selected line, and cue section boundaries.
+blocks, all words or words belonging to the selected line, and cue section boundaries.
 The same original master audio, transport and zoom apply to all three.
 
 The timing clock is either an explicit **fixed BPM + Beat 1 offset** or the

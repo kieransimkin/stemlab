@@ -52,6 +52,13 @@ def test_frontend_assets_are_present():
     assert "/assets/timeline.css" in index
     assert "/assets/canonical.js" not in index
 
+    app = (web / "app.js").read_text(encoding="utf-8")
+    timeline_css = (web / "timeline.css").read_text(encoding="utf-8")
+    assert "Open lyric audition" in app
+    assert "Words · all lyrics" in app
+    assert "unusually short word transition" in app
+    assert "stemlab-lyric-audition" in timeline_css
+
 
 def test_timeline_control_comes_from_the_public_npm_package():
     root = Path(__file__).parents[1]
