@@ -9,13 +9,15 @@ Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopabl
 ## Rigged mesh rhythm and loop evidence
 
 The optional `stemlab analyze-rig-motion` command analyses timestamped
-DanceRudiments **rig captures** from animated FBX/BVH/glTF/BLEND Actions. It
+DanceRudiments **rig captures** or verified time-only **motion packages**
+from animated FBX/BVH/glTF/BLEND Actions. It
 estimates kinematic movement accents and BPM candidates, discovers repeated
 pose cycles, and suggests reviewable loop seams with velocity and root-drift
 checks. It can export an explicitly **unverified** source beat map for the
 existing DanceRudiments 64-pip compiler. This is not verified musical beat 1,
 audio synchronization, or automatic looping/mesh-seam repair. No model downloads
-or native sampler are involved. See [rig-motion analysis](docs/rig-motion-analysis.md).
+or native sampler are involved. The optional DanceRudiments authoring loader
+validates all motion-package chunk hashes. See [rig-motion analysis](docs/rig-motion-analysis.md).
 
 The real-song reference timeline preserves its explicitly hash-pinned public
 detector JSON byte for byte, including newlines, on Windows and Linux. Generic

@@ -479,23 +479,25 @@ def _beat_map(times, primary, *, source_hash):
     return {"format": "dancerudiments.beat-map", "schema_version": 1,
             "pips_per_beat": 64, "interpolation": "linear",
             "anchors": [{"seconds": round(float(s), 9), "beat": int(i)} for i, s in enumerate(starts)],
-            "source": "StemLab estimated kinematic tempo; capture SHA-256 " + source_hash,
+            "source": "StemLab estimated kinematic tempo; source evidence SHA-256 " + source_hash,
             "bpm_status": "estimated", "phase_status": "estimated", "extrapolate": False}
 
 
-def analyze_rig_capture(path: Path | str, *, min_bpm: float = 60, max_bpm: float = 200) -> dict[str, Any]:
-    """Analyse an uncompiled RigCapture's kinematic accents, tempo and loop seams.
-
-    Interpretation remains a hypothesis: neither musical downbeats nor a
-    seamless/rendered animation can be established from control values alone.
-    """
+def _analyze_poses(data, times, values, channels, digest, *, min_bpm, max_bpm,
+                   source_kind="capture"):
+    """Shared offline analysis for independently validated source-time poses."""
     if not 30 <= min_bpm < max_bpm <= 300 or max_bpm / min_bpm > 8:
         raise ValueError("Expected a bounded BPM range within 30..300")
-    data, times, values, channels, digest = _read_capture(Path(path))
+    if (times.ndim != 1 or values.ndim != 2 or values.shape != (len(times), len(channels))
+            or not 16 <= len(times) <= 200_000 or values.size > MAX_VALUES
+            or not np.isfinite(times).all() or not np.isfinite(values).all()
+            or not np.all(np.diff(times) > 0) or times[-1] - times[0] < 3
+            or np.max(np.diff(times)) > .35):
+        raise ValueError("Need at least three seconds of finite, continuous source poses")
     energy, active, streams = _signals(times, values, channels)
     if energy is None:
         return {"format": FORMAT, "schema_version": 1, "source_file_sha256": digest,
-                "profile_sha256": data["profile_sha256"], "type_uri": data["type_uri"],
+                "source_kind": source_kind, "profile_sha256": data["profile_sha256"], "type_uri": data["type_uri"],
                 "motion_accents": [], "bpm_candidates": [], "recommended_tempo": None,
                 "estimated_beat_map": None, "loop_candidates": [], "active_controls": 0,
                 "pose_period_candidates": [], "pose_period_search_seconds": None,
@@ -518,7 +520,7 @@ def analyze_rig_capture(path: Path | str, *, min_bpm: float = 60, max_bpm: float
     if times[-1] - times[0] > 90:
         limitations.append("Pose recurrence search is restricted to the first 90 seconds; loop seam scoring uses source pose times.")
     return {"format": FORMAT, "schema_version": 1, "source_file_sha256": digest,
-            "profile_sha256": data["profile_sha256"], "type_uri": data["type_uri"],
+            "source_kind": source_kind, "profile_sha256": data["profile_sha256"], "type_uri": data["type_uri"],
             "sample_rate_hz": fps,
             "source_range_seconds": [float(times[0]), float(times[-1])],
             "active_controls": len(active), "motion_accents": accents,
@@ -527,6 +529,13 @@ def analyze_rig_capture(path: Path | str, *, min_bpm: float = 60, max_bpm: float
             "pose_period_candidates": periods,
             "pose_period_search_seconds": inspected,
             "loop_candidates": loops, "limitations": limitations}
+
+
+def analyze_rig_capture(path: Path | str, *, min_bpm: float = 60, max_bpm: float = 200) -> dict[str, Any]:
+    """Analyse the original physical RigCapture without changing its timing."""
+    data, times, values, channels, digest = _read_capture(Path(path))
+    return _analyze_poses(data, times, values, channels, digest,
+                          min_bpm=min_bpm, max_bpm=max_bpm)
 
 
 def write_rig_analysis(path: Path | str, report: dict, *, beat_map_path: Path | str | None = None):

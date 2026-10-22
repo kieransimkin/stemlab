@@ -14,6 +14,34 @@ blender --background --factory-startup --python DanceRudiments/tools/blender_mot
 stemlab analyze-rig-motion extracted/motion.capture.json --output analysis/motion-rhythm.json --estimated-beat-map analysis/estimated-source-beats.json --min-bpm 60 --max-bpm 200
 ```
 
+### Direct analysis of published Kandi Boom motion packages
+
+The released gallery uses *time-only, individually hashed, chunked*
+DanceRudiments motion packages rather than a single `.capture.json` file. The
+command can analyse these **without downloading or importing the original BVH**:
+
+```sh
+# With a compatible official DanceRudiments Python authoring package installed:
+stemlab analyze-rig-motion generated/mesh-demo-assets/motions/boxbot --output analysis/kandi-salsa.json
+stemlab analyze-rig-motion generated/mesh-demo-assets/motions/prism --output analysis/kandi-ballet.json
+```
+
+The adapter uses the existing `MotionPackage` loader: it validates the manifest,
+numbered rig profile and hashes of **every** selected compressed recording. It
+requires a complete consecutive original action, consistent 64-pip time-only
+clock, original clip identity, numbered chunk ordering and explicit `music_timing_verified: false`.
+If a package contains more than one original action, supply `--action-id` with
+its exact `original_clip_id`. Mixed/missing chunks, retimed music-verified
+recordings, inconsistent clocks or missing calibration provenance are errors.
+No model/Blender/native sampler or external network access is used.
+
+The original converter T-pose calibration frame is omitted from the **analysis**
+using its verified source frame interval; the stored recording and absolute pip
+origin are unchanged. The JSON records the source manifest SHA-256, original
+action identity, complete input clip IDs and their hashes, original pip range and
+number of omitted calibration pips. BPM and loop suggestions remain unverified
+and do not imply safe pose blending, root travel compensation or foot planting.
+
 The second command works on the exact capture path emitted by the first command;
 `motion.capture.json` above is a placeholder, not a promised extractor filename.
 Use `--output` without `--estimated-beat-map` to produce just the evidence. Both
