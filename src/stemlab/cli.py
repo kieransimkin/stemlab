@@ -20,6 +20,7 @@ from .cue_cli import print_cue_review, register_cue_commands
 from .models import MODEL_REGISTRY, profile as resolve_profile
 from .pipeline import run_pipeline
 from .recording_cli import register_recording_commands
+from .rig_motion_cli import register_rig_motion_commands
 from .types import PipelineConfig
 from .util import device_string
 
@@ -28,6 +29,7 @@ console = Console()
 register_cue_commands(app, console)
 register_clip_commands(app, console)
 register_recording_commands(app, console)
+register_rig_motion_commands(app, console)
 register_beat_offset_commands(app, console)
 
 
