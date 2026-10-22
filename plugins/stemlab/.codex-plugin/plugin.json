@@ -1,6 +1,6 @@
 {
   "name": "stemlab",
-  "version": "1.8.0",
+  "version": "1.11.0",
   "description": "Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",

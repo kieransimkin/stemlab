@@ -57,6 +57,8 @@ def test_tempo_conversion_native_sample_indices_and_controllers(tmp_path):
     assert piano['start'] == 0.5 and piano['end'] == 1.5
     assert piano['start_sample'] == 22050 and piano['end_sample'] == 66150
     assert any((n['is_drum'] for n in report['notes']))
+    assert all(type(n['program']) is int for n in report['notes'])
+    assert all(type(t['program']) is int for t in report['tracks'])
     assert report['tracks'][0]['control_changes'][0]['number'] == 64
     assert report['tracks'][0]['pitch_bends'][0]['pitch'] == 100
     assert len(report['tempo_map']) == 2
@@ -145,7 +147,7 @@ def test_no_matching_sources_is_not_success(tmp_path, monkeypatch):
     report = analyze_midi(master, tmp_path / 'out', config=MidiConfig(models=('transkun',)))
     assert report['status'] == 'no_matching_sources' and report['skipped']
 
-@pytest.mark.parametrize('relative', ['../external.wav', '/tmp/external.wav'])
+@pytest.mark.parametrize('relative', ['../external.wav', '/tmp/external.wav', 'C:/external.wav', '..\\external.wav'])
 def test_manifest_path_escape_rejected(tmp_path, relative):
     saved(tmp_path / 'old')
     path = tmp_path / 'old/analysis.json'

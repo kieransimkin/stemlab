@@ -38,11 +38,12 @@ def export_timeline_command(
     results: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
     output: Annotated[Path, typer.Option("--output", "-o", help="New static-site directory")],
     include_audio: Annotated[bool, typer.Option("--include-audio", help="Include master, stems and lyric evidence in a shareable snapshot")] = False,
+    artwork: Annotated[Path | None, typer.Option("--artwork", exists=True, dir_okay=False, help="Authorized local cover artwork for the subtitle audition")] = None,
 ):
     """Export the real React timeline for static hosting, without a StemLab server."""
     from .static_timeline import export_timeline
     try:
-        result = export_timeline(results, output, include_audio=include_audio)
+        result = export_timeline(results, output, include_audio=include_audio, artwork=artwork)
     except (ValueError, KeyError, OSError, RuntimeError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     console.print(f"Static timeline: {output / 'index.html'} ({result['artifact_lanes']} artifact lanes)")

@@ -13,6 +13,8 @@ on:
       - 'scripts/arcadians_http.py'
       - '.github/workflows/arcadians-timeline.yml'
       - 'scripts/build_arcadians_timeline.py'
+      - 'src/stemlab/analysis/midi/**'
+      - 'tests/test_midi*.py'
       - 'scripts/build_arcadians_pair_demos.py'
       - 'scripts/build_arcadians_fourier_demo.py'
       - 'scripts/recording_downloads.py'
@@ -68,7 +70,7 @@ jobs:
           python-version: '3.11'
       - name: Install lightweight test dependencies, without model downloads
         run: |
-          python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest pyyaml ruff
+          python -m pip install numpy scipy soundfile matplotlib fastapi rich 'typer>=0.12' platformdirs pytest pyyaml ruff 'pretty-midi>=0.2.10,<0.3' 'psutil>=6,<8'
           python -m pip install --no-deps -e .
       - name: Require latest stable released viewers and rebuilt controls before inference
         env:

@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from dataclasses import asdict
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Callable
 
 from stemlab.branding import attribution
@@ -197,7 +197,8 @@ def analyze_midi(master: Path, output_dir: Path, *, stems: list[StemArtifact] | 
 
 def _inside(root: Path, relative: str) -> Path:
     path = Path(relative)
-    if path.is_absolute() or ".." in path.parts:
+    windows = PureWindowsPath(relative)
+    if path.is_absolute() or str(relative).startswith(('/', '\\')) or windows.drive or ".." in path.parts or ".." in windows.parts:
         raise ValueError("Saved source/stem paths must be relative and inside the result directory")
     resolved = (root / path).resolve()
     if not resolved.is_relative_to(root) or not resolved.is_file():

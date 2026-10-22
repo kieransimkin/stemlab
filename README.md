@@ -30,14 +30,15 @@ they are excluded from the build context and source/package artifacts.
 
 > **Packaging identity:** the canonical project name is **StemLab**. StemLab is part of the **Dance Flow** project. The PyPI distribution is named `danceflow-stemlab` solely because Python package-registry names are globally unique. The Python import, CLI, GitHub repository and container image remain `stemlab`.
 
+## Before every new workflow
 
-## Agents and contributors
+Check the latest stable official release and the actual installed/imported version before starting; do not infer currency from a directory name or a development checkout. Read the current release notes, tagged capability documentation and relevant Potential problems. Use the [DanceFlow release preflight](https://github.com/kieransimkin/DanceFlow/blob/main/docs/workflows/release-preflight.md) and [complete capability references](https://github.com/kieransimkin/DanceFlow/blob/main/docs/capabilities/index.md).
 
-Agents using StemLab should inspect its available capabilities, use them fully where they fit the task, and look for useful improvements wherever possible. When a required feature is missing, or a reusable reliability, usability, performance or documentation gap is found, improve this tool rather than maintaining a separate workaround. If no worthwhile change is justified, explain why.
+People and agents should consider the full ecosystem, use all capabilities that materially serve the task, compose supported files/APIs, and improve a demonstrated reusable gap in its canonical tool. Record why no worthwhile change is justified when that is the result. Keep independent tool identities, compatibility, source clocks, privacy, model/download costs and publication/deployment permissions intact. Store weights and model-specific caches in the owning project's ignored `models/`.
 
-Submit every improvement as a pull request to [stemlab](https://github.com/kieransimkin/stemlab/pulls), with relevant tests, documentation and a reproducible example. Follow [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) for the contribution and validation workflow.
+## Find your route
 
-Project website: [https://kieransimkin.co.uk/danceflow/](https://kieransimkin.co.uk/danceflow/).
+[Synopsis](#synopsis) · [Install](#install) · [CLI](#cli) · [Output layout](#output-layout) · [Analysis performed](#analysis-performed) · [Curated default model set (September 2026)](#curated-default-model-set-september-2026) · [Speech transcription](#speech-transcription) · [Comprehensive sonic, harmonic, rhythmic and semantic analysis](#comprehensive-sonic-harmonic-rhythmic-and-semantic-analysis) · [Find DanceRudiments matching candidates from each stem](#find-dancerudiments-matching-candidates-from-each-stem)
 
 ## Synopsis
 
@@ -47,20 +48,160 @@ It combines independent separation and music-information-retrieval routes rather
 
 > **Model weights are not redistributed by this project.** They are fetched from their upstream registries/releases on first use. This avoids silently republishing checkpoints whose licensing may differ from the source code license, and lets upstream integrity metadata be used where available.
 
-## DanceFlow and DanceMoves
+## Install
 
-DanceFlow is the wider BPM and motion-response workflow. **StemLab** is its
-music-understanding layer; the WordPress **DanceMoves** plugin is a related
-downstream motion-response component. StemLab has no WordPress dependency and
-communicates through normal analysis artifacts and service APIs, so it remains
-independently useful and reproducible.
+Python 3.11 is recommended for the broad optional-model ecosystem. The `beats` and `all` extras install Beat This! plus the compatible `madmom-prebuilt` decoder. BeatNet 1.1.3 itself still publishes obsolete NumPy/Numba dependency pins, so StemLab downloads its official pure-Python wheel separately, verifies the published SHA-256, and exposes only the BeatNet code and bundled model weights from its cache. This route is supported on Python 3.11-3.13; a missing BeatNet result must not be mistaken for a successful detector run.
 
-See [docs/danceflow.md](docs/danceflow.md) for the component boundary.
+From PyPI, install the released StemLab distribution with:
 
-StemLab's browser workspace imports the reusable
-[`react-timeline-sequence`](https://www.npmjs.com/package/react-timeline-sequence)
-control for audio playback, the shared playhead, seeking, zoom and generic
-sequence lanes. StemLab retains the upload and analysis-specific adapters.
+```bash
+pip install danceflow-stemlab
+```
+
+The installed Python package and command remain `stemlab`. For development from a source checkout:
+
+```bash
+python -m venv .venv
+. .venv/bin/activate              # Windows: .venv\Scripts\activate
+python -m pip install -U pip
+pip install -e ".[all]"
+```
+
+SCNet and Beat Transformer are research repositories rather than stable pip inference APIs. They are isolated/downloaded on demand. To prepare everything in advance:
+
+```bash
+stemlab bootstrap all
+```
+
+For BeatNet alone:
+
+```bash
+pip install "danceflow-stemlab[beats]"
+stemlab bootstrap beatnet
+stemlab doctor
+```
+
+`stemlab doctor` reports BeatNet as ready only when the normal package or the
+verified StemLab cache can actually be found. `analyze --no-bootstrap` never
+downloads BeatNet and records the unavailable backend instead.
+
+For only the Vamp analysis stack:
+
+```bash
+stemlab bootstrap vamp
+```
+
+`bootstrap vamp` downloads the pinned Sonic Annotator runtime and launches the
+official Vamp Plugin Pack installer. Complete the installer once, then rerun the
+command if needed to verify that the requested plugin outputs are visible.
+
+## CLI
+
+Full requested analysis:
+
+```bash
+stemlab analyze master.wav --output ./analysis-master --profile full --device auto
+```
+
+Useful alternatives:
+
+```bash
+# Skip the 53-stem model for a materially lighter run
+stemlab analyze master.wav -o ./analysis-master --profile practical
+
+# Run only selected separators
+stemlab analyze master.wav -o ./analysis-master \
+  --model bs_roformer_sw --model scnet_xl_ihf --model openunmix_umxhq
+
+# Fail immediately rather than recording a backend failure and continuing
+stemlab analyze master.wav -o ./analysis-master --strict
+
+# Skip Vamp if the plugin pack is intentionally not installed
+stemlab analyze master.wav -o ./analysis-master --no-vamp
+
+stemlab models
+stemlab doctor
+```
+
+By default model weights and external research code are cached outside the output folder; all **generated analysis artifacts and datasets** are written inside the output folder. The copied master is also placed in `input/` so the Sonic Visualiser session is portable as one directory.
+
+## Output layout
+
+```text
+analysis-master/
+  input/master.wav
+  stems/
+    bs_roformer_sw/*.wav
+    mvsep_mega53/*.wav
+    scnet_xl_ihf/*.wav
+    htdemucs_ft/*.wav
+    openunmix_umxhq/*.wav
+  spectrograms/
+    master.png
+    master.npz
+    <model>/<stem>.png
+    <model>/<stem>.npz
+    speech/spoken_word.png
+    speech/spoken_word.npz
+  speech/
+    spoken_word.wav
+    speech_regions.json
+    whisper.json
+    transcript.txt
+    transcript.srt
+    words.tsv
+  beats/
+    beatnet.json / beatnet.tsv
+    beat_this.json / beat_this.tsv
+    beat_transformer.json / beat_transformer.tsv
+    beat_transformer_activations.npz
+  vamp/
+    report.json
+    transforms/*.n3
+    raw/*.csv
+    data/*.json
+    data/*.npz
+    plots/*.png
+  deep/
+    sonic/
+    rhythm/
+    harmony/
+    structure/
+    lyrics/
+    semantic_text/
+    song_map/
+    rudiments/             # optional native DanceRudiments candidate report
+      report.json
+      index.html
+      overview.png
+    summary.json
+  sonic_visualiser/
+    session.sv
+    session.xml
+    open_sonic_visualiser.bat
+    open_sonic_visualiser.sh
+  analysis.json
+  manifest.json
+```
+
+`session.sv` is genuine Sonic Visualiser bzip2-compressed session XML. It contains a master pane with beat/downbeat/Whisper time-instant layers and one synchronized waveform + Sonic Visualiser spectrogram pane for every separated stem. The uncompressed `session.xml` is retained for inspection/debugging. The Windows `.bat` looks on `PATH` and in the usual Program Files locations.
+
+## Analysis performed
+
+For every successful separator, **every WAV it emits** is retained. Stem names are discovered from files rather than truncated to a hard-coded four-stem schema, which is important for MVSep Mega 53. For the master and every stem, StemLab writes both a PNG spectrogram and compressed `.npz` spectrogram data (time axis, frequency axis, dB matrix, FFT metadata).
+
+Full-resolution spectrogram evidence stays in the `.npz`; the PNG renderer is bounded to 8,192 time frames so long tracks cannot expand into multi-gigabyte Matplotlib RGBA buffers. If an older run retained the NPZ but failed while drawing the PNG, repair it in place without rerunning models:
+
+```powershell
+stemlab repair-spectrograms "path\to\analysis-results"
+```
+
+Beat-grid comparison also retains an explicit inferred-index hypothesis when
+saved detections skip whole beats. It reuses the constant-grid fitter with
+integer gaps, preserving every observed timestamp and the raw half/double-time
+tempo. A poor sequential fit is replaced only by a better first-anchored gap
+fit within the existing error guard; both fits remain in the comparison report.
+Missing detections are not newly detected beats or canonical approval.
 
 ## Curated default model set (September 2026)
 
@@ -80,23 +221,6 @@ Relevant upstreams:
 - https://github.com/ZFTurbo/Music-Source-Separation-Training
 - https://github.com/adefossez/demucs
 - https://github.com/sigsep/open-unmix-pytorch
-
-## Analysis performed
-
-For every successful separator, **every WAV it emits** is retained. Stem names are discovered from files rather than truncated to a hard-coded four-stem schema, which is important for MVSep Mega 53. For the master and every stem, StemLab writes both a PNG spectrogram and compressed `.npz` spectrogram data (time axis, frequency axis, dB matrix, FFT metadata).
-
-Full-resolution spectrogram evidence stays in the `.npz`; the PNG renderer is bounded to 8,192 time frames so long tracks cannot expand into multi-gigabyte Matplotlib RGBA buffers. If an older run retained the NPZ but failed while drawing the PNG, repair it in place without rerunning models:
-
-```powershell
-stemlab repair-spectrograms "path\to\analysis-results"
-```
-
-Beat-grid comparison also retains an explicit inferred-index hypothesis when
-saved detections skip whole beats. It reuses the constant-grid fitter with
-integer gaps, preserving every observed timestamp and the raw half/double-time
-tempo. A poor sequential fit is replaced only by a better first-anchored gap
-fit within the existing error guard; both fits remain in the comparison report.
-Missing detections are not newly detected beats or canonical approval.
 
 ## Speech transcription
 
@@ -367,177 +491,99 @@ The guarded grade remains loose because first-anchored end drift is 67.114 ms.
 Its raw median tempo and unconfirmed canonical BPM remain visible.
 [Read the exact mapping, workflow and limitations](docs/beat-offsets.md).
 
-## Arcadians: complete analysis timeline and four movement demos
+## Editable song timing: fixed/variable BPM, lyrics, words and cue sections
 
-Every new release builds **one public site containing five working examples**, all
-covering the full original Arcadians song:
+The Stemlab browser workspace has **Lyric timing audition & correction** alongside
+**Beat correction**. The timing lanes show all words by default, with an optional
+selected-line view for close editing. The timeline's **Audition lyrics** control
+reveals the approved cover artwork and renders source-bound subtitles. Play, pause,
+seek, looping and channel selection remain owned by the one timeline transport.
 
-- **[Analysis timeline](https://kieransimkin.github.io/stemlab/timeline/arcadians/)**:
-  the real StemLab React viewer, original audio, six genuine HTDemucs stems,
-  waveforms/spectrograms, master/percussion beat estimates and consensus, Whisper words, all 13 curated
-  Vamp analyses, functional structure, sonic/rhythm/harmony/lyric analysis, text
-  semantics, song map and loop discovery.
-- **[Movement comparison](https://kieransimkin.github.io/stemlab/arcadians/)**:
-  the existing 48 DanceRudiments movements with 2D/3D/6D filtered/unfiltered master
-  routes, 145 BPM, 64 pips per beat and float64 recordings. This example remains
-  master-derived; it does not claim its movements use separated stems.
-- **[Stem-pair comparison](https://kieransimkin.github.io/stemlab/arcadians-stems/)**:
-  60 two-dimensional recordings with different actual stems driving X and Y.
-- **[Amplitude-mode comparison](https://kieransimkin.github.io/stemlab/arcadians-averages/)**:
-  30 fixed input/filter pairs, each with peak, average and four moving-average
-  windows: 180 recordings on shared normalization references.
+The actual screenshots and silent demonstration video in
+[the lyric-audition guide](docs/lyric-audition.md) show the released shared control
+in desktop and mobile layouts without redistributing a release master.
 
-- **[Fourier frequency bands](https://kieransimkin.github.io/stemlab/arcadians-fourier/)**:
-  select 4, 8, 16, 32, 64 or 128 dimensions derived from the full original master.
-  Each equal-width band supplies one dimension through a centered Hann 2048-point
-  rFFT and window-corrected band RMS. Global normalization preserves relative
-  band strengths within each resolution; it does not calibrate resolutions against
-  each other. Choose any X/Y/Z axes or see every band in the shared Bars view.
+Fixed-clock timing also flags consecutive word onsets below five DanceMoves ticks;
+below three ticks is severe. The editor outlines those destination words, lists every
+flag with seconds and tick distance, and lets the reviewer jump to its parent line.
+Flags never alter timestamps automatically, because a rapid backing-vocal or
+coarticulated phrase may be correct.
 
-The root landing page links to all five. These are deployment destinations; a patch
-or a green build alone does not establish that the new page is live.
+It uses the shared `react-timeline-sequence` 0.6+ timing lanes, not a second
+playhead or bespoke renderer. Its three editable tracks are per-line lyric
+blocks, all words or words belonging to the selected line, and cue section boundaries.
+The same original master audio, transport and zoom apply to all three.
 
-![Actual Arcadians Fourier frequency-band view, with selectable 4 to 128 dimensions.](docs/screenshots/fourier-bands-arcadians.png)
+The timing clock is either an explicit **fixed BPM + Beat 1 offset** or the
+current SHA-bound **corrected variable BPM** timeline. Variable mapping integrates
+the exact existing consensus/corrected sample frames, and never inserts
+imaginary beats into missing spans. Switching clock mode does not move cue,
+line, or word timestamps. An optional 150-ms snap tolerance (editable) applies
+*only to edits that the user makes*; it is disabled by default. Timing tooltips
+show whether and by how many signed milliseconds a marker misses a real or
+fixed-grid beat. A changed beat map must be saved before saving timing edits
+bound to that variable map.
 
-The same CI publication also retains the separate The Truth is a Virus beat
-reference. Its frozen detections are disclosed; current CI generates its fits,
-offsets and real timeline rather than asserting a fresh learned-model run.
+Editable word starts/ends are constrained within the selected lyric line.
+Dragging a complete line carries its words; changing a line boundary never
+silently clips words. The editor includes add-at-playhead, delete, section
+rename, line/word text, import, artist review status and save/reload controls.
+Cue renames are restricted to `[TYPE: STANDARD SECTION]`: the supported types
+are `SECTION`, `ENTRY`, `DROP`, `BREAK`. Names use the recognised INTRO, VERSE,
+PRE-CHORUS, CHORUS, BUILD, DROP, FINAL DROP, BREAKDOWN, OUTRO, etc., with
+optional numbering. Examples:
 
-The timeline's **`arcadians-core-v2` recipe** runs all the selected core families
-on the complete checksum-verified MP3. It is not the five-separator `full`
-comparison profile or every optional MIDI/evidence/NC model. Coverage, dependency
-versions and source/export revisions are disclosed. Missing stems, beat results,
-Vamp plugins or required deep-analysis evidence fail the build; there is no
-synthetic fallback. Artist-confirmed 145 BPM, lyrics, manually edited lyric timing
-and artist sections stay distinct from machine estimates. A completed loop scan
-may legitimately return zero accepted loops and explain unresolved sections.
-
-### Build and publish all five examples
-
-Start **Actions → Arcadians release demo → Run workflow → main**. The workflow
-first runs the full CPU analysis in StemLab's existing Docker environment, then
-exports and browser-tests the timeline. It also builds/tests the original movement example and both new comparison
-pages, reusing the exact separated float WAVs, plus all six full-master Fourier resolutions, and combines all five into a
-single verified Pages artifact. The model analysis is
-substantially heavier than master-peak extraction; upstream model downloads and
-inference must succeed. A new tagged release calls the same combined workflow.
-
-All five examples include audio playback, without autoplay. The timeline
-needs **no live StemLab API, Socket.IO connection or CDN**: the original React
-renderer loads precomputed local data, waveform envelopes and spectrogram strips.
-It supports play/pause, seeking, zoom/Fit, and saved-loop audition when loops exist.
-The original MP3 is unchanged; public stem audio uses full-duration PCM24 FLAC
-listening derivatives with their conversion disclosed. Original float WAVs and
-raw results are kept in a separate seven-day Actions analysis artifact.
-
-Keep **Pages Source = GitHub Actions** and **`STEMLAB_PAGES_ENABLED=true`** for
-automatic publication after a successful manual demo or a tagged release. Preserve
-`github-pages` environment approvals and allow the relevant `main`/tag refs.
-Alternatively, **Publish Arcadians demo to Pages → Run workflow → main** publishes
-a selected successful combined demo (blank run ID chooses the latest), without
-rerunning models or making a package release. Old artifacts without all three additional galleries and the timeline are
-rejected so they cannot overwrite the complete five-example site. The standalone **Arcadians
-complete analysis timeline** job is build-only, not a separate Pages deployment.
-
-The publisher verifies all viewers' provenance, artifact checksums and successful
-HTTP browser reports, then probes the actual public pages, timeline assets/data
-and partial MP3 responses. Failed or in-memory-only QA cannot authorize publication.
-QA files, private folders, model caches and runtime logs stay outside the public
-upload. All five examples are included in **`StemLab-Arcadians-visualizer.zip`**, with
-file hashes and build provenance. Native recording downloads are losslessly compressed as `.json.gz`; decompress before loading with the native recording API. No samples are discarded or quantized. Every resolution has mandatory native/bar/browser/audio QA. An incomplete build never replaces the live site.
-
-### Export an existing analysis as a static timeline
-
-```sh
-# Install the server extra for shared export helpers; do not start a server.
-stemlab export-timeline ./analysis-arcadians \
-  --include-audio --output ./arcadians-timeline-site
+```text
+[00:00.125][SECTION: INTRO]
+[00:57.460][SECTION: VERSE 1]
+[01:25.000][ENTRY: VOCAL INTRO]
+[01:44.010][DROP: CHORUS 1]
+[02:34.440][BREAK: SPOKEN BREAKDOWN]
 ```
 
-The output must be a new directory outside the analysis. Host it over static
-HTTP(S), not `file://`. Audio/lyric inclusion is explicit. Generic exports show
-saved evidence without claiming the complete Arcadians recipe ran.
+The edit document is stored separately as `timing/song-timing-edits.json`,
+schema `stemlab.timing-edits.v1`: source SHA-256, sample rate/frame count,
+`fixed_clock`, clock mode, revision-pinned beat map, lines/words/cues with
+integer native source frames, and artist review status. **Original audio,
+`canonical.json`, ASR evidence, source LRC and beat detector results remain
+unchanged.** The web service supports:
 
-See **[complete recipe, workflow, static export, timing and validation](docs/arcadians-timeline.md)**
-and **[movement/audio details and Pages configuration](docs/arcadians-release-demo.md)**.
+- `GET/PUT /api/{sha256}/song-timing` (optimistic revision guard),
+- `POST /api/{sha256}/song-timing/import` (LRC lyric lines, LRC/TSV/JSON words,
+  canonical cue-section LRC; importing lines with existing words is refused),
+- `POST /api/{sha256}/song-timing/preview` (strict validation and export without saving).
 
-## Timeline analysis gallery
+**Export DanceMoves timing bundle** provides a JSON source identity and fixed
+or full variable BPM map alongside line-LRC, per-word TSV and JSON, and cue-LRC
+content. For DanceMoves' separate full beat-map field, use the original Beat
+correction editor's `stemlab.beat-timeline.v1` export (or the bundle's nested
+`clock.beat_timeline`), not the enclosing song-timing bundle JSON. Word timings are kept in original source seconds; LRC/TSV representations
+round to compatible decimal positions while the JSON retains exact native
+frames. Uploaded word and cue files are independently validated by DanceMoves;
+pasting a full variable timeline into the old fixed beat-alignment field is
+not supported. Users must assign each file to the matching verified song.
 
-The browser workspace is intended to make the analysis output inspectable, not just downloadable. The illustrations below explain the main analysis families using the same shared timeline vocabulary as the frontend: one clock, one playhead, zoomable lanes, and consistent section alignment across spectrogram, beat, lyric and deep-analysis layers.
+Choose the desired format and use **Download selected format**. StemLab reports
+the exact filename and byte count and keeps a **Download ready** link in the
+editor. Use that link if the browser suppresses or hides the automatic download;
+the link refers to the same in-memory export and does not save timing changes.
 
-**Illustrations, not captured frontend screenshots.** These SVGs are generated by
-`scripts/render_readme_analysis_gallery.py`; the script does not execute the React
-timeline component, decode audio, run separation or perform neural inference.
-Only the Arcadians section labels, lyric text/timing and reference BPM come from
-the included artist-authored metadata. Other plotted patterns and example chord
-labels are explicitly schematic, not measured results for Arcadians. In
-particular, these pictures are not evidence of vocal-free cuts, measured tempo
-stability, chord/key estimates or loudness values. Actual frontend captures remain
-outstanding.
+For a fresh checkout, **release `react-timeline-sequence` v0.4+ first**. Stemlab
+only consumes the latest *published* stable shared component, never an untagged
+source copy. After publication run `python scripts/configure_viewer_build.py`
+(which updates official viewer receipts and compiled assets), then run:
 
-### 1. Separation, spectrograms, beats and sections
+```bash
+python -m pytest tests/test_timing_edits.py tests/test_beat_map.py
+node --test tests/web/timing-workflow.test.mjs tests/web/beat-map.test.mjs
+python scripts/check_viewer_build.py --latest
+npm ci && npm run build:web
+python scripts/check_viewer_build.py
+```
 
-![Illustration: Arcadians reference sections and reference tempo above schematic spectrogram lanes](docs/screenshots/analysis-overview-arcadians.svg)
-
-This is the core inspection view. It explains how StemLab lines up:
-
-- the **AI / reference section map** (`deep/structure/` and `deep/song_map/`),
-- the **beat and bar grid** from BeatNet, Beat This! and Beat Transformer (`beats/*.json`, `beats/*.tsv`),
-- the **master spectrogram**, and
-- each **stem spectrogram** written under `spectrograms/`.
-
-In practice, this is the view you use first when checking whether a separator, beat model or section model has produced outputs that are musically believable.
-
-### 2. Lyrics, speech regions and transcript QA
-
-![Illustration: Arcadians canonical lyric timing and transcript analysis concepts](docs/screenshots/analysis-lyrics-arcadians.svg)
-
-StemLab keeps lyric and speech analysis on the same clock as the audio:
-
-- **reference lyric timing** from a known-correct LRC or JSON source,
-- **Whisper word timing** from the preferred vocal stem,
-- **speech-region / VAD evidence** indicating detected speech activity; this alone does not establish the absence of singing,
-- the derived `spoken_word.wav` timeline-preserving speech isolate, and
-- downstream rhyme, prosody and repetition-safety diagnostics under `speech/` and `deep/lyrics/`.
-
-The important idea is that you can compare what the model heard against what the artist supplied, then immediately relate both to loop boundaries, choreography cues or lyric-sheet QA.
-
-### 3. Harmony, melody and song-map fusion
-
-![Illustration: schematic harmony and song-map concepts, not Arcadians analysis](docs/screenshots/analysis-harmony-songmap.svg)
-
-StemLab's harmonic and structural analysis is wider than a single chord track. The harmony/song-map family brings together:
-
-- **chord and harmonic-change evidence** from the curated Vamp pass,
-- **key, tonal-change and tuning outputs**,
-- **melody / F0 style lanes** derived from vocal analysis,
-- the **section-level song map** that fuses structure, rhythm, harmony and lyric evidence into one readable narrative.
-
-These outputs live primarily under `vamp/`, `deep/harmony/` and `deep/song_map/`, and they are the layer that makes the raw low-level DSP outputs easier to interpret in musical terms.
-
-### 4. Sonic profile, rhythm regimes and semantics
-
-![Illustration: sonic, rhythm and semantic analysis categories without measured values](docs/screenshots/analysis-sonic-rhythm.svg)
-
-The higher-level deep pass also tracks how a song feels over time:
-
-- **sonic profile** summaries (loudness, peaks, dynamics, timbre and stereo behaviour),
-- **groove / rhythmic metrics** such as swing tendency, offbeat energy and quantisation error,
-- **tempo-regime detection** for stable regions, ramps and abrupt changes,
-- **semantic summaries** from lyric/text analysis and, optionally, zero-shot audio semantics.
-
-This is the analysis family that turns StemLab from a simple BPM-and-stems tool into a richer musical understanding layer for DanceFlow and downstream motion-response systems.
-
-### 5. Where loops fit in
-
-The loop-discovery patch does not replace the earlier analyses; it depends on them. Loop selection uses:
-
-- **section labels** to find candidate verse and chorus spans,
-- the **beat grid** to align cuts to complete bars,
-- **full-vocal stem and available timing evidence** to avoid detected vocalisations; VAD alone is insufficient,
-- and **waveform seam checks** to reduce discontinuities; accepted joins still need listening checks.
-
-That means the loop lane is best understood as an *applied synthesis* of the structure, rhythm and vocal analyses already present in StemLab.
+Commit the released npm/lock/version receipt, generated `src/stemlab/web/app.js`
+and `timeline.css`, source, docs and tests together; never commit patch payloads,
+model weights or local development dependency overrides.
 
 ## Loop discovery and playback
 
@@ -717,158 +763,249 @@ See [the evidence-model guide](docs/evidence-models.md) for model terms, routing
 external bridges and interpretation rules. `scripts/benchmark_evidence_corpus.py`
 probes an authorised evaluation collection without copying audio into the repo.
 
-## Install
+## Arcadians: complete analysis timeline and four movement demos
 
-Python 3.11 is recommended for the broad optional-model ecosystem. The `beats` and `all` extras install Beat This! plus the compatible `madmom-prebuilt` decoder. BeatNet 1.1.3 itself still publishes obsolete NumPy/Numba dependency pins, so StemLab downloads its official pure-Python wheel separately, verifies the published SHA-256, and exposes only the BeatNet code and bundled model weights from its cache. This route is supported on Python 3.11-3.13; a missing BeatNet result must not be mistaken for a successful detector run.
+Every new release builds **one public site containing five working examples**, all
+covering the full original Arcadians song:
 
-From PyPI, install the released StemLab distribution with:
+- **[Analysis timeline](https://kieransimkin.github.io/stemlab/timeline/arcadians/)**:
+  the real StemLab React viewer, original audio, six genuine HTDemucs stems,
+  waveforms/spectrograms, master/percussion beat estimates and consensus, Whisper words, all 13 curated
+  Vamp analyses, functional structure, sonic/rhythm/harmony/lyric analysis, text
+  semantics, song map and loop discovery.
+- **[Movement comparison](https://kieransimkin.github.io/stemlab/arcadians/)**:
+  the existing 48 DanceRudiments movements with 2D/3D/6D filtered/unfiltered master
+  routes, 145 BPM, 64 pips per beat and float64 recordings. This example remains
+  master-derived; it does not claim its movements use separated stems.
+- **[Stem-pair comparison](https://kieransimkin.github.io/stemlab/arcadians-stems/)**:
+  60 two-dimensional recordings with different actual stems driving X and Y.
+- **[Amplitude-mode comparison](https://kieransimkin.github.io/stemlab/arcadians-averages/)**:
+  30 fixed input/filter pairs, each with peak, average and four moving-average
+  windows: 180 recordings on shared normalization references.
 
-```bash
-pip install danceflow-stemlab
+- **[Fourier frequency bands](https://kieransimkin.github.io/stemlab/arcadians-fourier/)**:
+  select 4, 8, 16, 32, 64 or 128 dimensions derived from the full original master.
+  Each equal-width band supplies one dimension through a centered Hann 2048-point
+  rFFT and window-corrected band RMS. Global normalization preserves relative
+  band strengths within each resolution; it does not calibrate resolutions against
+  each other. Choose any X/Y/Z axes or see every band in the shared Bars view.
+
+The root landing page links to all five. These are deployment destinations; a patch
+or a green build alone does not establish that the new page is live.
+
+![Actual Arcadians Fourier frequency-band view, with selectable 4 to 128 dimensions.](docs/screenshots/fourier-bands-arcadians.png)
+
+The same CI publication also retains the separate The Truth is a Virus beat
+reference. Its frozen detections are disclosed; current CI generates its fits,
+offsets and real timeline rather than asserting a fresh learned-model run.
+
+The timeline's **`arcadians-core-v3` recipe** runs all the selected core families
+on the complete checksum-verified MP3. It is not the five-separator `full`
+comparison profile or every optional evidence/NC model. It also runs Basic Pitch
+on the five pitched stems (bass, guitar, piano, vocals and other), displays their
+inferred note lanes and includes each unchanged native MIDI file for download.
+Drum audio is separated; this recipe does not claim drum-class MIDI transcription.
+Coverage, dependency
+versions and source/export revisions are disclosed. Missing stems, beat results,
+Vamp plugins, MIDI transcriptions or required deep-analysis evidence fail the build; there is no
+synthetic fallback. Artist-confirmed 145 BPM, lyrics, manually edited lyric timing
+and artist sections stay distinct from machine estimates. A completed loop scan
+may legitimately return zero accepted loops and explain unresolved sections.
+
+![Actual local Arcadians MIDI note lanes, using retained stems and new inference](docs/screenshots/arcadians-midi-real-local.png)
+
+Actual local implementation capture: retained v1.8.0 public core evidence plus
+new Basic Pitch inference from its disclosed PCM24 FLAC stems. This is not a
+claim that a fresh CI run or v3 deployment has completed.
+[Video, inferred-note plot, workflow coverage and verification limits](docs/arcadians-complete-analysis.md).
+
+### Build and publish all five examples
+
+Start **Actions → Arcadians release demo → Run workflow → main**. The workflow
+first runs the full CPU analysis in StemLab's existing Docker environment, then
+exports and browser-tests the timeline. It also builds/tests the original movement example and both new comparison
+pages, reusing the exact separated float WAVs, plus all six full-master Fourier resolutions, and combines all five into a
+single verified Pages artifact. The model analysis is
+substantially heavier than master-peak extraction; upstream model downloads and
+inference must succeed. A new tagged release calls the same combined workflow.
+
+All five examples include audio playback, without autoplay. The timeline
+needs **no live StemLab API, Socket.IO connection or CDN**: the original React
+renderer loads precomputed local data, waveform envelopes and spectrogram strips.
+It supports play/pause, ruler-click seek-and-play, Space-bar transport, 1,024×-fit
+precision zoom/Fit, and saved-loop audition when loops exist. The precision range
+lets short per-word boundaries occupy enough screen width for deliberate placement.
+The original MP3 is unchanged; public stem audio uses full-duration PCM24 FLAC
+listening derivatives with their conversion disclosed. Original float WAVs and
+raw results, native MIDI and note tables are kept in a separate seven-day Actions
+analysis artifact. Each MIDI note table is checked against its native MIDI and
+the hash of its actual separated input. MIDI tempo is not a new source BPM.
+Basic Pitch's bundled model is staged and checksum-checked under the configured
+project-local StemLab model cache; the installed original is retained.
+
+Keep **Pages Source = GitHub Actions** and **`STEMLAB_PAGES_ENABLED=true`** for
+automatic publication after a successful manual demo or a tagged release. Preserve
+`github-pages` environment approvals and allow the relevant `main`/tag refs.
+Alternatively, **Publish Arcadians demo to Pages → Run workflow → main** publishes
+a selected successful combined demo (blank run ID chooses the latest), without
+rerunning models or making a package release. Old artifacts without all three additional galleries and the timeline are
+rejected so they cannot overwrite the complete five-example site. The standalone **Arcadians
+complete analysis timeline** job is build-only, not a separate Pages deployment.
+
+The publisher verifies all viewers' provenance, artifact checksums and successful
+HTTP browser reports, then probes the actual public pages, timeline assets/data
+and partial MP3 responses. Failed or in-memory-only QA cannot authorize publication.
+QA files, private folders, model caches and runtime logs stay outside the public
+upload. All five examples are included in **`StemLab-Arcadians-visualizer.zip`**, with
+file hashes and build provenance. Native recording downloads are losslessly compressed as `.json.gz`; decompress before loading with the native recording API. No samples are discarded or quantized. Every resolution has mandatory native/bar/browser/audio QA. An incomplete build never replaces the live site.
+
+### Export an existing analysis as a static timeline
+
+```sh
+# Install the server extra for shared export helpers; do not start a server.
+stemlab export-timeline ./analysis-arcadians \
+  --include-audio --output ./arcadians-timeline-site
 ```
 
-The installed Python package and command remain `stemlab`. For development from a source checkout:
+The output must be a new directory outside the analysis. Host it over static
+HTTP(S), not `file://`. Audio/lyric inclusion is explicit. Generic exports show
+saved evidence without claiming the complete Arcadians recipe ran.
 
-```bash
-python -m venv .venv
-. .venv/bin/activate              # Windows: .venv\Scripts\activate
-python -m pip install -U pip
-pip install -e ".[all]"
-```
+See **[complete recipe, workflow, static export, timing and validation](docs/arcadians-timeline.md)**
+and **[movement/audio details and Pages configuration](docs/arcadians-release-demo.md)**.
 
-SCNet and Beat Transformer are research repositories rather than stable pip inference APIs. They are isolated/downloaded on demand. To prepare everything in advance:
+## Timeline analysis gallery
 
-```bash
-stemlab bootstrap all
-```
+The browser workspace is intended to make the analysis output inspectable, not just downloadable. The illustrations below explain the main analysis families using the same shared timeline vocabulary as the frontend: one clock, one playhead, zoomable lanes, and consistent section alignment across spectrogram, beat, lyric and deep-analysis layers.
 
-For BeatNet alone:
+**Illustrations, not captured frontend screenshots.** These SVGs are generated by
+`scripts/render_readme_analysis_gallery.py`; the script does not execute the React
+timeline component, decode audio, run separation or perform neural inference.
+Only the Arcadians section labels, lyric text/timing and reference BPM come from
+the included artist-authored metadata. Other plotted patterns and example chord
+labels are explicitly schematic, not measured results for Arcadians. In
+particular, these pictures are not evidence of vocal-free cuts, measured tempo
+stability, chord/key estimates or loudness values. Actual frontend captures remain
+outstanding.
 
-```bash
-pip install "danceflow-stemlab[beats]"
-stemlab bootstrap beatnet
-stemlab doctor
-```
+### 1. Separation, spectrograms, beats and sections
 
-`stemlab doctor` reports BeatNet as ready only when the normal package or the
-verified StemLab cache can actually be found. `analyze --no-bootstrap` never
-downloads BeatNet and records the unavailable backend instead.
+![Illustration: Arcadians reference sections and reference tempo above schematic spectrogram lanes](docs/screenshots/analysis-overview-arcadians.svg)
 
-For only the Vamp analysis stack:
+This is the core inspection view. It explains how StemLab lines up:
 
-```bash
-stemlab bootstrap vamp
-```
+- the **AI / reference section map** (`deep/structure/` and `deep/song_map/`),
+- the **beat and bar grid** from BeatNet, Beat This! and Beat Transformer (`beats/*.json`, `beats/*.tsv`),
+- the **master spectrogram**, and
+- each **stem spectrogram** written under `spectrograms/`.
 
-`bootstrap vamp` downloads the pinned Sonic Annotator runtime and launches the
-official Vamp Plugin Pack installer. Complete the installer once, then rerun the
-command if needed to verify that the requested plugin outputs are visible.
+In practice, this is the view you use first when checking whether a separator, beat model or section model has produced outputs that are musically believable.
 
-## CLI
+### 2. Lyrics, speech regions and transcript QA
 
-Full requested analysis:
+![Illustration: Arcadians canonical lyric timing and transcript analysis concepts](docs/screenshots/analysis-lyrics-arcadians.svg)
 
-```bash
-stemlab analyze master.wav --output ./analysis-master --profile full --device auto
-```
+StemLab keeps lyric and speech analysis on the same clock as the audio:
 
-Useful alternatives:
+- **reference lyric timing** from a known-correct LRC or JSON source,
+- **Whisper word timing** from the preferred vocal stem,
+- **speech-region / VAD evidence** indicating detected speech activity; this alone does not establish the absence of singing,
+- the derived `spoken_word.wav` timeline-preserving speech isolate, and
+- downstream rhyme, prosody and repetition-safety diagnostics under `speech/` and `deep/lyrics/`.
 
-```bash
-# Skip the 53-stem model for a materially lighter run
-stemlab analyze master.wav -o ./analysis-master --profile practical
+The important idea is that you can compare what the model heard against what the artist supplied, then immediately relate both to loop boundaries, choreography cues or lyric-sheet QA.
 
-# Run only selected separators
-stemlab analyze master.wav -o ./analysis-master \
-  --model bs_roformer_sw --model scnet_xl_ihf --model openunmix_umxhq
+### 3. Harmony, melody and song-map fusion
 
-# Fail immediately rather than recording a backend failure and continuing
-stemlab analyze master.wav -o ./analysis-master --strict
+![Illustration: schematic harmony and song-map concepts, not Arcadians analysis](docs/screenshots/analysis-harmony-songmap.svg)
 
-# Skip Vamp if the plugin pack is intentionally not installed
-stemlab analyze master.wav -o ./analysis-master --no-vamp
+StemLab's harmonic and structural analysis is wider than a single chord track. The harmony/song-map family brings together:
 
-stemlab models
-stemlab doctor
-```
+- **chord and harmonic-change evidence** from the curated Vamp pass,
+- **key, tonal-change and tuning outputs**,
+- **melody / F0 style lanes** derived from vocal analysis,
+- the **section-level song map** that fuses structure, rhythm, harmony and lyric evidence into one readable narrative.
 
-By default model weights and external research code are cached outside the output folder; all **generated analysis artifacts and datasets** are written inside the output folder. The copied master is also placed in `input/` so the Sonic Visualiser session is portable as one directory.
+These outputs live primarily under `vamp/`, `deep/harmony/` and `deep/song_map/`, and they are the layer that makes the raw low-level DSP outputs easier to interpret in musical terms.
 
-## Output layout
+### 4. Sonic profile, rhythm regimes and semantics
 
-```text
-analysis-master/
-  input/master.wav
-  stems/
-    bs_roformer_sw/*.wav
-    mvsep_mega53/*.wav
-    scnet_xl_ihf/*.wav
-    htdemucs_ft/*.wav
-    openunmix_umxhq/*.wav
-  spectrograms/
-    master.png
-    master.npz
-    <model>/<stem>.png
-    <model>/<stem>.npz
-    speech/spoken_word.png
-    speech/spoken_word.npz
-  speech/
-    spoken_word.wav
-    speech_regions.json
-    whisper.json
-    transcript.txt
-    transcript.srt
-    words.tsv
-  beats/
-    beatnet.json / beatnet.tsv
-    beat_this.json / beat_this.tsv
-    beat_transformer.json / beat_transformer.tsv
-    beat_transformer_activations.npz
-  vamp/
-    report.json
-    transforms/*.n3
-    raw/*.csv
-    data/*.json
-    data/*.npz
-    plots/*.png
-  deep/
-    sonic/
-    rhythm/
-    harmony/
-    structure/
-    lyrics/
-    semantic_text/
-    song_map/
-    rudiments/             # optional native DanceRudiments candidate report
-      report.json
-      index.html
-      overview.png
-    summary.json
-  sonic_visualiser/
-    session.sv
-    session.xml
-    open_sonic_visualiser.bat
-    open_sonic_visualiser.sh
-  analysis.json
-  manifest.json
-```
+![Illustration: sonic, rhythm and semantic analysis categories without measured values](docs/screenshots/analysis-sonic-rhythm.svg)
 
-`session.sv` is genuine Sonic Visualiser bzip2-compressed session XML. It contains a master pane with beat/downbeat/Whisper time-instant layers and one synchronized waveform + Sonic Visualiser spectrogram pane for every separated stem. The uncompressed `session.xml` is retained for inspection/debugging. The Windows `.bat` looks on `PATH` and in the usual Program Files locations.
+The higher-level deep pass also tracks how a song feels over time:
+
+- **sonic profile** summaries (loudness, peaks, dynamics, timbre and stereo behaviour),
+- **groove / rhythmic metrics** such as swing tendency, offbeat energy and quantisation error,
+- **tempo-regime detection** for stable regions, ramps and abrupt changes,
+- **semantic summaries** from lyric/text analysis and, optionally, zero-shot audio semantics.
+
+This is the analysis family that turns StemLab from a simple BPM-and-stems tool into a richer musical understanding layer for DanceFlow and downstream motion-response systems.
+
+### 5. Where loops fit in
+
+The loop-discovery patch does not replace the earlier analyses; it depends on them. Loop selection uses:
+
+- **section labels** to find candidate verse and chorus spans,
+- the **beat grid** to align cuts to complete bars,
+- **full-vocal stem and available timing evidence** to avoid detected vocalisations; VAD alone is insufficient,
+- and **waveform seam checks** to reduce discontinuities; accepted joins still need listening checks.
+
+That means the loop lane is best understood as an *applied synthesis* of the structure, rhythm and vocal analyses already present in StemLab.
+
+## Timeline overlays and movement display modes
+
+Master/stem audio appears as one channel per source, with **Waveform /
+Spectrogram / Both** in the left heading. Both overlays the waveform on the
+time-aligned spectrum. Each channel has a height slider and reset: wheel pans
+time, Ctrl/Command + wheel zooms time, Alt + wheel resizes the hovered channel,
+and Shift + wheel scrolls between channels. These are display-only changes.
+
+The shared DanceRudiments **Movement view** selector switches between the
+existing X–Y trajectory and **Bar graph**, one labelled signed bar per stored
+dimension. It retains the original native sampler, audio clock and review state.
+BeatNet/BeatThis still analyse **both** the master and every drums/percussion stem
+after separation; the master pass is never replaced.
+
+See **[viewer controls](docs/viewer-controls.md)** and the
+**[released-viewer workflow](docs/released-viewers.md)**. Release both companion
+packages first; StemLab resolves the latest stable official npm/PyPI releases and
+rebuilds from those distributions. Development pins and local vendor archives are
+not production dependencies. Existing exported pages must be regenerated.
 
 ## Web service
+
+Live and static timeline viewers enable **Audition lyrics** using the released
+React Timeline Sequence control. Timed subtitles appear over the song's cover,
+following Play/Pause, seeks, loops and the selected **Audio channel**. Choose the
+master or a full-duration stem; changing channels pauses playback and resets the
+playhead. Unsaved line edits update subtitles immediately, even with the timing
+editor hidden. Frozen exports remain read-only.
+
+![Actual Arcadians viewer with cover-art lyric subtitles](docs/screenshots/lyric-audition-arcadians.png)
+
+[Play the actual silent viewer demonstration](docs/screenshots/lyric-audition-demo.webm).
+See [the audition guide](docs/lyric-audition.md) for both examples, timing authority,
+artwork export, local preview commands and verification limits.
 
 StemLab includes an upload/timeline web UI plus HTTP and Socket.IO APIs for
 content-addressed analysis jobs. See [docs/web.md](docs/web.md) for launchers,
 endpoints, events and the Arcadians reference workflow.
 
-## Documentation
+## Python API
 
-- [DanceFlow workflow and DanceMoves relationship](docs/danceflow.md)
-- [Web service](docs/web.md)
-- [Containers](docs/containers.md)
-- [Publishing and releases](docs/publishing.md)
-- [BeatNet compatibility](docs/beatnet.md)
-- [Changelog](CHANGELOG.md)
+```python
+from pathlib import Path
+from stemlab.models import FULL_PROFILE
+from stemlab.pipeline import run_pipeline
+from stemlab.types import PipelineConfig
+
+result = run_pipeline(PipelineConfig(
+    input_wav=Path("master.wav"),
+    output_dir=Path("analysis-master"),
+    models=FULL_PROFILE,
+    device="auto",
+))
+```
 
 ## Codex plugin and MCP server
 
@@ -913,21 +1050,29 @@ It makes StemLab the default analysis engine, selects a proportionate profile,
 preserves evidence boundaries, and routes reusable capability gaps back into
 StemLab with tests instead of creating an undocumented parallel stack.
 
-## Python API
+## DanceFlow and DanceMoves
 
-```python
-from pathlib import Path
-from stemlab.models import FULL_PROFILE
-from stemlab.pipeline import run_pipeline
-from stemlab.types import PipelineConfig
+DanceFlow is the wider BPM and motion-response workflow. **StemLab** is its
+music-understanding layer; the WordPress **DanceMoves** plugin is a related
+downstream motion-response component. StemLab has no WordPress dependency and
+communicates through normal analysis artifacts and service APIs, so it remains
+independently useful and reproducible.
 
-result = run_pipeline(PipelineConfig(
-    input_wav=Path("master.wav"),
-    output_dir=Path("analysis-master"),
-    models=FULL_PROFILE,
-    device="auto",
-))
-```
+See [docs/danceflow.md](docs/danceflow.md) for the component boundary.
+
+StemLab's browser workspace imports the reusable
+[`react-timeline-sequence`](https://www.npmjs.com/package/react-timeline-sequence)
+control for audio playback, the shared playhead, seeking, zoom and generic
+sequence lanes. StemLab retains the upload and analysis-specific adapters.
+
+## Documentation
+
+- [DanceFlow workflow and DanceMoves relationship](docs/danceflow.md)
+- [Web service](docs/web.md)
+- [Containers](docs/containers.md)
+- [Publishing and releases](docs/publishing.md)
+- [BeatNet compatibility](docs/beatnet.md)
+- [Changelog](CHANGELOG.md)
 
 ## External runtime/cache details
 
@@ -942,11 +1087,106 @@ GHCR and Docker Hub after validation. See
 [docs/publishing.md](docs/publishing.md) for the release contract and Trusted
 Publishing setup.
 
+## Coordinated releases and latest-release dependencies
+
+Keep `DanceRudiments`, `react-timeline-sequence`, and `stemlab` as sibling
+checkouts. The release order is **React Timeline Sequence → DanceRudiments →
+StemLab**: publish and verify the companions before updating the consuming app.
+StemLab must use their **latest stable official releases**, not an unreleased
+commit, sibling source package or vendored npm archive. Each build records exact
+released versions/commits/integrity after latest-release resolution so all its
+jobs use the same bytes; CI fails clearly when that snapshot is stale.
+
+From the parent folder, preview and then explicitly execute:
+
+```powershell
+.\stemlab\scripts\Release-DanceFlow.ps1 -ProjectsRoot .
+.\stemlab\scripts\Release-DanceFlow.ps1 -ProjectsRoot . -Execute
+```
+
+For the first migration use the same commands with
+`.\release-kit\Release-DanceFlow.ps1` after extracting the complete kit. It
+applies the three repository patches, updates versions, performs scoped commits
+and normal pushes, waits for exact-commit CI, then creates **new** release tags.
+StemLab's CLI, both plugin manifests and MCP registry metadata are versioned together.
+The existing GitHub Actions workflows publish packages; no protection rules,
+credentials, old tags or assets are changed. The initial expected next-minor
+versions are only a preview proposal, never a claim that they are published.
+
+Use Node.js 24, Python 3.11+, PowerShell 5.1+, Git and authenticated GitHub CLI.
+Required main/registry/Pages jobs must pass; missing approvals and partial
+publication are blockers, not success. The default script releases all three
+projects, is opt-in via `-Execute`, and supports a saved exact-source `-Resume`
+session. A changed checkout or pre-commit build failure requires review rather
+than an automatic stash/reset or guessed recovery.
+
+StemLab's helper updates npm manifests/lock, optional native dependency minimum,
+release/build metadata and the genuinely rebuilt JS/CSS together. Its daily
+release-update workflow proposes subsequent updates by PR without auto-merging.
+A tagged StemLab release generates all five Arcadians pages and validates actual
+Pages deployment, live HTML and seekable audio. Do not start a duplicate manual
+Arcadians analysis during that tagged build. Read
+**[the full release, resume, verification and troubleshooting guide](docs/released-viewers.md)**
+before running it. Keep this README and AGENTS.md synchronized with future changes.
+
+## Standalone Linux CLI release gate
+
+The Linux one-file `stemlab-linux-x86_64` executable is a required release
+artifact, not a best-effort extra. It is packaged with **PyInstaller**, so normal
+Python/native modules are bundled rather than translating the complete ML stack
+into C. Its dedicated `Standalone CLI` workflow uses
+Python 3.11 so the maintained `madmom-prebuilt` decoder and StemLab's
+checksum-verified BeatNet 1.1.3 runtime can coexist. The build bootstraps the
+official BeatNet wheel, verifies its SHA-256, embeds the BeatNet code and model
+weights plus required package data/metadata, then smoke-tests the actual
+executable with an empty external StemLab cache. `--help`, `models`, and
+`doctor` must work, and `doctor` must report embedded BeatNet as ready.
+
+Main-branch release coordination requires `binary.yml` to pass before tagging.
+Tagged releases call the same reusable workflow and cannot publish a fallback
+`STEMLAB-BINARY-NOTE.txt`; absence or failure of the executable fails the release.
+
+## Windows pytest temporary-directory permissions
+
+StemLab configures a dedicated, **non-synchronised Windows test folder** at
+`%LOCALAPPDATA%\StemLab\pytest\<checkout-fingerprint>`, instead of the global
+`%TEMP%\pytest-of-<username>` folder or `.pytest-tmp/` inside OneDrive. This
+avoids recurring Windows `PermissionError: [WinError 5]` failures caused by
+stale global temp permissions and cloud-sync locks on test directories. Each
+checkout has its own short, stable base path; pytest continues to create
+separate numbered per-run folders for isolation. No administrator permissions,
+registry changes or deletion of the old temp folder are required.
+
+On Linux and macOS, pytest continues to use StemLab's ignored `.pytest-tmp/`
+directory. An explicit `--basetemp=PATH` or `PYTEST_DEBUG_TEMPROOT` setting
+always takes precedence. Avoid sharing an explicit `--basetemp` across
+concurrent runs because pytest clears that path at startup.
+
+The beat-map synthetic audio fixture additionally computes its WAV SHA-256 from
+an in-memory, closed WAV stream **before creating the hash-named analysis
+folder**. It no longer renames a populated directory, which OneDrive or
+antivirus software may temporarily lock on Windows. This affects only test
+setup, not beat-analysis logic or the source-audio verification contract.
+
+Run the regression tests without special environment setup:
+
+```powershell
+python -m pytest tests/test_pytest_temp_root.py tests/test_beat_map.py tests/test_timing_edits.py
+```
+
+Temporary files are local test data, not repository artefacts or published music.
+
 ## Reproducibility and licensing
 
 `analysis.json` records model/backend metadata and errors; `manifest.json` hashes every output artifact. Model checkpoints, research code and datasets retain their upstream terms. In particular, do not assume that an MIT-licensed inference wrapper automatically grants redistribution rights for every checkpoint it can download.
 
 ### Arcadians timeline CI decoder and artifact checks
+
+The current viewer snapshot uses the published React Timeline Sequence 0.8.0
+and DanceRudiments 0.3.0. The genuine rebuilt bundle preserves the existing
+transport, beat-grid controls and five MIDI note lanes. Cover subtitles, exact
+active-word highlighting and the master/stem selector use that same source-clock
+transport.
 
 The complete Arcadians demo checks lint before expensive analysis. Its Docker
 runtime includes pinned TorchCodec and performs a synthetic MP3 decoder smoke
@@ -1019,189 +1259,13 @@ All-In-One structure remains master-based, and Beat Transformer runs once on its
 actual five demixed streams—not repeatedly on filenames it does not consume.
 Consensus allows **one vote per detector family**, not one per stem, preserving
 all source hypotheses without letting repeated drum runs dominate the vote.
-The `arcadians-core-v2` publication gate requires the new, correctly attributed
+The `arcadians-core-v3` publication gate requires the new, correctly attributed
 master/drum beat results. See [routing, provenance and failure handling](docs/beat-inputs.md).
 
-## Timeline overlays and movement display modes
+## Agents and contributors
 
-Master/stem audio appears as one channel per source, with **Waveform /
-Spectrogram / Both** in the left heading. Both overlays the waveform on the
-time-aligned spectrum. Each channel has a height slider and reset: wheel pans
-time, Ctrl/Command + wheel zooms time, Alt + wheel resizes the hovered channel,
-and Shift + wheel scrolls between channels. These are display-only changes.
+Agents using StemLab should inspect its available capabilities, use them fully where they fit the task, and look for useful improvements wherever possible. When a required feature is missing, or a reusable reliability, usability, performance or documentation gap is found, improve this tool rather than maintaining a separate workaround. If no worthwhile change is justified, explain why.
 
-The shared DanceRudiments **Movement view** selector switches between the
-existing X–Y trajectory and **Bar graph**, one labelled signed bar per stored
-dimension. It retains the original native sampler, audio clock and review state.
-BeatNet/BeatThis still analyse **both** the master and every drums/percussion stem
-after separation; the master pass is never replaced.
+Submit every improvement as a pull request to [stemlab](https://github.com/kieransimkin/stemlab/pulls), with relevant tests, documentation and a reproducible example. Follow [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) for the contribution and validation workflow.
 
-See **[viewer controls](docs/viewer-controls.md)** and the
-**[released-viewer workflow](docs/released-viewers.md)**. Release both companion
-packages first; StemLab resolves the latest stable official npm/PyPI releases and
-rebuilds from those distributions. Development pins and local vendor archives are
-not production dependencies. Existing exported pages must be regenerated.
-
-
-## Coordinated releases and latest-release dependencies
-
-Keep `DanceRudiments`, `react-timeline-sequence`, and `stemlab` as sibling
-checkouts. The release order is **React Timeline Sequence → DanceRudiments →
-StemLab**: publish and verify the companions before updating the consuming app.
-StemLab must use their **latest stable official releases**, not an unreleased
-commit, sibling source package or vendored npm archive. Each build records exact
-released versions/commits/integrity after latest-release resolution so all its
-jobs use the same bytes; CI fails clearly when that snapshot is stale.
-
-From the parent folder, preview and then explicitly execute:
-
-```powershell
-.\stemlab\scripts\Release-DanceFlow.ps1 -ProjectsRoot .
-.\stemlab\scripts\Release-DanceFlow.ps1 -ProjectsRoot . -Execute
-```
-
-For the first migration use the same commands with
-`.\release-kit\Release-DanceFlow.ps1` after extracting the complete kit. It
-applies the three repository patches, updates versions, performs scoped commits
-and normal pushes, waits for exact-commit CI, then creates **new** release tags.
-StemLab's CLI, both plugin manifests and MCP registry metadata are versioned together.
-The existing GitHub Actions workflows publish packages; no protection rules,
-credentials, old tags or assets are changed. The initial expected next-minor
-versions are only a preview proposal, never a claim that they are published.
-
-Use Node.js 24, Python 3.11+, PowerShell 5.1+, Git and authenticated GitHub CLI.
-Required main/registry/Pages jobs must pass; missing approvals and partial
-publication are blockers, not success. The default script releases all three
-projects, is opt-in via `-Execute`, and supports a saved exact-source `-Resume`
-session. A changed checkout or pre-commit build failure requires review rather
-than an automatic stash/reset or guessed recovery.
-
-StemLab's helper updates npm manifests/lock, optional native dependency minimum,
-release/build metadata and the genuinely rebuilt JS/CSS together. Its daily
-release-update workflow proposes subsequent updates by PR without auto-merging.
-A tagged StemLab release generates all five Arcadians pages and validates actual
-Pages deployment, live HTML and seekable audio. Do not start a duplicate manual
-Arcadians analysis during that tagged build. Read
-**[the full release, resume, verification and troubleshooting guide](docs/released-viewers.md)**
-before running it. Keep this README and AGENTS.md synchronized with future changes.
-
-## Standalone Linux CLI release gate
-
-The Linux one-file `stemlab-linux-x86_64` executable is a required release
-artifact, not a best-effort extra. It is packaged with **PyInstaller**, so normal
-Python/native modules are bundled rather than translating the complete ML stack
-into C. Its dedicated `Standalone CLI` workflow uses
-Python 3.11 so the maintained `madmom-prebuilt` decoder and StemLab's
-checksum-verified BeatNet 1.1.3 runtime can coexist. The build bootstraps the
-official BeatNet wheel, verifies its SHA-256, embeds the BeatNet code and model
-weights plus required package data/metadata, then smoke-tests the actual
-executable with an empty external StemLab cache. `--help`, `models`, and
-`doctor` must work, and `doctor` must report embedded BeatNet as ready.
-
-Main-branch release coordination requires `binary.yml` to pass before tagging.
-Tagged releases call the same reusable workflow and cannot publish a fallback
-`STEMLAB-BINARY-NOTE.txt`; absence or failure of the executable fails the release.
-
-## Editable song timing: fixed/variable BPM, lyrics, words and cue sections
-
-The Stemlab browser workspace has **Song timing** alongside **Beat correction**.
-It uses the shared `react-timeline-sequence` 0.4+ timing lanes, not a second
-playhead or bespoke renderer. Its three editable tracks are per-line lyric
-blocks, words belonging to the selected line, and cue section boundaries.
-The same original master audio, transport and zoom apply to all three.
-
-The timing clock is either an explicit **fixed BPM + Beat 1 offset** or the
-current SHA-bound **corrected variable BPM** timeline. Variable mapping integrates
-the exact existing consensus/corrected sample frames, and never inserts
-imaginary beats into missing spans. Switching clock mode does not move cue,
-line, or word timestamps. An optional 150-ms snap tolerance (editable) applies
-*only to edits that the user makes*; it is disabled by default. Timing tooltips
-show whether and by how many signed milliseconds a marker misses a real or
-fixed-grid beat. A changed beat map must be saved before saving timing edits
-bound to that variable map.
-
-Editable word starts/ends are constrained within the selected lyric line.
-Dragging a complete line carries its words; changing a line boundary never
-silently clips words. The editor includes add-at-playhead, delete, section
-rename, line/word text, import, artist review status and save/reload controls.
-Cue renames are restricted to `[TYPE: STANDARD SECTION]`: the supported types
-are `SECTION`, `ENTRY`, `DROP`, `BREAK`. Names use the recognised INTRO, VERSE,
-PRE-CHORUS, CHORUS, BUILD, DROP, FINAL DROP, BREAKDOWN, OUTRO, etc., with
-optional numbering. Examples:
-
-```text
-[00:00.125][SECTION: INTRO]
-[00:57.460][SECTION: VERSE 1]
-[01:25.000][ENTRY: VOCAL INTRO]
-[01:44.010][DROP: CHORUS 1]
-[02:34.440][BREAK: SPOKEN BREAKDOWN]
-```
-
-The edit document is stored separately as `timing/song-timing-edits.json`,
-schema `stemlab.timing-edits.v1`: source SHA-256, sample rate/frame count,
-`fixed_clock`, clock mode, revision-pinned beat map, lines/words/cues with
-integer native source frames, and artist review status. **Original audio,
-`canonical.json`, ASR evidence, source LRC and beat detector results remain
-unchanged.** The web service supports:
-
-- `GET/PUT /api/{sha256}/song-timing` (optimistic revision guard),
-- `POST /api/{sha256}/song-timing/import` (LRC lyric lines, LRC/TSV/JSON words,
-  canonical cue-section LRC; importing lines with existing words is refused),
-- `POST /api/{sha256}/song-timing/preview` (strict validation and export without saving).
-
-**Export DanceMoves timing bundle** provides a JSON source identity and fixed
-or full variable BPM map alongside line-LRC, per-word TSV and JSON, and cue-LRC
-content. For DanceMoves' separate full beat-map field, use the original Beat
-correction editor's `stemlab.beat-timeline.v1` export (or the bundle's nested
-`clock.beat_timeline`), not the enclosing song-timing bundle JSON. Word timings are kept in original source seconds; LRC/TSV representations
-round to compatible decimal positions while the JSON retains exact native
-frames. Uploaded word and cue files are independently validated by DanceMoves;
-pasting a full variable timeline into the old fixed beat-alignment field is
-not supported. Users must assign each file to the matching verified song.
-
-For a fresh checkout, **release `react-timeline-sequence` v0.4+ first**. Stemlab
-only consumes the latest *published* stable shared component, never an untagged
-source copy. After publication run `python scripts/configure_viewer_build.py`
-(which updates official viewer receipts and compiled assets), then run:
-
-```bash
-python -m pytest tests/test_timing_edits.py tests/test_beat_map.py
-node --test tests/web/timing-workflow.test.mjs tests/web/beat-map.test.mjs
-python scripts/check_viewer_build.py --latest
-npm ci && npm run build:web
-python scripts/check_viewer_build.py
-```
-
-Commit the released npm/lock/version receipt, generated `src/stemlab/web/app.js`
-and `timeline.css`, source, docs and tests together; never commit patch payloads,
-model weights or local development dependency overrides.
-
-## Windows pytest temporary-directory permissions
-
-StemLab configures a dedicated, **non-synchronised Windows test folder** at
-`%LOCALAPPDATA%\StemLab\pytest\<checkout-fingerprint>`, instead of the global
-`%TEMP%\pytest-of-<username>` folder or `.pytest-tmp/` inside OneDrive. This
-avoids recurring Windows `PermissionError: [WinError 5]` failures caused by
-stale global temp permissions and cloud-sync locks on test directories. Each
-checkout has its own short, stable base path; pytest continues to create
-separate numbered per-run folders for isolation. No administrator permissions,
-registry changes or deletion of the old temp folder are required.
-
-On Linux and macOS, pytest continues to use StemLab's ignored `.pytest-tmp/`
-directory. An explicit `--basetemp=PATH` or `PYTEST_DEBUG_TEMPROOT` setting
-always takes precedence. Avoid sharing an explicit `--basetemp` across
-concurrent runs because pytest clears that path at startup.
-
-The beat-map synthetic audio fixture additionally computes its WAV SHA-256 from
-an in-memory, closed WAV stream **before creating the hash-named analysis
-folder**. It no longer renames a populated directory, which OneDrive or
-antivirus software may temporarily lock on Windows. This affects only test
-setup, not beat-analysis logic or the source-audio verification contract.
-
-Run the regression tests without special environment setup:
-
-```powershell
-python -m pytest tests/test_pytest_temp_root.py tests/test_beat_map.py tests/test_timing_edits.py
-```
-
-Temporary files are local test data, not repository artefacts or published music.
+Project website: [https://kieransimkin.co.uk/danceflow/](https://kieransimkin.co.uk/danceflow/).

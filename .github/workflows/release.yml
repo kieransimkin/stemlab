@@ -54,7 +54,7 @@ jobs:
           python -m pip install -U pip wheel setuptools
           # madmom/BeatNet remain legacy-sensitive; preinstall Cython before resolving extras.
           python -m pip install 'Cython<3' 'numpy<2'
-          python -m pip install -e '.[all,dev]'
+          python -m pip install -e '.[all,dev,midi]'
           python -m pip install -U build twine
 
       - name: Install and audit the same published native wheel used by demo CI

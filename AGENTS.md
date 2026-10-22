@@ -16,6 +16,9 @@
 
 ## Released viewers and coordinated CI/CD
 
+- The current source snapshot consumes React Timeline Sequence 0.8.0 and DanceRudiments
+  0.3.0. Preserve real HTTP audio, beat-control and MIDI-lane verification when
+  synchronizing newer releases; do not enable unrelated opt-in UI implicitly.
 - Read [docs/released-viewers.md](docs/released-viewers.md) before changing dependency, build or release behaviour. The sibling layout is `DanceRudiments/`, `react-timeline-sequence/`, and `stemlab/` under one parent.
 - Release the two companions first (React Timeline Sequence, then DanceRudiments), verify their configured publication workflows and public registries, then synchronize/rebuild/test/release StemLab. A merge or tag alone is not a verified release.
 - StemLab must target the **latest stable official releases**. No unreleased main commit, mutable development override, local `file:` archive or vendor package may substitute for a missing release. Latest is resolved before the build and locked to exact published versions, release commits and registry hashes for that run; fail visibly on stale or incompatible dependencies rather than falling back silently.
@@ -106,6 +109,17 @@ alignment v1: never mislabel an irregular v1 timeline as that older schema.
 
 ## Lyric and cue timing edits
 
+Use the released shared `lyricAudition` API in live and exported timelines. Feed
+it the complete edited line list, independently of editor visibility and viewport
+filtering; canonical lines are the fallback only before an edit document exists.
+Feed the complete source-frame word list as a separate track so the active word
+can be highlighted. Retain line identity for overlapping backing-vocal words;
+never derive fake word intervals by splitting line text.
+Offer only full-duration source-bound audio channels. Stem loops must decode that
+stem, never a master-only excerpt. Static artwork is local and hash-inventoried;
+keep extra lyric-reference metadata separate from frozen scientific evidence.
+Run the lyric adapter and real HTTP subtitle/channel browser checks on rebuilds.
+
 Use the source-bound, separately revisioned `timing/song-timing-edits.json`.
 Keep original canonical lyrics, ASR, cues and master unchanged. Word starts and
 ends are restricted to their own line; cue names must be [SECTION: VERSE 1],
@@ -114,3 +128,25 @@ saving/importing/exporting, and do not invent a beat in a variable-map gap.
 Never substitute a development shared timeline for its latest stable released
 version. Regenerate viewer receipts and built assets after the new timeline
 release is officially published.
+
+## Full ecosystem and release preflight
+
+Before every new workflow run, check the latest stable official release and observe the actual runtime used by the job. Follow [the shared preflight](https://github.com/kieransimkin/DanceFlow/blob/main/docs/workflows/release-preflight.md) and this project's [people-and-agent guide](docs/ECOSYSTEM.md). Review the complete relevant capability inventory rather than only a familiar command. Consider every DanceFlow component against the actual task; use and compose all applicable supported capabilities, and improve a concrete reusable gap in its canonical repository. Record why existing capabilities suffice when no change is justified. No catalogue checklist expands the task, authorises model downloads/training, or proves integration. Preserve exact source/package identity, clocks, model-local storage, privacy, costs, immutable releases and separate deployment gates.
+
+## Preflight temporary-directory access
+
+The Arcadians publication recipe is `arcadians-core-v3`: preserve the existing
+six-stem/core evidence families and add genuine Basic Pitch outputs for all five
+pitched stems. Require source hashes, successful per-stem status, native MIDI
+parsing and matching note tables. Publish only the bounded report/note/MIDI
+allowlist; worker requests, logs and model caches remain private. Drum separation
+does not establish drum MIDI transcription. Preserve original files and export
+to new directories. Keep the existing five viewers and beat reference together.
+Rebuild the released timeline bundle after adding MIDI lanes, and require real
+HTTP MIDI-download and painted note-lane checks before Pages deployment.
+
+Before any long, costly, model-backed, media-rendering, build, test, packaging or release command that creates private or atomic temporary directories, run a disposable preflight with the exact runtime, user or sandbox, and intended output parent. The probe must create a unique directory, write and read a file, atomically rename it, then remove the file and directory.
+
+Keep temporary data and caches under the owning project on `Z:`; model weights and model-specific caches remain under that project's ignored `models/`. If the probe returns `WinError 5`, access denied, a rename failure or a cleanup failure, stop before the expensive command. Preserve the exact error and use the documented narrowly approved unrestricted recovery from the outset only when the task requires it. Use a fresh output directory and do not repeat the already-failing full job in the restricted shell.
+
+After any unrestricted recovery, verify that the final output is readable and writable from the normal managed environment. If it is not, copy the completed bytes into a pre-created project-local directory that passed the probe, verify hashes, and retain the original failure and recovery evidence. Do not edit global ACLs, switch caches to `C:`, terminate unrelated processes or claim the underlying permission problem is fixed. Repositories that own temporary-directory creation should provide and test a reusable preflight helper rather than relying only on this instruction.

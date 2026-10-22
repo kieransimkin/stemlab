@@ -27,6 +27,7 @@ environment-snapshot/
 docker-output/
 music/
 models/
+/.work/
 .pytest-tmp*/
 .pytest-all/
 .pytest-rts-*/

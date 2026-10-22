@@ -20,7 +20,7 @@ def read_performance(path: Path, sample_rate: int, source_frames: int) -> dict:
     for index, instrument in enumerate(performance.instruments):
         name = instrument.name or ("Drums" if instrument.is_drum
                                    else pretty_midi.program_to_instrument_name(instrument.program))
-        tracks.append({"index": index, "name": name, "program": instrument.program,
+        tracks.append({"index": index, "name": name, "program": int(instrument.program),
                        "is_drum": instrument.is_drum,
                        "control_changes": [{"time": float(c.time), "number": c.number, "value": c.value}
                                            for c in instrument.control_changes],
@@ -38,7 +38,7 @@ def read_performance(path: Path, sample_rate: int, source_frames: int) -> dict:
                           "midi_pitch": int(note.pitch), "velocity": int(note.velocity),
                           "frequency_hz": (None if instrument.is_drum else
                                            float(pretty_midi.note_number_to_hz(note.pitch))),
-                          "track_index": index, "program": instrument.program,
+                          "track_index": index, "program": int(instrument.program),
                           "is_drum": instrument.is_drum,
                           "outside_source": start >= source_frames or end > source_frames,
                           "sub_sample_duration": start == end})

@@ -21,6 +21,7 @@ from arcadians_http import ProjectHandler, _byte_range
 from check_arcadians_audio import verify_audio_ranges
 from timeline_display_checks import expected_display_layout, check_display_controls
 from beat_offset_browser_checks import check_beat_offset_controls
+from lyric_audition_browser_checks import check_lyric_audition
 from stemlab.static_timeline import digest, read_json, verify_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -96,6 +97,24 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 report['all_expected_lanes'] = True
                 report['images_loaded'] = True
                 report['lanes'] = page.locator('.rts-lane').count()
+                assert page.get_by_text('Unmapped static timeline route:', exact=False).count() == 0
+                assert page.get_by_role('button', name='Show timing editor', exact=True).count() == 0
+                report['static_editors_disabled'] = True
+                midi_rows = [row for row in state['files'] if row['path'].startswith('deep/midi/')]
+                note_rows = [row for row in midi_rows if row['path'].endswith('/notes.json')]
+                native_rows = [row for row in midi_rows if row['path'].endswith('/transcription.mid')]
+                if note_rows or snapshot['coverage'].get('recipe') == 'arcadians-core-v3':
+                    assert len(note_rows) == len(native_rows)
+                    if snapshot['coverage'].get('recipe') == 'arcadians-core-v3':
+                        assert len(note_rows) == 5
+                    assert page.locator('.rts-lane-midi-notes').count() == len(note_rows)
+                    from urllib.parse import quote
+                    for row in native_rows:
+                        response = page.request.get(base + 'data/' + quote(row['path']))
+                        assert response.status == 200 and response.body().startswith(b'MThd')
+                    assert page.locator('.rts-lane-midi-notes .rts-note').count() > 0
+                    report['midi_note_lanes'] = len(note_rows)
+                    report['midi_downloads'] = len(native_rows)
                 audio = page.locator('audio').first
                 assert audio.evaluate('(a)=>a.paused && !a.autoplay')
                 report['no_autoplay'] = True
@@ -133,6 +152,7 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 tolerance = max(.04, duration / point['width'] + .01)
                 report['pointer_seek_tolerance_seconds'] = tolerance
                 page.wait_for_function('([t,e])=>!document.querySelector("audio").seeking && Math.abs(document.querySelector("audio").currentTime-t)<e', arg=[target,tolerance])
+                page.wait_for_function('!document.querySelector("audio").paused')
                 assert_clock()
                 # Seek backwards using the visible ruler too. The library owns the
                 # hidden media element; external DOM mutation is not its public UI.
@@ -145,6 +165,16 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 page.wait_for_timeout(100)
                 assert_clock()
                 report['seek'] = True
+                report['ruler_seek_and_play'] = True
+                scroller = page.locator('.rts-scroller')
+                scroller.focus()
+                page.keyboard.press('Space')
+                page.wait_for_function('document.querySelector("audio").paused')
+                page.keyboard.press('Space')
+                page.wait_for_function('!document.querySelector("audio").paused')
+                page.keyboard.press('Space')
+                page.wait_for_function('document.querySelector("audio").paused')
+                report['space_play_pause'] = True
                 zoom = page.get_by_label('Zoom', exact=True)
                 if zoom.count() == 0:
                     zoom = page.locator('input[type=range]').first
@@ -156,6 +186,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                 }""")
                 page.wait_for_timeout(200)
                 assert page.locator('.rts-ruler-track').bounding_box()['width'] > before
+                assert zoom.get_attribute('max') == '180'
+                report['precision_zoom_1024x_fit'] = True
                 page.get_by_role('button', name='Fit', exact=True).click()
                 report['zoom_fit'] = True
                 stage = 'Saved loop preview'
@@ -176,6 +208,8 @@ def check(site: Path, report_path: Path, *, chromium=None, in_memory=False, requ
                     report['loop_audition'] = True
                 else:
                     report['loop_audition'] = 'no accepted loops; not fabricated'
+                stage = 'Lyric subtitles, cover artwork and selected audio channel'
+                report['lyric_audition'] = check_lyric_audition(page, state)
                 page.screenshot(path=str(report_path.with_suffix('.png')))
                 # Inspect only the generated root; no live /api, socket or CDN.
                 assert not errors and not bad, (errors, bad)

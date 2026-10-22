@@ -122,7 +122,8 @@ StemLab's tagged release invokes the existing combined Arcadians workflow. It
 keeps all five examples in one deployment:
 
 - `timeline/arcadians/`: complete analysis with master and drum/percussion beat
-  hypotheses, overlaid audio lanes and time/height controls;
+  hypotheses, overlaid audio lanes, time/height controls and five pitched-stem
+  MIDI note lanes/native downloads (the `arcadians-core-v3` recipe);
 - `arcadians/`: the original 48 master-derived recordings;
 - `arcadians-stems/`: 60 actual different-stem two-dimensional recordings;
 - `arcadians-fourier/`: full master, 4/8/16/32/64/128-band shared viewers with every-resolution native/bar/audio checks.

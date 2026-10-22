@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.11.0 - 2026-10-21
+
+- Synchronize React Timeline Sequence 0.8.0 and its verified registry identity.
+- Extend timing-edit zoom to 1,024 times the fitted scale for short word boundaries.
+- Add focus-aware Space play/pause and ruler-click seek-and-play to the shared
+  master/stem transport, with full-song browser regression coverage.
+- Make timing export completion visible: the selected format now reports its
+  exact filename and byte count and leaves a reusable download-ready link when
+  the browser hides or blocks the automatic download.
+
+## 1.10.0 - 2026-10-21
+
+- Extend the released timeline's source-synchronised cover-art lyric audition
+  with a complete all-words timing lane and a focused selected-line mode.
+- Synchronize React Timeline Sequence 0.7.0 and highlight the exact active word
+  from the complete source-frame word track, including overlapping vocal lines.
+- Add clickable warning/severe diagnostics for word-onset transitions below five or
+  three DanceMoves ticks. Diagnostics never rewrite artist timing automatically.
+- Keep saved source-frame corrections retrievable through the existing API and
+  exports while the shared audition remains bound to the one master transport.
+
+## 1.9.0 - 2026-10-21
+
+- Synchronize the published React Timeline Sequence 0.6.0, registry lock and
+  genuine compiled viewer while retaining the analysis and transport controls.
+- Use released React Timeline Sequence 0.6.0 for live/static cover-art lyric
+  auditioning, full edited-line updates and full-duration master/stem selection.
+- Bundle source-bound artwork and separate canonical lyric-reference metadata in
+  static exports; verify actual subtitle and selected-channel playback over HTTP.
+- Extend the complete Arcadians CI/Pages recipe with five genuine pitched-stem
+  Basic Pitch transcriptions, painted note lanes and byte-preserved MIDI downloads.
+  Validate source hashes, sample clocks, native MIDI and matching note tables.
+- Keep static Pages free of unavailable server-editing controls. Preserve all
+  existing demos, raw evidence, original recordings and source-adjacent new files.
+- Stage bundled Basic Pitch models in the configured project-local model cache;
+  preserve originals and reject corrupt copies. Keep numeric MIDI program values
+  numeric in JSON and reject cross-platform escaping saved-source paths.
+
 ## 1.8.0 - 2026-10-17
 
 - Add fixed and variable BPM matching with source-bound beat maps.

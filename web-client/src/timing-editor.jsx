@@ -1,5 +1,6 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {SECTION_NAMES,CUE_TYPES,canonicalCue,createAtPlayhead,deleteTimingEvent,updateTimingEvent,toFrame} from './timing-workflow.js';
+import {SECTION_NAMES,CUE_TYPES,canonicalCue,createAtPlayhead,deleteTimingEvent,shortWordTransitions,updateTimingEvent,toFrame} from './timing-workflow.js';
+import {auditionWords} from './lyric-audition.js';
 import './timing-editor.css';
 
 const api = async (hash,method='GET',body=null,endpoint='')=>{
@@ -12,15 +13,19 @@ const api = async (hash,method='GET',body=null,endpoint='')=>{
 };
 const sourceSeconds=(row,sr)=>row/sr;
 const filename=(kind,hash)=>`stemlab-${hash.slice(0,12)}-${kind}`;
-function download(body,name,mime){
- const blob=new Blob([body],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');
- try{a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();}
- finally{window.setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function prepareDownload(body,name,mime){
+ const blob=new Blob([body],{type:mime});
+ return {url:URL.createObjectURL(blob),name,mime,bytes:blob.size};
+}
+function triggerDownload(item){
+ const a=document.createElement('a');
+ a.href=item.url;a.download=item.name;document.body.appendChild(a);a.click();a.remove();
 }
 
-export function useTimingEditor(hash,duration,beatEditor){
+export function useTimingEditor(hash,duration,beatEditor,enabled=true){
  const [doc,setDoc]=useState(null),[saved,setSaved]=useState(false),[revision,setRevision]=useState(null);
- const [dirty,setDirty]=useState(false),[working,setWorking]=useState(false),[open,setOpen]=useState(false);
+ const [dirty,setDirty]=useState(false),[working,setWorking]=useState(false),[open,setOpen]=useState(true);
+ const [wordScope,setWordScope]=useState('all');
  const [selected,setSelected]=useState({kind:'line',id:null}),[note,setNote]=useState('');
  const [snap,setSnap]=useState(false),[snapTolerance,setSnapTolerance]=useState(.15);
  const [gridVisible,setGridVisible]=useState(false);
@@ -28,6 +33,7 @@ export function useTimingEditor(hash,duration,beatEditor){
  const [newText,setNewText]=useState(''),[newWord,setNewWord]=useState(''),[newType,setNewType]=useState('SECTION'),[newSection,setNewSection]=useState('INTRO');
  const [fileKind,setFileKind]=useState('lines');
  const [exportKind,setExportKind]=useState('bundle');
+ const [lastExport,setLastExport]=useState(null);
  const playhead=useRef(0),input=useRef(null),docRef=useRef(null),activeHash=useRef(hash),busy=useRef(false);
  docRef.current=doc;
  const reload=useCallback(async(force=false)=>{
@@ -40,11 +46,13 @@ export function useTimingEditor(hash,duration,beatEditor){
    }catch(e){setNote(e.message);}
  },[hash,dirty]);
  useEffect(()=>{
+   if(!enabled)return;
    activeHash.current=hash;setDoc(null);setRevision(null);setDirty(false);setSelected({kind:'line',id:null});
    void reload(true);
    const timer=window.setInterval(()=>{if(!docRef.current&&!busy.current)void reload(true);},5000);
    return()=>window.clearInterval(timer);
  },[hash]);
+ useEffect(()=>()=>{if(lastExport?.url)URL.revokeObjectURL(lastExport.url);},[lastExport?.url]);
  const edit=useCallback(fn=>{
   try{const source=docRef.current;if(!source)return;const next=fn(source);setDoc(next);setDirty(true);setNote('Unsaved song timing edits · original evidence preserved');}
   catch(e){setNote(e.message);}
@@ -98,8 +106,9 @@ export function useTimingEditor(hash,duration,beatEditor){
      wordjson:[JSON.stringify(exported.word_json,null,2)+'\n',filename('words',hash)+'.json','application/json'],
      cues:[exported.cue_lrc,filename('cues',hash)+'.lrc','text/plain;charset=utf-8'],
    };
-   download(...items[exportKind]);
-   setNote(`Exported ${exportKind} · source-bound clock and all timing forms remain available via the bundle`);
+   const item=prepareDownload(...items[exportKind]);
+   setLastExport(item);triggerDownload(item);
+   setNote(`Download started: ${item.name} (${item.bytes.toLocaleString()} bytes) · use the ready link below if the browser hid or blocked the automatic download`);
   }catch(e){setNote(e.message)}finally{setWorking(false);busy.current=false;}
  };
  const importFile=async event=>{
@@ -116,14 +125,16 @@ export function useTimingEditor(hash,duration,beatEditor){
   const start=row.start_frame??row.frame,end=row.end_frame??start;
   return start/sr<=visible.end+.01 && end/sr>=visible.start-.01;
  };
+ const shortTransitions=useMemo(()=>shortWordTransitions(doc),[doc]);
+ const flaggedWords=useMemo(()=>new Map(shortTransitions.map(flag=>[flag.toId,flag.severity])),[shortTransitions]);
  const toEvent=(row,kind)=>({id:row.id,label:kind==='cue'?`[${row.type}: ${row.section}]`:kind==='word'?row.word:row.text,
   ...(kind==='cue'?{type:row.type,section:row.section}:{}),
   start:sourceSeconds(row.start_frame??row.frame,sr),
   ...(kind==='cue'?{}:{end:sourceSeconds(row.end_frame,sr)}),
-  ...(kind==='word'?{parentId:row.line_id}:{})});
- const lineRows=doc?.lines||[],wordRows=(doc?.words||[]).filter(row=>row.line_id===selectedLine?.id);
+  ...(kind==='word'?{parentId:row.line_id,className:flaggedWords.has(row.id)?`stemlab-short-transition-${flaggedWords.get(row.id)}`:''}:{})});
+ const lineRows=doc?.lines||[],wordRows=wordScope==='all'?(doc?.words||[]):(doc?.words||[]).filter(row=>row.line_id===selectedLine?.id);
  const lane=(kind,rows,parent=null)=>({
-  id:`timing:${kind}`,kind:`timing-${kind}`,title:kind==='line'?'Lyric lines · editable':kind==='word'?`Words · ${selectedLine?.text||'select a line'}`:'Cue sections · editable',
+  id:`timing:${kind}`,kind:`timing-${kind}`,title:kind==='line'?'Lyric lines · editable':kind==='word'?(wordScope==='all'?'Words · all lyrics':`Words · ${selectedLine?.text||'select a line'}`):'Cue sections · editable',
   meta:`${rows.length} ${kind} events · drag or arrow to adjust · ${clock?.mode||'no clock'} match`,height:kind==='word'?88:94,
   content:{type:'timing',kind,clock,editable:true,snap,toleranceSeconds:snapTolerance,
    items:rows.filter(inView).slice(0,1600).map(row=>toEvent(row,kind)),
@@ -136,12 +147,12 @@ export function useTimingEditor(hash,duration,beatEditor){
   lane('line',lineRows),lane('word',wordRows,lineRows),lane('cue',doc.cues),
  ]:[];
  const panel=<section className="stemlab-timing-panel" aria-label="Editable lyric, word and cue timing">
-  <header><strong>Song timing · line lyrics, words &amp; cue sections</strong>
+  <header><strong>Lyric timing audition &amp; correction</strong>
    <span>{doc?`${doc.lines.length} lines · ${doc.words.length} words · ${doc.cues.length} cues · ${dirty?'unsaved':'saved/seeded'}`:'Awaiting master'}</span>
    <button type="button" onClick={()=>setOpen(v=>!v)}>{open?'Hide timing editor':'Show timing editor'}</button>
   </header>
   {open&&doc&&<>
-   <p>Line, word and cue edits are kept in a separate source-bound document. Choose a lyric line to adjust its individual words. Cue names must follow the established [SECTION: VERSE 1] / [DROP: CHORUS 1] convention.</p>
+   <p>All words are visible by default. Switch to the selected line for a less crowded editing view. Line, word and cue edits are kept in a separate source-bound document. Cue names must follow the established [SECTION: VERSE 1] / [DROP: CHORUS 1] convention.</p>
    <div className="stemlab-timing-fields">
     <label>Timing clock <select aria-label="Timing clock" value={doc.clock_mode} onChange={e=>setClockMode(e.target.value)}>
       <option value="fixed">Fixed BPM + Beat 1 offset</option>
@@ -155,7 +166,18 @@ export function useTimingEditor(hash,duration,beatEditor){
     <label>Snap tolerance (ms) <input type="number" min="0" max="1000" step="10" value={Math.round(snapTolerance*1000)}
       onChange={e=>setSnapTolerance(Math.max(0,Math.min(1,Number(e.target.value)/1000)))}/></label>
     <label><input type="checkbox" checked={gridVisible} onChange={e=>setGridVisible(e.target.checked)}/>Beat grid overlay</label>
+    <label>Word lane <select aria-label="Word lane scope" value={wordScope} onChange={e=>setWordScope(e.target.value)}>
+      <option value="all">All words</option><option value="selected">Selected line only</option>
+    </select></label>
    </div>
+   {shortTransitions.length>0&&<details className="stemlab-timing-diagnostics" open>
+    <summary>{shortTransitions.length} unusually short word transition{shortTransitions.length===1?'':'s'} to audition</summary>
+    <p>Orange is below five 16th-beat ticks; red is below three. These are review flags, not automatic timing changes.</p>
+    <ul>{shortTransitions.map(flag=><li key={`${flag.fromId}:${flag.toId}`}>
+      <button type="button" onClick={()=>{setSelected({kind:'word',id:flag.toId});setWordScope('selected');}}>{flag.line}: {flag.fromWord} → {flag.toWord}</button>
+      {' '}<strong>{flag.severity}</strong> · {flag.ticks.toFixed(2)} ticks · {flag.seconds.toFixed(3)}s
+    </li>)}</ul>
+   </details>}
    {variableSelected&&!canVariable&&<p role="alert">Variable BPM is selected but its source-bound beat map is unavailable; no silent fixed-BPM downgrade.</p>}
    {variableSelected&&beatEditor?.dirty&&<p role="alert">Save the beat-map corrections before saving/exporting lyric and cue timing changes.</p>}
    {variableSelected&&canVariable&&doc.beat_revision!==beatRevision&&<p role="alert">The saved beat-map revision has changed. Review its timing, then explicitly rebind these lyrics and cues to that revision. <button type="button" disabled={beatEditor.dirty} onClick={()=>edit(x=>({...x,beat_revision:beatRevision,review_status:'draft'}))}>Rebind to reviewed beat-map revision</button></p>}
@@ -200,7 +222,8 @@ export function useTimingEditor(hash,duration,beatEditor){
      <option value="words">Word TSV</option><option value="wordjson">Word JSON</option>
      <option value="cues">Named cue LRC</option>
     </select></label>
-    <button type="button" disabled={working} onClick={exportAll}>Download selection</button>
+    <button type="button" disabled={working} onClick={exportAll}>Download selected format</button>
+    {lastExport&&<a className="stemlab-download-ready" href={lastExport.url} download={lastExport.name}>Download ready: {lastExport.name}</a>}
     <label>Import track <select value={fileKind} onChange={e=>setFileKind(e.target.value)}>
      <option value="lines">Per-line LRC</option><option value="words">Per-word LRC/TSV/JSON</option><option value="cues">Section-cue LRC</option>
     </select></label>
@@ -213,5 +236,8 @@ export function useTimingEditor(hash,duration,beatEditor){
   {open&&!doc&&<p>Waiting for decoded source audio; no lyric or cue times are invented.</p>}
   {note&&<output role="status" className="stemlab-timing-status">{note}</output>}
  </section>;
- return {clock,lanes,panel,gridVisible,onWindowChange:setVisible,onTimeChange:t=>{playhead.current=t;}};
+ return {clock,lanes,panel,gridVisible,
+   lyricItems:doc ? lineRows.map(row=>toEvent(row,'line')) : null,
+   lyricWords:doc ? auditionWords(doc) : null,
+   onWindowChange:setVisible,onTimeChange:t=>{playhead.current=t;}};
 }

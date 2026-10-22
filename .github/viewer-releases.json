@@ -28,11 +28,11 @@
   "policy": "latest-stable",
   "schema": "stemlab.viewer-releases.v1",
   "timeline": {
-    "commit": "e8ef859126f7d3c9abd07f371cef46b624d36ebc",
-    "integrity": "sha512-I61SrPjij7n65oPehI90KftWe2AvtMd267w5icLfRgtCU1ww8JdZ58OHDLBMjrkEbkvUroaoKGDqgMA6SNBk0A==",
+    "commit": "169edf420bc4eb5c0664a10fb962421a5afe0814",
+    "integrity": "sha512-RMxUowcR9FlXqS1qkr/6Rzof38fuCS2T8onZ0RNhR0W6NwIb88qCZNhmehz9o3padda00bb32JDzMTxAquI4oQ==",
     "repository": "kieransimkin/react-timeline-sequence",
-    "tag": "v0.4.0",
-    "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.4.0.tgz",
-    "version": "0.4.0"
+    "tag": "v0.8.0",
+    "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.8.0.tgz",
+    "version": "0.8.0"
   }
 }

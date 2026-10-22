@@ -5,6 +5,21 @@ description: Use StemLab for audio timing analysis and loopable sections for Sho
 
 # StemLab / DanceFlow
 
+Use **Audition lyrics** in live or rebuilt static timelines to review line timing
+over the cover while the chosen full-duration master/stem plays. The complete
+edited track drives subtitles independently of viewport and editor visibility.
+Keep static snapshots read-only, source seconds unchanged, and stem loops separate
+from master-only excerpts. [Actual viewer and illustrated guide](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-audition.md).
+
+For the complete public Arcadians example, use the repository's
+`arcadians-core-v3` workflow (`scripts/build_arcadians_timeline.py`). It owns
+six-stem separation, complete core evidence and five pitched-stem Basic Pitch
+MIDI estimates, using new output directories. Require native MIDI/note/source
+validation and real HTTP browser QA before combining and publishing the Pages
+artifact. Preserve the other viewers and the independent beat reference. Drum
+audio is available; drum MIDI is not part of this recipe. Never promote inferred
+notes or MIDI tempo to canonical notes or song BPM.
+
 Created by Kieran Simkin — https://kieransimkin.co.uk/my-songs/
 
 ## Workflow
