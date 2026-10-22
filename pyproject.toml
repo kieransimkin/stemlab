@@ -51,7 +51,7 @@ Contact = "https://kieransimkin.co.uk/contact/"
 
 [project.optional-dependencies]
 # Explicit opt-in: native motions/catalogue stay entirely in DanceRudiments.
-rudiments = ["dancerudiments>=0.3.0"]
+rudiments = ["dancerudiments>=0.4.5"]
 # Local MCP transport and read-only viewer for the existing React timeline.
 # Model backends remain separately selected; no duplicate React bundle is shipped.
 codex = ["mcp>=2.2,<3", "fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
