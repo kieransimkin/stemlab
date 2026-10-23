@@ -14,6 +14,7 @@ from rich.table import Table
 from .analysis.registry import ACTIONS
 from .bootstrap import bootstrap as do_bootstrap
 from .beat_offset_cli import register_beat_offset_commands
+from .beat_comparison_cli import register_beat_comparison_commands
 from .branding import AUTHOR_NAME, AUTHOR_SITE, MY_SONGS_URL, PROJECT_DESCRIPTION, REPOSITORY_URL
 from .clip_cli import register_clip_commands
 from .cue_cli import print_cue_review, register_cue_commands
@@ -31,6 +32,7 @@ register_clip_commands(app, console)
 register_recording_commands(app, console)
 register_rig_motion_commands(app, console)
 register_beat_offset_commands(app, console)
+register_beat_comparison_commands(app, console)
 
 
 @app.command("export-timeline")

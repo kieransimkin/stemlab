@@ -6,6 +6,19 @@ By **[Kieran Simkin](https://kieransimkin.co.uk/)** · [DanceFlow ecosystem](htt
 
 Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/
 
+## Independent beat finding and counting (experimental)
+
+`stemlab compare-beats` now compares model-free audio, N-dimensional
+DanceRudiments recordings, rig captures and verified motion-package accents.
+Five complementary classical rhythm decoders produce reviewable BPM, beat count,
+phase, accent-cycle and local-tempo hypotheses. It can also import existing
+Beat This!/BeatNet/Beat Transformer/All-In-One model result JSON without
+re-running models; no model weights are downloaded. Cross-source phase scores
+require explicit clock offsets. No inferred downbeat or predicted grid is
+silently accepted as a real detection or canonical timeline. See
+[usage and evidence schema](docs/beat-evidence.md) and the
+[model and implementation research roadmap](docs/beat-research-roadmap.md).
+
 ## Rigged mesh rhythm and loop evidence
 
 The optional `stemlab analyze-rig-motion` command analyses timestamped
