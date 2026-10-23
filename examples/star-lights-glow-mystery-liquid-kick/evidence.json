@@ -1,0 +1,63 @@
+{
+  "schema": "stemlab.song-source-reference.v1",
+  "id": "star_lights_glow_mystery_liquid_kick",
+  "title": "Star Lights Glow (Mystery Liquid Kick)",
+  "artist": "Bass Ben & Friends",
+  "selected_mix": "Mystery Liquid Kick",
+  "canonical_lossless_master": {
+    "original_filename": "01 - Star Lights glow (Mystery Liquid Kick).wav",
+    "sha256": "9de00a34643a61eada7bec26da050ad6857d6ea31306ab9104b51cd214799284",
+    "bytes": 39513820,
+    "format": "RIFF WAVE PCM signed 16-bit little-endian",
+    "sample_rate_hz": 44100,
+    "channels": 2,
+    "sample_width_bits": 16,
+    "num_sample_frames": 9878444,
+    "duration_seconds": 224.0009977324263,
+    "bundled_in_repository": false
+  },
+  "listening_and_analysis_derivative": {
+    "path": "master.mp3",
+    "sha256": "48393fbb5ef5a1afc184ea388ce760612fe0c249c5c2f7caa57e563c6bd2e098",
+    "bytes": 6514148,
+    "codec": "MP3 MPEG-1 Layer III",
+    "bitrate_bps": 192000,
+    "bitrate_mode": "CBR",
+    "sample_rate_hz": 44100,
+    "channels": 2,
+    "id3_version": "2.3",
+    "encoded_from_lossless_master_sha256": "9de00a34643a61eada7bec26da050ad6857d6ea31306ab9104b51cd214799284"
+  },
+  "artwork": {
+    "path": "cover.jpg",
+    "sha256": "664bc2b9bc31407af556ab453fc316cae3d45241c5672c7e019195ce254b6196",
+    "bytes": 1134876,
+    "width": 2048,
+    "height": 2048,
+    "mime": "image/jpeg",
+    "embedded_in_mp3": true,
+    "picture_type": "front_cover"
+  },
+  "id3": {
+    "title": "Star Lights Glow (Mystery Liquid Kick)",
+    "artist": "Bass Ben & Friends",
+    "album_artist": "Bass Ben & Friends",
+    "album": "Star Lights Glow",
+    "subtitle": "Mystery Liquid Kick",
+    "track_number": "1",
+    "release_date": null,
+    "isrc": null
+  },
+  "musical_analysis": {
+    "canonical_bpm": null,
+    "downbeat_phase": "unverified",
+    "beat_timeline": null,
+    "motion_match": null,
+    "note": "No tempo/phase or matched movement has been authored or approved for this master."
+  },
+  "source_rights": {
+    "status": "media supplied for this repository addition by the requesting user",
+    "license": "not specified",
+    "note": "Code MIT license must not be interpreted as a licence for this audio or artwork."
+  }
+}

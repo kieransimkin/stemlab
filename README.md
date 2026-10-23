@@ -6,6 +6,19 @@ By **[Kieran Simkin](https://kieransimkin.co.uk/)** · [DanceFlow ecosystem](htt
 
 Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/
 
+## Canonical song example — Star Lights Glow (Mystery Liquid Kick)
+
+`examples/star-lights-glow-mystery-liquid-kick/` holds Bass Ben & Friends'
+**Star Lights Glow (Mystery Liquid Kick)** as a verified 192 kbps CBR MP3
+listening/analysis reference with the original supplied front-cover JPEG and ID3
+metadata. The original lossless WAV remains the canonical source master,
+identified by SHA-256 in `evidence.json` rather than redistributed as a second
+large binary. The mix is separate from *Star Lights Glow (Anthem)*; BPM, phase,
+release date and ISRC are unconfirmed. Verify with
+`python scripts/verify_star_lights_reference.py` and consult the [example's
+README](examples/star-lights-glow-mystery-liquid-kick/README.md). The MIT code
+licence does not license the music or artwork.
+
 ## Independent beat finding and counting (experimental)
 
 `stemlab compare-beats` now compares model-free audio, N-dimensional
