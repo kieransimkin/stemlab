@@ -32,6 +32,17 @@ silently accepted as a real detection or canonical timeline. See
 [usage and evidence schema](docs/beat-evidence.md) and the
 [model and implementation research roadmap](docs/beat-research-roadmap.md).
 
+The review now groups half/double tempo families rather than majority-voting
+correlated algorithms, scores DP coverage across the original source, and fits
+original saved model timestamps with robust residual/drift guards. Optional
+`--annotation NAME=FILE` evaluates beat timing only against a matching,
+human-reviewed, SHA-bound annotation; separately-held-out reliability calibration
+abstains without enough independent annotated songs. The non-destructive
+`scripts/benchmark_example_beats.py` handles Arcadians, The Truth is a Virus,
+and the separately pinned Star Lights Glow (Mystery Liquid Kick) derivative.
+No estimator approves beat 1, changes an audio master or replaces a canonical
+beat map. See [beat evidence](docs/beat-evidence.md).
+
 ## Rigged mesh rhythm and loop evidence
 
 The optional `stemlab analyze-rig-motion` command analyses timestamped

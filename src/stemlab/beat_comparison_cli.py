@@ -22,6 +22,7 @@ def register_beat_comparison_commands(app, console):
         input: Annotated[list[str]|None,typer.Option('--input',help='KIND:NAME=PATH; repeat (audio/recording/capture/package)')]=None,
         model_result: Annotated[list[str]|None,typer.Option('--model-result',help='NAME=previous saved StemLab BeatResult JSON; repeat')]=None,
         align: Annotated[list[str]|None,typer.Option('--align',help='NAME=offset_seconds explicitly confirms common clock; repeat')]=None,
+        annotation: Annotated[list[str]|None,typer.Option('--annotation',help='NAME=human-reviewed beat JSON; exact source SHA required')]=None,
         min_bpm: Annotated[float,typer.Option('--min-bpm')]=60.0,
         max_bpm: Annotated[float,typer.Option('--max-bpm')]=200.0,
         no_plp: Annotated[bool,typer.Option('--no-plp',help='Skip optional librosa local pulse baseline')]=False,
@@ -66,6 +67,19 @@ def register_beat_comparison_commands(app, console):
             for name,path in models:
                 reports.append(read_saved_beat_result(path,name))
             result=compare_reports(reports,source_offsets=offsets)
+            if annotation:
+                from .analysis.beat_evaluation import evaluate_report, read_annotation
+                by_name = {r['input']['name']: r for r in reports}
+                evaluations = {}
+                for assignment in annotation:
+                    name, location = _assignment(assignment)
+                    if name not in by_name or name in evaluations:
+                        raise ValueError('Annotation source must be unique and match an input name')
+                    path = Path(location)
+                    if path.resolve() == output:
+                        raise ValueError('Output cannot replace an annotation')
+                    evaluations[name] = evaluate_report(by_name[name], read_annotation(path))
+                result['independent_beat_annotation_evaluations'] = evaluations
             # Atomic nonclobbering creation. Outputs contain hypotheses and
             # source fingerprints, never the input audio or entire rig capture.
             output.parent.mkdir(parents=True,exist_ok=True)

@@ -428,7 +428,10 @@ def _dp_beat_events(t: np.ndarray, y: np.ndarray, bpm: float):
     valid=np.where(length>=5)[0]
     if not len(valid):
         return [], [], 0.
-    end=int(max(valid,key=lambda k: (scores[k]/max(1,length[k]),length[k])))
+    # A maximum *average* reward selects five locally perfect notes over an
+    # otherwise coherent full-song path. Prefer total path reward, then length;
+    # penalize lack of coverage on the ORIGINAL source timeline as well.
+    end=int(max(valid,key=lambda k: (scores[k],length[k])))
     indices=[]
     while end>=0:
         indices.append(end)
@@ -438,9 +441,14 @@ def _dp_beat_events(t: np.ndarray, y: np.ndarray, bpm: float):
     ordinal=[0]
     for idx in indices[1:]:
         ordinal.append(ordinal[-1]+int(hops[idx]))
-    # Score is coverage of periodic observed onsets within the predicted path.
-    support=min(1.,len(indices)/max(1,ordinal[-1]+1))
-    return observed, ordinal, round(float(support),4)
+    expected_source_beats=1+(t[-1]-t[0])/period
+    global_support=min(1.,len(indices)/max(1.,expected_source_beats))
+    span_fraction=(points[indices[-1]]-points[indices[0]])/max(1e-9,t[-1]-t[0])
+    # A 4-second rhythmic fragment inside a long song must not receive a 1.0
+    # beat-count confidence merely because its own five accents are regular.
+    if global_support < .15 or span_fraction < .20:
+        return [], [], 0.
+    return observed, ordinal, round(float(global_support),4)
 
 
 def _local_tempos(t: np.ndarray, y: np.ndarray, min_bpm: float, max_bpm: float):
@@ -493,12 +501,20 @@ def analyze_input(source: RhythmInput, *, min_bpm: float = 60, max_bpm: float = 
                     h["observed_onset_ordinal_positions"]=ordinals
                     h["beat_count_observed_candidates"]=len(events)
                     h["skipped_ordinal_positions"]=(ordinals[-1]+1)-len(events)
-                    h["description"]="selected actual onset peaks; missing beats not inserted"
+                    h["observed_candidate_fraction_of_source_grid"]=support
+                    h["path_span_fraction_of_source"]=round((events[-1]-events[0])/
+                                                             max(1e-9,t[-1]-t[0]),4)
+                    h["source_grid_expected_count_estimate"]=len(h["grid_seconds"])
+                    h["description"]=("Observed onset candidates on a globally supported path; "
+                                      "missing beats are not inserted. Score reflects full source coverage.")
                     group.append(h)
         tempo_windows[feature]=_local_tempos(t,y,min_bpm,max_bpm)
         hypotheses.extend(group)
-    # Detector disagreements are kept; the top score is only a review starting
-    # point, and scores are not calibrated or comparable across methods.
+    # Detector disagreements are kept. Scores are not calibrated and their
+    # numerical ranges differ; report tempo families rather than choosing a
+    # model by whichever scoring function happens to produce the largest value.
+    tempo_families,tempo_family_status=_tempo_family_summary(hypotheses)
+    local_warnings=_local_tempo_warnings(tempo_windows)
     return {"format": FORMAT, "schema_version": 1,
             "input": {"name": source.name, "kind": source.kind, "sha256": source.sha256,
                       "clock_basis": source.clock_basis, "metadata": source.metadata,
@@ -508,7 +524,10 @@ def analyze_input(source: RhythmInput, *, min_bpm: float = 60, max_bpm: float = 
             "skipped_features_due_to_cpu_limit": skipped,
             "selection_rule": "top_12_by_first_difference_standard_deviation",
             "hypotheses": hypotheses,
+            "tempo_families":tempo_families,
+            "tempo_family_status":tempo_family_status,
             "local_tempo_windows": tempo_windows,
+            "local_tempo_warnings":local_warnings,
             "observed_events": [],
             "notes": ["All returned beat grids are estimated predictions, not independent observed beats.",
                       "No time signature, downbeat, or beat 1 is inferred from a simple accent cycle.",
@@ -520,6 +539,173 @@ def _harmonic_ratio(a: float, b: float) -> tuple[float, float]:
     ratio = b/a
     closest = min(choices, key=lambda k: abs(math.log(ratio/k)))
     return closest, 100*(ratio/closest-1)
+
+
+
+def _octave_relationship(a: float, b: float, *, tolerance: float = .06) -> float | None:
+    """Recognise tempo-level ambiguity without conflating 3:2 or other ratios."""
+    ratio=b/a
+    for level in (.25,.5,1.,2.,4.):
+        if abs(math.log(ratio/level)) <= math.log(1+tolerance):
+            return level
+    return None
+
+
+def _tempo_family_summary(hypotheses: list[dict]) -> tuple[list[dict],str]:
+    """Group half/double-tempo views for review, with no detector voting.
+
+    The ACF, comb, PLP and DP scores have different, uncalibrated scales.
+    ACF and comb also share a source representation. No member is treated as
+    a probability or automatically promoted to the canonical tempo.
+    """
+    ordered=sorted((h for h in hypotheses if isinstance(h.get('bpm'),(float,int))
+                    and math.isfinite(h['bpm']) and h['bpm']>0),
+                   key=lambda h:h['bpm'])
+    families=[]
+    for h in ordered:
+        member={'detector':h['detector'],'feature':h['feature'],'bpm':h['bpm']}
+        family=next((f for f in families
+                     if _octave_relationship(f['_base'],h['bpm']) is not None),None)
+        if family is None:
+            family={'_base':h['bpm'],'members':[]}
+            families.append(family)
+        family['members'].append(member)
+    result=[]
+    for family in families:
+        distinct=[]
+        for h in family['members']:
+            bucket=next((b for b in distinct
+                         if abs(math.log(h['bpm']/b[0])) < math.log(1.03)),None)
+            if bucket is None:
+                distinct.append([h['bpm']])
+            else:
+                bucket.append(h['bpm'])
+        levels=sorted(round(float(np.median(x)),3) for x in distinct)
+        result.append({'tempo_levels_bpm':levels,
+                       'method_names':sorted({m['detector'] for m in family['members']}),
+                       'feature_names':sorted({m['feature'] for m in family['members']}),
+                       'members':family['members'],
+                       'octave_level_ambiguity':len(levels)>1,
+                       'status':'not_a_consensus_or_confirmed_music_tempo'})
+    if not result:
+        status='no_supported_tempo_hypotheses'
+    elif len(result)>1:
+        status='incompatible_tempo_families_review_required'
+    elif result[0]['octave_level_ambiguity']:
+        status='half_double_tempo_level_unresolved'
+    else:
+        status='no_interfamily_conflict_in_current_hypotheses'
+    result.sort(key=lambda r:(-len(r['method_names']),len(r['tempo_levels_bpm'])))
+    return result,status
+
+
+def _local_tempo_warnings(tempo_windows: dict[str,list[dict]]) -> list[dict]:
+    """Flag apparent tempo jumps that might be metrical-level switches.
+
+    Adjacent 8-second windows overlap. A jump from 72 to 145 BPM is not proof
+    of a real musical tempo ramp; disclose the 2:1 relationship separately.
+    """
+    warnings=[]
+    for feature,windows in tempo_windows.items():
+        for a,b in zip(windows,windows[1:]):
+            bpm_a,bpm_b=a['bpm'],b['bpm']
+            ratio=_octave_relationship(bpm_a,bpm_b,tolerance=.09)
+            if ratio is not None and ratio != 1.:
+                classification='possible_octave_level_switch_not_verified_tempo_change'
+            elif ratio is None and abs(math.log(bpm_b/bpm_a))>.18:
+                classification='nonharmonic_window_disagreement_review_required'
+            else:
+                continue
+            warnings.append({'feature':feature,'from_seconds':a['from_seconds'],
+                             'next_from_seconds':b['from_seconds'],
+                             'bpm_pair':[bpm_a,bpm_b],
+                             'tempo_ratio':round(bpm_b/bpm_a,4),
+                             'interpretation':classification})
+    return warnings
+
+
+def _saved_beat_grid_fit(beats: np.ndarray) -> dict | None:
+    """Robust, source-time global beat-grid *hypothesis* from model detections.
+
+    Detector timestamps and skipped ordinal positions remain untouched.
+    Twofold metrical readings are candidates, never silently resolved. A Huber
+    regression reduces individual onset jitter without hiding coherent drift.
+    """
+    if len(beats) < 5:
+        return None
+    intervals = np.diff(beats)
+    valid = intervals[(intervals > .18) & (intervals < 2.5)]
+    if len(valid) < 3:
+        return None
+    median_ibi = float(np.median(valid))
+    gaps = np.maximum(1, np.rint(intervals / median_ibi).astype(np.int64))
+    if np.any(gaps > 32) or gaps.sum() > 100_000:
+        return {'status': 'unsupported_large_detection_gaps'}
+    ordinal = np.r_[0, np.cumsum(gaps)].astype(float)
+    x = ordinal - ordinal.mean()
+    y = beats.astype(float)
+    # A stable constant grid is a line in (inferred ordinal, original seconds).
+    slope = float(np.dot(x, y - y.mean()) / np.dot(x, x))
+    intercept = float(y.mean() - slope * ordinal.mean())
+    if not math.isfinite(slope) or slope <= 0:
+        return None
+    for _ in range(8):
+        residual = y - (intercept + slope * ordinal)
+        sigma = max(.004, 1.4826 * float(np.median(np.abs(residual - np.median(residual)))))
+        huber = 1.5 * sigma
+        weight = np.minimum(1., huber / np.maximum(np.abs(residual), 1e-12))
+        total = float(weight.sum())
+        if total < 2:
+            break
+        centre_x = float(np.dot(weight, ordinal) / total)
+        centre_y = float(np.dot(weight, y) / total)
+        centred = ordinal - centre_x
+        den = float(np.dot(weight, centred * centred))
+        if den <= 0:
+            break
+        slope = float(np.dot(weight, centred * (y - centre_y)) / den)
+        intercept = centre_y - slope * centre_x
+    if not math.isfinite(slope) or slope <= 0:
+        return None
+    residual = np.abs(y - (intercept + slope * ordinal))
+    p95 = float(np.percentile(residual, 95))
+    median_residual = float(np.median(residual))
+    # A model can have stable early beats and genuinely accelerate later. Such
+    # detections must not be forced into one nominal tempo merely because a
+    # handful of timestamps agree with a robust line.
+    mid = len(ordinal) // 2
+    halves = []
+    for left, right in ((0, mid + 1), (mid, len(ordinal))):
+        bx, by = ordinal[left:right], y[left:right]
+        bx0 = bx - bx.mean()
+        den = float(np.dot(bx0, bx0))
+        halves.append(float(np.dot(bx0, by - by.mean()) / den) if den > 0 else float('nan'))
+    segment_bpms = [60 / value if math.isfinite(value) and value > 0 else None for value in halves]
+    relative_drift = (abs(halves[0] - halves[1]) / slope
+                      if all(math.isfinite(value) for value in halves) else float('inf'))
+    inliers = float(np.mean(residual <= max(.04, .10 * slope)))
+    good = (p95 <= max(.08, .18 * slope) and relative_drift <= .04
+            and inliers >= .80)
+    # Octave alternatives carry exactly the same timestamp evidence at another
+    # ordinal scale. No extra timestamp is an observed detector output.
+    alternatives = [round(float(60 / slope * factor), 5) for factor in (.5, 2.)
+                    if 30 <= (60 / slope * factor) <= 300]
+    return {
+        'status': ('estimated_constant_tempo_grid' if good
+                   else 'nonconstant_or_poorly_fitted_grid_review_required'),
+        'global_fit_bpm': round(60 / slope, 5),
+        'global_fit_median_absolute_residual_seconds': round(median_residual, 6),
+        'global_fit_p95_absolute_residual_seconds': round(p95, 6),
+        'robust_inlier_fraction': round(inliers, 4),
+        'estimated_segment_bpm': [round(bpm, 5) if bpm else None for bpm in segment_bpms],
+        'segment_drift_percent': round(100 * relative_drift, 3),
+        'alternative_half_double_bpm_not_new_observations': alternatives,
+        'inferred_ordinal_gaps_not_observed_beats': int(gaps.sum() - len(intervals)),
+        'observed_timestamp_count': len(beats),
+        'fitted_intervals_count': int(gaps.sum()),
+        'method': ('Huber_IRLS_source_timestamps_with_explicit_gap_hypotheses; '
+                   'original_model_events_preserved'),
+    }
 
 
 def compare_reports(reports: list[dict], *, source_offsets: dict[str,float] | None = None) -> dict:
@@ -560,7 +746,10 @@ def compare_reports(reports: list[dict], *, source_offsets: dict[str,float] | No
                                 "bpm": [x["bpm"],y["bpm"]], "ratio": ratio,
                                 "harmonic_error_percent": round(error,3),
                                 "shared_clock_alignment": "supplied" if both_aligned else "unverified",
-                                "phase_agreement": None}
+                                "phase_agreement": None,
+                                "phase_comparison_status": (
+                                    "same_metrical_level_estimated_grid" if ratio == 1.
+                                    else "harmonic_tempo_levels_not_direct_phase_comparable")}
                     if both_aligned:
                         ga=np.asarray(x["grid_seconds"])+source_offsets[left]
                         gb=np.asarray(y["grid_seconds"])+source_offsets[right]
@@ -573,11 +762,26 @@ def compare_reports(reports: list[dict], *, source_offsets: dict[str,float] | No
                                 relation["phase_agreement"]={
                                     "fraction_within_70ms": round(float(np.mean(nearest[intersect]<=.07)),4),
                                     "median_nearest_grid_error_seconds": round(float(np.median(nearest[intersect])),5),
-                                    "status":"estimated_grids_only_not_ground_truth"}
+                                    "status": ("estimated_grids_only_not_ground_truth" if ratio == 1.
+                                               else "harmonic_grid_overlap_not_metrical_level_confirmation"),
+                                    "metrical_level_ratio": ratio,
+                                    "fraction_reference_grid_used": round(float(np.sum(intersect)) / len(ga),4)}
                     pairs.append(relation)
+    # One detector family applied to multiple stems is still only one family.
+    lineage = {}
+    for report in reports:
+        family_names = set()
+        for hypothesis in report.get("hypotheses", []):
+            family = hypothesis.get("family", "unknown")
+            if family == "pretrained_audio_model":
+                family += ":" + hypothesis.get("detector", "unknown")
+            family_names.add(family)
+        lineage[report["input"]["name"]] = sorted(family_names)
     return {"format":"stemlab.rhythm-comparison.v1", "schema_version":1,
             "source_reports":reports,"offsets_confirmed_by_user":source_offsets,
             "cross_source_comparisons":pairs,
+            "independent_detector_family_lineage":lineage,
+            "confidence_calibration_status":"not_calibrated_no_heldout_annotations",
             "result_status":"review_required_not_canonical_consensus"}
 
 
@@ -618,6 +822,7 @@ def read_saved_beat_result(path: Path | str, name: str) -> dict:
     else:
         metrical_disagreement = False
     bpm = saved_bpm or tempo
+    global_fit=_saved_beat_grid_fit(beats)
     meta = data.get("metadata")
     if not isinstance(meta, dict):
         raise ValueError("Saved BeatResult metadata must be an object")
@@ -638,7 +843,15 @@ def read_saved_beat_result(path: Path | str, name: str) -> dict:
             "beats_are_observed": False, "beats_are_model_estimates": True,
             "tempo_status": "estimated", "phase_status":"estimated",
             "model_tempo_differs_from_intervals":metrical_disagreement,
-            "model_interval_bpm":round(tempo,4) if tempo else None}]
+            "model_interval_bpm":round(tempo,4) if tempo else None,
+            "original_saved_model_bpm":saved_bpm,
+            "source_grid_fit_diagnostics":global_fit,
+            "saved_bpm_differs_from_global_fit_percent":(
+                round(100*(saved_bpm/global_fit['global_fit_bpm']-1),3)
+                if saved_bpm and global_fit and global_fit.get('global_fit_bpm') else None),
+            "median_interval_quantisation_bias_possible":bool(
+                tempo and global_fit and global_fit.get('status')=='estimated_constant_tempo_grid'
+                and abs(tempo/global_fit['global_fit_bpm']-1) > .01)}]
     return {"format":FORMAT,"schema_version":1,"input":{
             "name":name,"kind":"saved_model_result","sha256":digest,
             "clock_basis":"original_audio_source_seconds_claimed_by_model",

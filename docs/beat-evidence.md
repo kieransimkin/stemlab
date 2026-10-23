@@ -73,6 +73,74 @@ with 4-second hop. Local results reveal possible ramps/drift without coercing
 an irregular source into a confirmed fixed BPM. Beats-per-accent-cycle proposals
 (3, 4, 5, 6, 7) are *not* time signatures and must not be called downbeats.
 
+
+## Octave-aware BPM, source-wide counting and robust model fits
+
+`tempo_families` groups BPM values that are related by a power of two but
+retains every method and source-feature identity. A 72.5/145 BPM pairing is an
+**unresolved metrical level**, not two votes against the same actual tempo.
+`tempo_family_status` explicitly reports a family conflict or half/double
+ambiguity. Scores from ACF, PLP, comb and DP have different scales and remain
+uncalibrated; correlated features and algorithms never become extra votes.
+
+The DP onset path now maximizes whole-path evidence, requires minimum coverage
+of the **original source time span**, and publishes the estimated full-source
+beat count separately from matched observed onset candidates and missing
+ordinal positions. Short perfect fragments cannot masquerade as full-song
+beat detection. Model-result import preserves every detector event and derives
+a robust Huber-regression grid: it reports original timestamp count, an
+explicit missing-ordinal *hypothesis*, median/p95 phase residual, first/second
+half tempo drift, and ambiguous half/double alternatives. An irregular grid
+remains `nonconstant_or_poorly_fitted_grid_review_required`.
+
+`local_tempo_warnings` explicitly distinguish a likely octave metrical switch
+from a non-harmonic local disagreement. Neither is itself verified tempo
+modulation; bar meter and first downbeat remain unknown without annotations.
+Cross-source comparisons report an independent detector lineage and mark
+estimated phase overlap at different metrical levels as **conditional**, even
+when both inputs have user-supplied clock offsets.
+
+## Reviewed annotations and held-out score calibration
+
+`compare-beats` accepts optional `--annotation NAME=FILE` for a track with a
+matching exact SHA-256. The annotation JSON must have `format` set to
+`stemlab.beat-annotation.v1`, `schema_version: 1`, `clock: source_seconds`,
+`status: human_reviewed`, `annotator`, `source_sha256`, `beats` and optionally
+`downbeats`. It must contain at least five distinct ordered beat timestamps.
+A BPM label without beat timestamps is **not** an acceptable annotation.
+
+```sh
+stemlab compare-beats --input audio:master=master.wav \
+  --annotation master=reviewed-beats.json --output comparison-with-metrics.json
+```
+
+The evaluation reports one-to-one beat-timing precision/recall/F-measure,
+median timing residual and continuous-match length **conditional on that
+annotation**, not inherent confidence. The `calibrate_held_out` Python API
+fits monotonic score/reliability tables only from separately annotated train
+tracks and evaluates them on independent held-out tracks. It rejects overlapping
+track identities, requires at least 8 training and 4 held-out examples per
+method by default, and reports a held-out Brier score. Without such an
+annotated corpus, `calibrated_confidence_status` is explicitly unavailable.
+
+## Real-song repeatable benchmark
+
+From a local source checkout containing the hash-pinned MP3s:
+
+```sh
+python scripts/benchmark_example_beats.py --repo-root . \
+  --output-dir .cache/beat-benchmark-v2 --min-bpm 60 --max-bpm 200
+```
+
+This does full-song feature extraction without re-running neural checkpoints.
+It checks source hashes for **Arcadians** (145 BPM reference metadata),
+**The Truth is a Virus** (unconfirmed BPM, with frozen saved neural events),
+and, when present, **Star Lights Glow (Mystery Liquid Kick)** (unconfirmed BPM
+and distinct source identity from its Anthem mix). All outputs go to a new
+local directory. Song BPM reference metadata does not establish annotated
+individual beat times or downbeat phase. Real-song accuracy requires reviewed
+beat-level annotation and external listening/visual inspection.
+
 ## Modality-specific observations and clocks
 
 | Kind | Input | Evidence and caution |
