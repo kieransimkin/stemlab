@@ -81,7 +81,8 @@ def test_local_tempo_windows_keep_variations_separate():
     fps=80
     t=np.arange(0,30,1/fps)
     y=np.zeros(len(t))
-    beats=[.2]; location=.2
+    beats = [.2]
+    location = .2
     while location<29.9:
         bpm=100+55*location/30
         location+=60/bpm
@@ -104,7 +105,8 @@ def test_recording_input_ranks_per_axis_motion_without_confusing_declared_bpm(tm
           'clock':{'bpm':bpm,'bpm_source':'synthetic nominal','bpm_status':'estimated',
                    'phase_status':'unverified','start_pip':0,'beat_zero_seconds':0},
           'samples':rows.tolist()}
-    path=tmp_path/'recording.json';path.write_text(json.dumps(data))
+    path = tmp_path / 'recording.json'
+    path.write_text(json.dumps(data))
     source=read_source(path,'recording','dance')
     assert source.clock_basis=='nominal_recording_clock_not_independent_tempo'
     assert source.metadata['declared_bpm_status']=='estimated'
@@ -121,7 +123,8 @@ def test_audio_features_independently_identify_kick_transients(tmp_path):
         first=int(beat*sr)
         pulse=np.arange(min(int(.08*sr),len(y)-first))/sr
         y[first:first+len(pulse)]+=.65*np.sin(2*np.pi*(90*pulse))*np.exp(-80*pulse)
-    path=tmp_path/'kick.wav';sf.write(path,y,sr)
+    path = tmp_path / 'kick.wav'
+    sf.write(path, y, sr)
     source=read_source(path,'audio','song')
     assert source.kind=='audio'
     assert len(source.features)==4
@@ -143,7 +146,8 @@ def test_capture_quaternion_and_kinetic_pause_features(tmp_path):
           'type_uri':profile['type_uri'],'profile_sha256':digest,'profile':profile,
           'frame_times_seconds':t.tolist(),'frames':(.7*np.sin(2*np.pi*t)).reshape(-1,1).tolist(),
           'provenance':{'synthetic':True}}
-    path=tmp_path/'capture.json';path.write_text(json.dumps(data))
+    path = tmp_path / 'capture.json'
+    path.write_text(json.dumps(data))
     source=read_source(path,'capture','leftfoot')
     assert source.kind=='rig_capture'
     assert 'kinetic_velocity_minima' in source.features
@@ -156,7 +160,8 @@ def test_saved_model_input_retains_downbeats_and_provenance(tmp_path):
     beats=np.arange(.2,8,.5).tolist()
     data={'model':'beat_this','beats':beats,'downbeats':beats[::4],
           'tempo_bpm':120.,'metadata':{'source':{'sha256':'a'*64},'detector':'beat_this'}}
-    path=tmp_path/'model.json';path.write_text(json.dumps(data))
+    path = tmp_path / 'model.json'
+    path.write_text(json.dumps(data))
     result=read_saved_beat_result(path,'beatthis_model')
     hyp=result['hypotheses'][0]
     assert hyp['bpm']==120

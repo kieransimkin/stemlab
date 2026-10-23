@@ -82,7 +82,8 @@ def beat_f_measure(predicted: list[float], reference: list[float], *, tolerance:
             errors.append(abs(float(delta)))
             consecutive += 1
             longest = max(longest, consecutive)
-            i += 1; j += 1
+            i += 1
+            j += 1
         elif delta < 0:
             consecutive = 0
             i += 1

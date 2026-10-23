@@ -7,8 +7,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(ROOT / 'scripts'))
-from verify_star_lights_reference import EXAMPLE, verify
-from stemlab.canonical import load_canonical
+from verify_star_lights_reference import EXAMPLE, verify  # noqa: E402
+from stemlab.canonical import load_canonical  # noqa: E402
 
 
 class StarLightsReferenceTests(unittest.TestCase):

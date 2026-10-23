@@ -424,7 +424,10 @@ def _dp_beat_events(t: np.ndarray, y: np.ndarray, bpm: float):
                 continue
             candidate=scores[j]+reward[i]-1.5*abs(ratio-multiple)-.14*(multiple-1)
             if candidate>scores[i]:
-                scores[i]=candidate; parents[i]=j; length[i]=length[j]+1; hops[i]=multiple
+                scores[i] = candidate
+                parents[i] = j
+                length[i] = length[j] + 1
+                hops[i] = multiple
     valid=np.where(length>=5)[0]
     if not len(valid):
         return [], [], 0.
@@ -456,7 +459,9 @@ def _local_tempos(t: np.ndarray, y: np.ndarray, min_bpm: float, max_bpm: float):
     if t[-1]-t[0]<12:
         return []
     windows=[]
-    begin=float(t[0]); final=float(t[-1]); width=8.
+    begin = float(t[0])
+    final = float(t[-1])
+    width = 8.
     while begin+width<=final and len(windows)<230:
         segment=y[(t>=begin)&(t<begin+width)]
         if len(segment)>=FPS*7:
