@@ -255,6 +255,41 @@ def _autocorrelation(y: np.ndarray, min_bpm: float, max_bpm: float):
     return np.arange(low, high+1), ac[low:high+1], ac
 
 
+def _refined_period_lag(lags: np.ndarray, scores: np.ndarray, index: int,
+                        min_bpm: float, max_bpm: float) -> tuple[float, dict]:
+    """Refine an integer ACF/comb peak without inventing extra onset evidence.
+
+    A 100 Hz time grid gives 142.86 BPM at lag 42 even when the actual period
+    is 41.38 frames (145 BPM). Three-point parabolic interpolation estimates
+    the local maximum between bins. It is capped to half a frame; flat peaks,
+    edge maxima and out-of-range estimates keep the original integer bin.
+
+    This improves numerical resolution, *not* statistical confidence or the
+    choice between half-time and double-time metrical interpretations.
+    """
+    coarse = int(lags[index])
+    refined = float(coarse)
+    status = 'integer_bin_no_stable_interior_peak'
+    if 0 < index < len(scores) - 1:
+        left, centre, right = (float(scores[index + offset]) for offset in (-1, 0, 1))
+        curvature = left - 2 * centre + right
+        if (all(math.isfinite(v) for v in (left, centre, right))
+                and centre >= max(left, right) and curvature < -1e-10):
+            fractional = float(np.clip(.5 * (left - right) / curvature, -.5, .5))
+            proposal = coarse + fractional
+            if FPS * 60 / max_bpm <= proposal <= FPS * 60 / min_bpm:
+                refined = proposal
+                status = 'bounded_three_bin_parabolic_peak'
+    return refined, {
+        'status': status,
+        'coarse_integer_lag_frames': coarse,
+        'refined_lag_frames': round(refined, 5),
+        'coarse_integer_bin_bpm': round(60 * FPS / coarse, 5),
+        'fps_of_feature_trace': FPS,
+        'metrical_level_ambiguity_unchanged': True,
+    }
+
+
 def _interval_evidence(y: np.ndarray, min_bpm: float, max_bpm: float):
     min_spacing = max(3, math.floor(FPS*.115))
     peaks, props = sp_signal.find_peaks(y, distance=min_spacing,
@@ -354,13 +389,16 @@ def _classical_hypotheses(t: np.ndarray, y: np.ndarray, key: str,
     if not len(lags):
         return []
     choices = []
-    def add(method, bpm, confidence):
+    def add(method, bpm, confidence, lag_diagnostics=None):
         h = _candidate(t, y, method=method, bpm=bpm, strength=confidence, parent=key)
         if h:
+            if lag_diagnostics is not None:
+                h['lag_refinement'] = lag_diagnostics
             choices.append(h)
     i = int(np.argmax(auto))
     if auto[i] >= .1:
-        add("unbiased_autocorrelation", 60*FPS/int(lags[i]), float(auto[i]))
+        lag, diagnostic = _refined_period_lag(lags, auto, i, min_bpm, max_bpm)
+        add("unbiased_autocorrelation", 60 * FPS / lag, float(auto[i]), diagnostic)
     # Comb filter sums evidence at 1, 2 and 3 periods; it can prefer a
     # different metrical level from the first autocorrelation peak.
     comb = auto.copy()
@@ -370,7 +408,8 @@ def _classical_hypotheses(t: np.ndarray, y: np.ndarray, key: str,
         comb[valid] += weight * full_ac[indices[valid]]
     j = int(np.argmax(comb))
     if comb[j] >= .15:
-        add("multi_tap_comb", 60*FPS/int(lags[j]), float(comb[j]/1.8))
+        lag, diagnostic = _refined_period_lag(lags, comb, j, min_bpm, max_bpm)
+        add("multi_tap_comb", 60 * FPS / lag, float(comb[j]/1.8), diagnostic)
     intervals = _interval_evidence(y, min_bpm, max_bpm)
     if intervals is not None:
         tempo, support, peaks = intervals
@@ -468,9 +507,12 @@ def _local_tempos(t: np.ndarray, y: np.ndarray, min_bpm: float, max_bpm: float):
             lags, ac, _=_autocorrelation(segment,min_bpm,max_bpm)
             if len(lags) and float(np.max(ac))>=.16:
                 j=int(np.argmax(ac))
+                lag, diagnostic = _refined_period_lag(lags, ac, j, min_bpm, max_bpm)
                 windows.append({"from_seconds":round(begin,3),
                                 "to_seconds":round(begin+width,3),
-                                "bpm":round(float(60*FPS/lags[j]),3),
+                                "bpm":round(float(60*FPS/lag),3),
+                                "integer_bin_bpm":diagnostic['coarse_integer_bin_bpm'],
+                                "lag_refinement_status":diagnostic['status'],
                                 "periodicity_uncalibrated":round(float(ac[j]),4),
                                 "status":"local_tempo_hypothesis"})
         begin+=4.
@@ -510,6 +552,19 @@ def analyze_input(source: RhythmInput, *, min_bpm: float = 60, max_bpm: float = 
                     h["path_span_fraction_of_source"]=round((events[-1]-events[0])/
                                                              max(1e-9,t[-1]-t[0]),4)
                     h["source_grid_expected_count_estimate"]=len(h["grid_seconds"])
+                    h['beat_count_diagnostics'] = {
+                        'predicted_full_source_grid_slots': len(h['grid_seconds']),
+                        'observed_onset_candidates_in_path': len(events),
+                        'estimated_ordinal_slots_between_first_and_last_onsets': ordinals[-1] + 1,
+                        'inferred_unobserved_intermediate_slots': ordinals[-1] + 1 - len(events),
+                        'predicted_slots_before_first_observation': max(
+                            0, int(round((events[0] - t[0]) * h['bpm'] / 60))),
+                        'predicted_slots_after_last_observation': max(
+                            0, int(round((t[-1] - events[-1]) * h['bpm'] / 60))),
+                        'source_coverage_fraction': h['path_span_fraction_of_source'],
+                        'observed_onset_candidates_are_not_confirmed_music_beats': True,
+                        'missing_slot_counts_are_inferred_not_observed': True,
+                    }
                     h["description"]=("Observed onset candidates on a globally supported path; "
                                       "missing beats are not inserted. Score reflects full source coverage.")
                     group.append(h)
@@ -569,6 +624,14 @@ def _tempo_family_summary(hypotheses: list[dict]) -> tuple[list[dict],str]:
     families=[]
     for h in ordered:
         member={'detector':h['detector'],'feature':h['feature'],'bpm':h['bpm']}
+        # Only selected source-observed onset peaks can support an empirical
+        # path-coverage diagnostic. Correlation, comb and PLP share derived
+        # features and must not be counted as additional independent evidence.
+        if h['detector'] == 'dynamic_programming_onsets':
+            coverage = h.get('observed_candidate_fraction_of_source_grid')
+            if isinstance(coverage, (int, float)) and not isinstance(coverage, bool):
+                if math.isfinite(coverage) and 0 <= coverage <= 1:
+                    member['observed_onset_path_coverage_fraction'] = round(float(coverage), 4)
         family=next((f for f in families
                      if _octave_relationship(f['_base'],h['bpm']) is not None),None)
         if family is None:
@@ -586,10 +649,22 @@ def _tempo_family_summary(hypotheses: list[dict]) -> tuple[list[dict],str]:
             else:
                 bucket.append(h['bpm'])
         levels=sorted(round(float(np.median(x)),3) for x in distinct)
+        observed_paths = {}
+        for member in family['members']:
+            coverage = member.get('observed_onset_path_coverage_fraction')
+            if coverage is not None:
+                feature = member['feature']
+                observed_paths[feature] = max(observed_paths.get(feature, 0.), coverage)
         result.append({'tempo_levels_bpm':levels,
                        'method_names':sorted({m['detector'] for m in family['members']}),
                        'feature_names':sorted({m['feature'] for m in family['members']}),
                        'members':family['members'],
+                       'observed_path_coverage_by_feature':observed_paths,
+                       'best_full_source_observed_path_coverage':(
+                           round(max(observed_paths.values()), 4) if observed_paths else None),
+                       'features_with_80pct_path_coverage':sorted(
+                           k for k, v in observed_paths.items() if v >= .8),
+                       'coverage_is_not_confidence_or_musical_ground_truth':True,
                        'octave_level_ambiguity':len(levels)>1,
                        'status':'not_a_consensus_or_confirmed_music_tempo'})
     if not result:

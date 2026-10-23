@@ -59,6 +59,8 @@ def _summary(report: dict, *, reference_bpm: float | None,
                            if abs(ratio/factor-1)<.06),None)
         entries.append({'decoder':hypothesis['detector'], 'feature':hypothesis['feature'],
                         'bpm':bpm, 'reference_error_percent':delta,
+                        'lag_refinement':hypothesis.get('lag_refinement'),
+                        'beat_count_diagnostics':hypothesis.get('beat_count_diagnostics'),
                         'octave_relationship_to_reference':octave,
                         'predicted_grid_beat_count':hypothesis['beat_count_grid'],
                         'source_covered_observed_onsets':hypothesis.get('beat_count_observed_candidates'),
