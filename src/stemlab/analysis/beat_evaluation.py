@@ -70,7 +70,7 @@ def beat_f_measure(predicted: list[float], reference: list[float], *, tolerance:
     an artist-confirmed tempo or a genuine downbeat was inferred independently.
     """
     a, b = _times(predicted, name='Predictions'), _times(reference, name='Reference')
-    if not type(tolerance) in (int, float) or not math.isfinite(tolerance) or not 0 < tolerance <= .2:
+    if type(tolerance) not in (int, float) or not math.isfinite(tolerance) or not 0 < tolerance <= .2:
         raise ValueError('Tolerance must be finite and in (0, 0.2] seconds')
     i = j = matched = 0
     errors = []
