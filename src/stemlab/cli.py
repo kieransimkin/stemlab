@@ -452,6 +452,24 @@ def list_models():
     console.print(table)
 
 
+@app.command("fuse-lyrics")
+def fuse_lyrics(
+    request: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="Source-bound lyric fusion request JSON")],
+    output: Annotated[Path, typer.Option("--output", "-o", help="New review bundle directory")],
+):
+    """Combine corroborated lyric observations and compatible gap fills; keep conflicts visible."""
+    from .lyric_fusion import export_request
+    try:
+        result = export_request(request, output)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    summary = result["summary"]
+    console.print(f"Provisional lyric fusion: {summary['timed_tokens']}/{summary['canonical_tokens']} "
+                  f"timed tokens; {summary['gap_fills']} gap fills; "
+                  f"{summary['conflicted_tokens']} timing disagreements. Listening QA pending.")
+    console.print(str(output.resolve() / "combined-timeline.json"))
+
+
 @app.command("analysis-actions")
 def list_analysis_actions():
     """Show every high-level analysis route, dependency and default status."""
