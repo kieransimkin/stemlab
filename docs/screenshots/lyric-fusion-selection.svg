@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="322" role="img" aria-label="Actual lyric fusion source selections">
+<rect width="100%" height="100%" fill="#101724"/>
+<text x="20" y="28" fill="white" font-family="monospace" font-size="16">Observed lyric intervals · source selections · provisional</text>
+<text x="20" y="68" fill="white" font-family="monospace" font-size="12">0: Signals</text>
+<rect x="269.286" y="55" width="11.786" height="16" fill="#137c8b"/>
+<text x="790" y="68" fill="#ddd" font-family="monospace" font-size="11">view-a</text>
+<text x="20" y="90" fill="white" font-family="monospace" font-size="12">1: cross</text>
+<rect x="308.571" y="77" width="11.786" height="16" fill="#137c8b"/>
+<text x="790" y="90" fill="#ddd" font-family="monospace" font-size="11">view-a</text>
+<text x="20" y="112" fill="white" font-family="monospace" font-size="12">2: the</text>
+<rect x="347.857" y="99" width="11.786" height="16" fill="#a65e00"/>
+<text x="790" y="112" fill="#ddd" font-family="monospace" font-size="11">view-b</text>
+<text x="20" y="134" fill="white" font-family="monospace" font-size="12">3: quiet</text>
+<rect x="387.143" y="121" width="11.786" height="16" fill="#137c8b"/>
+<text x="790" y="134" fill="#ddd" font-family="monospace" font-size="11">view-a</text>
+<text x="20" y="156" fill="white" font-family="monospace" font-size="12">4: night</text>
+<rect x="426.429" y="143" width="11.786" height="16" fill="#137c8b"/>
+<text x="790" y="156" fill="#ddd" font-family="monospace" font-size="11">view-a</text>
+<text x="20" y="178" fill="white" font-family="monospace" font-size="12">5: Voices</text>
+<rect x="465.714" y="165" width="11.786" height="16" fill="#137c8b"/>
+<text x="790" y="178" fill="#ddd" font-family="monospace" font-size="11">view-a</text>
+<text x="20" y="200" fill="white" font-family="monospace" font-size="12">6: find</text>
+<rect x="505.000" y="187" width="11.786" height="16" fill="#137c8b"/>
+<text x="790" y="200" fill="#ddd" font-family="monospace" font-size="11">view-a</text>
+<text x="20" y="222" fill="white" font-family="monospace" font-size="12">7: a</text>
+<rect x="544.286" y="209" width="11.786" height="16" fill="#137c8b"/>
+<text x="790" y="222" fill="#ddd" font-family="monospace" font-size="11">view-a</text>
+<text x="20" y="244" fill="white" font-family="monospace" font-size="12">8: clear</text>
+<rect x="583.571" y="231" width="11.786" height="16" fill="#a65e00"/>
+<text x="790" y="244" fill="#ddd" font-family="monospace" font-size="11">view-b</text>
+<text x="20" y="266" fill="white" font-family="monospace" font-size="12">9: way</text>
+<rect x="622.857" y="253" width="11.786" height="16" fill="#a65e00"/>
+<text x="790" y="266" fill="#ddd" font-family="monospace" font-size="11">view-b</text>
+<text x="20" y="288" fill="white" font-family="monospace" font-size="12">10: home</text>
+<text x="790" y="288" fill="#ddd" font-family="monospace" font-size="11">UNTIMED</text>
+</svg>

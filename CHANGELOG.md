@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Combine complementary source-bound canonical lyric observations with the native
+  `fuse-lyrics` CLI/Python workflow. Preserve artist locks, original intervals,
+  correlated-view grouping, all alternatives, conflicts, gaps and draft status.
+- Export provisional LRC/SRT, observed words, full provenance and a source-selection
+  diagram without inference, audio copying, beat snapping or timing publication.
+
 ## 1.11.0 - 2026-10-21
 
 - Synchronize React Timeline Sequence 0.8.0 and its verified registry identity.
