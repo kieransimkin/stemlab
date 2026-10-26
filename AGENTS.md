@@ -1,9 +1,18 @@
 # Agent instructions for StemLab
 
+- For complementary lyric results, use `stemlab fuse-lyrics` and
+  [docs/lyric-fusion.md](docs/lyric-fusion.md). Verify exact source/text/clock,
+  group correlated runs by view, preserve explicit artist locks and alternatives,
+  and keep gaps/conflicts and pending listening visible. Never average, interpolate,
+  snap observations to beats or promote text coverage to timing certainty.
+
 - Read README.md, docs/, plugins/stemlab/skills/ and the CLI help before selecting an analysis route. Check analysis, timing, evidence, MIDI, loop and agent integrations.
 - Use the relevant existing capabilities as fully as the task warrants. Always look for a useful improvement to this tool. Fix a reusable gap here rather than copying its engine or carrying a private workaround; record why no change is justified when that is the result.
 - Submit improvements as PRs to https://github.com/kieransimkin/stemlab/pulls. Never leave a completed reusable improvement only in a local fork. Keep changes focused and preserve the tool's identity and compatibility contracts.
 - Add relevant regression coverage, documentation and a reproducible example when behaviour changes. Run the applicable pytest suites and release/plugin identity checks described in .github/workflows/ci.yml and .github/workflows/release.yml.
+- The canonical pytest suite is `tests/`, selected by `pyproject.toml`. Retained
+  resource copies are not a second suite; identical test basenames there must
+  not break collection or replace the maintained regression in `tests/`.
 - Keep credentials, account data, private media and rights records out of source, fixtures, logs and packages. Use synthetic fixtures or explicitly authorised public examples and preserve their provenance/licences.
 - Use [CONTRIBUTING.md](CONTRIBUTING.md) for review. Maintainers publish accepted, validated improvements as a fresh matching GitHub release and verify configured registry destinations. Preserve existing tags and release assets; publication and deployment remain subject to applicable authorisation.
 - Website: https://kieransimkin.co.uk/danceflow/

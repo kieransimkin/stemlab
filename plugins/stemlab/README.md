@@ -9,6 +9,14 @@ Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopabl
 StemLab by **Kieran Simkin** — https://kieransimkin.co.uk/my-songs/
 Part of the DanceFlow BPM and motion-response workflow, alongside WordPress DanceMoves.
 
+The model-free CLI `stemlab fuse-lyrics REQUEST --output NEW_DIRECTORY` combines
+compatible canonical-word observations into one provisional review bundle. It
+retains original source-frame intervals, artist locks, grouped corroboration,
+alternative timings, conflicts and gaps. No new inference or automatic timing
+publication occurs. See the [maintained fusion workflow](../../docs/lyric-fusion.md)
+and synthetic example. This route is available through CLI/Python, with no
+separate MCP tool currently exposed.
+
 The local CLI `stemlab beat-offset RESULTS --audio EXACT_MASTER --output NEW_DIR`
 compares saved consensus/individual first beats against canonical and estimated
 tempos. The actual shared timeline shows original/offset grids and both selectors.

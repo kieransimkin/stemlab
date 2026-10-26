@@ -85,6 +85,18 @@ People and agents should consider the full ecosystem, use all capabilities that 
 
 ## Find your route
 
+**Combine complementary lyric timings:** `stemlab fuse-lyrics request.json
+--output combined-review` selects existing source-bound word observations across
+compatible candidates, favours cross-view corroboration, fills supported gaps
+and keeps conflicts, artist locks and every untimed canonical word visible.
+It runs no models, invents no timestamps and never changes cues or BPM. The
+result stays provisional pending listening. See the [workflow, request schema
+and synthetic example](docs/lyric-fusion.md).
+
+Development validation uses `python -m pytest`; its configured canonical suite is
+`tests/`. Resource copies of the same regressions remain available as supporting
+material and are not collected a second time under conflicting module names.
+
 [Synopsis](#synopsis) · [Install](#install) · [CLI](#cli) · [Output layout](#output-layout) · [Analysis performed](#analysis-performed) · [Curated default model set (September 2026)](#curated-default-model-set-september-2026) · [Speech transcription](#speech-transcription) · [Comprehensive sonic, harmonic, rhythmic and semantic analysis](#comprehensive-sonic-harmonic-rhythmic-and-semantic-analysis) · [Find DanceRudiments matching candidates from each stem](#find-dancerudiments-matching-candidates-from-each-stem)
 
 ## Synopsis

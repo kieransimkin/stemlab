@@ -5,6 +5,16 @@ description: Use StemLab for audio timing analysis and loopable sections for Sho
 
 # StemLab / DanceFlow
 
+For complementary canonical lyric analyses, use the native CLI
+`stemlab fuse-lyrics REQUEST --output NEW_DIRECTORY` or Python
+`stemlab.lyric_fusion.combine`. Verify the exact master, text and unchanged source
+clock, group correlated runs with `view_id`, and preserve explicit artist word
+locks. The chronological selector retains actual intervals, provenance,
+alternatives, conflicts and missing words. It never averages, interpolates or
+beat-snaps. Keep the result draft until listening QA; do not change canonical
+timing attachments. The [maintained guide and synthetic example](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-fusion.md)
+document the input/output contracts. No MCP tool exposes this command yet.
+
 Use **Audition lyrics** in live or rebuilt static timelines to review line timing
 over the cover while the chosen full-duration master/stem plays. The complete
 edited track drives subtitles independently of viewport and editor visibility.
