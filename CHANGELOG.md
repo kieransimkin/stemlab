@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Collect the canonical `tests/` suite once; a byte-identical retained resource
+  test no longer aborts collection through a duplicate Python module name.
+
 - Combine complementary source-bound canonical lyric observations with the native
   `fuse-lyrics` CLI/Python workflow. Preserve artist locks, original intervals,
   correlated-view grouping, all alternatives, conflicts, gaps and draft status.

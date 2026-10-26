@@ -142,6 +142,7 @@ select = ["E4", "E7", "E9", "F"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
+testpaths = ["tests"]
 pythonpath = ["src"]
 
 [tool.setuptools.data-files]
