@@ -8,7 +8,8 @@ from typer.testing import CliRunner
 from stemlab.analysis.loops import analyze_loops
 from stemlab.analysis.phrase_loops import (
     PhraseLoopConfig, analyze_existing_phrase_loops, analyze_phrase_loops,
-    _beat_aligned_bounds, _complete_beat_aligned_bounds, musical_restart_context,
+    _beat_aligned_bounds, _boundary_lyric_repeat, _complete_beat_aligned_bounds,
+    musical_restart_context,
 )
 from stemlab.analysis.rudiment_matches import extract_peak_events
 from stemlab.cli import app
@@ -63,6 +64,7 @@ def test_line_occurrences_native_export_and_diversity(tmp_path):
         assert candidate['status'] == 'requires_listening_or_edit'
         assert 'vocal_boundary' in candidate['failed_gates']
         assert 'attended_listening_unavailable' in candidate['failed_gates']
+        assert 'boundary_lyric_repeat' in candidate
         assert candidate['crossfade_ms'] == 0
         audio,sr=sf.read(tmp_path/'phrases'/candidate['file'],dtype='float32',always_2d=True)
         np.testing.assert_array_equal(audio,y[candidate['start_sample']:candidate['end_sample']])
@@ -173,6 +175,21 @@ def test_feedback_exact_hash_bad_region_repeats_and_new_matches(tmp_path):
         analyze_phrase_loops(master,tmp_path/'bad',canonical=canonical,
             beat_results=[beat],stems=stems,feedback=feedback)
     assert not (tmp_path/'bad/phrase_loops.json').exists()
+
+
+def test_exact_repeated_boundary_lyric_is_an_explicit_restart_risk():
+    lines = [
+        {'text': "How you callin' me long-distance"},
+        {'text': "I'm P-B-X-in'"},
+        {'text': "How you callin' me long distance"},
+    ]
+    result = _boundary_lyric_repeat(lines, [0, 1, 2])
+    assert result['available'] is True
+    assert result['exact_text_match'] is True
+    assert result['first_occurrence_index'] == 0
+    assert result['last_occurrence_index'] == 2
+    assert result['normalized_tokens'] == ['how', 'you', 'callin', 'me', 'long', 'distance']
+    assert _boundary_lyric_repeat(lines, [0, 1])['available'] is False
 
 
 def test_rated_near_duplicates_are_not_resuggested(tmp_path):

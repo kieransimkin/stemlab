@@ -116,6 +116,12 @@ failed vocal/waveform gates where applicable.
 Line completeness, same-phase context and high chroma similarity cannot prove
 a satisfying musical cadence, clear consonants, correct narrative closure or
 listener preference. Edge cuts lacking recorded context are not scored.
+When the first and last audible lyric occurrences are exact normalized-text
+repeats, the candidate records `boundary_lyric_repeat`, adds the
+`duplicated_boundary_lyric` listening gate and receives a ranking penalty. This
+prevents a repeated restart marker from silently looking like ordinary new
+content. It does not authorise an inward cut through the repeated line or the
+preceding vocal tail; present exact bar-length alternatives for artist review.
 One song's ratings do not establish general accuracy; synthetic held-out
 contexts test the mechanism and real suggestions still require listening.
 

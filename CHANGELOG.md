@@ -14,6 +14,10 @@
   timed lyric, preventing a technically beat-locked candidate from cutting that
   overlapping vocal line. Reject candidates that cannot converge inside the
   duration and evidence limits.
+- Detect an exact normalized lyric repeated at both audible boundaries, expose
+  it as `boundary_lyric_repeat`, add a `duplicated_boundary_lyric` listening
+  gate and demote it in phrase ranking. The diagnostic never cuts a timed lyric;
+  exact shorter bar alternatives remain an artist-review decision.
 
 ## 1.11.1 - 2026-11-02
 

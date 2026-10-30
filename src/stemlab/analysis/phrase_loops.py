@@ -75,6 +75,34 @@ def _iou(a: int, b: int, c: int, d: int) -> float:
     return overlap / (max(b, d) - min(a, c))
 
 
+def _boundary_lyric_repeat(lines: list[dict], indices: list[int]) -> dict:
+    """Expose an exact repeated lyric at both audible boundaries.
+
+    This is a restart-risk signal, not an instruction to cut through either
+    timed occurrence. Artist feedback still decides whether the trailing copy
+    is content or the next cycle's pickup.
+    """
+    if len(indices) < 2:
+        return {"available": False, "reason": "Fewer than two audible lyric occurrences"}
+    first_index, last_index = indices[0], indices[-1]
+    first_tokens = tuple(re.findall(r"\w+", lines[first_index]["text"].casefold()))
+    last_tokens = tuple(re.findall(r"\w+", lines[last_index]["text"].casefold()))
+    if not first_tokens or first_tokens != last_tokens:
+        return {"available": False, "reason": "Boundary lyrics are not exact text repeats"}
+    return {
+        "available": True,
+        "exact_text_match": True,
+        "first_occurrence_index": first_index,
+        "last_occurrence_index": last_index,
+        "text": lines[first_index]["text"],
+        "normalized_tokens": list(first_tokens),
+        "interpretation": (
+            "The same lyric appears at both audible boundaries; this may duplicate "
+            "the restart marker or add bars, but never authorises an inward lyric cut"
+        ),
+    }
+
+
 def _feedback(feedback: dict | None, source_hash: str, frames: int,
               lines: list[dict], sr: int) -> tuple[list[dict], list[tuple[int, int]]]:
     if feedback is None:
@@ -385,11 +413,16 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
             if not included_indices:
                 rejected["missing_aligned_lyrics"] += 1
                 continue
+            boundary_repeat = _boundary_lyric_repeat(lines, included_indices)
+            if boundary_repeat["available"]:
+                failed.append("duplicated_boundary_lyric")
+                cost += .25
             pool.append(dict(start_sample=a,end_sample=b,duration_samples=b-a,
                 start_seconds=a/sr,end_seconds=b/sr,duration_seconds=duration,
                 included_lyrics=[lines[index] for index in included_indices],
                 canonical_line_indices=[included_indices[0],included_indices[-1]],
                 requested_canonical_line_indices=[i,j],
+                boundary_lyric_repeat=boundary_repeat,
                 lyric_target_bounds=dict(start_seconds=first["start"],end_seconds=last["end"]),
                 boundary_alignment=alignment,restart_context=context,phase=phase,
                 detected_bar_phase=bar_phase,join=join,

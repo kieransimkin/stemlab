@@ -703,6 +703,9 @@ sample indexing, thresholds, limitations and reproducible screenshot examples.
 
 For line-complete alternatives when a musically satisfying restart is the goal,
 use `stemlab phrase-loops analysis-master --feedback artist-ratings.json --export-audio`.
+Candidates whose first and last audible lyric occurrences repeat exactly are
+flagged and demoted as possible duplicated restart markers; StemLab does not
+silently cut either occurrence to shorten the loop.
 By default it encloses the requested canonical lines on actual detected beats at
 the same measured bar phase: the start moves backward, the end moves forward,
 and any neighbouring timed lyric touched by that expansion is recursively
