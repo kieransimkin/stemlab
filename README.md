@@ -703,13 +703,30 @@ sample indexing, thresholds, limitations and reproducible screenshot examples.
 
 For line-complete alternatives when a musically satisfying restart is the goal,
 use `stemlab phrase-loops analysis-master --feedback artist-ratings.json --export-audio`.
-This opt-in search compares the musical context around both cuts, preserves
-canonical lyric occurrences, uses explicit artist feedback and selects diverse
-passages. Suggestions remain separate from strict accepted loops. See
+By default it encloses the requested canonical lines on actual detected beats at
+the same measured bar phase: the start moves backward, the end moves forward,
+and any neighbouring timed lyric touched by that expansion is recursively
+enclosed before the boundaries are realigned. Unknown or changing meter is held
+rather than guessed. The report retains
+both the requested lines and every lyric occurrence actually audible in the
+expanded slice. Use `--line-boundaries` only to reproduce the legacy off-grid
+comparison; it is not the recommended loop deliverable. This opt-in search also
+compares the musical context around the final cuts, uses explicit artist feedback
+and selects diverse passages. Suggestions remain separate from strict accepted loops. See
 [phrase-loop methodology, feedback format and synthetic example](docs/phrase-loops.md).
 For longer excerpts, add `--min-seconds 20 --max-seconds 30`; optional
-`--max-bar-phase-error 0.125` also screens out mismatched measured bar positions.
-These filters suggest auditions and do not establish seamless or listening approval.
+`--max-bar-phase-error 0.125` remains useful for auditing legacy line-boundary
+comparisons. The default aligned mode records exact beat indices, matching
+detected beat ordinals within the bar, whole measured bar counts and source-frame
+quantisation. A time-interpolated bar coordinate can retain a small residual when
+the measured beat intervals drift; it does not undo exact event alignment. None of these measurements establishes
+a seamless waveform join or listening approval.
+
+![Generated explanatory diagram comparing legacy lyric-edge cuts with the default same-phase detected-beat boundaries](docs/screenshots/phrase-loop-beat-alignment.svg)
+
+*Generated explanatory diagram, not measured song evidence or a frontend
+screenshot. Exact exported WAVs and three-repeat auditions remain the dynamic
+evidence; a separate video adds no useful seam information.*
 
 ![Loop selection and playback in the existing analysis frontend](docs/screenshots/loops-playing.png)
 

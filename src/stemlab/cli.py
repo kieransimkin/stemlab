@@ -311,6 +311,8 @@ def find_phrase_loops(
     top: Annotated[int, typer.Option("--top", min=1, max=64)] = 6,
     max_bar_phase_error: Annotated[float | None, typer.Option("--max-bar-phase-error", min=0, max=.5,
         help="Optional maximum cut-position mismatch as a fraction of a measured bar")] = None,
+    beat_aligned: Annotated[bool, typer.Option("--beat-aligned/--line-boundaries",
+        help="Enclose lyrics on detected beats at the same measured bar phase (default); line boundaries are legacy comparison only")] = True,
     export_audio: Annotated[bool, typer.Option("--export-audio")] = False,
 ):
     """Suggest line-complete phrases by musical restart; never accept strict loops."""
@@ -322,7 +324,8 @@ def find_phrase_loops(
         report = analyze_existing_phrase_loops(results, feedback=ratings, export_audio=export_audio,
             config=PhraseLoopConfig(min_seconds=min_seconds,max_seconds=max_seconds,
                                     min_lines=min_lines,top=top,
-                                    max_bar_phase_error=max_bar_phase_error))
+                                    max_bar_phase_error=max_bar_phase_error,
+                                    beat_aligned=beat_aligned))
     except (ValueError, TypeError, KeyError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     console.print(f"{report['candidate_count']} phrase audition candidate(s); "

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- Make detected-beat boundaries the default for lyric phrase-loop auditions.
+  StemLab now moves the start backward and the end forward to measured beats at
+  the same detected bar phase, refuses unknown/changing meter, reports exact
+  beat indices and padding, and scores the real aligned seam. Keep
+  `--line-boundaries` only as an explicit legacy comparison mode.
+- Report every canonical lyric occurrence actually present in an expanded
+  beat-aligned slice, while retaining the narrower requested line range for
+  provenance, so deduplicated candidates cannot understate their audio content.
+- Recursively expand and realign when a beat boundary touches a neighbouring
+  timed lyric, preventing a technically beat-locked candidate from cutting that
+  overlapping vocal line. Reject candidates that cannot converge inside the
+  duration and evidence limits.
+
 ## 1.11.1 - 2026-11-02
 
 - Isolate Windows pytest process, fixture and cache paths in a probed unique LocalAppData run root with cleanup.

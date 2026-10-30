@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 from stemlab.analysis.loops import analyze_loops
 from stemlab.analysis.phrase_loops import (
     PhraseLoopConfig, analyze_existing_phrase_loops, analyze_phrase_loops,
-    musical_restart_context,
+    _beat_aligned_bounds, _complete_beat_aligned_bounds, musical_restart_context,
 )
 from stemlab.analysis.rudiment_matches import extract_peak_events
 from stemlab.cli import app
@@ -74,6 +74,88 @@ def test_line_occurrences_native_export_and_diversity(tmp_path):
             assert overlap/min(a['duration_samples'],b['duration_samples']) <= .6
 
 
+def test_default_boundaries_enclose_lyrics_on_measured_beats_and_complete_bars(tmp_path):
+    master,_,beat,stems,canonical=evidence(tmp_path)
+    for line in canonical['lyric_timing']:
+        line['start'] += .1
+        line['end'] -= .1
+    report=analyze_phrase_loops(master,tmp_path/'aligned',canonical=canonical,
+        beat_results=[beat],stems=stems,config=PhraseLoopConfig(top=12))
+    assert report['config']['beat_aligned'] is True
+    assert report['candidate_count'] > 0
+    assert any(c['boundary_alignment']['start_padding_seconds'] > 0
+               for c in report['candidates'])
+    for candidate in report['candidates']:
+        alignment=candidate['boundary_alignment']
+        assert alignment['exact_detected_beat_events'] is True
+        assert alignment['same_measured_bar_phase'] is True
+        assert alignment['beat_count'] % alignment['detected_beats_per_bar'] == 0
+        assert alignment['complete_bar_count'] == (
+            alignment['beat_count']//alignment['detected_beats_per_bar'])
+        assert candidate['start_seconds'] <= candidate['lyric_target_bounds']['start_seconds']
+        assert candidate['end_seconds'] >= candidate['lyric_target_bounds']['end_seconds']
+        assert candidate['start_sample'] == round(alignment['start_beat_seconds']*8000)
+        assert candidate['end_sample'] == round(alignment['end_beat_seconds']*8000)
+        assert 'complete_bar_alignment_unverified' not in candidate['failed_gates']
+
+
+def test_same_phase_alignment_expands_end_instead_of_cutting_the_lyric():
+    beats=np.arange(0,20.01,.5)
+    down=np.arange(0,len(beats),4,dtype=int)
+    aligned=_beat_aligned_bounds(beats,down,.1,7.9,8000)
+    assert aligned['available'] is True
+    assert aligned['start_beat_seconds'] == 0
+    assert aligned['end_beat_seconds'] == 8
+    assert aligned['start_sample'] == 0
+    assert aligned['end_sample'] == 64000
+    assert aligned['complete_bar_count'] == 4
+
+
+def test_alignment_recursively_encloses_neighbouring_overlapping_lyrics():
+    beats=np.arange(0,20.01,.5)
+    down=np.arange(0,len(beats),4,dtype=int)
+    lines=[dict(start=1.0,end=2.2,text='overlapping pickup'),
+           dict(start=2.1,end=5.9,text='requested phrase'),
+           dict(start=5.8,end=7.7,text='overlapping tail')]
+    aligned=_complete_beat_aligned_bounds(lines,1,1,beats,down,8000)
+    assert aligned['available'] is True
+    assert aligned['start_beat_seconds'] == 1
+    assert aligned['end_beat_seconds'] == 9
+    assert aligned['lyric_complete_on_aligned_bounds'] is True
+    assert aligned['lyric_expansion_iterations'] == 1
+    assert aligned['enclosed_lyric_bounds'] == {
+        'start_seconds':1.0,'end_seconds':7.7}
+
+
+def test_line_boundary_mode_is_explicit_legacy_opt_out(tmp_path):
+    master,_,beat,stems,canonical=evidence(tmp_path)
+    for line in canonical['lyric_timing']:
+        line['start'] += .1
+        line['end'] -= .1
+    report=analyze_phrase_loops(master,tmp_path/'legacy',canonical=canonical,
+        beat_results=[beat],stems=stems,
+        config=PhraseLoopConfig(top=3,beat_aligned=False))
+    assert report['config']['beat_aligned'] is False
+    assert report['candidate_count'] > 0
+    for candidate in report['candidates']:
+        first,last=candidate['canonical_line_indices']
+        assert candidate['start_sample'] == round(canonical['lyric_timing'][first]['start']*8000)
+        assert candidate['end_sample'] == round(canonical['lyric_timing'][last]['end']*8000)
+        assert candidate['boundary_alignment']['exact_detected_beat_events'] is False
+        assert 'complete_bar_alignment_unverified' in candidate['failed_gates']
+
+
+def test_duration_limit_applies_after_default_beat_alignment(tmp_path):
+    master,_,beat,stems,canonical=evidence(tmp_path)
+    for line in canonical['lyric_timing']:
+        line['start'] += .1
+        line['end'] -= .1
+    report=analyze_phrase_loops(master,tmp_path/'bounded',canonical=canonical,
+        beat_results=[beat],stems=stems,
+        config=PhraseLoopConfig(min_seconds=5,max_seconds=7.9,min_lines=4))
+    assert report['candidate_count'] == 0
+
+
 def test_feedback_exact_hash_bad_region_repeats_and_new_matches(tmp_path):
     master,_,beat,stems,canonical=evidence(tmp_path)
     # Words repeat every eight seconds. Excluding this full occurrence also
@@ -123,7 +205,8 @@ def test_malformed_feedback_is_rejected_before_output(tmp_path,mutation):
 
 
 @pytest.mark.parametrize('config',[{'min_seconds':float('nan')},{'top':True},
-    {'min_lines':1.5},{'max_overlap':1},{'min_seconds':31,'max_seconds':30}])
+    {'min_lines':1.5},{'max_overlap':1},{'min_seconds':31,'max_seconds':30},
+    {'beat_aligned':'yes'}])
 def test_invalid_config(config):
     with pytest.raises(ValueError):
         PhraseLoopConfig(**config)
@@ -135,13 +218,16 @@ def test_missing_canonical_grid_and_zero_length_occurrence(tmp_path):
         analyze_phrase_loops(master,tmp_path/'bad',canonical={},beat_results=[beat],stems=stems)
     empty=analyze_phrase_loops(master,tmp_path/'empty',canonical=canonical,
                               beat_results=[],stems=stems)
-    assert empty['candidate_count']==0 and empty['rejected_candidates']['missing_grid'] > 0
+    assert (empty['candidate_count']==0
+            and empty['rejected_candidates']['missing_beat_aligned_bounds'] > 0)
     canonical['lyric_timing'].insert(5,dict(start=10,end=10,text='Instant caption'))
     report=analyze_phrase_loops(master,tmp_path/'zero',canonical=canonical,
                                beat_results=[beat],stems=stems)
     assert report['candidate_count'] > 0
-    # Zero-length entries may stay inside a selected interval, never become its start.
-    assert all(c['included_lyrics'][0]['end']>c['included_lyrics'][0]['start']
+    # Zero-length entries may stay inside the expanded audio span, never become
+    # the requested phrase start that generated the candidate.
+    assert all(canonical['lyric_timing'][c['requested_canonical_line_indices'][0]]['end']
+               > canonical['lyric_timing'][c['requested_canonical_line_indices'][0]]['start']
                for c in report['candidates'])
 
 
@@ -181,3 +267,9 @@ def test_reuse_and_cli_index_separate_report_preserve_strict(tmp_path):
     report=json.loads((tmp_path/'deep/phrase_loops/phrase_loops.json').read_text())
     assert report['candidate_count'] <= 3
     assert report['config']['max_bar_phase_error'] == .125
+    assert report['config']['beat_aligned'] is True
+    result=CliRunner().invoke(app,['phrase-loops',str(tmp_path),'--top','3',
+                                  '--line-boundaries'])
+    assert result.exit_code==0, result.output
+    report=json.loads((tmp_path/'deep/phrase_loops/phrase_loops.json').read_text())
+    assert report['config']['beat_aligned'] is False

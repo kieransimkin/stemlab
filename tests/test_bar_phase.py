@@ -40,7 +40,10 @@ def test_opt_in_filter_rejects_half_bar_windows_preserves_raw_audio_and_strict_h
     for i,line in enumerate(canonical['lyric_timing']):
         if i%3 == 1:
             line['end'] -= 1  # End at a half-bar position; words are otherwise complete.
-    cfg = dict(min_seconds=5,max_seconds=16,min_lines=1,top=64,max_overlap=.99)
+    # Preserve the historical line-edge mode here so this regression continues
+    # to isolate the optional tolerance filter from the new beat-aligned default.
+    cfg = dict(min_seconds=5,max_seconds=16,min_lines=1,top=64,max_overlap=.99,
+               beat_aligned=False)
     baseline = analyze_phrase_loops(master,tmp_path/'old',canonical=canonical,
         beat_results=[beat],stems=stems,config=PhraseLoopConfig(**cfg))
     filtered = analyze_phrase_loops(master,tmp_path/'new',canonical=canonical,
@@ -63,7 +66,8 @@ def test_filter_requires_enclosing_downbeats_instead_of_extrapolating(tmp_path):
     master,_,beat,stems,canonical = evidence(tmp_path)
     beat.downbeats = [0.,2.]
     report = analyze_phrase_loops(master,tmp_path/'new',canonical=canonical,
-        beat_results=[beat],stems=stems,config=PhraseLoopConfig(max_bar_phase_error=.125))
+        beat_results=[beat],stems=stems,
+        config=PhraseLoopConfig(max_bar_phase_error=.125,beat_aligned=False))
     assert report['candidate_count'] == 0
     assert report['rejected_candidates']['missing_bar_phase'] > 0
 

@@ -14,7 +14,7 @@ import numpy as np
 import soundfile as sf
 
 from stemlab.util import sha256_file
-from .loops import (LoopConfig, _gates, _grid, _vocal_intervals, _write_json,
+from .loops import (LoopConfig, _gates, _grid, _ordered_times, _vocal_intervals, _write_json,
                     detected_bar_phase_metrics, index_loop_report, load_loop_evidence,
                     optimize_join, spectral_context)
 from .rudiment_matches import extract_peak_events
@@ -28,6 +28,7 @@ class PhraseLoopConfig:
     top: int = 6
     max_overlap: float = 0.60
     max_bar_phase_error: float | None = None
+    beat_aligned: bool = True
 
     def __post_init__(self):
         for key in ("min_seconds", "max_seconds", "max_overlap"):
@@ -45,6 +46,8 @@ class PhraseLoopConfig:
             if (isinstance(value, bool) or not isinstance(value, (float, int))
                     or not math.isfinite(value) or not 0 <= value <= .5):
                 raise ValueError('max_bar_phase_error must be None or finite in [0, .5]')
+        if not isinstance(self.beat_aligned, bool):
+            raise ValueError("beat_aligned must be a boolean")
         for key, upper in (("min_lines", 128), ("top", 64)):
             value = getattr(self, key)
             if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= upper:
@@ -173,6 +176,118 @@ def _phase(beats: np.ndarray, a: float, b: float) -> dict:
                 interpretation="Measured beat-phase proxy; no complete-bar or straight-grid approval")
 
 
+def _beat_aligned_bounds(beats: np.ndarray, down_indices: np.ndarray,
+                         lyric_start: float, lyric_end: float, sr: int) -> dict:
+    """Enclose a lyric passage on detected beats at the same measured bar phase.
+
+    The start moves backward and the end moves forward, so alignment never cuts
+    into the requested canonical lines. Detected beat/downbeat events remain the
+    only timing authority; no constant-tempo events or assumed 4/4 meter are made.
+    """
+    try:
+        beats = _ordered_times(beats)
+        down = np.asarray(down_indices)
+        if (down.ndim != 1 or len(down) < 2 or down.dtype.kind not in "iu"
+                or np.any(down < 0) or np.any(down >= len(beats))
+                or np.any(np.diff(down) <= 0)):
+            raise ValueError("Need ordered measured downbeat indices")
+        if (not np.isfinite([lyric_start, lyric_end]).all()
+                or not 0 <= lyric_start < lyric_end):
+            raise ValueError("Need finite ordered lyric bounds")
+        start_index = int(np.searchsorted(beats, lyric_start, side="right") - 1)
+        first_end_index = int(np.searchsorted(beats, lyric_end, side="left"))
+        if start_index < 0 or first_end_index >= len(beats):
+            raise ValueError("Lyric passage lacks enclosing detected beats")
+
+        start_bar = int(np.searchsorted(down, start_index, side="right") - 1)
+        if start_bar < 0 or start_bar + 1 >= len(down):
+            raise ValueError("Start beat lacks an enclosing measured bar")
+        beats_per_bar = int(down[start_bar + 1] - down[start_bar])
+        if not 2 <= beats_per_bar <= 12:
+            raise ValueError("Detected beats per bar are unsupported")
+        start_phase = int(start_index - down[start_bar])
+
+        end_index = None
+        end_bar = None
+        for candidate in range(first_end_index, len(beats)):
+            bar = int(np.searchsorted(down, candidate, side="right") - 1)
+            if candidate == int(down[-1]):
+                bar = len(down) - 1
+                phase = 0
+            elif bar < 0 or bar + 1 >= len(down):
+                continue
+            else:
+                phase = int(candidate - down[bar])
+            if phase == start_phase:
+                end_index, end_bar = candidate, bar
+                break
+        if end_index is None or end_bar is None:
+            raise ValueError("No later detected beat has the start beat's measured bar phase")
+
+        # Every fully or partially traversed measured bar must retain the same
+        # detected meter. A changing/unknown meter is held rather than guessed.
+        last_interval = min(end_bar, len(down) - 2)
+        counts = np.diff(down)[start_bar:last_interval + 1]
+        if not len(counts) or np.any(counts != beats_per_bar):
+            raise ValueError("Detected beats per bar change across the lyric passage")
+        beat_count = int(end_index - start_index)
+        if beat_count <= 0 or beat_count % beats_per_bar:
+            raise ValueError("Aligned bounds do not span complete measured bars")
+
+        a = int(round(float(beats[start_index]) * sr))
+        b = int(round(float(beats[end_index]) * sr))
+        if not 0 <= a < b:
+            raise ValueError("Aligned beat events do not map to ordered source frames")
+        return dict(available=True, mode="detected_beats_same_bar_phase",
+            start_sample=a, end_sample=b, start_beat_index=start_index,
+            end_beat_index=end_index, start_beat_seconds=float(beats[start_index]),
+            end_beat_seconds=float(beats[end_index]), beat_count=beat_count,
+            detected_beats_per_bar=beats_per_bar,
+            complete_bar_count=beat_count // beats_per_bar,
+            start_padding_seconds=float(lyric_start - beats[start_index]),
+            end_padding_seconds=float(beats[end_index] - lyric_end),
+            start_sample_quantization_seconds=float(a / sr - beats[start_index]),
+            end_sample_quantization_seconds=float(b / sr - beats[end_index]),
+            exact_detected_beat_events=True, same_measured_bar_phase=True,
+            interpretation="Detected beat events enclosing complete canonical lines; not listening approval")
+    except (ValueError, TypeError, IndexError) as exc:
+        return dict(available=False, mode="detected_beats_same_bar_phase", reason=str(exc))
+
+
+def _complete_beat_aligned_bounds(lines: list[dict], first_index: int, last_index: int,
+                                  beats: np.ndarray, down_indices: np.ndarray,
+                                  sr: int) -> dict:
+    """Align a target while recursively enclosing every lyric touched by expansion."""
+    target_start = float(lines[first_index]["start"])
+    target_end = float(lines[last_index]["end"])
+    enclosed_start, enclosed_end = target_start, target_end
+    for iteration in range(len(lines) + 1):
+        alignment = _beat_aligned_bounds(
+            beats, down_indices, enclosed_start, enclosed_end, sr
+        )
+        if not alignment["available"]:
+            return alignment
+        a = alignment["start_sample"] / sr
+        b = alignment["end_sample"] / sr
+        overlapping = [line for line in lines
+            if ((line["end"] > line["start"] and line["end"] > a and line["start"] < b)
+                or (line["end"] == line["start"] and a <= line["start"] < b))]
+        incomplete = [line for line in overlapping
+            if line["start"] < a - 1e-12 or line["end"] > b + 1e-12]
+        if not incomplete:
+            alignment.update(lyric_complete_on_aligned_bounds=True,
+                lyric_expansion_iterations=iteration,
+                requested_lyric_bounds=dict(start_seconds=target_start,
+                                             end_seconds=target_end),
+                enclosed_lyric_bounds=dict(start_seconds=enclosed_start,
+                                            end_seconds=enclosed_end))
+            return alignment
+        enclosed_start = min(enclosed_start, *(line["start"] for line in incomplete))
+        enclosed_end = max(enclosed_end, *(line["end"] for line in incomplete))
+    return dict(available=False, mode="detected_beats_same_bar_phase",
+                reason="Lyric-overlap expansion did not converge")
+
+
 def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
                          beat_results: list, stems: list, feedback: dict | None = None,
                          whisper_result: dict | None = None, lyrics_result: dict | None = None,
@@ -194,12 +309,24 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
                     if r["rating"] in {"good", "okay"}]
     rejected = Counter()
     pool = []
+    aligned_bounds_seen = set()
     for i, first in enumerate(lines):
         if first["end"] <= first["start"]:
             continue  # Preserve zero-length canonical lines, but never use as a start.
         for j in range(i+cfg.min_lines-1, len(lines)):
             last = lines[j]
-            a, b = round(first["start"]*sr), round(last["end"]*sr)
+            if cfg.beat_aligned:
+                alignment = _complete_beat_aligned_bounds(lines, i, j, beats, down, sr)
+                if not alignment["available"]:
+                    rejected["missing_beat_aligned_bounds"] += 1
+                    continue
+                a, b = alignment["start_sample"], alignment["end_sample"]
+            else:
+                a, b = round(first["start"]*sr), round(last["end"]*sr)
+                alignment = dict(available=True, mode="canonical_line_edges",
+                    start_sample=a, end_sample=b, exact_detected_beat_events=False,
+                    same_measured_bar_phase=False,
+                    interpretation="Legacy line-edge cuts; explicit opt-out from beat alignment")
             duration = (b-a)/sr
             if duration > cfg.max_seconds:
                 break
@@ -211,6 +338,10 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
             if any(_iou(a,b,r["start_sample"],r["end_sample"]) >= .90 for r in ratings):
                 rejected["previously_rated_near_duplicate"] += 1
                 continue
+            if (a, b) in aligned_bounds_seen:
+                rejected["duplicate_aligned_bounds"] += 1
+                continue
+            aligned_bounds_seen.add((a, b))
             phase = _phase(beats, a/sr, b/sr)
             if not phase["available"]:
                 rejected["missing_grid"] += 1
@@ -240,15 +371,28 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
                             for t in (a/sr,b/sr)]
             acoustic_clear = [bool(gates) and all(g.clear(t,.08) for g in gates)
                               for t in (a/sr,b/sr)]
-            failed = ["complete_bar_alignment_unverified", "attended_listening_unavailable"]
+            failed = ["attended_listening_unavailable"]
+            if not cfg.beat_aligned:
+                failed.insert(0, "complete_bar_alignment_unverified")
             if not all(timing_clear) or not all(acoustic_clear):
                 failed.append("vocal_boundary")
             if not join["passes_waveform_join"]:
                 failed.append("waveform_join")
+            included_indices = [index for index, line in enumerate(lines)
+                if ((line["end"] > line["start"] and line["end"] > a/sr
+                     and line["start"] < b/sr)
+                    or (line["end"] == line["start"] and a/sr <= line["start"] < b/sr))]
+            if not included_indices:
+                rejected["missing_aligned_lyrics"] += 1
+                continue
             pool.append(dict(start_sample=a,end_sample=b,duration_samples=b-a,
                 start_seconds=a/sr,end_seconds=b/sr,duration_seconds=duration,
-                included_lyrics=lines[i:j+1],canonical_line_indices=[i,j],
-                restart_context=context,phase=phase,detected_bar_phase=bar_phase,join=join,
+                included_lyrics=[lines[index] for index in included_indices],
+                canonical_line_indices=[included_indices[0],included_indices[-1]],
+                requested_canonical_line_indices=[i,j],
+                lyric_target_bounds=dict(start_seconds=first["start"],end_seconds=last["end"]),
+                boundary_alignment=alignment,restart_context=context,phase=phase,
+                detected_bar_phase=bar_phase,join=join,
                 vocal_clear=all(acoustic_clear) and all(timing_clear),
                 acoustic_clear=acoustic_clear,timing_clear=timing_clear,
                 failed_gates=failed,ranking_cost=cost,feedback_duration_cost=duration_cost,
@@ -290,8 +434,10 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
             "Bad section passages and exact canonical-word repeats excluded; all rated near-duplicates suppressed.",
             "Missing attack similarity stays null; available context weights are reported.",
             "Strict loop search and its acceptance gates are unchanged.",
+            "Phrase-loop boundaries use enclosing detected beats at the same measured bar phase by default; --line-boundaries is a legacy comparison opt-out.",
+            "Beat expansion recursively encloses every timed lyric it touches; candidates that cannot keep neighbouring vocals complete are held.",
             "Optional detected bar-phase filter uses enclosing downbeats and consistent measured beats per bar; it does not prove meter, harmony or listening quality.",
-            "Native audio slices only; no snap, fade, crossfade, stretch or normalisation."])
+            "Native audio slices only; default boundary alignment changes the cut to measured beat events but applies no fade, crossfade, stretch or normalisation."])
     _write_json(output_dir/"phrase_loops.json",report)
     return report
 
