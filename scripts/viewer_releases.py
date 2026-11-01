@@ -104,9 +104,17 @@ def resolve(fetch=get_json) -> dict:
     npm = fetch('https://registry.npmjs.org/react-timeline-sequence/latest')
     pypi = fetch('https://pypi.org/pypi/dancerudiments/json')
     if npm.get('name') != 'react-timeline-sequence' or npm.get('version') != timeline['version']:
-        raise ValueError('Latest timeline GitHub release and npm latest disagree. Finish its Release workflow; do not use main or a vendor archive.')
+        raise ValueError(
+            'Latest timeline GitHub release and npm latest disagree: '
+            f"GitHub={timeline['version']}, npm={npm.get('version', 'missing')}. "
+            'Finish its Release workflow; do not use main or a vendor archive.')
     if pypi.get('info', {}).get('version') != native['version']:
-        raise ValueError('Latest DanceRudiments GitHub release and PyPI disagree. Finish Release packages before releasing StemLab.')
+        raise ValueError(
+            'Latest DanceRudiments GitHub release and PyPI disagree: '
+            f"GitHub={native['version']}, PyPI={pypi.get('info', {}).get('version', 'missing')}. "
+            'Inspect the publish-pypi job in DanceRudiments Release packages and complete '
+            'official publication before releasing StemLab. See docs/released-viewers.md '
+            'for partial-publication recovery; the release gate cannot be bypassed.')
     # These are the earliest possible new stable versions after the pre-display releases.
     if version(timeline['version']) < (0, 2, 3) or version(native['version']) < (0, 2, 5):
         raise ValueError('Publish fresh companion releases containing the display APIs before updating StemLab')

@@ -27,6 +27,17 @@
 - Preserve the master-plus-drums/percussion beat-routing contract, 64-pips-per-beat native recording clock, per-dimension bars and combined waveform/spectrogram lanes. New UI features must be supplied by released shared APIs and genuinely rebuilt frontend assets, not copied engines or marker strings.
 - Distinguish source CI, package publication, full-song inference, browser/audio QA, artifact packaging, actual Pages deployment and live URL/audio verification. Keep all five Arcadians pages together, including the full-master Fourier selector for 4, 8, 16, 32, 64 and 128 channels. Every resolution must pass native/full-dimensional bar and HTTP audio checks before packaging; preserve every sample in losslessly compressed recording downloads. Do not report unexecuted, skipped or older-commit checks as success. CI playback evidence is not subjective listening QA.
 
+## General source-test discovery and release diagnostics
+
+- The default pytest root is `tests/`. Keep archival copies under `resources/`
+  out of automatic collection; do not hide canonical tests to fix an import
+  collision. Explicitly named test paths remain supported.
+- A latest-release mismatch must report the actual GitHub and registry versions.
+  Inspect the failed companion publication job and follow
+  `docs/released-viewers.md#partial-publication-and-registry-storage`; never
+  substitute development source, delete old releases, or weaken the guard to
+  produce a green viewer build.
+
 ## Standalone CLI release contract
 
 ### Offline rig-motion validation

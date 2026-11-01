@@ -186,6 +186,35 @@ Registry tags/locking: https://docs.npmjs.com/cli/commands/npm-dist-tag and
 https://docs.npmjs.com/cli/commands/npm-ci. Never bypass a failed publication gate
 because an older artifact or a different commit was green.
 
+## Partial publication and registry storage
+
+`check_viewer_build.py --latest` reports both observed versions when the latest
+official GitHub release and its registry disagree. Stop at that gate and inspect
+the companion publication job. An uploaded GitHub asset, successful native test,
+or merged source commit does not establish registry publication.
+
+On 2026-11-01, the official APIs reported DanceRudiments GitHub **v0.4.7** while
+PyPI still reported **0.4.5**. The v0.4.7
+[publish-pypi job](https://github.com/kieransimkin/DanceRudiments/actions/runs/39871770870/job/120154290836)
+failed with HTTP 400 because the `dancerudiments` project's total storage had
+reached its **10 GB** limit. This is a project-storage failure, not an
+authentication failure or a reason to use a different dependency source.
+
+The owner can inspect current usage on
+[PyPI project settings](https://pypi.org/manage/project/dancerudiments/settings/)
+and follow PyPI's
+[project-size increase process](https://docs.pypi.org/project-management/storage-limits/#requesting-a-project-size-limit-increase).
+Preserve existing releases and pinned consumers; yanking does not free storage.
+DanceRudiments' current source enforces compact wheel, sdist and aggregate upload
+budgets, but a smaller future release does not itself increase the account's
+remaining quota.
+
+After sufficient quota is available, recover the original publication using its
+unchanged, verified artifacts and existing release identity, or publish a fresh
+validated version through the coordinator. Never move the old tag or replace its
+assets with a rebuilt version. Recheck GitHub/PyPI agreement before synchronizing
+StemLab's dependency snapshot and genuinely rebuilding its frontend.
+
 ## This repository's role
 
 StemLab owns analysis, input-to-lane adaptation, DSP/batch generation and the

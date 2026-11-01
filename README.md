@@ -1178,6 +1178,11 @@ commit, sibling source package or vendored npm archive. Each build records exact
 released versions/commits/integrity after latest-release resolution so all its
 jobs use the same bytes; CI fails clearly when that snapshot is stale.
 
+When GitHub and a package registry disagree, the preflight prints both observed
+versions and the failed publication job to inspect. A GitHub release alone cannot
+satisfy the guard. See [partial-publication recovery](docs/released-viewers.md#partial-publication-and-registry-storage)
+for the diagnosed DanceRudiments PyPI storage limit and immutable-release recovery.
+
 From the parent folder, preview and then explicitly execute:
 
 ```powershell
@@ -1226,6 +1231,14 @@ executable with an empty external StemLab cache. `--help`, `models`, and
 Main-branch release coordination requires `binary.yml` to pass before tagging.
 Tagged releases call the same reusable workflow and cannot publish a fallback
 `STEMLAB-BINARY-NOTE.txt`; absence or failure of the executable fails the release.
+
+## Test discovery
+
+`python -m pytest` collects the maintained `tests/` directory by default. The
+archived `resources/test_beat_subframe_precision.py` is byte-identical to its
+canonical copy in `tests/`; collecting both under the same module name prevented
+the whole suite from running. Explicit test paths still work. This discovery
+setting changes no tests, optional-dependency skips or failure criteria.
 
 ## Windows pytest temporary-directory permissions
 

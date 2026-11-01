@@ -72,6 +72,22 @@ def test_resolve_only_agreed_stable_official_releases():
     assert vr.resolve(routes.__getitem__) == record()
 
 
+@pytest.mark.parametrize('registry,route,observed', [
+    ('npm', 'https://registry.npmjs.org/react-timeline-sequence/latest', '0.2.2'),
+    ('PyPI', 'https://pypi.org/pypi/dancerudiments/json', '0.2.4'),
+])
+def test_partial_publication_reports_both_versions_without_selecting_fallback(registry, route, observed):
+    routes = fake_api()
+    metadata = routes[route]['info'] if registry == 'PyPI' else routes[route]
+    metadata['version'] = observed
+    with pytest.raises(ValueError) as error:
+        vr.resolve(routes.__getitem__)
+    assert 'GitHub=0.3.0' in str(error.value)
+    assert f'{registry}={observed}' in str(error.value)
+    if registry == 'PyPI':
+        assert 'publish-pypi' in str(error.value)
+
+
 @pytest.mark.parametrize('failure', ['draft', 'prerelease', 'tag', 'sha', 'npm-lag', 'pypi-lag', 'yanked', 'mirror', 'hash'])
 def test_resolve_rejects_incomplete_or_untrusted_publication(failure):
     routes = fake_api()
