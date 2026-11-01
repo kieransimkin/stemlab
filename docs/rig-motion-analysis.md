@@ -116,3 +116,71 @@ The tests use generated, source-bounded synthetic motions only: rhythmic pulses,
 repeated slow poses, constant controls, alternating quaternion signs, discrete
 selectors, root drift and malformed captures. No third-party choreography or
 Kandi Boom model files are downloaded.
+
+## World-space and contact evidence
+
+DanceRudiments owns the portable skeleton's hierarchy, rest transforms and
+world-space evaluation. Its `dancerudiments.world-motion-evidence` schema 1
+sidecar can be supplied for an **original capture**, not a compiled package:
+
+```sh
+stemlab analyze-rig-motion extracted/motion.capture.json \
+  --world-motion analysis/world-motion-evidence.json \
+  --tempo-strategy consensus --output analysis/with-contacts.json \
+  --events-output analysis/motion-events.json --clock-id original-motion-seconds
+```
+
+The sidecar must identify the exact capture-file SHA-256, profile and semantic
+type; every original frame timestamp, root position, envelope and contact state
+must be present and finite. Coordinate axes, units and valid coverage are
+explicit. Invalid identities, changed frames, malformed events and asserted
+musical approval are errors. StemLab validates the interchange; it does not
+duplicate the skeletal evaluator or independently recompute its geometry.
+
+`control_evidence` retains the complete earlier control-space result.
+`world_evidence` retains separate event streams, tempo alternatives, contact
+boundary diagnostics and additional loop proposals. World-joint speed,
+root-relative speed and body height share one kinematic lineage. Foot-plant
+events are a separately labelled heuristic from that same capture, not an
+independent musical annotation. Per-foot low-height stance and speed are not
+proof of actual ground contact or a correctly retargeted/weighted character.
+
+Stable event sequences refine the initial correlation-bin BPM using the shared
+`constant_beat_fit` implementation and explicit inferred integer-gap alternatives.
+Refinement requires source-event residual, first-anchored and endpoint-drift
+guards. The coarse BPM and fit diagnostics remain in the candidate; timestamps
+are never inserted or moved, and half/double metrical interpretations remain
+separate. An accelerating or poorly fitted source is not forced into a precise
+constant-tempo claim.
+
+The effective `recommended_tempo`, `motion_accents`, `bpm_candidates` and
+estimated beat map follow the selected strategy:
+
+| Strategy | Behaviour |
+| --- | --- |
+| `consensus` (default) | Prefer a contact pulse corroborated by the leading control/world hypothesis at the same, half or double metrical level. Preserve octave ambiguity. Contradictory supported families abstain. Without contact hypotheses, retain control evidence, then world evidence as a fallback. |
+| `control` | Select the original control-space hypothesis and accents. |
+| `world` | Select the strongest world-kinematic feature's hypothesis and source peaks. |
+| `contact` | Select the foot-plant hypothesis and actual detected plant events. |
+
+Without a world sidecar the original control-only behaviour is preserved.
+No strategy approves beat one, meter or music alignment, and corroboration never
+inflates the source heuristic score or the 70% DanceRudiments conversion gate.
+`select_rig_tempo_hypothesis(report, family="contact", candidate_index=0)` returns
+a copy with an explicit alternative selected, preserving the originals.
+With `family="consensus"`, corroboration is checked against that requested
+contact candidate, not the first candidate's tempo. The
+effective loop list contains compatible-duration candidates wholly within a
+continuous source interval; remaining family
+loops stay in `world_evidence.loop_candidates` for review. Contact-state checks
+are attached to each loop and do not repair a seam or confirm foot placement.
+Original control accents remain intact in `control_evidence`; the effective
+selection and alignment export exclude accents in uncovered time spans.
+`source_valid_segments_seconds` records coverage even without a world sidecar,
+splitting gaps strictly greater than three times the global median frame step.
+Isolated frames remain explicit singleton intervals in that source metadata.
+
+For source-bound audio matching and explicit review revisions, see
+[motion alignment](motion-alignment.md). The offline entry point
+`python -m stemlab.rig_motion_cli` requires NumPy, Typer and Rich; importing its
+analysis APIs no longer imports SoundFile, Torch or the audio-analysis runner.

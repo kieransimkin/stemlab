@@ -11,6 +11,33 @@ permissions:
   contents: read
 
 jobs:
+  motion-evidence:
+    name: Offline motion evidence and alignment (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install only lightweight source-validation and wheel-build dependencies
+        run: python -m pip install "setuptools>=75" wheel build numpy pytest "typer>=0.12" "rich>=13.7"
+      - name: Build the real wheel without installing audio/model dependencies
+        run: |
+          python -m build --wheel --no-isolation
+          python -m pip install --no-deps dist/*.whl
+      - name: Verify installed offline APIs do not import the audio/model pipeline
+        run: |
+          python -I -c "import sys; import stemlab.analysis.rig_motion; import stemlab.analysis.motion_alignment; assert not any(m in sys.modules for m in ('soundfile', 'torch', 'librosa', 'stemlab.analysis.runner'))"
+          python -m stemlab.rig_motion_cli --help
+      - name: Test source binding, world-sidecar validation, alignment and manual review
+        run: >-
+          python -m pytest tests/test_rig_motion_analysis.py tests/test_rig_motion_package.py
+          tests/test_rig_world_evidence.py tests/test_motion_alignment.py
+
   release-tools:
     name: Release coordinator and PowerShell syntax
     runs-on: ubuntu-latest

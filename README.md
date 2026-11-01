@@ -64,6 +64,40 @@ audio synchronization, or automatic looping/mesh-seam repair. No model downloads
 or native sampler are involved. The optional DanceRudiments authoring loader
 validates all motion-package chunk hashes. See [rig-motion analysis](docs/rig-motion-analysis.md).
 
+For original captures, `--world-motion world-motion-evidence.json` consumes the
+source-hash-bound world-space/foot-contact sidecar produced by DanceRudiments.
+It checks the exact capture, rig profile, timestamps and coverage, retains the
+original control analysis, and exposes contact/world tempo alternatives plus
+contact-state loop diagnostics. `--tempo-strategy consensus` prefers a contact
+pulse corroborated by control/world timing; contradictory families abstain.
+Explicit `control`, `world` and `contact` selections remain available and never
+approve music timing. Root/world/height traces share one kinematic lineage;
+correlated streams are not counted as independent model votes.
+Selecting an alternative consensus candidate checks corroboration for that
+exact candidate. Source coverage is recorded from the original timestamps even
+without a world sidecar; gaps and isolated frames cannot become interpolated
+alignment events or selected world-aware loop spans. Original control evidence
+remains available for review.
+
+`prepare-alignment-events`, `align-motion-audio` and `confirm-motion-alignment`
+complete the source-clock handoff: import actual observed accents or saved audio
+detections, verify original source bytes, supply an explicit clock map, compare
+offset/half-speed/double-speed and bounded variable-tempo proposals, then write
+a separate review revision. Gaps remain unmapped, periodic phase ambiguity is
+reported, and beat one/meter require separate explicit confirmations. Generated
+affine endpoints receive bounded floating-point roundoff correction before
+review; reviewed mappings still require exact source bounds. Nothing
+retimes source media or silently changes a canonical beat map. The offline
+modules use NumPy; `python -m stemlab.rig_motion_cli --help` also exposes this
+workflow without importing the audio/model pipeline. See the [alignment guide,
+JSON contracts and reproducible example](docs/motion-alignment.md).
+
+The `motion-evidence` CI job builds the actual wheel, verifies isolated offline
+imports without audio/model dependencies, and tests source binding, world/contact
+sidecars, timing candidates and review revisions on Python 3.10/3.12. Production
+companion dependencies still require official published releases; this source
+gate does not claim listening, retargeted-character or deployment acceptance.
+
 The real-song reference timeline preserves its explicitly hash-pinned public
 detector JSON byte for byte, including newlines, on Windows and Linux. Generic
 exports still remove private paths. Container model weights and model-specific

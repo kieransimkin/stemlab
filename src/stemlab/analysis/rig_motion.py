@@ -494,6 +494,10 @@ def _analyze_poses(data, times, values, channels, digest, *, min_bpm, max_bpm,
             or not np.all(np.diff(times) > 0) or times[-1] - times[0] < 3
             or np.max(np.diff(times)) > .35):
         raise ValueError("Need at least three seconds of finite, continuous source poses")
+    gap_limit = 3 * float(np.median(np.diff(times)))
+    cuts = [0, *(np.flatnonzero(np.diff(times) > gap_limit) + 1).tolist(), len(times)]
+    coverage = [[float(times[first]), float(times[last - 1])]
+                for first, last in zip(cuts, cuts[1:])]
     energy, active, streams = _signals(times, values, channels)
     if energy is None:
         return {"format": FORMAT, "schema_version": 1, "source_file_sha256": digest,
@@ -503,6 +507,7 @@ def _analyze_poses(data, times, values, channels, digest, *, min_bpm, max_bpm,
                 "pose_period_candidates": [], "pose_period_search_seconds": None,
                 "sample_rate_hz": None,
                 "source_range_seconds": [float(times[0]), float(times[-1])],
+                "source_valid_segments_seconds": coverage,
                 "limitations": ["No varying continuous controls; tempo and loops cannot be inferred."]}
     t, envelope, fps = _resample(times, energy)
     accents = _accents(t, envelope, fps)
@@ -523,6 +528,7 @@ def _analyze_poses(data, times, values, channels, digest, *, min_bpm, max_bpm,
             "source_kind": source_kind, "profile_sha256": data["profile_sha256"], "type_uri": data["type_uri"],
             "sample_rate_hz": fps,
             "source_range_seconds": [float(times[0]), float(times[-1])],
+            "source_valid_segments_seconds": coverage,
             "active_controls": len(active), "motion_accents": accents,
             "bpm_candidates": candidates, "recommended_tempo": primary,
             "estimated_beat_map": _beat_map(times, primary, source_hash=digest),
@@ -531,11 +537,29 @@ def _analyze_poses(data, times, values, channels, digest, *, min_bpm, max_bpm,
             "loop_candidates": loops, "limitations": limitations}
 
 
-def analyze_rig_capture(path: Path | str, *, min_bpm: float = 60, max_bpm: float = 200) -> dict[str, Any]:
+def analyze_rig_capture(path: Path | str, *, min_bpm: float = 60, max_bpm: float = 200,
+                        world_motion: Path | str | dict | None = None,
+                        tempo_strategy: str = "consensus") -> dict[str, Any]:
     """Analyse the original physical RigCapture without changing its timing."""
     data, times, values, channels, digest = _read_capture(Path(path))
-    return _analyze_poses(data, times, values, channels, digest,
-                          min_bpm=min_bpm, max_bpm=max_bpm)
+    report = _analyze_poses(data, times, values, channels, digest,
+                            min_bpm=min_bpm, max_bpm=max_bpm)
+    if world_motion is None:
+        if tempo_strategy not in ("control", "consensus"):
+            raise ValueError("World/contact tempo strategy requires a world-motion sidecar")
+        return report
+    from .rig_world_evidence import add_world_evidence, read_world_evidence
+    world = read_world_evidence(world_motion, capture_sha256=digest,
+                               profile_sha256=data["profile_sha256"],
+                               type_uri=data["type_uri"], times=times)
+    return add_world_evidence(report, world, data, times, values, channels,
+                              min_bpm=min_bpm, max_bpm=max_bpm, tempo_strategy=tempo_strategy)
+
+
+def select_rig_tempo_hypothesis(report: dict, *, family="consensus", candidate_index=0) -> dict:
+    """Select a retained evidence family without confirming its musical timing."""
+    from .rig_world_evidence import select_rig_tempo_hypothesis as select
+    return select(report, family=family, candidate_index=candidate_index)
 
 
 def write_rig_analysis(path: Path | str, report: dict, *, beat_map_path: Path | str | None = None):

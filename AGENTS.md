@@ -29,6 +29,24 @@
 
 ## Standalone CLI release contract
 
+### Offline rig-motion validation
+
+- Keep source rig/contact evidence and event alignment usable with NumPy alone;
+  their dedicated CLI adds only Typer/Rich. Do not eagerly import the audio
+  runner, SoundFile, Torch or Librosa through `stemlab.analysis`.
+- The `motion-evidence` CI job builds and installs the actual wheel without
+  audio/model dependencies, checks isolated imports and runs
+  `test_rig_motion_analysis.py`, `test_rig_motion_package.py`,
+  `test_rig_world_evidence.py` and `test_motion_alignment.py` on Python 3.10/3.12.
+  This is a source/wheel regression gate, not real choreography, audio listening,
+  companion-release publication or Pages acceptance.
+- Preserve original capture/source hashes, source seconds, independent-family
+  lineage, coverage gaps and original control evidence. Clock mappings and
+  manual review revisions are separate, validated documents. A timing acceptance
+  never approves beat one, meter, retargeting or loop seams implicitly.
+
+### Standalone audio runtime gates
+
 - Treat `.github/workflows/binary.yml` as a required release gate. Do not restore
   `continue-on-error` or a placeholder binary note.
 - Build the one-file CLI with PyInstaller on Python 3.11+ because BeatNet's maintained offline DBN

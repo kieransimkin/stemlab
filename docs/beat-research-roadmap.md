@@ -90,18 +90,27 @@ Test gates: 70→160 BPM ramps, ritardando, abrupt jumps, syncopated UK garage,
 triplet shuffle, 3/4, 4/4, 6/8, 5/4, 7/8, swing, tempo-doubling and silent
 breaks. Compare at multiple metrical levels and first-anchored error guards.
 
-### Stage D — rig/world-space beat and contact inference
+### Stage D — rig/world-space beat and contact inference (implemented)
 
-Build in DanceRudiments a *read-only offline world-space keypoint evaluator*
-from its exact numbered rig profile, rest transforms and hierarchy (not a
-replacement native sampler). Extract foot-plant/toe-off, ankle local minima,
-COM height troughs, velocity extrema, turning accelerations and contact-slip
-probability. Separate global root translation from dance gestures; ignore
-quaternion sign jumps and discrete rig selectors. Compare scalar controls,
-world-space group energy, PCA/TD-PCA synergy, kinetic minima and full
-contact-based motion beats as alternative families. Detect simple gait phase,
-left/right lead and repeated phrase lengths, but do not label motion pulses as
-music downbeats by default.
+The source-side portable skeletal evaluator now lives in DanceRudiments;
+StemLab consumes its source-bound `dancerudiments.world-motion-evidence`
+sidecar. `analyze-rig-motion --world-motion` validates exact source/profile/time
+identity, preserves control-space evidence, derives separate world/contact tempo
+alternatives and checks loop contact states. `--tempo-strategy` exposes
+consensus/control/world/contact selection; contradictory supported families
+abstain and metrical alternatives stay explicit. This is source inference,
+not retargeted character or musical approval. See
+[rig-motion analysis](rig-motion-analysis.md#world-space-and-contact-evidence).
+
+The evaluator uses the numbered source rig profile, rest transforms and
+hierarchy without replacing native playback. It extracts foot-plant/toe-off
+hypotheses, world/root-relative velocity minima, a body-height proxy and contact
+drift diagnostics. The height proxy is an unweighted joint mean, not a measured
+centre of mass. Ground level and contact confidence are explicitly heuristic,
+and root travel is retained separately. Unsupported arbitrary Rigify control
+graphs abstain instead of being mistaken for a portable deform hierarchy.
+PCA/TD-PCA synergy and learned contact estimators remain optional research
+comparators; this implementation does not claim those methods ran.
 
 Test gates: static reference T-pose, calibrated Kandi Boom source transform,
 sequential rig chunk seams, alternating q/-q, large root drift, sliding feet,
@@ -109,17 +118,24 @@ arm crossings, retargeted hips/feet, mirrored movement, 30/60/120 fps timing,
 missing channels and non-Rigify source rigs. Real salsa/ballet validation
 requires licensed local assets and actual Blender/WebGL visual QA.
 
-### Stage E — multi-stream synchronization and consensus candidates
+### Stage E — multi-stream synchronization and consensus candidates (implemented)
 
-Join motion and audio sources only with **verified source identity and explicit
-clock mapping**. Estimate candidate lag via cross-correlation, event matching
-or dynamic time warping, but do not apply it without review. Preserve direct
-clock mappings and extracted source audio frames. Compare confidence and
-independent-model agreement over bars and tempo regimes. Show a ranked
-consensus candidate with `support_by_independent_family`, not a hidden vote.
-Expose a phase picker and manual bar-one/meter confirmation in StemLab/DanceMoves;
-show per-detector evidence lanes in Kandi Boom's gallery without changing
-native transport. Until alignment is accepted, simply show disagreeing lanes.
+`prepare-alignment-events`, `align-motion-audio` and
+`confirm-motion-alignment` provide source-byte/clock validation, observed-event
+matching, explicit half/double physical rate candidates, bounded monotone
+variable-tempo paths, independent-family lineage, periodic-lag ambiguity,
+coverage gaps and separate hash-bound manual review revisions. The Python API
+includes validation and bounded mapping for review UIs. Beat-one and meter
+confirmations are independent fields. Algorithms never apply a timing choice
+to the original source. See [contracts and example](motion-alignment.md).
+
+Motion and audio are joined only with **verified source bytes and an explicit
+clock mapping**. Event-difference lag proposals and bounded monotone event paths
+produce source-bound candidates; the independent-family comparison table
+preserves related detector lineage. Periodic phase aliases and incomplete
+coverage remain explicit. The review API exposes candidate selection, manual
+anchors, beat one and meter separately for gallery/timeline consumers, while
+leaving the canonical transport and original source clocks untouched.
 
 Test gates: known ± offset, multiple plausible pulse phases, stem latency,
 partial clips, motion in half/double speed, missing onsets, variable tempos
