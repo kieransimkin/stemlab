@@ -137,6 +137,22 @@ audio as private raw auditions, never as finished seamless edits.
 - **Verification:** chosen outputs still cover the question and retain provenance.
 - **Limit:** savings never waive required evidence, validation, licensing, privacy, or listening QA.
 
+### A main checkout silently runs through an older or CPU-only launcher
+
+- **Symptom (2 November 2026):** `stemlab doctor` from one launcher reports CPU or a practical run rejects explicit CUDA, while a project-local environment sees the NVIDIA GPU and the checked-out source has a newer version.
+- **Cause:** the wrapper still points at a frozen runtime rather than the checkout's source and CUDA environment. A normal editable dependency sync can also replace custom `+cu` Torch wheels with CPU wheels.
+- **Correction:** make the maintained wrapper set `PYTHONPATH` to the checkout's `src`, invoke the verified project-local CUDA environment, and set every model/cache root beneath the project. When adding dev extras, immediately restore the pinned Torch and torchaudio CUDA wheels from PyTorch's official CUDA index if the resolver selected CPU wheels.
+- **Verification:** print the imported `stemlab.__file__` and version, Torch/torchaudio versions, `torch.cuda.is_available()`, and the GPU name; run `stemlab doctor`; then complete a real source-bound model run with zero pipeline/deep-analysis errors. Do not infer CUDA use from `nvidia-smi` alone.
+- **Limit:** an environment that runs inference can still lack optional test extras. Full-suite failures caused by missing declared extras or local documentation edits must be separated from source defects.
+
+### BS-RoFormer ignores StemLab's configured cache root
+
+- **Symptom (2 November 2026):** BS-RoFormer downloads to a user-profile cache even though `STEMLAB_CACHE` points inside the project.
+- **Cause:** `bs-roformer-infer` owns a separate model search path, and StemLab's adapter did not pass its `models_dir` argument.
+- **Correction:** pass `STEMLAB_BS_ROFORMER_MODELS` (falling back beneath `STEMLAB_CACHE`) to compatible upstream sessions. Preserve any partial user-cache download for review; do not silently move or delete it.
+- **Verification:** the adapter regression test confirms the explicit directory, `cache_info()` resolves the existing project-local checkpoint, and a real BS-RoFormer run performs no user-profile download.
+- **Limit:** successful model resolution does not prove GPU compatibility, output quality or the validity of every other backend.
+
 ### Windows Codex sandbox blocks the web build or local server
 
 - **Symptom:** Vite/esbuild fails with `Error: spawn EPERM`; `stemlab serve` fails during scheduler startup with `PermissionError: [WinError 5] Access is denied` from `multiprocessing.connection.Pipe` / `_winapi.CreateFile`; or pytest cannot scan a workspace-local or profile temp directory with the same Windows access-denied error.
