@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.12.0 - 2026-11-02
 
 - Make detected-beat boundaries the default for lyric phrase-loop auditions.
   StemLab now moves the start backward and the end forward to measured beats at
