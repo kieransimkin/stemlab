@@ -10,11 +10,11 @@
   "inference": "Frozen real BeatThis/BeatNet master results and majority-vote consensus. CI regenerates offsets, fits and the real timeline; it does not rerun learned models.",
   "selection": "Explicitly selected by Kieran on 2026-10-16 after new bounded catalogue beat analysis.",
   "files": {
-    "analysis.json": "66186bac3302e7c685346c4933f422b9d3ecfb8e26fcf88f9a2e1936221d035e",
-    "beats/beat_this.json": "480230a0d4a53e49d8b903b02aac25ed9d7a45713d453693a59aad945de679dd",
-    "beats/beatnet.json": "e7a3bda7a47382614e422629f3f1e6af05b447565b58c8f5df63cc3a0cf4b290",
-    "beats/consensus.json": "d8bac18cbfc51de34b315770430404e00ee0f22d637b3af589578f68832eaf4e",
-    "canonical.json": "aa6e85e0961ad04d5f47b5653a15af838414bdd0839bb5677c0f8eaaaf9c1139",
+    "analysis.json": "7f89a1952041717a2d6053eea6c5be289af6f47d2346800a8adedbb1496ae681",
+    "beats/beat_this.json": "c28afde314cc2eb481de2669b6299c0e1814ea8347993506176eeb88dabbac93",
+    "beats/beatnet.json": "50e1b8ac5ea1ab81a69cfce6885b986c92549aa5a7010a20469f459a1aaee94b",
+    "beats/consensus.json": "a4ea6f305bf02f8f0bc7156e7a5cf5cd7aea0872d902e9a47a207a7636a4bb78",
+    "canonical.json": "4ee509d2ef9041e9dceb107548d906aa8ef4df000fa291802a87abbeae03c84f",
     "master.mp3": "b11ac7c48df227ac51d94c05a245d3138acf1a002f851c55d98fd7fb7f0de510"
   }
 }
