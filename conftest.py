@@ -10,8 +10,8 @@ import hashlib
 import os
 import shutil
 import uuid
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 import pytest
 
@@ -27,7 +27,6 @@ def default_temp_root(
         # %TEMP%/pytest-of-USER can be stale or ACL-protected. Checkouts under
         # OneDrive can lock temporary renames; neither is suitable on Windows.
         base = Path(current_environment.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
-        key = hashlib.sha256(str(checkout).casefold().encode("utf-8")).hexdigest()[:12]
         return base / checkout.name / "pytest-tmp"
     return checkout / ".pytest-tmp"
 
