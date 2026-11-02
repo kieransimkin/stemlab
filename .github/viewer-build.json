@@ -1,40 +1,40 @@
 {
   "dependencies": {
     "dancerudiments": {
-      "commit": "b89d1b80fcd8a8d8e02394ec718b6f4debd97b94",
+      "commit": "c21f897e9e516b63368c62b89626494b30b0a2cf",
       "repository": "kieransimkin/DanceRudiments",
-      "tag": "v0.3.0",
-      "version": "0.3.0",
+      "tag": "v0.4.9",
+      "version": "0.4.9",
       "wheels": {
-        "dancerudiments-0.3.0-cp310-cp310-macosx_11_0_arm64.whl": "78c9b37617b900d3f8b5f9908e8a23ed0dacc4e6097bba9242f3d5c714e27692",
-        "dancerudiments-0.3.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "f831a20531384097bc4869b625d07f1cc4ec3bc81dd46e5b16f7270822d15a1c",
-        "dancerudiments-0.3.0-cp310-cp310-win_amd64.whl": "20ed831a80de4a54001c156024f3743c07c11eb91cbc4642f41f2090eda83a96",
-        "dancerudiments-0.3.0-cp311-cp311-macosx_11_0_arm64.whl": "2ccbb5839a697a2d70e7151a978450d97c2747ebea91a40e0bb25f95ade9526e",
-        "dancerudiments-0.3.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "98d0a202c66bd9109cfd92ce65ad2e3ea16c4ec90abf150b97acc9849a913b0d",
-        "dancerudiments-0.3.0-cp311-cp311-win_amd64.whl": "069eb592c5250be54f54134c96f0e78f0dd7f06b2e2b18d1eb413428229a459a",
-        "dancerudiments-0.3.0-cp312-cp312-macosx_11_0_arm64.whl": "f9d990384791aeac861d15f10ed997a91f394359f09aaffbed8f9468c99f6b22",
-        "dancerudiments-0.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "aa7be644fb2ee91b0e18fc94c29cf956556b221d7871ca3c25e9672b5493bce7",
-        "dancerudiments-0.3.0-cp312-cp312-win_amd64.whl": "0fde8e8f5ad78c1b189c5e765cbe571979603d71743023b4068fc293189edb2d",
-        "dancerudiments-0.3.0-cp313-cp313-macosx_11_0_arm64.whl": "1e33280f74d48eb40fad102be7ac7d8b0ae3af06c7d1c7dc7a1342166d8985b2",
-        "dancerudiments-0.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "2e6f764acd4b85f218271f60da7946e9a0c428a5f64d84e22646a56b308b72f6",
-        "dancerudiments-0.3.0-cp313-cp313-win_amd64.whl": "ac83a2fadea61907ef21102791568bd35fe94c6068304b940ea2d464009d75e7",
-        "dancerudiments-0.3.0-cp314-cp314-macosx_11_0_arm64.whl": "796f90562d78b1481739e314359823693f0c7f90a0f1433426c0f5b6637d339d",
-        "dancerudiments-0.3.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "db9d6217fcf27760243c3c38ecd992499fcfc03f35b4a6e6cf9075bbd5932004",
-        "dancerudiments-0.3.0-cp314-cp314-win_amd64.whl": "9c664cb021ad8445d0861eb52bd91ce7b2ff9cde7ae62ca2d170e5a23cf1c219",
-        "dancerudiments-0.3.0-cp39-cp39-macosx_11_0_arm64.whl": "da2632d19679b9c2df60b5d1e1c85a1e2eeff4779b3df626bc5f9235bfa25eca",
-        "dancerudiments-0.3.0-cp39-cp39-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "33242ac267774539d28b7fb03fcd5f9bdc5ca1c607a5526ddb79e61d7e42d660",
-        "dancerudiments-0.3.0-cp39-cp39-win_amd64.whl": "a3965d9493d6164e7011ad605ca267619395f87015b46418c1cdf378136b0d45"
+        "dancerudiments-0.4.9-cp310-cp310-macosx_11_0_arm64.whl": "52b8f75fe6f6f71ae2f93b564a046a458df3eaf4da5a41638cc0b340ebb2679e",
+        "dancerudiments-0.4.9-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "8da113b14ccc12039945c9c9960458c4864dda083c59d61f3a8b8430fcd5a22d",
+        "dancerudiments-0.4.9-cp310-cp310-win_amd64.whl": "043eaa78e14912414e076c48e3cd72d2465a238078b50543c4fe90c9eb5b624c",
+        "dancerudiments-0.4.9-cp311-cp311-macosx_11_0_arm64.whl": "df11e940a3d0d7a5ff4fdafb01e7114d1d84c355f901521b04c57d996d7d7962",
+        "dancerudiments-0.4.9-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "23f2a2d7d9e9948166fa6f1120c08bfb55acc2b271e862ba5d06d72031c6fd15",
+        "dancerudiments-0.4.9-cp311-cp311-win_amd64.whl": "9616544cbf1169b6c60c769a34a19db87acf857c6138a30e89d0dc774703493b",
+        "dancerudiments-0.4.9-cp312-cp312-macosx_11_0_arm64.whl": "d80869edc0cdfc2d0ce082dade829a2300b5647e850095af64608f586814f04d",
+        "dancerudiments-0.4.9-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "ff98965390fce7c3d873204592bcadc45faeb5e79e5ec24d8c914de9237654e4",
+        "dancerudiments-0.4.9-cp312-cp312-win_amd64.whl": "0dab08d532f3e32c082f30011661ea3e86a065ee3f23bc905da1636448a4ab36",
+        "dancerudiments-0.4.9-cp313-cp313-macosx_11_0_arm64.whl": "184b9c2082830b7ed7d93d88e876dd6aa6d0e6a8f78242672476b94d5fcd728a",
+        "dancerudiments-0.4.9-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "64359359f451b9c70b7a9cdaa4d8680d6de2c6ae7a08fc653c93449ca21529a0",
+        "dancerudiments-0.4.9-cp313-cp313-win_amd64.whl": "4f6cb0efce3d092594a4f3da429626791be5e0c7d8224c7f31c93920a8a4dc76",
+        "dancerudiments-0.4.9-cp314-cp314-macosx_11_0_arm64.whl": "5083ec7523ae536f08133c1efb4de6941c1639cd5a64bce94190c0a47a69c23a",
+        "dancerudiments-0.4.9-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "84b37f2e060c59c371fd4511faede0fe3d9998d05498042c4ef8448c44edac0f",
+        "dancerudiments-0.4.9-cp314-cp314-win_amd64.whl": "dc5b3a18362b9d7ee0acc9a93e9dd2efff3bb1645f19068fd5a72732686c1341",
+        "dancerudiments-0.4.9-cp39-cp39-macosx_11_0_arm64.whl": "4390f533fbfb350a00e5b83459fcfb248989b5cfd5b111f972cdbada0e064bba",
+        "dancerudiments-0.4.9-cp39-cp39-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": "b7fa60ccfd4f7fe2ef98e732735983f94ea14904776fe3ff04cfc70d0ba8c2de",
+        "dancerudiments-0.4.9-cp39-cp39-win_amd64.whl": "c0145e822ace8e54d65550b3b69ba38a9488752c8ef8fd1621e719cfc2edf9a4"
       }
     },
     "policy": "latest-stable",
     "schema": "stemlab.viewer-releases.v1",
     "timeline": {
-      "commit": "169edf420bc4eb5c0664a10fb962421a5afe0814",
-      "integrity": "sha512-RMxUowcR9FlXqS1qkr/6Rzof38fuCS2T8onZ0RNhR0W6NwIb88qCZNhmehz9o3padda00bb32JDzMTxAquI4oQ==",
+      "commit": "8c77ffb60f1a9305ec0fa48cb6db848c7e22000d",
+      "integrity": "sha512-Pu0MyU57tRjT+f9250CCbHV+kHT8rzqJsk/1Z+C7rBAVtv+wraPP1lCDjaPGyW6jwOG3PqVT7LKNtj0omsV43A==",
       "repository": "kieransimkin/react-timeline-sequence",
-      "tag": "v0.8.0",
-      "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.8.0.tgz",
-      "version": "0.8.0"
+      "tag": "v0.8.1",
+      "tarball": "https://registry.npmjs.org/react-timeline-sequence/-/react-timeline-sequence-0.8.1.tgz",
+      "version": "0.8.1"
     }
   },
   "outputs": {
@@ -43,8 +43,8 @@
   },
   "schema": "stemlab.viewer-build.v1",
   "sources": {
-    "package-lock.json": "7f58f8845e1df93096a15d84b43d4a68357696cd71ee002e469549c39dfe1585",
-    "package.json": "4ae19e074b522e65f1e461b1635f4b91ca65aac4a6b3812b7b439f1d95bbcc1d",
+    "package-lock.json": "52255c84900e009ee3911ad1d48eecd2ce81724c133e3b047983a6fe11457dd0",
+    "package.json": "cf64936be0d90c5c7229892aa86cdd45018892dbc73bf77bcb10380b246ddea7",
     "web-client/src/app.jsx": "6b8ed30b846d20bf82ed06ee3f47f3510f878e082cde954c33ac36e5ab66c2ab",
     "web-client/src/audio-channels.js": "a2bba51c94ec03a73c521f44d3968d804fce49fdbc7358c61d6c4d7f346951b4",
     "web-client/src/beat-map-editor.jsx": "82c500254a58edd5c5b0ce53895526e0177b86ecd3aadf4d0edbbc5b30004ee5",
