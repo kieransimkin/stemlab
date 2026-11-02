@@ -9,7 +9,7 @@ from stemlab.analysis.loops import analyze_loops
 from stemlab.analysis.phrase_loops import (
     PhraseLoopConfig, analyze_existing_phrase_loops, analyze_phrase_loops,
     _beat_aligned_bounds, _boundary_lyric_repeat, _complete_beat_aligned_bounds,
-    musical_restart_context,
+    _refine_contiguous_line_ends, musical_restart_context,
 )
 from stemlab.analysis.rudiment_matches import extract_peak_events
 from stemlab.cli import app
@@ -127,6 +127,39 @@ def test_alignment_recursively_encloses_neighbouring_overlapping_lyrics():
     assert aligned['lyric_expansion_iterations'] == 1
     assert aligned['enclosed_lyric_bounds'] == {
         'start_seconds':1.0,'end_seconds':7.7}
+
+
+def test_onset_only_lrc_ends_refine_from_explicit_whisper_words():
+    lines=[dict(start=2.1,end=4.1,text='first',occurrence_index=0),
+           dict(start=4.1,end=6.1,text='second',occurrence_index=1),
+           dict(start=6.1,end=6.85,text='last',occurrence_index=2)]
+    whisper={'words':[
+        dict(start=2.0,end=3.7,word='first'),
+        dict(start=4.2,end=5.8,word='second'),
+    ]}
+    refined=_refine_contiguous_line_ends(lines,whisper)
+    assert refined[0]['end'] == 3.7
+    assert refined[0]['canonical_inferred_end'] == 4.1
+    assert refined[0]['end_timing_source'] == 'whisper_words'
+    assert refined[1]['end'] == 5.8
+    assert refined[2] == lines[2]
+    assert lines[0]['end'] == 4.1  # Canonical input is not mutated.
+
+
+def test_onset_only_lrc_phrase_search_no_longer_cascades_through_song(tmp_path):
+    master,_,beat,stems,canonical=evidence(tmp_path)
+    for line in canonical['lyric_timing']:
+        line['start'] += .1
+        line['end'] = min(40.0,line['end']+.1)
+    words=[dict(start=line['start'],end=line['end']-.3,word=line['text'])
+           for line in canonical['lyric_timing'][:-1]]
+    report=analyze_phrase_loops(master,tmp_path/'lrc',canonical=canonical,
+        beat_results=[beat],stems=stems,whisper_result={'words':words},
+        config=PhraseLoopConfig(top=8,min_lines=2))
+    assert report['candidate_count'] > 0
+    assert any(any(line.get('end_timing_source') == 'whisper_words'
+                   for line in candidate['included_lyrics'])
+               for candidate in report['candidates'])
 
 
 def test_line_boundary_mode_is_explicit_legacy_opt_out(tmp_path):

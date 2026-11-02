@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.12.1 - 2026-11-02
+
+- Refine onset-only LRC carry-forward line ends from explicit Whisper word timings before beat-aligned phrase expansion, preventing a single boundary adjustment from cascading through every later lyric while leaving missing evidence unknown.
+
 ## 1.12.0 - 2026-11-02
 
 - Make detected-beat boundaries the default for lyric phrase-loop auditions.

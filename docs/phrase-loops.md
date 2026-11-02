@@ -33,6 +33,10 @@ reimplemented or used as a substitute for musical listening.
 
 - Candidate targets come from ordered canonical line starts and explicit line
   ends, preserving repeated occurrences and any interior zero-length caption.
+  Standard LRC contains onsets rather than true vocal ends, so a carried-forward
+  end equal to the next line onset is refined only when an explicit Whisper word
+  interval ends earlier inside that same window. The canonical input is not
+  mutated, and absent or crossing word evidence remains unknown.
   By default the start moves backward to the preceding detected beat and the end
   moves forward to the first detected beat at the same measured bar position.
   If either new boundary touches another timed lyric, that complete line is
