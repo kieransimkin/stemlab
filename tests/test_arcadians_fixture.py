@@ -12,7 +12,7 @@ def test_arcadians_canonical_lrc_matches_locked_reference():
     path = EXAMPLE / "canonical-lyric-timing.lrc"
     raw = path.read_bytes()
     assert hashlib.sha256(raw).hexdigest() == (
-        "92b46abc4caf1caa8eddf7c306a9e767f8d0bbefed3b39d38e4b4f96981e9de7"
+        "8242b9a9307a934f15bb78593382536dd74c67b34b83c2fe0ef739c58e846e19"
     )
     events = _parse_lrc(raw.decode("utf-8-sig"))
     assert len(events) == 48

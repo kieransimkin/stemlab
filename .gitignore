@@ -33,3 +33,7 @@ models/
 .pytest-rts-*/
 .web-test-results-*/
 stemlab-codex-results/
+
+# Local test scratch is never source or release evidence.
+.pytest_cache/
+.test-tmp/
