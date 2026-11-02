@@ -1,6 +1,6 @@
 """Keep pytest fixtures off Windows sync folders and stale global temp paths.
 
-Windows: %LOCALAPPDATA%/StemLab/pytest/<checkout-fingerprint>/pytest-of-USER/pytest-N.
+Windows: a unique %LOCALAPPDATA%/stemlab/pytest-tmp/direct-* run root.
 Other platforms: the existing git-ignored .pytest-tmp/ under the checkout.
 Explicit --basetemp or PYTEST_DEBUG_TEMPROOT always wins.
 """
