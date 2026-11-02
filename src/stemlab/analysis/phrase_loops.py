@@ -70,6 +70,44 @@ def _canonical_lines(canonical: dict, duration: float) -> list[dict]:
     return lines
 
 
+def _refine_contiguous_line_ends(lines: list[dict], whisper_result: dict | None) -> list[dict]:
+    """Replace onset-only LRC carry-forward ends with explicit word ends.
+
+    Standard LRC supplies line onsets, so canonical normalisation conservatively
+    carries each line to the next onset. Beat expansion would otherwise touch the
+    next line, then recursively walk through the whole song. A refinement is made
+    only when explicit Whisper word intervals overlap that exact line window and
+    end strictly before the next canonical onset. Missing evidence stays unknown.
+    """
+    words = []
+    for item in (whisper_result or {}).get("words", []):
+        try:
+            start, end = float(item["start"]), float(item["end"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if np.isfinite([start, end]).all() and 0 <= start < end:
+            words.append((start, end))
+    if not words:
+        return lines
+
+    refined = []
+    for index, original in enumerate(lines):
+        line = dict(original)
+        if index + 1 < len(lines):
+            next_start = float(lines[index + 1]["start"])
+            if abs(float(line["end"]) - next_start) <= 1e-9:
+                ends = [min(end, next_start) for start, end in words
+                        if end > line["start"] and start < next_start]
+                explicit_end = max(ends, default=None)
+                if (explicit_end is not None
+                        and line["start"] < explicit_end < next_start - 1e-9):
+                    line["canonical_inferred_end"] = float(line["end"])
+                    line["end"] = float(explicit_end)
+                    line["end_timing_source"] = "whisper_words"
+        refined.append(line)
+    return refined
+
+
 def _iou(a: int, b: int, c: int, d: int) -> float:
     overlap = max(0, min(b, d) - max(a, c))
     return overlap / (max(b, d) - min(a, c))
@@ -326,7 +364,9 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
     if not len(audio) or not np.isfinite(audio).all():
         raise ValueError("Master must contain finite audio samples")
     source_hash = sha256_file(audio_path)
-    lines = _canonical_lines(canonical, len(audio)/sr)
+    lines = _refine_contiguous_line_ends(
+        _canonical_lines(canonical, len(audio)/sr), whisper_result
+    )
     ratings, excluded = _feedback(feedback, source_hash, len(audio), lines, sr)
     model, beats, down, errors = _grid(beat_results, len(audio)/sr)
     strict_cfg = LoopConfig(snap_ms=0)
@@ -468,6 +508,7 @@ def analyze_phrase_loops(audio_path: Path, output_dir: Path, *, canonical: dict,
             "Missing attack similarity stays null; available context weights are reported.",
             "Strict loop search and its acceptance gates are unchanged.",
             "Phrase-loop boundaries use enclosing detected beats at the same measured bar phase by default; --line-boundaries is a legacy comparison opt-out.",
+            "Onset-only LRC carry-forward ends are refined only from explicit Whisper word intervals; absent word evidence remains unknown.",
             "Beat expansion recursively encloses every timed lyric it touches; candidates that cannot keep neighbouring vocals complete are held.",
             "Optional detected bar-phase filter uses enclosing downbeats and consistent measured beats per bar; it does not prove meter, harmony or listening quality.",
             "Native audio slices only; default boundary alignment changes the cut to measured beat events but applies no fade, crossfade, stretch or normalisation."])

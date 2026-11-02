@@ -712,7 +712,10 @@ and any neighbouring timed lyric touched by that expansion is recursively
 enclosed before the boundaries are realigned. Unknown or changing meter is held
 rather than guessed. The report retains
 both the requested lines and every lyric occurrence actually audible in the
-expanded slice. Use `--line-boundaries` only to reproduce the legacy off-grid
+expanded slice. When standard LRC supplies only line onsets and therefore carries
+each line to the next onset, StemLab may shorten that inferred end only to an
+explicit Whisper word end inside the same window; missing word evidence remains
+unknown. Use `--line-boundaries` only to reproduce the legacy off-grid
 comparison; it is not the recommended loop deliverable. This opt-in search also
 compares the musical context around the final cuts, uses explicit artist feedback
 and selects diverse passages. Suggestions remain separate from strict accepted loops. See
