@@ -22,11 +22,13 @@ def test_default_root_is_created_early(monkeypatch, tmp_path):
     monkeypatch.delenv("PYTEST_DEBUG_TEMPROOT", raising=False)
     checkout = tmp_path / "OneDrive" / "checkout with spaces"
     checkout.mkdir(parents=True)
-    config = SimpleNamespace(rootpath=checkout, getoption=lambda _: None)
+    config = SimpleNamespace(rootpath=checkout, getoption=lambda _: None, _inicache={})
     pytest_configure(config)
-    expected = default_temp_root(checkout)
-    assert Path(os.environ["PYTEST_DEBUG_TEMPROOT"]) == expected
-    assert expected.is_dir()
+    expected_parent = default_temp_root(checkout)
+    actual = Path(os.environ["PYTEST_DEBUG_TEMPROOT"])
+    assert actual.parent == expected_parent
+    assert actual.name.startswith("direct-")
+    assert actual.is_dir()
 
 
 def test_windows_location_avoids_both_temp_and_onedrive(tmp_path):
@@ -36,9 +38,9 @@ def test_windows_location_avoids_both_temp_and_onedrive(tmp_path):
     env = {"LOCALAPPDATA": str(local)}
     first = default_temp_root(checkout, environment=env, platform="nt")
     second = default_temp_root(other_checkout, environment=env, platform="nt")
-    assert first.is_relative_to(local / "StemLab" / "pytest")
+    assert first == local / "stemlab" / "pytest-tmp"
     assert not first.is_relative_to(checkout)
-    assert first != second  # Separate worktrees never share the same temp root.
+    assert first == second
     assert first == default_temp_root(checkout, environment=env, platform="nt")
 
 

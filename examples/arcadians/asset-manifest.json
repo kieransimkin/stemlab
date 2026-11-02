@@ -99,13 +99,13 @@
   "lyric_timing": {
     "status": "canonical_user_edited_locked",
     "path": "canonical-lyric-timing.lrc",
-    "bytes": 2542,
-    "sha256": "92b46abc4caf1caa8eddf7c306a9e767f8d0bbefed3b39d38e4b4f96981e9de7",
-    "encoding": "UTF-8 with BOM",
+    "bytes": 2441,
+    "sha256": "8242b9a9307a934f15bb78593382536dd74c67b34b83c2fe0ef739c58e846e19",
+    "encoding": "UTF-8 with BOM and LF line endings",
     "authority": {
       "status": "canonical_user_edited_locked",
       "basis": "Kieran stated that he carefully manually timed Arcadians.lrc and asked to make it the new canonical lyric timing.",
-      "timing_accuracy_evidence": "Kieran carefully manually timed the lyric starts and clear/end events; the exact supplied file is preserved byte-for-byte and overrides the earlier automated estimate.",
+      "timing_accuracy_evidence": "Kieran carefully manually timed the lyric starts and clear/end events; cue content is preserved while Git canonicalises line endings to LF, and this file overrides the earlier automated estimate.",
       "tempo_bpm_artist_confirmed": 145.0
     },
     "validation": {
