@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import inspect
+import os
 import shutil
 import tempfile
 import time
 from pathlib import Path
 
+from stemlab.bootstrap import CACHE_ROOT
 from stemlab.models import BS_ROFORMER_IDS
 from stemlab.types import SeparationResult
 from stemlab.util import device_string
@@ -14,6 +16,9 @@ from .common import collect_wavs
 
 
 MVSep_MEGA53_MINIMUM_CUDA_BYTES = 16 * 1024**3
+BS_ROFORMER_MODELS_DIR = Path(
+    os.environ.get("STEMLAB_BS_ROFORMER_MODELS", CACHE_ROOT / "bs-roformer")
+)
 
 
 def _validate_model_hardware(
@@ -52,6 +57,8 @@ class BSRoformerBackend(SeparatorBackend):
         sig = inspect.signature(BSRoformerSession)
         kwargs = {}
         params = sig.parameters
+        if "models_dir" in params:
+            kwargs["models_dir"] = str(BS_ROFORMER_MODELS_DIR)
         if "device" in params:
             dev = device_string(device)
             kwargs["device"] = "cpu" if dev == "mps" else dev
