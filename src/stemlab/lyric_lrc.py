@@ -5,6 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from .lyric_quality import assess_lines
+
 
 def build_lrc(alignment: dict, *, title: str, artist: str, line_anchors: dict | None = None) -> tuple[str, dict]:
     """Keep every canonical line; flag late anchors and refuse missing lines.
@@ -22,6 +24,7 @@ def build_lrc(alignment: dict, *, title: str, artist: str, line_anchors: dict | 
     duration = float(alignment["duration"])
     cues, output = [], [f"[ti:{title}]", f"[ar:{artist}]", "[offset:0]"]
     previous_cs = -1
+    quality_rows = []
     for number, line in enumerate(text.splitlines(), 1):
         if not line.strip():
             output.append("")
@@ -53,8 +56,14 @@ def build_lrc(alignment: dict, *, title: str, artist: str, line_anchors: dict | 
                      "first_word_anchored": not late, "review_reasons": reasons,
                      "recovery_evidence": anchor.get("recovery_evidence")})
         output.append(stamp + line)
+        quality_rows.append({'text': line, 'start': float(anchor['start']),
+                             'end': max([float(anchor['end']), *[float(w['end']) for w in usable]]),
+                             'canonical_word_count': len(words), 'timing_source': 'observed_asr'})
     if not cues:
         raise ValueError("No canonical lyric lines")
+    quality = assess_lines(quality_rows, duration)
+    if not quality['export_eligible']:
+        raise ValueError(f"Line-level timing gates failed: {quality['issues']}")
     report = {"schema": "stemlab.canonical-line-lrc.v1", "line_count": len(cues),
               "canonical_nonempty_lines": sum(bool(line.strip()) for line in text.splitlines()),
               "canonical_word_match_ratio": alignment["match_ratio"],
@@ -62,7 +71,7 @@ def build_lrc(alignment: dict, *, title: str, artist: str, line_anchors: dict | 
               "review_line_count": sum(bool(cue["review_reasons"]) for cue in cues),
               "canonical_text_parity": True, "strictly_increasing": True,
               "duration_seconds": duration, "cues": cues,
-              "listening_qa": "pending", "accepted": False,
+              "listening_qa": "pending", "accepted": False, "line_quality": quality,
               "policy": "Observed ASR word anchors only; no interpolation or beat snapping. "
                         "Late anchors are flagged; listening QA remains required."}
     return "\n".join(output) + "\n", report

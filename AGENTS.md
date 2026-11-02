@@ -1,5 +1,12 @@
 # Agent instructions for StemLab
 
+## Lyric recovery and export gates
+
+- Check the current official release and actual imported runtime before each new workflow run.
+- Use the line-gated native recognition/export route in `docs/lyric-line-gates.md`; never recover an old interpolating script as a fallback after a held export.
+- Keep acoustic known-text alignment, free recognition, canonical spelling, independent vocal parts and artist approval separate. A single chronological fusion or phrase-loop boundary fix does not resolve simultaneous voices.
+- Retain original observations and part assignments. No global match score, forced text coverage or shared duplicate observation overrides a failed section or establishes independent performances.
+
 - Read README.md, docs/, plugins/stemlab/skills/ and the CLI help before selecting an analysis route. Check analysis, timing, evidence, MIDI, loop and agent integrations.
 - Use the relevant existing capabilities as fully as the task warrants. Always look for a useful improvement to this tool. Fix a reusable gap here rather than copying its engine or carrying a private workaround; record why no change is justified when that is the result.
 - Submit improvements as PRs to https://github.com/kieransimkin/stemlab/pulls. Never leave a completed reusable improvement only in a local fork. Keep changes focused and preserve the tool's identity and compatibility contracts.

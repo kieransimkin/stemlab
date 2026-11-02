@@ -6,6 +6,21 @@ By **[Kieran Simkin](https://kieransimkin.co.uk/)** · [DanceFlow ecosystem](htt
 
 Local music analysis for stems, timing, beats, harmony, lyrics, MIDI and loopable sections for Shorts. https://kieransimkin.co.uk/
 
+## Complete lyric-line gates and separate vocal parts
+
+Canonical LRC export rejects missing anchors, implausibly long cross-gap phrases,
+compressed line clusters and rounded onset collisions before ranking candidates.
+The repetition-safe `python -m stemlab.lyric_batch` route preserves native ASR
+evidence and holds complete export when a section fails; it never interpolates
+missing lines. Optional `python -m stemlab.lyric_acoustic` reuses existing local
+Whisper weights for known-text alignment. Explicit separate-part line selections
+can retain simultaneous onsets without serializing backing vocals.
+
+Read [the commands, synthetic demonstration and limits](docs/lyric-line-gates.md).
+Recognition scores and forced text coverage do not prove sung-word accuracy or
+voice identity. All exports remain drafts until artist listening confirmation;
+existing files, canonical lyrics and selected EPK timings are preserved.
+
 ## Canonical song example — Star Lights Glow (Mystery Liquid Kick)
 
 `examples/star-lights-glow-mystery-liquid-kick/` holds Bass Ben & Friends'

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Gate canonical LRC export on line-level spans, compressed clusters and rounded onset collisions; retain complete native evidence when a section fails.
+- Add repetition-safe batch recognition and an optional local-weight acoustic alignment adapter without interpolating missing lines or overwriting artist edits.
+- Export explicit separate-part line selections with original occurrence IDs and simultaneous onsets, retaining review hypotheses without inferring vocal identity or promoting canonical timing.
+
 ## 1.12.1 - 2026-11-02
 
 - Refine onset-only LRC carry-forward line ends from explicit Whisper word timings before beat-aligned phrase expansion, preventing a single boundary adjustment from cascading through every later lyric while leaving missing evidence unknown.
