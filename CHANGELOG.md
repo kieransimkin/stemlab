@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.11.1 - 2026-11-02
+
+- Isolate Windows pytest process, fixture and cache paths in a probed unique LocalAppData run root with cleanup.
+- Normalize Git text and checked-in analysis fixtures to LF, updating exact Arcadians and source-evidence hashes for stable cross-platform verification.
+
 ## 1.11.0 - 2026-10-21
 
 - Synchronize React Timeline Sequence 0.8.0 and its verified registry identity.
