@@ -43,7 +43,13 @@ script proposes the next minor version after the higher of that repository's
 source version and latest stable GitHub release. Review the preview; explicit
 `-TimelineVersion`, `-DanceRudimentsVersion` and `-StemLabVersion` overrides accept
 fresh MAJOR.MINOR.PATCH versions. Prereleases, existing local/remote tags and
-attempts to reuse published versions are rejected.
+attempts to retag published versions are rejected.
+
+For a StemLab-only change, preview with `-ReusePublishedCompanions`. Both
+companion checkouts must match their current stable tags and public registries.
+The coordinator records those exact releases in the session, rebuilds StemLab
+against them and creates only the fresh StemLab tag. A moved tag, unpublished
+companion change or stale registry fails the existing gates.
 
 For each repository the coordinator prepares a version commit, pushes main,
 waits for the required workflows for **that exact commit**, and only then pushes
@@ -172,7 +178,7 @@ resume: do not edit journal SHAs to bypass this safeguard. Review and commit the
 fixes, complete or abandon the partial release deliberately, and start a new
 session with a different `-StateFile` and fresh versions for any already-tagged
 projects. Existing published tags/assets remain intact. The coordinator is
-conservative: it releases all three projects; it does not guess how to adopt a
+conservative: it uses the recorded new or reused releases and does not guess how to adopt a
 partially edited release or roll it back.
 
 ## Source of truth

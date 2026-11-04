@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.13.0
 
 - Gate canonical LRC export on line-level spans, compressed clusters and rounded onset collisions; retain complete native evidence when a section fails.
 - Add repetition-safe batch recognition and an optional local-weight acoustic alignment adapter without interpolating missing lines or overwriting artist edits.
