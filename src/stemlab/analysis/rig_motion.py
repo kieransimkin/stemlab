@@ -154,9 +154,12 @@ def _accents(t, energy, fps):
                      (energy[1:-1] > threshold))[0] + 1
     strongest = sorted(peaks, key=lambda k: float(energy[k]), reverse=True)
     taken = []
+    blocked = np.zeros(len(t), dtype=bool)
+    radius = math.ceil(.13 * fps) - 1
     for p in strongest:
-        if all(abs(p - k) >= .13 * fps for k in taken):
+        if not blocked[p]:
             taken.append(int(p))
+            blocked[max(0, p - radius):p + radius + 1] = True
     maximum = max(float(np.percentile(energy, 95)), 1e-9)
     return [{"seconds": round(float(t[p]), 6), "strength": round(float(min(1, energy[p] / maximum)), 4)}
             for p in sorted(taken)]
@@ -173,6 +176,69 @@ def _correlation(t, signal, seconds):
     b = b - b.mean()
     den = math.sqrt(float(np.dot(a, a) * np.dot(b, b)))
     return float(np.dot(a, b) / den) if den > 1e-10 else 0.0
+
+
+def _regular_correlations(times, signals, periods):
+    """Overlap-normalised Pearson correlations on the uniform analysis grid.
+
+    Interpolate fractional lags exactly as the scalar path does. The prefix
+    statistics use the same overlap as the cross-products, including the
+    fractional-lag endpoint, rather than normalising by the full recording.
+    """
+    size = len(times)
+    step = float((times[-1] - times[0]) / (size - 1))
+    regular = times[0] + step * np.arange(size)
+    if not np.allclose(times, regular, rtol=0, atol=step * 1e-8):
+        return np.asarray([[_correlation(times, row, period) for period in periods]
+                           for row in signals])
+
+    # Centre before accumulating squares so near-constant channels don't lose
+    # precision to cancellation when their means are removed again per lag.
+    rows = np.asarray(signals, dtype=np.float64)
+    rows = rows - rows.mean(axis=1, keepdims=True)
+    fft_length = 1 << (2 * size - 1).bit_length()
+    spectrum = np.fft.rfft(rows, n=fft_length, axis=1)
+    ac = np.fft.irfft(spectrum * spectrum.conj(), n=fft_length, axis=1)
+    first = np.pad(rows.cumsum(axis=1), ((0, 0), (1, 0)))
+    squares = np.pad((rows ** 2).cumsum(axis=1), ((0, 0), (1, 0)))
+    adjacent = np.pad((rows[:, :-1] * rows[:, 1:]).cumsum(axis=1), ((0, 0), (1, 0)))
+    result = np.zeros((len(rows), len(periods)))
+    for i, period in enumerate(periods):
+        lag = period / step
+        if abs(lag - round(lag)) <= 1e-8:
+            lag = float(round(lag))
+        offset = int(lag)
+        frac = lag - offset
+        count = size - offset - (frac > 0)
+        if count <= 0:
+            continue
+        # At a grid-aligned lag, floating-point addition can round the last
+        # shifted timestamp outside the scalar path's inclusive endpoint.
+        if (times[count - 1] + period > times[-1]
+                or (count < size and times[count] + period <= times[-1])):
+            result[:, i] = [_correlation(times, row, period) for row in signals]
+            continue
+        if count < 50:
+            continue
+        a = first[:, count]
+        aa = squares[:, count]
+        b = first[:, offset + count] - first[:, offset]
+        bb = squares[:, offset + count] - squares[:, offset]
+        ab = ac[:, offset]
+        if frac:
+            # Autocorrelation at the shorter integer lag includes one final
+            # pair that cannot be interpolated inside the recording.
+            ab = ab - rows[:, count] * rows[:, -1]
+            b1 = first[:, offset + count + 1] - first[:, offset + 1]
+            b11 = squares[:, offset + count + 1] - squares[:, offset + 1]
+            b01 = adjacent[:, offset + count] - adjacent[:, offset]
+            keep = 1 - frac
+            b = keep * b + frac * b1
+            bb = keep**2 * bb + 2 * keep * frac * b01 + frac**2 * b11
+            ab = keep * ab + frac * ac[:, offset + 1]
+        denominator = np.sqrt(np.maximum(0, aa - a*a/count) * np.maximum(0, bb - b*b/count))
+        np.divide(ab - a*b/count, denominator, out=result[:, i], where=denominator > 1e-10)
+    return np.clip(result, -1, 1)
 
 
 def _phase(t, energy, period):
@@ -201,18 +267,17 @@ def _tempo_candidates(t, energy, group_envelopes, minimum, maximum):
     if float(np.ptp(energy)) < .02 or len(t) < 6:
         return []
     bpm_range = np.arange(minimum, maximum + .001, .5)
-    pooled = np.asarray([_correlation(t, energy, 60.0 / bpm) for bpm in bpm_range])
-    groups = np.asarray([[_correlation(t, signal, 60.0 / bpm) for bpm in bpm_range]
-                         for signal in group_envelopes])
+    correlations = _regular_correlations(t, [energy, *group_envelopes], 60.0 / bpm_range)
+    pooled, groups = correlations[0], correlations[1:]
     # 80th-percentile positive agreement retains a strong footfall stream even
     # if slow arm/torso motion is in antiphase. Low support remains explicit.
     positive = np.maximum(0.0, groups)
     agreement = np.quantile(positive, .8, axis=0)
     ranks = .85 * agreement + .15 * np.maximum(0, pooled)
     local = [i for i in range(1, len(ranks)-1) if ranks[i] >= ranks[i-1] and ranks[i] > ranks[i+1]]
-    if ranks[0] > ranks[1]:
+    if len(ranks) == 1 or ranks[0] > ranks[1]:
         local.append(0)
-    if ranks[-1] > ranks[-2]:
+    if len(ranks) > 1 and ranks[-1] > ranks[-2]:
         local.append(len(ranks)-1)
     proposals = []
     for i in local:
@@ -264,57 +329,72 @@ def _groups_at(values, channels, active):
     return result
 
 
-def _pose_distance(left, right, groups):
+def _pose_distances(left, right, groups):
     measures = []
     for _, path, indices, span, _ in groups:
+        a, b = left[..., indices], right[..., indices]
         if path == "rotation_quaternion":
-            q0, q1 = left[indices], right[indices]
-            q0 = q0 / max(1e-12, np.linalg.norm(q0))
-            q1 = q1 / max(1e-12, np.linalg.norm(q1))
-            dist = 2 * math.acos(float(np.clip(abs(np.dot(q0, q1)), 0, 1)))
+            a = a / np.maximum(1e-12, np.linalg.norm(a, axis=-1, keepdims=True))
+            b = b / np.maximum(1e-12, np.linalg.norm(b, axis=-1, keepdims=True))
+            distance = 2 * np.arccos(np.clip(np.abs(np.sum(a * b, axis=-1)), 0, 1))
         else:
-            dist = float(np.linalg.norm(left[indices] - right[indices]))
-        measures.append(dist / span)
-    return float(np.percentile(measures, 80)) if measures else float("inf")
+            distance = np.linalg.norm(a - b, axis=-1)
+        measures.append(distance / span)
+    if not measures:
+        return np.full(left.shape[:-1], np.inf)
+    return np.percentile(np.stack(measures, axis=-1), 80, axis=-1)
+
+
+def _pose_distance(left, right, groups):
+    return float(_pose_distances(left, right, groups))
 
 
 def _pose_at(times, values, seconds):
-    i = int(np.searchsorted(times, seconds, side="right") - 1)
-    i = min(max(0, i), len(times) - 2)
-    w = (seconds - times[i]) / (times[i+1] - times[i])
-    out = (1-w) * values[i] + w * values[i+1]
-    return out
+    i = np.clip(np.searchsorted(times, seconds, side="right") - 1, 0, len(times) - 2)
+    w = np.asarray((seconds - times[i]) / (times[i+1] - times[i]))[..., None]
+    return (1-w) * values[i] + w * values[i+1]
+
+
+def _seam_batches(times, values, channels, groups, starts, duration):
+    """Score all in-range candidates in bounded blocks without sampling a new clock."""
+    starts = np.asarray(starts, dtype=float)
+    starts = starts[(starts >= times[0]) & (starts + duration <= times[-1])]
+    step_indices = [i for i, c in enumerate(channels) if c.get("interpolation") == "step"]
+    h = min(.04, duration / 12)
+    for block in range(0, len(starts), 128):
+        start = starts[block:block+128]
+        end = start + duration
+        a, b = _pose_at(times, values, start), _pose_at(times, values, end)
+        pose = _pose_distances(a, b, groups)
+        left = start - h >= times[0]
+        right = end + h <= times[-1]
+        va = (_pose_at(times, values, start + h)
+              - _pose_at(times, values, np.where(left, start-h, start))) / np.where(left, 2*h, h)[:, None]
+        vb = (_pose_at(times, values, np.where(right, end+h, end))
+              - _pose_at(times, values, end - h)) / np.where(right, 2*h, h)[:, None]
+        delta = va - vb
+        velocity = np.percentile(np.stack([
+            np.linalg.norm(delta[:, indices], axis=1) / max(scale, 1e-5)
+            for _, _, indices, _, scale in groups
+        ], axis=1), 80, axis=1)
+        drift = np.zeros(len(start))
+        for bone, path, indices, span, _ in groups:
+            if bone.lower() in ("root", "root_ctrl", "hips", "pelvis", "master") and path == "location":
+                drift = np.maximum(drift, np.linalg.norm(a[:, indices] - b[:, indices], axis=1) / span)
+        valid = np.ones(len(start), dtype=bool)
+        if step_indices:
+            ia = np.maximum(0, np.searchsorted(times, start, side="right") - 1)
+            ib = np.maximum(0, np.searchsorted(times, end, side="right") - 1)
+            valid = np.all(values[np.ix_(ia, step_indices)] == values[np.ix_(ib, step_indices)], axis=1)
+        for i in np.flatnonzero(valid):
+            yield float(start[i]), float(end[i]), float(pose[i]), float(velocity[i]), float(drift[i])
 
 
 def _seam(times, values, channels, groups, start, end):
-    if start < times[0] or end > times[-1]:
+    if not groups:
         return None
-    a, b = _pose_at(times, values, start), _pose_at(times, values, end)
-    pose = _pose_distance(a, b, groups)
-    h = min(.04, (end - start) / 12)
-    if start - h >= times[0]:
-        va = (_pose_at(times, values, start + h) - _pose_at(times, values, start - h)) / (2*h)
-    else:
-        va = (_pose_at(times, values, start + h) - a) / h
-    if end + h <= times[-1]:
-        vb = (_pose_at(times, values, end + h) - _pose_at(times, values, end - h)) / (2*h)
-    else:
-        vb = (b - _pose_at(times, values, end - h)) / h
-    velocity = []
-    for _, path, indices, _, scale in groups:
-        velocity.append(float(np.linalg.norm(va[indices] - vb[indices])) / max(scale, 1e-5))
-    velocity_cost = float(np.percentile(velocity, 80)) if velocity else float("inf")
-    # Root translation must not silently be discarded or in-place-normalised.
-    root_displacement = 0.0
-    for bone, path, indices, span, _ in groups:
-        if bone.lower() in ("root", "root_ctrl", "hips", "pelvis", "master") and path == "location":
-            root_displacement = max(root_displacement, float(np.linalg.norm(a[indices] - b[indices])) / span)
-    ia = max(0, int(np.searchsorted(times, start, side="right") - 1))
-    ib = max(0, int(np.searchsorted(times, end, side="right") - 1))
-    for i, c in enumerate(channels):
-        if c.get("interpolation") == "step" and values[ia, i] != values[ib, i]:
-            return None
-    return pose, velocity_cost, root_displacement
+    row = next(_seam_batches(times, values, channels, groups, [start], end - start), None)
+    return row[2:] if row is not None else None
 
 
 def _repeat_cost(times, values, groups, start, end):
@@ -322,9 +402,8 @@ def _repeat_cost(times, values, groups, start, end):
     if end + duration > times[-1]:
         return None
     offsets = np.linspace(0, duration, 17)
-    scores = [_pose_distance(_pose_at(times, values, start + offset),
-                             _pose_at(times, values, end + offset), groups) for offset in offsets]
-    return float(np.median(scores))
+    return float(np.median(_pose_distances(_pose_at(times, values, start + offsets),
+                                           _pose_at(times, values, end + offsets), groups)))
 
 
 def _search_loops(times, values, channels, active, primary, max_loops=12):
@@ -342,14 +421,8 @@ def _search_loops(times, values, channels, active, primary, max_loops=12):
     results = []
     for beats in (1, 2, 4, 8, 16, 32):
         span = beats * period
-        for start in anchors:
-            end = float(start + span)
-            if end > times[-1]:
-                continue
-            metrics = _seam(times, values, channels, groups, float(start), end)
-            if metrics is None:
-                continue
-            pose, tangent, drift = metrics
+        for start, end, pose, tangent, drift in _seam_batches(
+                times, values, channels, groups, anchors, span):
             if pose > .32 or tangent > .6 or drift > .02:
                 continue
             repeat = _repeat_cost(times, values, groups, float(start), end)
@@ -423,6 +496,34 @@ def _pose_periods(times, values, active):
     return distinct, [round(float(grid[0]), 4), round(float(grid[-1]), 4)]
 
 
+def _recurrence_windows(times, values, active):
+    """Look for recurrent sections near the start, middle and end of long takes."""
+    duration = float(times[-1] - times[0])
+    starts = [float(times[0])]
+    if duration > 90:
+        # Windows are sampled, not claimed as complete clip-wide recurrence coverage.
+        count = min(3, math.ceil(duration / 90))
+        starts = np.linspace(times[0], times[-1] - 90, count)
+    candidates = []
+    inspected = []
+    for start in starts:
+        a = int(np.searchsorted(times, start, side="left"))
+        b = int(np.searchsorted(times, start + 90, side="right"))
+        if b - a < 2:
+            continue
+        periods, window = _pose_periods(times[a:b], values[a:b], active)
+        inspected.append(window)
+        candidates.extend(dict(candidate, search_window_seconds=window) for candidate in periods)
+    candidates.sort(key=lambda item: item["trajectory_mismatch"])
+    distinct = []
+    for candidate in candidates:
+        if all(abs(candidate["seconds"] - old["seconds"]) >= .18 for old in distinct):
+            distinct.append(candidate)
+        if len(distinct) == 6:
+            break
+    return distinct, inspected
+
+
 def _independent_loops(times, values, channels, active, periods, *, max_loops=4):
     groups = _groups_at(values, channels, active)
     if not groups:
@@ -431,14 +532,8 @@ def _independent_loops(times, values, channels, active, periods, *, max_loops=4)
     for period in periods:
         duration = period["seconds"]
         starts = np.arange(times[0], times[-1] - duration + 1e-7, max(.1, duration / 16))
-        for start in starts:
-            end = float(start + duration)
-            if end > times[-1]:
-                continue
-            metrics = _seam(times, values, channels, groups, float(start), end)
-            if metrics is None:
-                continue
-            pose, tangent, root = metrics
+        for start, end, pose, tangent, root in _seam_batches(
+                times, values, channels, groups, starts, duration):
             if pose > .32 or tangent > .60 or root > .02:
                 continue
             repeated = _repeat_cost(times, values, groups, float(start), end)
@@ -514,7 +609,7 @@ def _analyze_poses(data, times, values, channels, digest, *, min_bpm, max_bpm,
     aligned = [_resample(times, stream)[1] for stream in streams]
     candidates = _tempo_candidates(t, envelope, aligned, min_bpm, max_bpm)
     primary = candidates[0] if candidates and len(accents) >= 5 else None
-    periods, inspected = _pose_periods(times, values, active)
+    periods, inspected = _recurrence_windows(times, values, active)
     aligned_loops = _search_loops(times, values, channels, active, primary, max_loops=8)
     loops = aligned_loops + _independent_loops(times, values, channels, active, periods)
     limitations = ["Motion accents are not verified musical beats or beat 1.",
@@ -522,8 +617,8 @@ def _analyze_poses(data, times, values, channels, digest, *, min_bpm, max_bpm,
                    "Loop suggestions are not seam repairs or contact/skin deformation checks."]
     if primary is None:
         limitations.append("Insufficient consistent motion accents for a tempo hypothesis.")
-    if times[-1] - times[0] > 90:
-        limitations.append("Pose recurrence search is restricted to the first 90 seconds; loop seam scoring uses source pose times.")
+    if len(inspected) > 1:
+        limitations.append("Pose recurrence searches bounded start, middle and end windows; uninspected intervals may contain other periods.")
     return {"format": FORMAT, "schema_version": 1, "source_file_sha256": digest,
             "source_kind": source_kind, "profile_sha256": data["profile_sha256"], "type_uri": data["type_uri"],
             "sample_rate_hz": fps,
@@ -533,8 +628,66 @@ def _analyze_poses(data, times, values, channels, digest, *, min_bpm, max_bpm,
             "bpm_candidates": candidates, "recommended_tempo": primary,
             "estimated_beat_map": _beat_map(times, primary, source_hash=digest),
             "pose_period_candidates": periods,
-            "pose_period_search_seconds": inspected,
+            "pose_period_search_seconds": inspected[0] if inspected else None,
+            "pose_period_search_windows_seconds": inspected,
             "loop_candidates": loops, "limitations": limitations}
+
+
+def analyze_motion_channels(times, values, channels, *, source_sha256: str,
+                            min_bpm: float = 60, max_bpm: float = 200) -> dict[str, Any]:
+    """Analyse evaluated, finite source-time motion arrays without a JSON round trip.
+
+    Callers own format decoding, units and the original source hash. Channels
+    describe continuous controls grouped by bone and data path. Quaternion
+    groups must be in array-index order and use the declared interpolation.
+    This evidence is not a DanceRudiments rig capture and cannot be compiled
+    or interpreted as a verified beat map or as a contact test.
+    """
+    if (not isinstance(source_sha256, str) or len(source_sha256) != 64
+            or any(char not in "0123456789abcdef" for char in source_sha256)):
+        raise ValueError("source_sha256 must be a lowercase SHA-256")
+    times = np.asarray(times, dtype=np.float64)
+    values = np.asarray(values, dtype=np.float64)
+    if (values.ndim != 2 or times.ndim != 1 or values.shape != (len(times), len(channels))
+            or not len(channels) or len(channels) > 4096 or values.size > MAX_VALUES):
+        raise ValueError("Motion arrays do not match the bounded channel layout")
+    groups = {}
+    seen = set()
+    for i, channel in enumerate(channels):
+        if (not isinstance(channel, dict) or not isinstance(channel.get("bone"), str)
+                or not isinstance(channel.get("data_path"), str)
+                or channel.get("value_type", "float") not in ("float", "integer", "boolean")
+                or channel.get("interpolation", "linear") not in ("linear", "step", "quaternion")
+                or type(channel.get("array_index")) is not int
+                or channel["array_index"] < (-1 if channel.get("interpolation") == "step" else 0)):
+            raise ValueError("Invalid motion channel descriptor")
+        if channel.get("value_type") in ("integer", "boolean") and not np.allclose(
+                values[:, i], np.rint(values[:, i]), rtol=0, atol=1e-8):
+            raise ValueError("Discrete motion channel contains fractional values")
+        key = (channel["bone"], channel["data_path"])
+        identity = (*key, channel["array_index"])
+        if identity in seen:
+            raise ValueError("Duplicate motion channel component")
+        seen.add(identity)
+        if channel["data_path"] == "rotation_quaternion":
+            if channel.get("interpolation") != "quaternion":
+                raise ValueError("Quaternion groups require quaternion interpolation")
+            groups.setdefault(key, []).append(i)
+    if groups:
+        values = values.copy()
+    for indices in groups.values():
+        if [channels[i]["array_index"] for i in indices] != [0, 1, 2, 3]:
+            raise ValueError("Incomplete quaternion group")
+        q = values[:, indices]
+        if np.any(np.abs(np.sum(q * q, axis=1) - 1) > 2e-5):
+            raise ValueError("Non-unit quaternion in motion channels")
+        flips = np.sum(q[1:] * q[:-1], axis=1) < 0
+        signs = np.r_[1, np.cumprod(np.where(flips, -1, 1))]
+        values[:, indices] = q * signs[:, None]
+    metadata = {"profile_sha256": hashlib.sha256(_canonical(channels).encode("ascii")).hexdigest(),
+                "type_uri": "stemlab:motion-channels/v1"}
+    return _analyze_poses(metadata, times, values, channels, source_sha256,
+                          min_bpm=min_bpm, max_bpm=max_bpm, source_kind="motion_channels")
 
 
 def analyze_rig_capture(path: Path | str, *, min_bpm: float = 60, max_bpm: float = 200,
