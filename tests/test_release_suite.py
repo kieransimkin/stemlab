@@ -391,6 +391,7 @@ def test_preview_reuses_verified_companions_without_planning_new_tags(tmp_path, 
     for name in versions:
         (tmp_path / name).mkdir()
     suite = rs.ReleaseSuite(options(tmp_path, execute=False, reuse_published_companions=True))
+    monkeypatch.setattr(rs, 'release_python_supported', lambda: True)
     monkeypatch.setattr(rs, 'require_origin', lambda *args: None)
     monkeypatch.setattr(rs, 'dirty_files', lambda *args: set())
     monkeypatch.setattr(rs, 'current_version', lambda repo, name: versions[name])
