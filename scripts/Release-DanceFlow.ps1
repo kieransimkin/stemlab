@@ -19,6 +19,7 @@ param(
     [string]$ProjectsRoot = (Get-Location).Path,
     [switch]$Execute,
     [switch]$Resume,
+    [switch]$ReusePublishedCompanions,
     [string]$DanceRudimentsVersion = '',
     [string]$TimelineVersion = '',
     [string]$StemLabVersion = '',
@@ -40,6 +41,7 @@ if (Test-Path -LiteralPath $PatchDirectory -PathType Container) {
 }
 if ($Execute) { $Arguments += '--execute' }
 if ($Resume) { $Arguments += '--resume' }
+if ($ReusePublishedCompanions) { $Arguments += '--reuse-published-companions' }
 if ($DanceRudimentsVersion) { $Arguments += @('--dancerudiments-version', $DanceRudimentsVersion) }
 if ($TimelineVersion) { $Arguments += @('--timeline-version', $TimelineVersion) }
 if ($StemLabVersion) { $Arguments += @('--stemlab-version', $StemLabVersion) }

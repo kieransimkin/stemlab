@@ -16,7 +16,8 @@ import release_suite as rs
 
 def options(root, **values):
     data = dict(projects_root=root, state_file=None, patch_dir=None, timeout_minutes=1,
-                execute=True, resume=False, dancerudiments_version='', timeline_version='', stemlab_version='')
+                execute=True, resume=False, reuse_published_companions=False,
+                dancerudiments_version='', timeline_version='', stemlab_version='')
     data.update(values)
     return argparse.Namespace(**data)
 
@@ -383,3 +384,34 @@ def test_identity_error_causes_no_partial_version_writes(tmp_path):
     with pytest.raises(ValueError, match='registry identity'):
         rs.prepare_stemlab_version(tmp_path, '1.5.0')
     assert rs.current_version(tmp_path, 'stemlab') == '1.4.2'
+
+
+def test_preview_reuses_verified_companions_without_planning_new_tags(tmp_path, monkeypatch):
+    versions = {'react-timeline-sequence': '0.8.1', 'DanceRudiments': '0.4.10', 'stemlab': '1.12.1'}
+    for name in versions:
+        (tmp_path / name).mkdir()
+    suite = rs.ReleaseSuite(options(tmp_path, execute=False, reuse_published_companions=True))
+    monkeypatch.setattr(rs, 'release_python_supported', lambda: True)
+    monkeypatch.setattr(rs, 'require_origin', lambda *args: None)
+    monkeypatch.setattr(rs, 'dirty_files', lambda *args: set())
+    monkeypatch.setattr(rs, 'current_version', lambda repo, name: versions[name])
+    monkeypatch.setattr(rs, 'command', lambda args, *a, **kw: '24' if args[0] == 'node' else '')
+    monkeypatch.setattr(suite, 'sha', lambda name: 'a' * 40)
+
+    def api(name, path):
+        if path == 'pages':
+            return {'build_type': 'workflow'}
+        if path.startswith('actions/variables/'):
+            return {'value': 'true'}
+        assert path == 'releases/latest'
+        return {'tag_name': 'v' + versions[name]}
+
+    verified = []
+    monkeypatch.setattr(suite, 'api', api)
+    monkeypatch.setattr(suite, 'verify_publication', lambda name: verified.append(name))
+    suite.preflight()
+    assert verified == ['react-timeline-sequence', 'DanceRudiments']
+    assert all(suite.state['projects'][name]['phase'] == 'released' for name in verified)
+    assert suite.state['projects']['stemlab']['version'] == '1.13.0'
+    assert suite.state['projects']['stemlab']['phase'] == 'planned'
+    assert not suite.state_path.exists()

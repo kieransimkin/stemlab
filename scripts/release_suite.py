@@ -290,6 +290,8 @@ class ReleaseSuite:
                 if current_sha != item.get('sha', item['initial_sha']):
                     if not self._adopt_prepared_repair(name, item, current_sha):
                         raise ValueError(f'{name}: checkout moved since the saved session; review instead of tagging different code')
+                if item.get('reused'):
+                    self.verify_publication(name)
             return
         if self.args.execute and self.state_path.exists():
             raise ValueError('A saved release session exists. Use -Resume, or select a new -StateFile for a genuinely new release.')
@@ -307,6 +309,16 @@ class ReleaseSuite:
                 raise ValueError(f'{name}: expected a stable vX.Y.Z latest release')
             old = latest['tag_name'][1:]
             current = current_version(repo, name)
+            if self.args.reuse_published_companions and name != 'stemlab':
+                if current != old or self.patch(name):
+                    raise ValueError(f'{name}: reuse requires unmodified source at its current published version')
+                sha = self.sha(name)
+                self.state['projects'][name] = {
+                    'initial_sha': sha, 'sha': sha, 'version': old,
+                    'phase': 'released', 'reused': True, 'patch_sha256': None,
+                }
+                self.verify_publication(name)
+                continue
             target = requested[name] or next_minor(current, old)
             if semver(target) <= semver(old) or semver(target) < semver(current):
                 raise ValueError(f'{name}: choose a fresh version newer than {old} and no lower than source {current}')
@@ -326,8 +338,9 @@ class ReleaseSuite:
         print('\nRelease order (existing GitHub Actions publish the registries):')
         for name in NAMES:
             item = self.state['projects'][name]
-            print(f"  {name}: v{item['version']} [{item['phase']}]")
-        print('First the two companions; then refresh the latest published packages, rebuild, test and release StemLab.')
+            state = 'reusing verified publication' if item.get('reused') else item['phase']
+            print(f"  {name}: v{item['version']} [{state}]")
+        print('Verify the two companions; then refresh the latest published packages, rebuild, test and release StemLab.')
         print('No force-push, moved tag, credentials change, automatic merge or deployment-protection change.')
         print('The final check requires all five Arcadians pages and HTTP/audio validation, not just a green tag job.\n')
 
@@ -503,9 +516,13 @@ def main(argv=None):
     parser.add_argument('--timeout-minutes', type=int, default=420)
     parser.add_argument('--execute', action='store_true')
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--reuse-published-companions', action='store_true',
+                        help='verify and reuse existing companion releases for a StemLab-only change')
     args = parser.parse_args(argv)
     if args.timeout_minutes < 1 or (args.resume and not args.execute):
         parser.error('Use a positive timeout; --resume also requires --execute')
+    if args.reuse_published_companions and (args.timeline_version or args.dancerudiments_version):
+        parser.error('Companion version overrides cannot be used with --reuse-published-companions')
     try:
         suite = ReleaseSuite(args)
         suite.preflight()

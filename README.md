@@ -1087,6 +1087,8 @@ after separation; the master pass is never replaced.
 
 See **[viewer controls](docs/viewer-controls.md)** and the
 **[released-viewer workflow](docs/released-viewers.md)**. Release both companion
+
+For a StemLab-only release, the coordinator can verify and reuse the current published companions with `-ReusePublishedCompanions`.
 packages first; StemLab resolves the latest stable official npm/PyPI releases and
 rebuilds from those distributions. Development pins and local vendor archives are
 not production dependencies. Existing exported pages must be regenerated.
