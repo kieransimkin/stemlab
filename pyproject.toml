@@ -61,6 +61,7 @@ separation = [
   "bs-roformer-infer>=0.1.5",
 ]
 speech = ["faster-whisper"]
+lyric-alignment = ["faster-whisper>=1.2,<2", "stable-ts-whisperless==2.19.1"]
 # BeatNet's published wheel has obsolete NumPy/Numba metadata. StemLab's
 # checksum-verified bootstrap exposes its code without resolving those pins;
 # this maintained binary supplies the compatible offline DBN decoder.

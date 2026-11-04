@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="240" viewBox="0 0 800 240">
+<rect width="800" height="240" fill="#151426"/>
+<g fill="#f4edf7" font-family="sans-serif" font-size="18"><text x="24" y="32">Actual synthetic native output: separate parts retain overlap</text></g>
+<rect x="250" y="65" width="144.00000000000003" height="38" rx="6" fill="#ec83c1"/>
+<text x="255" y="89" fill="#161125" font-family="sans-serif" font-size="15">A bright shore</text>
+<rect x="310.0" y="140" width="240.0" height="38" rx="6" fill="#80cbdc"/>
+<text x="315.0" y="164" fill="#161125" font-family="sans-serif" font-size="15">A soft echo</text>
+<rect x="490" y="65" width="120" height="38" rx="6" fill="#ec83c1"/>
+<text x="495" y="89" fill="#161125" font-family="sans-serif" font-size="15">Keep moving</text>
+<g fill="#f4edf7" font-family="sans-serif" font-size="16"><text x="24" y="90">Lead</text><text x="24" y="165">Backing</text><text x="24" y="220">No interpolation or shifting; test observations are not measured singing.</text></g>
+</svg>

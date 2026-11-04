@@ -73,3 +73,11 @@ def test_invalid_observed_recovery_is_rejected():
     with pytest.raises(ValueError, match="invalid observed"):
         build_lrc(alignment, title="Song", artist="Artist",
                   line_anchors={1: dict(word="one", start=-2, end=2, index=None)})
+
+
+def test_high_coverage_cannot_export_cross_gap_phrase():
+    alignment = reconcile('Go with me', [dict(word='Go', start=2, end=2.2),
+                                         dict(word='with', start=26, end=26.2),
+                                         dict(word='me', start=27, end=27.3)], 40)
+    with pytest.raises(ValueError, match='Line-level'):
+        build_lrc(alignment, title='Song', artist='Artist')
