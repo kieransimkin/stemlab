@@ -216,3 +216,26 @@ def test_source_channels_match_equivalent_capture(tmp_path):
     for field in ('bpm_candidates', 'loop_candidates', 'motion_accents',
                   'pose_period_search_windows_seconds'):
         assert direct[field] == saved[field]
+
+
+@pytest.mark.parametrize(("bpm", "offbeat"), [(60, 0), (110, .65), (200, 0)])
+def test_motion_tempo_keeps_real_pulse_over_octave(bpm, offbeat):
+    from stemlab.analysis.rig_motion import _tempo_candidates
+
+    times = np.arange(0, 24, 1 / 60)
+    phase = times * bpm / 60
+    energy = np.exp(-((np.remainder(phase + .5, 1) - .5) / .07) ** 2)
+    energy += offbeat * np.exp(-((np.remainder(phase, 1) - .5) / .07) ** 2)
+    candidates = _tempo_candidates(times, energy, [energy, np.roll(energy, 1)], 60, 200)
+    assert candidates[0]["bpm"] == pytest.approx(bpm, abs=1)
+    assert candidates[0]["requires_review"]
+
+
+def test_out_of_range_pulse_does_not_create_a_clipped_boundary_peak():
+    from stemlab.analysis.rig_motion import _tempo_candidates
+
+    times = np.arange(0, 24, 1 / 60)
+    phase = times * 220 / 60
+    energy = np.exp(-((np.remainder(phase + .5, 1) - .5) / .07) ** 2)
+    candidates = _tempo_candidates(times, energy, [energy, np.roll(energy, 1)], 60, 200)
+    assert all(candidate["bpm"] < 200 for candidate in candidates)

@@ -257,41 +257,73 @@ def _phase(t, energy, period):
     return max(0.0, float(strength)), float(phase)
 
 
-def _tempo_candidates(t, energy, group_envelopes, minimum, maximum):
-    """Evidence across controls: a slow torso must not bury a stepping foot.
+def _tempo_peaks(curve):
+    return np.pad((curve[1:-1] >= curve[:-2]) & (curve[1:-1] > curve[2:]), (1, 1))
 
-    The pooled curve and each independent bone/control group are compared.
-    Results include group support rather than making one limb's periodic motion
-    masquerade as whole-body rhythmic consensus.
-    """
-    if float(np.ptp(energy)) < .02 or len(t) < 6:
+
+def _tempo_spectrum(t, streams, bpm, minimum, maximum):
+    """Compare periodic energy per control, with equal weight across controls."""
+    size = 1 << (len(t) * 4 - 1).bit_length()
+    rates = np.fft.rfftfreq(size, t[1] - t[0]) * 60
+    band = (rates >= min(35, .6 * minimum)) & (rates <= max(420, 2 * maximum))
+    window = np.hanning(len(t))
+    weights = np.full(len(streams), .8 / (len(streams) - 1))
+    weights[0] = .2
+    combined = np.zeros(len(rates))
+    for start in range(0, len(streams), 16):
+        block = streams[start:start + 16]
+        centered = block - block.mean(axis=1, keepdims=True)
+        magnitude = np.abs(np.fft.rfft(centered * window, n=size, axis=1))
+        magnitude /= np.maximum(1e-9, magnitude[:, band].max(axis=1, keepdims=True))
+        combined += weights[start:start + 16] @ magnitude
+    return np.interp(bpm, rates, combined), np.interp(2 * bpm, rates, combined)
+
+
+def _tempo_candidates(t, energy, group_envelopes, minimum, maximum):
+    """Rank pulse rates using periodicity, local peak shape and metrical evidence."""
+    if float(np.ptp(energy)) < .02 or len(t) < 6 or not group_envelopes:
         return []
-    bpm_range = np.arange(minimum, maximum + .001, .5)
-    correlations = _regular_correlations(t, [energy, *group_envelopes], 60.0 / bpm_range)
+    # Extend the scoring grid past the requested bounds to distinguish a
+    # genuine boundary peak from a rising shoulder clipped by the bounds.
+    before = math.ceil((minimum - .85 * minimum) * 2) + 1
+    after = math.ceil((maximum / .85 - minimum) * 2) + 1
+    bpm_range = minimum + .5 * np.arange(-before, after + 1)
+    streams = np.asarray([energy, *group_envelopes])
+    correlations = _regular_correlations(t, streams, 60.0 / bpm_range)
     pooled, groups = correlations[0], correlations[1:]
-    # 80th-percentile positive agreement retains a strong footfall stream even
-    # if slow arm/torso motion is in antiphase. Low support remains explicit.
-    positive = np.maximum(0.0, groups)
-    agreement = np.quantile(positive, .8, axis=0)
+    agreement = np.quantile(np.maximum(0, groups), .8, axis=0)
     ranks = .85 * agreement + .15 * np.maximum(0, pooled)
-    local = [i for i in range(1, len(ranks)-1) if ranks[i] >= ranks[i-1] and ranks[i] > ranks[i+1]]
-    if len(ranks) == 1 or ranks[0] > ranks[1]:
-        local.append(0)
-    if len(ranks) > 1 and ranks[-1] > ranks[-2]:
-        local.append(len(ranks)-1)
+    direct, subdivision = _tempo_spectrum(t, streams, bpm_range, minimum, maximum)
+    periodic_peak = _tempo_peaks(ranks)
+    spectral_peak = _tempo_peaks(direct) & (direct > .18)
+    candidates = (periodic_peak | spectral_peak) & (ranks >= .14)
+    candidates &= (bpm_range >= minimum) & (bpm_range <= maximum + .001)
+
+    shoulders = .5 * (np.interp(.85 * bpm_range, bpm_range, ranks)
+                       + np.interp(bpm_range / .85, bpm_range, ranks))
+    prominence = np.maximum(0, ranks - shoulders)
+    # A broad log-tempo prior breaks ties between plausible metrical levels.
+    # Strong motion evidence can still win well outside the centre.
+    prior = np.exp(-.5 * (np.log2(bpm_range / 120) / .7) ** 2)
     proposals = []
-    for i in local:
-        if ranks[i] < .20 or not np.any(groups[:, i] >= .15):
-            continue
+    for i in np.flatnonzero(candidates):
         bpm = float(bpm_range[i])
         phase_score, zero = _phase(t, energy, 60 / bpm)
-        rank = .85 * ranks[i] + .15 * phase_score
+        phase_term = phase_score if periodic_peak[i] else 0.0
+        periodicity = .85 * ranks[i] + .15 * phase_term
+        # A strong subdivision can reinforce a pulse with its own evidence.
+        # On its own it cannot turn a clear fast pulse into a slower beat.
+        harmonic_support = min(subdivision[i], 1.5 * direct[i])
+        rank = (.65 * periodicity + .35 * direct[i] + .35 * prominence[i]
+                + .22 * harmonic_support) * prior[i] / 1.57
         support = int(np.sum(groups[:, i] >= .30))
         proposals.append({"bpm": bpm, "autocorrelation": round(float(pooled[i]), 4),
                           "group_periodicity": round(float(agreement[i]), 4),
                           "supporting_control_groups": support,
                           "active_control_groups": len(group_envelopes),
                           "phase_contrast": round(phase_score, 4), "beat_zero_seconds": round(zero, 6),
+                          "spectral_support": round(float(direct[i]), 4),
+                          "subdivision_support": round(float(subdivision[i]), 4),
                           "score": round(float(rank), 4), "source": "pose-velocity novelty"})
     proposals.sort(key=lambda c: -c["score"])
     result = []

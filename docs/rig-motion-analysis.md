@@ -83,7 +83,13 @@ additional evidence for the source.
 3. Find local kinematic accents and compare candidate quarter-note intervals
    within `--min-bpm` / `--max-bpm`. Retain several ranked BPM/phase hypotheses,
    the number of supporting independent control groups, and half/double-time
-   uncertainty. No downbeat classifier is claimed.
+   uncertainty. The tempo ranking combines autocorrelation peaks with a
+   windowed spectrum of the same control envelopes. Checking both sides of
+   each search bound prevents a clipped slope from becoming a peak. A broad
+   prior centred at 120 BPM helps choose between related rates, and a strong
+   subdivision supports a rate only when that rate has its own evidence.
+   Clear slow and fast pulses can still lead the ranking. The scores are
+   relative ranking evidence. Beat phase and meter remain hypotheses.
 4. Independently test repeated **poses** for periods up to 12 seconds so loop
    candidates can survive an uncertain beat grid. Long recordings use up to
    three 90-second windows spanning the start and end, with a middle window
