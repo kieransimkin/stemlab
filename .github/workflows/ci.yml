@@ -35,7 +35,7 @@ jobs:
           python -m stemlab.rig_motion_cli --help
       - name: Test source binding, world-sidecar validation, alignment and manual review
         run: >-
-          python -m pytest tests/test_rig_motion_analysis.py tests/test_rig_motion_package.py
+          python -m pytest tests/test_rig_motion_analysis.py tests/test_rig_motion_package.py tests/test_motion_loop_seams.py
           tests/test_rig_world_evidence.py tests/test_motion_alignment.py
 
   release-tools:

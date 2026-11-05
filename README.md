@@ -80,6 +80,13 @@ or native sampler are involved. The optional DanceRudiments authoring loader
 validates all motion-package chunk hashes. Tempo ranking uses periodicity and spectral support to distinguish plausible
 half- and double-time pulses. See [rig-motion analysis](docs/rig-motion-analysis.md).
 
+Python callers with an independently aligned beat grid can also use
+`stemlab.analysis.motion_loop_seams.rank_aligned_motion_loops` to rank hard-cut
+recording loops of a fixed beat count. It reuses the pose, velocity and root
+gates, can reject large PCM join steps, and accepts optional full-body and
+lower-body camera measurements. It keeps both endpoints within a bounded
+shared shift from the supplied beats. See [beat-constrained seam ranking](docs/rig-motion-analysis.md#beat-constrained-seam-ranking).
+
 For original captures, `--world-motion world-motion-evidence.json` consumes the
 source-hash-bound world-space/foot-contact sidecar produced by DanceRudiments.
 It checks the exact capture, rig profile, timestamps and coverage, retains the
