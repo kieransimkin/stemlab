@@ -77,7 +77,8 @@ checks. It can export an explicitly **unverified** source beat map for the
 existing DanceRudiments 64-pip compiler. This is not verified musical beat 1,
 audio synchronization, or automatic looping/mesh-seam repair. No model downloads
 or native sampler are involved. The optional DanceRudiments authoring loader
-validates all motion-package chunk hashes. See [rig-motion analysis](docs/rig-motion-analysis.md).
+validates all motion-package chunk hashes. Tempo ranking uses periodicity and spectral support to distinguish plausible
+half- and double-time pulses. See [rig-motion analysis](docs/rig-motion-analysis.md).
 
 For original captures, `--world-motion world-motion-evidence.json` consumes the
 source-hash-bound world-space/foot-contact sidecar produced by DanceRudiments.

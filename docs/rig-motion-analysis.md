@@ -83,12 +83,32 @@ additional evidence for the source.
 3. Find local kinematic accents and compare candidate quarter-note intervals
    within `--min-bpm` / `--max-bpm`. Retain several ranked BPM/phase hypotheses,
    the number of supporting independent control groups, and half/double-time
-   uncertainty. No downbeat classifier is claimed.
-4. Independently test repeated **poses** (up to 12-second periods within the
-   first 90 seconds) so loop candidates can survive an uncertain beat grid.
+   uncertainty. The tempo ranking combines autocorrelation peaks with a
+   windowed spectrum of the same control envelopes. Checking both sides of
+   each search bound prevents a clipped slope from becoming a peak. A broad
+   prior centred at 120 BPM helps choose between related rates, and a strong
+   subdivision supports a rate only when that rate has its own evidence.
+   Clear slow and fast pulses can still lead the ranking. The scores are
+   relative ranking evidence. Beat phase and meter remain hypotheses.
+4. Independently test repeated **poses** for periods up to 12 seconds so loop
+   candidates can survive an uncertain beat grid. Long recordings use up to
+   three 90-second windows spanning the start and end, with a middle window
+   when needed. The report lists the actual windows and the source window of
+   each retained period.
 5. Score possible beat-aligned or unquantized loop windows by pose distance,
    tangential velocity mismatch, discrete selector equality, root translation,
-   and repeated-phrase evidence when another cycle is present.
+   and repeated-phrase evidence when another cycle is present. Seam scoring
+   uses bounded batches at the original timestamps.
+
+### Already decoded motion
+
+For offline adapters with validated arrays, use
+`stemlab.analysis.rig_motion.analyze_motion_channels`. Pass increasing
+source timestamps in seconds, a frames-by-channels matrix, ordered channel
+descriptors and the SHA-256 of the original source. Quaternion groups use
+four columns ordered by array index. The adapter owns source decoding and
+units. The evidence records `source_kind: motion_channels` and is unsuitable
+as a compiler input or as a foot-contact check.
 
 The JSON records source-file SHA-256, exact rig profile identity, motion accents,
 BPM alternatives, source beat-map hypothesis, pose-recurrence periods, and each

@@ -170,3 +170,72 @@ def test_typer_cli_writes_optional_map(tmp_path):
     assert result.exit_code == 0, result.output
     assert json.loads((tmp_path / "analysis.json").read_text())["format"] == "stemlab.rig-motion-analysis"
     assert json.loads((tmp_path / "beat-map.json").read_text())["schema_version"] == 1
+
+
+def test_batched_lag_matches_scalar_on_short_and_shifted_grids():
+    from stemlab.analysis.rig_motion import _correlation, _regular_correlations
+
+    rng = np.random.default_rng(741)
+    periods = [.3, .502, .525, .61, .7, .995, 2.5]
+    for size in (65, 227, 901):
+        times = 17.125 + np.arange(size) * .025
+        signals = np.vstack((rng.normal(size=(3, size)), np.ones(size)))
+        expected = [[_correlation(times, signal, lag) for lag in periods]
+                    for signal in signals]
+        np.testing.assert_allclose(_regular_correlations(times, signals, periods),
+                                   expected, atol=2e-10)
+
+
+def test_recurrence_finds_late_phrase_after_unrelated_motion():
+    from stemlab.analysis.rig_motion import _recurrence_windows
+
+    times = np.arange(0, 200, .05)
+    rng = np.random.default_rng(208)
+    values = rng.normal(size=(len(times), 1))
+    late = times >= 110
+    values[late, 0] = np.sin(2 * np.pi * times[late] / 2.0)
+    active = [('foot', 'location', [0], 1.0)]
+    periods, inspected = _recurrence_windows(times, values, active)
+    assert len(inspected) == 3
+    assert any(item['seconds'] == 2.0 and item['search_window_seconds'][0] >= 110
+               for item in periods)
+
+
+def test_source_channels_match_equivalent_capture(tmp_path):
+    from stemlab.analysis.rig_motion import analyze_motion_channels
+
+    path, capture = make_capture(tmp_path, step_switch=True)
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    direct = analyze_motion_channels(
+        capture['frame_times_seconds'], capture['frames'], capture['profile']['channels'],
+        source_sha256=digest, min_bpm=100, max_bpm=140,
+    )
+    saved = analyze_rig_capture(path, min_bpm=100, max_bpm=140)
+    assert direct['source_kind'] == 'motion_channels'
+    assert direct['source_file_sha256'] == digest
+    for field in ('bpm_candidates', 'loop_candidates', 'motion_accents',
+                  'pose_period_search_windows_seconds'):
+        assert direct[field] == saved[field]
+
+
+@pytest.mark.parametrize(("bpm", "offbeat"), [(60, 0), (110, .65), (200, 0)])
+def test_motion_tempo_keeps_real_pulse_over_octave(bpm, offbeat):
+    from stemlab.analysis.rig_motion import _tempo_candidates
+
+    times = np.arange(0, 24, 1 / 60)
+    phase = times * bpm / 60
+    energy = np.exp(-((np.remainder(phase + .5, 1) - .5) / .07) ** 2)
+    energy += offbeat * np.exp(-((np.remainder(phase, 1) - .5) / .07) ** 2)
+    candidates = _tempo_candidates(times, energy, [energy, np.roll(energy, 1)], 60, 200)
+    assert candidates[0]["bpm"] == pytest.approx(bpm, abs=1)
+    assert candidates[0]["requires_review"]
+
+
+def test_out_of_range_pulse_does_not_create_a_clipped_boundary_peak():
+    from stemlab.analysis.rig_motion import _tempo_candidates
+
+    times = np.arange(0, 24, 1 / 60)
+    phase = times * 220 / 60
+    energy = np.exp(-((np.remainder(phase + .5, 1) - .5) / .07) ** 2)
+    candidates = _tempo_candidates(times, energy, [energy, np.roll(energy, 1)], 60, 200)
+    assert all(candidate["bpm"] < 200 for candidate in candidates)
