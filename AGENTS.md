@@ -55,7 +55,8 @@
 - The `motion-evidence` CI job builds and installs the actual wheel without
   audio/model dependencies, checks isolated imports and runs
   `test_rig_motion_analysis.py`, `test_rig_motion_package.py`,
-  `test_rig_world_evidence.py` and `test_motion_alignment.py` on Python 3.10/3.12.
+  `test_rig_world_evidence.py`, `test_motion_alignment.py` and
+  `test_motion_loop_seams.py` on Python 3.10/3.12.
   This is a source/wheel regression gate, not real choreography, audio listening,
   companion-release publication or Pages acceptance.
 - Preserve original capture/source hashes, source seconds, independent-family

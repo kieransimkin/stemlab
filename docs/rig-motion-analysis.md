@@ -204,3 +204,44 @@ For source-bound audio matching and explicit review revisions, see
 [motion alignment](motion-alignment.md). The offline entry point
 `python -m stemlab.rig_motion_cli` requires NumPy, Typer and Rich; importing its
 analysis APIs no longer imports SoundFile, Torch or the audio-analysis runner.
+
+## Beat-constrained seam ranking
+
+The Python API accepts beats already mapped to the recording's source seconds.
+It measures hard cuts at a caller-selected beat count and keeps the duration
+between the two supplied beat anchors. A shared shift of at most 15 ms by
+default tests nearby hard cuts. The legacy CLI and motion-only estimates keep
+their existing behavior.
+
+```python
+from stemlab.analysis.motion_loop_seams import rank_aligned_motion_loops
+
+cuts = rank_aligned_motion_loops(
+    motion_seconds,
+    motion_channels,
+    channel_layout,
+    aligned_beat_seconds,
+    beat_count=4,
+    pcm=aligned_stereo_pcm,
+    sample_rate=48_000,
+    view_seam=fixed_camera_measurement,
+)
+```
+
+PCM is normalized mono or frame-major multichannel data with sample zero on the
+same source clock. The waveform check compares the last included sample to the
+first. A join is held when the step is at least 0.03 full scale and twice the
+99th-percentile sample slope in the two interior 50 ms windows. Smaller steps
+and level changes contribute to the ranking. A repeat retains the source samples.
+
+The optional camera callback returns two costs in [0, 1] for full-body and
+lower-body differences between the requested seam frames. Zero means no
+observed difference. A camera measurement is a visual cue. Reliable foot
+contact claims need world-space evidence or attended review. Camera and PCM
+evidence supplement the existing pose, velocity and root-drift gates. An
+empty result means no candidate passed the available evidence gates. Each
+returned candidate still requires visual and listening review.
+
+The synthetic regression tests exercise exact sample bounds, a waveform click,
+a lower-body mismatch and an endpoint shift on a known clock. Real source media
+is unnecessary to reproduce these checks.
