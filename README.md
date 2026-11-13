@@ -29,6 +29,12 @@ Recognition scores and forced text coverage do not prove sung-word accuracy or
 voice identity. All exports remain drafts until artist listening confirmation;
 existing files, canonical lyrics and selected EPK timings are preserved.
 
+Use `stemlab lyric-display` to draft line visibility from a canonical-word
+reconciliation. It proposes starts and clears alongside the observed word
+edges. Add `--reference-lrc` to compare against authored display timing for the
+same recording. An optional short gap hold extends the display alone. See the
+[command and worked example](docs/lyric-boundaries.md#draft-and-score-line-display-timing).
+
 ## Canonical song example — Star Lights Glow (Mystery Liquid Kick)
 
 `examples/star-lights-glow-mystery-liquid-kick/` holds Bass Ben & Friends'
@@ -1110,6 +1116,8 @@ See **[viewer controls](docs/viewer-controls.md)** and the
 **[released-viewer workflow](docs/released-viewers.md)**. Release both companion
 
 For a StemLab-only release, the coordinator can verify and reuse the current published companions with `-ReusePublishedCompanions`.
+When main already contains the planned version and verified build inputs, the
+coordinator validates and tags that commit through the usual CI checks.
 packages first; StemLab resolves the latest stable official npm/PyPI releases and
 rebuilds from those distributions. Development pins and local vendor archives are
 not production dependencies. Existing exported pages must be regenerated.

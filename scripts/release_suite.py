@@ -402,8 +402,13 @@ class ReleaseSuite:
         changed = dirty_files(repo)
         if changed - allowed:
             raise ValueError(f'{name}: unexpected files changed; not committing them: {sorted(changed - allowed)}')
-        command(['git', 'add', '--', *sorted(changed)], repo)
-        command(['git', 'commit', '-m', f'Prepare v{item["version"]}: released viewer integration and documentation'], repo)
+        if changed:
+            command(['git', 'add', '--', *sorted(changed)], repo)
+            command(['git', 'commit', '-m', f'Prepare v{item["version"]}: released viewer integration and documentation'], repo)
+        else:
+            if current_version(repo, name) != item['version'] or self.sha(name) != item['initial_sha']:
+                raise ValueError(f'{name}: preparation made no changes and did not confirm the planned version and source')
+            print(f'{name}: preparation verified the existing release commit; no new commit needed', flush=True)
         item.update(phase='prepared', sha=self.sha(name))
         self.save()
 

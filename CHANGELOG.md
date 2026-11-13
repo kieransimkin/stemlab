@@ -13,6 +13,10 @@
 - Reject merged backend tokens and out-of-crop spans in known-text alignment.
 - Let full analysis choose a separate Whisper device and report the actual
   transcription device and compute type.
+- Propose display starts and optional holds in a separate draft. Score starts
+  and explicit clears against a read-only same-recording artist LRC.
+- Let the release coordinator verify and publish an already-prepared commit
+  through the existing main and tag checks without requiring a new commit.
 
 ## 1.13.0
 
