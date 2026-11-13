@@ -103,3 +103,6 @@ class PipelineConfig:
     cue_downbeats_only: bool = False
     cue_force_snap: bool = False
     cue_precision: str = "exact"
+
+    # None keeps the existing shared separation / detector device.
+    whisper_device: str | None = None

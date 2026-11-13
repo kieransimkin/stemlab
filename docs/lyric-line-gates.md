@@ -51,6 +51,10 @@ timestamp adjustment. Missing/instant words remain visible; failed line checks
 hold the complete export. Forced coverage is not recognition accuracy, evidence
 that all words were performed, or artist approval.
 
+Backend tokens must also match the canonical word boundaries. A single stamp
+for two written words is rejected rather than divided. For an independent
+observation of their boundaries, see [bounded CTC evidence](lyric-boundaries.md).
+
 ## Simultaneous parts and manual choices
 
 `stemlab.lyric_parts.assemble_lines` accepts one explicitly chosen observation

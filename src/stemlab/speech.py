@@ -151,6 +151,8 @@ def isolate_and_transcribe(
         "audio_decode_backend": "faster-whisper PyAV" if vad_mode == "full" else "StemLab TorchAudio",
         "normalization": normalization,
         "model": whisper_model,
+        "device": fw_device,
+        "compute_type": compute_type,
         "language": info.language,
         "language_probability": float(info.language_probability),
         "duration": float(info.duration),
@@ -174,6 +176,11 @@ def isolate_and_transcribe(
         for i, s in enumerate(segments, 1):
             f.write(f"{i}\n{_fmt_srt(s['start'])} --> {_fmt_srt(s['end'])}\n{s['text'].strip()}\n\n")
     return result
+
+
+def validate_speech_device(device: str | None) -> None:
+    if device is not None and device not in {"auto", "cpu", "cuda"}:
+        raise ValueError("Whisper device override must be auto, cpu or cuda")
 
 
 def validate_speech_options(vad_mode: str, language: str | None) -> None:

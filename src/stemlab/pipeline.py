@@ -19,7 +19,7 @@ from .manifest import write_manifest
 from .models import MODEL_REGISTRY
 from .separators import make_backend
 from .sonic_visualiser import build_session
-from .speech import isolate_and_transcribe, validate_speech_options
+from .speech import isolate_and_transcribe, validate_speech_device, validate_speech_options
 from .spectrogram import generate_spectrogram
 from .types import BeatResult, PipelineConfig, SeparationResult, StemArtifact
 from .util import sha256_file, slugify, write_json
@@ -51,6 +51,7 @@ def _error_record(stage: str, exc: Exception) -> dict:
 
 def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> dict:
     validate_speech_options(config.whisper_vad_mode, config.whisper_language)
+    validate_speech_device(config.whisper_device)
     from .analysis.loops import LoopConfig
     LoopConfig(max_seconds=config.loop_max_seconds)
     if config.export_loops and (not config.run_loops or not config.run_deep_analysis):
@@ -223,7 +224,7 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     vocal,
                     speech_dir,
                     whisper_model=config.whisper_model,
-                    device=config.device,
+                    device=config.whisper_device or config.device,
                     condition_on_previous_text=config.whisper_condition_on_previous_text,
                     vad_mode=config.whisper_vad_mode,
                     language=config.whisper_language,
@@ -232,6 +233,8 @@ def run_pipeline(config: PipelineConfig, progress: ProgressFn | None = None) -> 
                     "source_vocals": str(Path(whisper_result["source_vocals"]).relative_to(out)),
                     "spoken_word_wav": str(Path(whisper_result["spoken_word_wav"]).relative_to(out)),
                     "model": whisper_result["model"],
+                    "device": whisper_result.get("device"),
+                    "compute_type": whisper_result.get("compute_type"),
                     "language": whisper_result["language"],
                     "language_probability": whisper_result["language_probability"],
                     "regions": len(whisper_result["regions"]),

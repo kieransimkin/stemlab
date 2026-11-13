@@ -71,6 +71,28 @@ def test_backend_substitution_is_not_canonical_evidence():
         )
 
 
+def test_acoustic_adapter_cannot_split_a_merged_backend_timestamp():
+    with pytest.raises(ValueError, match="changed canonical tokens"):
+        canonical_result(
+            "star lights", {"segments": [{"words": [{"word": " starlights", "start": 1, "end": 2}]}]}, 20
+        )
+
+
+def test_acoustic_adapter_retains_raw_spelling_and_exports_canonical_case():
+    raw = {"segments": [{"words": [{"word": " we're,", "start": .1, "end": .6}]}]}
+    result = canonical_result("We’re", raw, 4)
+    assert result["lines"][0]["words"][0]["word"] == "We’re"
+    assert result["lines"][0]["words"][0]["backend_word"] == " we're,"
+
+
+@pytest.mark.parametrize("start,end", [(-.1, .2), (.8, 1.1)])
+def test_acoustic_backend_times_cannot_escape_the_decoded_crop(start, end):
+    raw = {"segments": [{"words": [{"word": "one", "start": start, "end": end}]}]}
+    result = canonical_result("one", raw, 10, offset=2, crop_end=3)
+    assert not result["quality"]["export_eligible"]
+    assert result["lines"][0]["start"] is None
+
+
 def test_zero_duration_first_word_and_middle_word_are_held():
     for instant in [0, 1]:
         words = [{"word": "one", "start": 1, "end": 1.2}, {"word": "two", "start": 1.2, "end": 1.5}]
