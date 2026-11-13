@@ -18,6 +18,9 @@ adequate corroboration and check the complete observed word span before
 trusting separately selected onsets and releases. Use occurrence windows
 when free recognition could attach a later refrain to the wrong line. See the
 [timing comparison and synthetic example](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-boundaries.md).
+For an edge that could follow the decode crop, shift the relevant crop limit
+and compare on the original audio clock. Use `stemlab lyric-ensemble` on saved
+observations to retain crop diagnostics alongside the chosen edges.
 
 Use `stemlab lyric-display` for line visibility proposals and optional
 comparison with a same-recording artist LRC. Blank tags are authored display
