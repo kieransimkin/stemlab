@@ -1,3 +1,5 @@
+import pytest
+
 from stemlab.word_alignment import reconcile
 
 
@@ -43,3 +45,17 @@ def test_multiword_asr_stamp_is_not_split_to_invent_word_times():
     result = reconcile('go home', [dict(word='go home', start=1, end=2)], 3)
     assert result['matched_words'] == 0
     assert all(word['start'] is None for word in result['words'])
+
+
+def test_a_later_repeat_cannot_backfill_a_missing_earlier_occurrence():
+    observed = [dict(word='fly', start=8.1, end=8.4), dict(word='home', start=8.4, end=8.7)]
+    result = reconcile('fly home\n\nfly home', observed, 10, line_windows={1: (1, 2), 3: (8, 9)})
+    assert [word['start'] for word in result['words']] == [None, None, 8.1, 8.4]
+    assert result['words'][0]['review_reasons'] == ['no_observed_word_in_line_window']
+
+
+def test_occurrence_windows_do_not_clip_a_crossing_word_or_accept_a_blank_line():
+    observed = [dict(word='fly', start=.9, end=1.4)]
+    assert reconcile('fly', observed, 5, line_windows={1: (1, 2)})['matched_words'] == 0
+    with pytest.raises(ValueError, match='lyric line 2'):
+        reconcile('fly\n\nhome', observed, 5, line_windows={2: (1, 2)})

@@ -6,6 +6,10 @@
   decode trace and explicit weak/edge diagnostics.
 - Compare observed lyric onsets and releases independently, grouping related
   runs and retaining conflicts and missing boundaries.
+- Exclude weak observations from corroboration, preserve observed word spans
+  when comparing their edges, and allow occurrence windows in ASR matching.
+- Hold backward and overlapping word spans and overlapping line spans in
+  single-part acoustic exports; retain the underlying evidence for review.
 - Reject merged backend tokens and out-of-crop spans in known-text alignment.
 - Let full analysis choose a separate Whisper device and report the actual
   transcription device and compute type.

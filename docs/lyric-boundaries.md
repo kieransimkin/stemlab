@@ -52,6 +52,17 @@ For an audition you can optionally require a minimum word span. This prevents
 a late consonant observation and early release from forming an implausibly
 short highlight. It drops the pair without moving either endpoint.
 
+Weak observations stay visible but do not count as corroboration. An onset
+and release that agree separately can still make a word too short. The
+selector now also checks whether a single original interval supports both
+edges and the resulting duration, and reports when there is no such interval.
+
+Where you have reliable occurrence windows, pass them to
+`stemlab.word_alignment.reconcile(..., line_windows={1: (12.4, 16.0)})`.
+Keys are physical lyric file line numbers, including blank lines in numbering.
+The entire observed word must fit the chosen window. An observation from a
+later chorus cannot fill a missing word in the earlier one.
+
 When preparing the inputs, compare consonant evidence, free recognition and
 held-vowel releases separately. A grapheme edge need not match the audible
 onset of a sustained sung syllable. Flag unsupported words and review early or

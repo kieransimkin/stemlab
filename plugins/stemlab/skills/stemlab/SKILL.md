@@ -13,7 +13,10 @@ from master-only excerpts. [Actual viewer and illustrated guide](https://github.
 
 For a merged lyric token, a short pickup or a disputed release, compare bounded
 letter-level CTC and independent alignment evidence on the verified master
-clock. Keep each edge's origin and retain conflicting evidence. See the
+clock. Keep each edge's origin and retain conflicting evidence. Require
+adequate corroboration and check the complete observed word span before
+trusting separately selected onsets and releases. Use occurrence windows
+when free recognition could attach a later refrain to the wrong line. See the
 [timing comparison and synthetic example](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-boundaries.md).
 
 For the complete public Arcadians example, use the repository's

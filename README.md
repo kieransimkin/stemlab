@@ -22,6 +22,9 @@ For merged words or disputed pickups, use [bounded letter alignment and boundary
 comparison](docs/lyric-boundaries.md). The optional local CTC pass retains each
 letter and the free-decoded trace; the comparison API keeps exact onset/release
 observations and reports disagreement without giving repeated decodes extra votes.
+Weak observations do not count as corroboration, and duration checks help keep
+held words intact. When reconciling free recognition, optional occurrence
+windows prevent a later repeat from supplying earlier missing words.
 Recognition scores and forced text coverage do not prove sung-word accuracy or
 voice identity. All exports remain drafts until artist listening confirmation;
 existing files, canonical lyrics and selected EPK timings are preserved.

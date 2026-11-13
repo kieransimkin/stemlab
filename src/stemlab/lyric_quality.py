@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 
 
-def assess_lines(lines: list[dict], duration: float) -> dict:
+def assess_lines(lines: list[dict], duration: float, *, require_nonoverlap: bool = False) -> dict:
     """Inspect actual anchors before ranking. Never repair, spread, or snap them.
 
     Conservative rate/span limits are diagnostic gates, not a claim that fast
@@ -15,6 +15,7 @@ def assess_lines(lines: list[dict], duration: float) -> dict:
         raise ValueError("Audio-header duration must be finite and positive")
     issues = []
     previous_cs = -1
+    previous_end = None
     for index, line in enumerate(lines):
         reasons = []
         start, end = line.get("start"), line.get("end")
@@ -38,14 +39,19 @@ def assess_lines(lines: list[dict], duration: float) -> dict:
                 reasons.append("discontinuous_or_implausibly_long_line_span")
             if count >= 3 and count / (end - start) > 12:
                 reasons.append("implausibly_compressed_line")
+            if require_nonoverlap and previous_end is not None and start < previous_end:
+                reasons.append("overlap_with_previous_line_in_single_vocal_part")
             if index >= 2:
                 prior = [p.get("start") for p in lines[index - 2 : index]]
                 if all(isinstance(p, (int, float)) for p in prior) and start - prior[0] < 0.4:
                     reasons.append("three_line_onsets_compressed_inside_400ms")
+            previous_end = end
         if source in {"interpolated", "uniform_fallback", "unmatched"}:
             reasons.append("unsupported_or_interpolated_line")
         if line.get("invalid_word_count", 0):
             reasons.append("instant_or_invalid_acoustically_aligned_words")
+        if line.get("overlapping_or_backward_words"):
+            reasons.append("overlapping_or_backward_words")
         if reasons:
             issues.append({"line": index + 1, "text": line.get("text"), "reasons": reasons})
     return {
@@ -54,6 +60,7 @@ def assess_lines(lines: list[dict], duration: float) -> dict:
         "export_eligible": bool(lines) and not issues,
         "issues": issues,
         "duration_seconds": duration,
+        "requires_nonoverlap": require_nonoverlap,
         "listening_qa": "pending",
         "accepted": False,
         "policy": "All lines must have valid original audio anchors; no interpolation. "

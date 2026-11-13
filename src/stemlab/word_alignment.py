@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import re
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -23,11 +24,30 @@ def normal(word):
     return value.casefold().replace('’', "'")
 
 
-def reconcile(text, observed, duration):
+def reconcile(text, observed, duration, *, line_windows=None):
+    """Match single-word observations, optionally bounded by occurrence.
+
+    Windows map one-based physical lyric line numbers to source seconds. An
+    observation must lie wholly within its window; it is never clipped. Lines
+    without windows retain the ordinary full-source reconciliation behaviour.
+    """
     canonical = [(line, m.group()) for line, value in enumerate(text.splitlines(), 1)
                  for m in TOKEN.finditer(value)]
+    windows = {} if line_windows is None else line_windows
+    if not isinstance(windows, dict):
+        raise ValueError("Line windows must map lyric line numbers to source-second pairs")
+    canonical_lines = {line for line, _ in canonical}
+    for line, bounds in windows.items():
+        if (
+            type(line) is not int or line not in canonical_lines
+            or not isinstance(bounds, (tuple, list)) or len(bounds) != 2
+            or any(type(t) not in (int, float) or not math.isfinite(t) for t in bounds)
+            or not 0 <= bounds[0] < bounds[1] <= duration
+        ):
+            raise ValueError(f"Invalid source-clock window for lyric line {line}")
     a = [normal(w) for _, w in canonical]
     b = [normal(str(w.get('word', w.get('text', ''))).strip()) for w in observed]
+    times = [(float(w['start']), float(w['end'])) for w in observed] if windows else []
     n, m = len(a), len(b)
     scores = [[0.0] * (m + 1) for _ in range(n + 1)]
     moves = [bytearray(m + 1) for _ in range(n + 1)]
@@ -40,9 +60,18 @@ def reconcile(text, observed, duration):
             return 2.0
         ratio = SequenceMatcher(None, x, y).ratio()
         return 0.6 if min(len(x), len(y)) >= 4 and ratio >= .86 else -2.1
+
+    def match_score(i, j):
+        bounds = windows.get(canonical[i][0])
+        if bounds is not None:
+            start, end = times[j]
+            if not bounds[0] <= start < end <= bounds[1]:
+                return -math.inf
+        return similarity(a[i], b[j])
+
     for i in range(1, n + 1):
         for j in range(1, m + 1):
-            options = (scores[i-1][j-1] + similarity(a[i-1], b[j-1]),
+            options = (scores[i-1][j-1] + match_score(i-1, j-1),
                        scores[i-1][j] - 1, scores[i][j-1] - 1)
             move = max(range(3), key=lambda k: options[k])
             scores[i][j], moves[i][j] = options[move], move
@@ -51,7 +80,7 @@ def reconcile(text, observed, duration):
     while i or j:
         move = moves[i][j]
         if i and j and move == 0:
-            if similarity(a[i-1], b[j-1]) > 0:
+            if match_score(i-1, j-1) > 0:
                 mapping[i-1] = j-1
             i, j = i-1, j-1
         elif i and (not j or move == 1):
@@ -79,7 +108,7 @@ def reconcile(text, observed, duration):
                 reasons.append('low_asr_probability')
             previous_end = max(previous_end, end)
         else:
-            reasons.append('no_observed_word')
+            reasons.append('no_observed_word_in_line_window' if line in windows else 'no_observed_word')
         rows.append(dict(index=idx, line=line, word=word, start=start, end=end,
                          observed_index=mapping.get(idx), match=kind,
                          probability=source.get('probability') if source else None,
@@ -90,6 +119,7 @@ def reconcile(text, observed, duration):
                 exact_words=sum(r['match']=='exact' for r in rows),
                 review_words=sum(bool(r['review_reasons']) for r in rows),
                 threshold_pass=len(mapping)/max(n, 1) >= .7,
+                **({'line_windows_seconds': windows} if windows else {}),
                 listening_qa='pending', accepted=False,
                 policy='No interpolation; matched ASR timings remain provisional until listening QA.')
 

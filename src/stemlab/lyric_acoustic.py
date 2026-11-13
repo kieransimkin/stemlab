@@ -48,6 +48,7 @@ def canonical_result(
             and math.isfinite(word["end"])
             and offset <= word["start"] < word["end"] <= upper
         ]
+        disordered = any(right["start"] < left["end"] for left, right in zip(valid, valid[1:]))
         first_valid = bool(shifted) and shifted[0] in valid
         lines.append(
             {
@@ -59,11 +60,13 @@ def canonical_result(
                 "timing_source": "acoustic_known_text",
                 "words": shifted,
                 "invalid_word_count": len(shifted) - len(valid),
+                "overlapping_or_backward_words": disordered,
                 "review_reasons": ["acoustic_candidate_requires_listening"]
-                + (["instant_or_invalid_words"] if len(valid) != len(shifted) else []),
+                + (["instant_or_invalid_words"] if len(valid) != len(shifted) else [])
+                + (["overlapping_or_backward_words"] if disordered else []),
             }
         )
-    quality = assess_lines(lines, duration)
+    quality = assess_lines(lines, duration, require_nonoverlap=True)
     return {
         "schema": "stemlab.canonical-acoustic-alignment.v1",
         "canonical_text": text,
@@ -154,7 +157,7 @@ def align_known_text(
 def draft_lrc(alignment: dict, *, title: str, artist: str) -> str:
     if any(c in title + artist for c in "\r\n[]"):
         raise ValueError("Unsafe LRC metadata")
-    quality = assess_lines(alignment["lines"], alignment["duration"])
+    quality = assess_lines(alignment["lines"], alignment["duration"], require_nonoverlap=True)
     if not quality["export_eligible"]:
         raise ValueError("Line-level timing gates failed; retain evidence for correction")
     output = [

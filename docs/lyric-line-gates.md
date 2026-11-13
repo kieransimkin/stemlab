@@ -55,6 +55,11 @@ Backend tokens must also match the canonical word boundaries. A single stamp
 for two written words is rejected rather than divided. For an independent
 observation of their boundaries, see [bounded CTC evidence](lyric-boundaries.md).
 
+The single vocal track acoustic draft also holds overlapping or reversed word
+intervals and overlapping line spans. Retain the candidate evidence; if the
+overlap is really sung by a different part, use the explicit part selection
+workflow below instead of shifting the timestamps.
+
 ## Simultaneous parts and manual choices
 
 `stemlab.lyric_parts.assemble_lines` accepts one explicitly chosen observation
