@@ -48,6 +48,10 @@ missing timings stay visible. Model weights and agreement scores are review
 evidence, not calibrated confidence. This API does not establish source
 mapping, infer part identity or overwrite artist edits.
 
+For an audition you can optionally require a minimum word span. This prevents
+a late consonant observation and early release from forming an implausibly
+short highlight. It drops the pair without moving either endpoint.
+
 When preparing the inputs, compare consonant evidence, free recognition and
 held-vowel releases separately. A grapheme edge need not match the audible
 onset of a sustained sung syllable. Flag unsupported words and review early or

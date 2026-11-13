@@ -41,6 +41,7 @@ def select_boundaries(
     sample_rate: int,
     onset_tolerance_seconds: float = .12,
     release_tolerance_seconds: float = .20,
+    min_word_seconds: float = 0,
     max_word_seconds: float = 4,
 ) -> list[dict]:
     """Find a nonoverlapping draft path through observed word-edge pairs.
@@ -55,6 +56,9 @@ def select_boundaries(
     seconds = (onset_tolerance_seconds, release_tolerance_seconds, max_word_seconds)
     if not all(math.isfinite(x) and 0 < x <= 10 for x in seconds):
         raise ValueError("Timing tolerances and maximum word duration must be between 0 and 10 seconds")
+    if not math.isfinite(min_word_seconds) or not 0 <= min_word_seconds <= max_word_seconds:
+        raise ValueError("Minimum word duration must be between zero and the maximum")
+    min_frames = max(1, math.ceil(min_word_seconds * sample_rate))
     onset_tolerance, release_tolerance, max_frames = (max(1, round(x * sample_rate)) for x in seconds)
     if len(words) > 10000 or any(len(a) > 16 or len(b) > 16 for a, b in words):
         raise ValueError("At most 10,000 words and 16 observations per edge are supported")
@@ -100,7 +104,7 @@ def select_boundaries(
             _, (count, score), link = frontier[bisect_right(frontier_frames, x.frame) - 1]
             for ib, (y, ys, _) in enumerate(b):
                 span = y.frame - x.frame
-                if 0 < span <= max_frames:
+                if min_frames <= span <= max_frames:
                     # Prefer one source for ties; no boundary is moved.
                     q = xs + ys + (.06 if x.source == y.source else 0)
                     additions.append((y.frame, (count + 1, score + q), (index, ia, ib, link)))

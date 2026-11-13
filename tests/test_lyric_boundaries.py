@@ -41,3 +41,13 @@ def test_an_unobserved_or_reversed_edge_leaves_the_word_untimed():
 def test_bad_source_frame_is_not_clamped():
     with pytest.raises(ValueError, match="Invalid source-bound observation"):
         select([([obs("a", "ctc", -1)], [obs("a", "ctc", 400)])])
+
+
+def test_minimum_duration_can_reject_a_letter_peak_paired_with_an_early_end():
+    result = select_boundaries(
+        [([obs("letter", "ctc", 650)], [obs("attention", "attention", 674), obs("other", "other", 1030, .45)])],
+        num_frames=2000, sample_rate=1000, min_word_seconds=.06,
+    )[0]
+    assert result["onset"]["frame"] == 650
+    assert result["release"]["frame"] == 1030
+    assert {row["frame"] for row in result["release_candidates"]} == {674, 1030}
