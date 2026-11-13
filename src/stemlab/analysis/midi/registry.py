@@ -6,6 +6,8 @@ import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from stemlab.util import parse_model_paths
+
 
 @dataclass(frozen=True)
 class MidiModel:
@@ -110,10 +112,4 @@ class MidiConfig:
 
 
 def parse_overrides(values: list[str] | None) -> dict[str, str]:
-    result: dict[str, str] = {}
-    for value in values or []:
-        key, sep, path = value.partition("=")
-        if not sep or key not in MIDI_MODELS or not path.strip() or key in result:
-            raise ValueError("Expected unique MODEL=PATH entries (paths may contain '=')")
-        result[key] = str(Path(path).expanduser().resolve())
-    return result
+    return parse_model_paths(values, MIDI_MODELS)

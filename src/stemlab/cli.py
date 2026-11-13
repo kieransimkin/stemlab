@@ -23,7 +23,7 @@ from .pipeline import run_pipeline
 from .recording_cli import register_recording_commands
 from .rig_motion_cli import register_rig_motion_commands
 from .types import PipelineConfig
-from .util import device_string
+from .util import device_string, parse_model_paths
 
 app = typer.Typer(no_args_is_help=True, pretty_exceptions_show_locals=False, help=PROJECT_DESCRIPTION)
 console = Console()
@@ -199,15 +199,13 @@ def analyze(
             raise typer.BadParameter(str(exc)) from exc
     evidence_paths = {}
     evidence_pythons = {}
-    if evidence_model_path or evidence_backend_python:
-        from .analysis.midi.registry import parse_overrides
-        evidence_paths = parse_overrides(evidence_model_path)
-        evidence_pythons = parse_overrides(evidence_backend_python)
     evidence_text = evidence_canonical_text.read_text(encoding="utf-8") if evidence_canonical_text else None
-    if evidence_model:
-        from .analysis.evidence import EvidenceConfig
+    if evidence_model or evidence_model_path or evidence_backend_python:
+        from .analysis.evidence import EVIDENCE_MODELS, EvidenceConfig
         try:
-            ecfg = EvidenceConfig(models=tuple(evidence_model), device=device,
+            evidence_paths = parse_model_paths(evidence_model_path, EVIDENCE_MODELS)
+            evidence_pythons = parse_model_paths(evidence_backend_python, EVIDENCE_MODELS)
+            ecfg = EvidenceConfig(models=tuple(evidence_model or ()), device=device,
                                   allow_downloads=evidence_allow_downloads,
                                   model_paths=evidence_paths, backend_pythons=evidence_pythons,
                                   canonical_text=evidence_text, language=evidence_language,
@@ -467,14 +465,13 @@ def extract_evidence(
     strict: Annotated[bool, typer.Option("--strict", help="Stop at first backend failure")] = False,
 ):
     """Run optional independent evidence models without rerunning separation unless needed."""
-    from .analysis.evidence import EvidenceConfig, analyze_path
-    from .analysis.midi.registry import parse_overrides
+    from .analysis.evidence import EVIDENCE_MODELS, EvidenceConfig, analyze_path
     try:
         cfg = EvidenceConfig(models=tuple(model or ("firered_aed", "swift_f0")), target=target,
                              device=device, allow_downloads=allow_model_downloads,
                              timeout_seconds=timeout, continue_on_error=not strict,
-                             model_paths=parse_overrides(model_path),
-                             backend_pythons=parse_overrides(backend_python),
+                             model_paths=parse_model_paths(model_path, EVIDENCE_MODELS),
+                             backend_pythons=parse_model_paths(backend_python, EVIDENCE_MODELS),
                              canonical_text=canonical_text.read_text(encoding="utf-8") if canonical_text else None,
                              language=language, chord_dictionary=chord_dictionary, prompt=prompt)
         cfg.validate_paths()

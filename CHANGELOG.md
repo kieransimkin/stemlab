@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.14.2
+
+- Validate complementary evidence model paths and worker Python overrides against
+  the evidence registry in both `stemlab evidence` and `stemlab analyze`.
+
 ## 1.14.1
 
 - Add `stemlab lyric-ensemble` to compare saved alignments against the verified
