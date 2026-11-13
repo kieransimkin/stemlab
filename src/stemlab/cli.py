@@ -71,7 +71,7 @@ def repair_spectrograms(
 
 @app.command("lyric-display")
 def lyric_display_command(
-    alignment: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="Canonical-word reconciliation JSON")],
+    alignment: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="Word reconciliation or lyric ensemble draft JSON")],
     output: Annotated[Path, typer.Option("--output", "-o", help="New draft JSON file")],
     reference_lrc: Annotated[Path | None, typer.Option(exists=True, dir_okay=False, help="Same-recording artist LRC to score as a display reference")] = None,
     pickup_adjustment: Annotated[bool, typer.Option(help="Adjust display starts for unusually long first-word spans")] = True,
@@ -89,6 +89,24 @@ def lyric_display_command(
     except (KeyError, OSError, TypeError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     console.print(f"Lyric display draft: {output} ({len(report['lines'])} lines)")
+
+
+@app.command("lyric-ensemble")
+def lyric_ensemble_command(
+    request: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="Saved boundary observations JSON")],
+    master: Annotated[Path, typer.Option("--master", exists=True, dir_okay=False, help="Exact master WAV")],
+    output: Annotated[Path, typer.Option("--output", "-o", help="New ensemble draft JSON file")],
+    min_word_seconds: Annotated[float, typer.Option(min=0, max=4, help="Optional minimum observed word duration")] = 0,
+):
+    """Combine saved lyric alignments on the verified master clock."""
+    from .lyric_ensemble import write_ensemble_report
+
+    try:
+        report = write_ensemble_report(request, master, output, min_word_seconds=min_word_seconds)
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    timed = sum(word["onset"] is not None for word in report["words"])
+    console.print(f"Lyric ensemble draft: {output} ({timed}/{len(report['words'])} words timed)")
 
 
 @app.command()

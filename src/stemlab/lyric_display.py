@@ -155,11 +155,19 @@ def read_display_reference(text: str, duration: float) -> list[dict]:
 
 
 def _line_observations(source: dict) -> tuple[float, list[dict], list[dict]]:
-    if source.get("schema") != "stemlab.canonical-word-reconciliation.v1":
-        raise ValueError("Expected a StemLab canonical-word reconciliation")
+    schema = source.get("schema")
+    ensemble = schema == "stemlab.lyric-ensemble-draft.v1"
+    if not ensemble and schema != "stemlab.canonical-word-reconciliation.v1":
+        raise ValueError("Expected a StemLab word reconciliation or ensemble draft")
     duration = float(source["duration"])
     words = {}
     for word in source["words"]:
+        if ensemble:
+            onset, release = word["onset"], word["release"]
+            valid = onset is not None and release is not None
+            rate = source["sample_rate"]
+            word = {**word, "match": "exact" if valid else "unmatched",
+                    "start": onset["frame"] / rate if valid else None, "end": release["frame"] / rate if valid else None}
         words.setdefault(word["line"], []).append(word)
     groups, metadata = [], []
 
