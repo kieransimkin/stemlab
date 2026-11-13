@@ -59,7 +59,7 @@ The pass runs after stems, lyrics and the normal deep analysis inputs exist. Qwe
 
 ## Interpretation rules
 
-- **FireRed AED:** `singing` near a loop/cue boundary is a review reason, not proof that the detector is acoustically perfect. Its published speech-VAD score is not a music-cut benchmark.
+- **FireRed AED:** the adapter converts the selected source to 16 kHz mono from sample zero. `events.json` retains the source and model clocks and the backend's event intervals. `activity-scores.npz` keeps the raw speech, singing and music scores with 25 ms frame centres spaced 10 ms apart. Use these to compare entrances, gaps and overlapping activity. Audible word identity and boundaries still require lexical evidence and listening.
 - **HeartTranscriptor:** recognition is an alternative hypothesis. Never replace artist-approved lyrics from it automatically.
 - **Qwen forced alignment:** an alignment answers *where supplied text appears*. It is not lyric recognition and it must expose unmatched/failed regions.
 - **SwiftF0:** pitch confidence is not a vocal detector. Instruments can also be pitched.

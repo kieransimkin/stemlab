@@ -6,6 +6,8 @@
   master clock and retain each selected edge and its alternatives.
 - Detect when a lyric boundary follows a shifted decode crop. Retain unstable
   observations for review and exclude them from corroboration and span support.
+- Accept native-rate stereo in FireRed AED and retain raw singing activity
+  scores on the source clock alongside the original event intervals.
 
 ## 1.14.0
 
