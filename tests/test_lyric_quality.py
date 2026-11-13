@@ -93,6 +93,24 @@ def test_acoustic_backend_times_cannot_escape_the_decoded_crop(start, end):
     assert result["lines"][0]["start"] is None
 
 
+def test_acoustic_export_holds_backward_or_overlapping_words():
+    raw = {"segments": [{"words": [
+        {"word": "one", "start": 1, "end": 1.4}, {"word": "two", "start": 1.1, "end": 1.3},
+    ]}]}
+    result = canonical_result("one two", raw, 10)
+    assert result["lines"][0]["words"][1]["start"] == 1.1
+    assert "overlapping_or_backward_words" in result["quality"]["issues"][0]["reasons"]
+    with pytest.raises(ValueError, match="gates"):
+        draft_lrc(result, title="Test", artist="Test")
+
+
+def test_monotonic_starts_can_still_overlap_in_a_single_vocal_part():
+    rows = [line(start=1, end=3), line(start=2, end=4)]
+    assert assess_lines(rows, 10)["export_eligible"]
+    report = assess_lines(rows, 10, require_nonoverlap=True)
+    assert report["issues"][0]["reasons"] == ["overlap_with_previous_line_in_single_vocal_part"]
+
+
 def test_zero_duration_first_word_and_middle_word_are_held():
     for instant in [0, 1]:
         words = [{"word": "one", "start": 1, "end": 1.2}, {"word": "two", "start": 1.2, "end": 1.5}]

@@ -51,3 +51,27 @@ def test_minimum_duration_can_reject_a_letter_peak_paired_with_an_early_end():
     assert result["onset"]["frame"] == 650
     assert result["release"]["frame"] == 1030
     assert {row["frame"] for row in result["release_candidates"]} == {674, 1030}
+
+
+def test_weak_observations_are_retained_but_do_not_count_as_corroboration():
+    result = select([(
+        [obs("weak", "other", 505, .16), obs("acoustic", "ctc", 500)],
+        [obs("weak", "other", 795, .2), obs("acoustic", "ctc", 800)],
+    )])[0]
+    assert result["onset"]["corroborating_families"] == []
+    assert result["release"]["corroborating_families"] == []
+    assert result["interval_supporting_families"] == ["ctc"]
+    assert {item["source"] for item in result["onset_candidates"]} == {"weak", "acoustic"}
+
+
+def test_observed_duration_prevents_an_unheard_short_mixed_pair():
+    words = [(
+        [obs("acoustic", "ctc", 610, .93), obs("whisper", "attention", 300, .63)],
+        [obs("acoustic", "ctc", 1140, .74), obs("whisper", "attention", 690, .85)],
+    )]
+    old = select_boundaries(words, sample_rate=1000, num_frames=3000, interval_weight=0)[0]
+    new = select(words)[0]
+    assert (old["onset"]["frame"], old["release"]["frame"]) == (610, 690)
+    assert "no_strong_matching_complete_interval" in old["review_reasons"]
+    assert (new["onset"]["frame"], new["release"]["frame"]) == (610, 1140)
+    assert new["interval_supporting_families"] == ["ctc"]
