@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import soundfile as sf
@@ -10,6 +12,7 @@ from typer.testing import CliRunner
 from stemlab import cli
 from stemlab.analysis.evidence import EVIDENCE_MODELS, EvidenceConfig
 from stemlab.analysis.evidence import runner
+from stemlab.analysis.evidence.adapters import run_firered
 from stemlab.types import StemArtifact
 
 
@@ -48,6 +51,34 @@ def test_vocal_or_master_falls_back_but_vocal_only_does_not(tmp_path):
     cfg = EvidenceConfig(models=("firered_aed",))
     assert runner.select_sources(master, [], EVIDENCE_MODELS["firered_aed"], cfg)[0].path == master
     assert runner.select_sources(master, [], EVIDENCE_MODELS["heart_transcriptor"], cfg) == []
+
+
+def test_firered_accepts_native_stereo_and_keeps_activity_frame_clock(tmp_path, monkeypatch):
+    source = tmp_path / "vocals.wav"
+    audio = np.full((44_100, 2), .2, dtype=np.float32)
+    sf.write(source, audio, 44_100, subtype="FLOAT")
+    original = source.read_bytes()
+
+    def detect(input_audio):
+        pcm, sr = input_audio
+        assert sr == 16_000 and pcm.shape == (16_000,) and pcm.dtype == np.int16
+        assert np.allclose(pcm[500:1000], 6554, atol=6)
+        values = np.full((98, 3), .75, dtype=np.float32)
+        return {"event2timestamps": {"singing": [(0.2, 0.8)]}}, values
+
+    monkeypatch.setitem(sys.modules, "fireredvad", SimpleNamespace(
+        FireRedAedConfig=lambda **kw: kw,
+        FireRedAed=SimpleNamespace(from_pretrained=lambda *args: SimpleNamespace(detect=detect)),
+    ))
+    report = run_firered({"source": str(source), "model_path": "synthetic"}, tmp_path)
+    assert source.read_bytes() == original
+    assert "activity-scores.npz" in report["files"]
+    saved = json.loads((tmp_path / "events.json").read_text())
+    assert saved["events"][0]["start"] == .2 and saved["events"][0]["end"] == .8
+    assert saved["input_clock"]["source_frames"] == 44_100
+    with np.load(tmp_path / "activity-scores.npz") as evidence:
+        assert evidence["labels"].tolist() == ["speech", "singing", "music"]
+        assert np.allclose(evidence["source_center_seconds"][[0, -1]], [.0125, .9825])
 
 
 def test_mocked_run_preserves_source_and_writes_report(tmp_path, monkeypatch):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import importlib.metadata
 import json
+from math import gcd
 import os
 from pathlib import Path
 from typing import Any
@@ -29,9 +30,25 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def run_firered(request: dict, out: Path) -> dict:
     from fireredvad import FireRedAed, FireRedAedConfig
+    from scipy.signal import resample_poly
+    import soundfile as sf
+
     model_dir = request.get("model_path")
     if not model_dir:
         raise ValueError("firered_aed requires --model-path firered_aed=/path/to/FireRedVAD/AED")
+    pcm, sample_rate = sf.read(request["source"], dtype="float32", always_2d=True)
+    source_frames, channels = pcm.shape
+    if not source_frames or not np.isfinite(pcm).all():
+        raise ValueError("FireRed requires finite, nonempty audio")
+    mono = pcm.mean(axis=1)
+    model_rate = 16_000
+    if sample_rate != model_rate:
+        divisor = gcd(sample_rate, model_rate)
+        mono = resample_poly(mono, model_rate // divisor, sample_rate // divisor)
+    if len(mono) < 400:
+        raise ValueError("FireRed requires at least one 25 ms feature frame")
+    scale = min(1., 32767 / max(float(np.max(np.abs(mono))) * 32768, 1.))
+    model_pcm = np.rint(mono * (32768 * scale)).astype(np.int16)
     config = FireRedAedConfig(use_gpu=request.get("device", "auto").startswith("cuda"),
                               smooth_window_size=5, speech_threshold=0.4,
                               singing_threshold=0.5, music_threshold=0.5,
@@ -39,7 +56,24 @@ def run_firered(request: dict, out: Path) -> dict:
                               min_silence_frame=20, merge_silence_frame=0,
                               extend_speech_frame=0, chunk_max_frame=30000)
     model = FireRedAed.from_pretrained(model_dir, config)
-    result, probs = model.detect(str(request["source"]))
+    result, probs = model.detect((model_pcm, model_rate))
+    files = ["events.json"]
+    input_clock = {
+        "source_sample_rate": sample_rate, "source_frames": source_frames, "source_channels": channels,
+        "model_sample_rate": model_rate, "model_frames": len(model_pcm),
+        "gain_before_pcm16": scale, "first_source_frame": 0,
+    }
+    probability_shape = None
+    if probs is not None:
+        scores = np.asarray(probs, dtype=np.float32)
+        expected = 1 + (len(model_pcm) - 400) // 160
+        labels = ("speech", "singing", "music")
+        if scores.shape != (expected, len(labels)) or not np.isfinite(scores).all() or np.any((scores < 0) | (scores > 1)):
+            raise ValueError("Unexpected FireRed 10 ms frame clock or activity scores")
+        centres = (np.arange(expected, dtype=np.float64) * 160 + 200) / model_rate
+        np.savez_compressed(out / "activity-scores.npz", source_center_seconds=centres, labels=labels, scores=scores)
+        files.append("activity-scores.npz")
+        probability_shape = list(scores.shape)
     rows = []
     for label, spans in (result.get("event2timestamps") or {}).items():
         for start, end in spans:
@@ -47,10 +81,14 @@ def run_firered(request: dict, out: Path) -> dict:
                          "duration": float(end) - float(start)})
     payload = {"model": "firered_aed", "events": rows,
                "event_ratios": result.get("event2ratio", {}),
-               "probability_shape": list(np.asarray(probs).shape) if probs is not None else None}
+               "probability_shape": probability_shape, "input_clock": input_clock,
+               "activity_frame_hop_seconds": .010, "activity_frame_window_seconds": .025,
+               "score_policy": "Raw model scores. Event intervals use the backend's postprocessing."}
     (out / "events.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     _write_csv(out / "events.csv", rows)
-    return {"files": ["events.json", "events.csv"], "event_count": len(rows),
+    if rows:
+        files.append("events.csv")
+    return {"files": files, "event_count": len(rows),
             "package_version": _pkg("fireredvad")}
 
 

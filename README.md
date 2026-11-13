@@ -31,6 +31,8 @@ model evidence and retain them in the review. [Command and request format](docs/
 Recognition scores and forced text coverage do not prove sung-word accuracy or
 voice identity. All exports remain drafts until artist listening confirmation;
 existing files, canonical lyrics and selected EPK timings are preserved.
+The optional FireRed pass accepts native-rate audio and saves its singing
+activity scores on the source clock. [Evidence backends](docs/evidence-models.md)
 
 Use `stemlab lyric-display` to draft line visibility from a canonical-word
 reconciliation. It proposes starts and clears alongside the observed word
