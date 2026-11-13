@@ -119,6 +119,37 @@ def test_pipeline_separates_before_master_and_every_percussion_pass(tmp_path, mo
     assert not list(config.output_dir.glob('.beat-pass-*'))
 
 
+def test_pipeline_routes_only_whisper_to_its_override(tmp_path, monkeypatch):
+    config, events = stub_pipeline(tmp_path, monkeypatch)
+    config.device = 'cuda'
+    config.whisper_device = 'cpu'
+    config.run_whisper = True
+    make_backend = pipeline.make_backend
+
+    class Separator:
+        def separate(self, master, folder, model, device):
+            events.append(('separator_device', device))
+            return make_backend().separate(master, folder, model, device)
+
+    def whisper(vocal, folder, *, device, **kwargs):
+        events.append(('whisper_device', device))
+        spoken = folder / 'transcription_input.wav'
+        sf.write(spoken, np.zeros(16000), 16000)
+        return dict(source_vocals=vocal, spoken_word_wav=spoken, model='test', device=device,
+                    compute_type='int8', language='en', language_probability=1, regions=[], segments=[],
+                    words=[], condition_on_previous_text=False, repetition_safe_mode=True,
+                    repetition_diagnostics={}, vad_mode='full', speech_mask_applied=False,
+                    requested_language='en')
+
+    monkeypatch.setattr(pipeline, 'make_backend', lambda *args, **kwargs: Separator())
+    monkeypatch.setattr(pipeline, 'isolate_and_transcribe', whisper)
+    report = pipeline.run_pipeline(config)
+    assert ('separator_device', 'cuda') in events
+    assert ('whisper_device', 'cpu') in events
+    assert report['speech']['device'] == 'cpu' and report['speech']['compute_type'] == 'int8'
+    assert not report['errors']
+
+
 def test_per_source_failure_preserves_other_results_and_provenance(tmp_path, monkeypatch):
     config, events = stub_pipeline(tmp_path, monkeypatch, fail='drums.wav')
     report = pipeline.run_pipeline(config)

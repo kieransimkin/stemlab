@@ -17,6 +17,11 @@ Whisper weights for known-text alignment. Explicit separate-part line selections
 can retain simultaneous onsets without serializing backing vocals.
 
 Read [the commands, synthetic demonstration and limits](docs/lyric-line-gates.md).
+
+For merged words or disputed pickups, use [bounded letter alignment and boundary
+comparison](docs/lyric-boundaries.md). The optional local CTC pass retains each
+letter and the free-decoded trace; the comparison API keeps exact onset/release
+observations and reports disagreement without giving repeated decodes extra votes.
 Recognition scores and forced text coverage do not prove sung-word accuracy or
 voice identity. All exports remain drafts until artist listening confirmation;
 existing files, canonical lyrics and selected EPK timings are preserved.
@@ -352,6 +357,11 @@ word, so `Go,` can match canonical `Go` without changing either text or timing.
 It does not split one multiword ASR timestamp into invented per-word timings.
 
 Whisper runs in repetition-safe mode by default (`condition_on_previous_text=False`) to prevent a repeated syllable in one window contaminating later windows. `whisper.json` records that setting and includes repeated-token diagnostics. Use `--whisper-condition-on-previous-text` only for an explicit comparison run; a flagged transcript remains evidence requiring section-wise recovery or listening QA, not a trustworthy lyric source.
+
+On a GPU with limited free memory, `stemlab analyze song.wav -o analysis --device
+cuda --whisper-device cpu --whisper-vad-mode full` keeps separation on CUDA and
+runs only Whisper on the CPU. Speech evidence records the actual device and
+compute type. Omitting the override preserves the shared device setting.
 
 Beat analysis runs:
 

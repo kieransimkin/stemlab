@@ -102,6 +102,19 @@ def test_analyze_cli_passes_options(tmp_path, monkeypatch):
     assert cfg.cue_precision == 'milliseconds' and cfg.cue_beat_model == 'beat_this'
 
 
+def test_whisper_device_cli_keeps_separation_device(tmp_path, monkeypatch):
+    master = tmp_path / 'master.wav'
+    sf.write(master, np.zeros(100), 8000)
+    seen = []
+    monkeypatch.setattr(cli, 'run_pipeline', lambda cfg, **kw: seen.append(cfg) or {'errors': []})
+    args = ['analyze', str(master), '-o', str(tmp_path / 'new'), '--device', 'cuda']
+    result = CliRunner().invoke(cli.app, args + ['--whisper-device', 'cpu'])
+    assert result.exit_code == 0, result.output
+    assert (seen[0].device, seen[0].whisper_device) == ('cuda', 'cpu')
+    assert CliRunner().invoke(cli.app, args + ['--whisper-device', 'invalid']).exit_code == 2
+    assert len(seen) == 1
+
+
 def test_analyze_no_detector_rejected_before_run(tmp_path, monkeypatch):
     _, cues = fixture(tmp_path)
     master = tmp_path / 'master.wav'

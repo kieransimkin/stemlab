@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 260" role="img" aria-label="Synthetic words on the source clock, comparing recogniser and acoustic observations">
+<rect width="780" height="260" fill="#101a2a" rx="16"/>
+<g font-family="system-ui,sans-serif" fill="#eff5fa">
+<text x="26" y="35" font-size="20">Two observed edges for each word</text>
+<text x="26" y="61" font-size="13">Synthetic evidence · the coloured marks stay on their original clock</text>
+<text x="26" y="104" font-size="13">Speech onset</text>
+<path d="M155 99 H740" stroke="#354762"/>
+<text x="26" y="142" font-size="13">Letter evidence</text>
+<path d="M155 137 H740" stroke="#354762"/>
+<text x="26" y="180" font-size="13">Other model</text>
+<path d="M155 175 H740" stroke="#354762"/>
+<text x="26" y="218" font-size="13">Selected interval</text>
+<path d="M155 213 H740" stroke="#354762"/>
+<circle cx="350.98" cy="137" r="5" fill="#71e3ec"/>
+<circle cx="343.17" cy="175" r="5" fill="#c5abff"/>
+<circle cx="264.69" cy="99" r="5" fill="#f9a86a"/>
+<circle cx="389.98" cy="137" r="5" fill="#71e3ec"/>
+<circle cx="416.79" cy="175" r="5" fill="#c5abff"/>
+<rect x="343.17" y="203" width="73.61" height="20" rx="6" fill="#a4eda2"/>
+<text x="379.98" y="218" fill="#102217" text-anchor="middle" font-size="13">go</text>
+<circle cx="506.98" cy="137" r="5" fill="#71e3ec"/>
+<circle cx="499.18" cy="175" r="5" fill="#c5abff"/>
+<circle cx="410.94" cy="99" r="5" fill="#f9a86a"/>
+<circle cx="592.77" cy="137" r="5" fill="#71e3ec"/>
+<circle cx="619.59" cy="175" r="5" fill="#c5abff"/>
+<rect x="499.18" y="203" width="120.41" height="20" rx="6" fill="#a4eda2"/>
+<text x="559.38" y="218" fill="#102217" text-anchor="middle" font-size="13">now</text>
+<text x="155" y="244" font-size="12">0.0 s</text><text x="708" y="244" font-size="12">1.5 s</text></g></svg>

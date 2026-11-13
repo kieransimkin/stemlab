@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.14.0
+
+- Add bounded English CTC lyric evidence with source-frame letter spans, a free
+  decode trace and explicit weak/edge diagnostics.
+- Compare observed lyric onsets and releases independently, grouping related
+  runs and retaining conflicts and missing boundaries.
+- Reject merged backend tokens and out-of-crop spans in known-text alignment.
+- Let full analysis choose a separate Whisper device and report the actual
+  transcription device and compute type.
+
 ## 1.13.0
 
 - Gate canonical LRC export on line-level spans, compressed clusters and rounded onset collisions; retain complete native evidence when a section fails.

@@ -8,44 +8,52 @@ from __future__ import annotations
 
 import hashlib
 import math
-import re
 from pathlib import Path
 
 from .lyric_quality import assess_lines
+from .word_alignment import TOKEN, normal
 
 
 def lexical(value: str) -> str:
     return "".join(c.casefold() for c in value if c.isalnum())
 
 
-def canonical_result(text: str, raw: dict, duration: float, *, offset: float = 0) -> dict:
+def canonical_result(
+    text: str, raw: dict, duration: float, *, offset: float = 0, crop_end: float | None = None,
+) -> dict:
     """Retain exact input line grouping; reject omissions or substituted text."""
     canonical = [line for line in text.splitlines() if line.strip()]
     segments = raw.get("segments", [])
     if len(segments) != len(canonical):
         raise ValueError("Acoustic backend did not preserve every canonical line")
+    upper = duration if crop_end is None else min(duration, crop_end)
+    if not 0 <= offset < upper <= duration:
+        raise ValueError("Invalid acoustic candidate source bounds")
     lines = []
     for number, (line, segment) in enumerate(zip(canonical, segments), 1):
         words = segment.get("words") or []
-        if lexical("".join(word["word"] for word in words)) != lexical(line):
+        canonical_words = TOKEN.findall(line)
+        if [normal(word["word"]) for word in words] != [normal(word) for word in canonical_words]:
             raise ValueError(f"Acoustic backend changed canonical tokens on line {number}")
-        shifted = [
-            {**word, "start": float(word["start"]) + offset, "end": float(word["end"]) + offset}
-            for word in words
-        ]
+        shifted = []
+        for spelling, word in zip(canonical_words, words):
+            shifted.append({
+                **word, "word": spelling, "backend_word": word["word"],
+                "start": float(word["start"]) + offset, "end": float(word["end"]) + offset,
+            })
         valid = [
             word
             for word in shifted
             if math.isfinite(word["start"])
             and math.isfinite(word["end"])
-            and 0 <= word["start"] < word["end"] <= duration
+            and offset <= word["start"] < word["end"] <= upper
         ]
         first_valid = bool(shifted) and shifted[0] in valid
         lines.append(
             {
                 "text": line,
                 "canonical_line": number,
-                "canonical_word_count": len(re.findall(r"\w+(?:['’]\w+)?", line)),
+                "canonical_word_count": len(canonical_words),
                 "start": shifted[0]["start"] if first_valid else None,
                 "end": max((word["end"] for word in valid), default=None),
                 "timing_source": "acoustic_known_text",
@@ -102,7 +110,8 @@ def align_known_text(
             local_files_only=True,
         )
     samples = decode_audio(str(audio), sampling_rate=16000)
-    clip = samples[round(start * 16000) : round(stop * 16000)]
+    first_sample = round(start * 16000)
+    clip = samples[first_sample : round(stop * 16000)]
     result = model.align(
         clip,
         text,
@@ -119,7 +128,9 @@ def align_known_text(
     if result is None:
         raise RuntimeError("Acoustic alignment failed; no timestamps fabricated")
     raw = result.to_dict()
-    aligned = canonical_result(text, raw, duration, offset=start)
+    actual_start = first_sample / 16000
+    actual_stop = (first_sample + len(clip)) / 16000
+    aligned = canonical_result(text, raw, duration, offset=actual_start, crop_end=actual_stop)
     with audio.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
     from importlib.metadata import version
@@ -132,6 +143,8 @@ def align_known_text(
         "model_path": str(model_path),
         "crop_start": start,
         "crop_end": stop,
+        "decoded_crop_start": actual_start,
+        "decoded_crop_end": actual_stop,
         "backend": "stable-ts-whisperless",
         "backend_version": version("stable-ts-whisperless"),
     }
