@@ -11,6 +11,12 @@ edited track drives subtitles independently of viewport and editor visibility.
 Keep static snapshots read-only, source seconds unchanged, and stem loops separate
 from master-only excerpts. [Actual viewer and illustrated guide](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-audition.md).
 
+In live StemEdit, **Combined line and word LRC** imports and exports both
+timing tracks. Keep word releases and optional line holds separate. Bind the
+LRC to the exact recording, verify both kinds of boundary after reimport and
+save the source-frame draft only in the intended review project.
+[Combined LRC example](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-audition.md#round-trip-combined-line-and-word-lrc)
+
 For a merged lyric token, a short pickup or a disputed release, compare bounded
 letter-level CTC and independent alignment evidence on the verified master
 clock. Keep each edge's origin and retain conflicting evidence. Require

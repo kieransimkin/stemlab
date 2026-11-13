@@ -190,3 +190,80 @@ def test_word_lrc_offsets_are_not_silently_dropped(tmp_path):
             format="lrc",
             text="[offset:1]\n[offset:2]\n[00:01.500]Hello\n",
         )
+
+
+def test_combined_lrc_round_trip_separates_word_gaps_line_holds_and_clears(tmp_path):
+    root, source = make_root(tmp_path)
+    original, _, revision, _ = timing_edits.read_or_seed(root, source)
+    text = (
+        "\ufeff[ar:Test Artist]\r\n[re:Draft]\r\n[offset:100]\r\n"
+        "[00:00.225]<00:00.250>Hello,<00:00.350> <00:00.400>world!<00:00.500>\r\n"
+        "[00:00.750]\r\n"
+        "[00:01.225]<00:01.225>We're <00:01.400>here.<00:01.500>\r\n"
+        "[00:01.850]\r\n"
+        "[00:01.850]A line with no word timing\r\n"
+        "[00:02.350]\r\n"
+    )
+    imported = timing_edits.import_text(
+        root, source, original, kind="combined", format="alrc", text=text
+    )
+    assert [(x["text"], x["start_frame"], x["end_frame"]) for x in imported["lines"]] == [
+        ("Hello, world!", 1000, 5200),
+        ("We're here.", 9000, 14000),
+        ("A line with no word timing", 14000, 18000),
+    ]
+    assert [(x["word"], x["start_frame"], x["end_frame"]) for x in imported["words"]] == [
+        ("Hello,", 1200, 2000), ("world!", 2400, 3200), ("We're", 9000, 10400), ("here.", 10400, 11200)
+    ]
+    assert imported["cues"] == original["cues"]
+    assert imported["fixed_clock"] == original["fixed_clock"]
+    assert imported["review_status"] == "draft"
+    assert timing_edits.read_or_seed(root, source)[0] == original
+
+    # One frame inside the hold is editable and survives save/export/reimport.
+    imported["lines"][0]["end_frame"] += 1
+    imported["words"][0]["end_frame"] -= 1
+    saved, _ = timing_edits.save(root, source, imported, revision)
+    exported = timing_edits.export_document(root, source, saved)
+    assert exported["combined_lrc_error"] is None
+    assert "<00:00.249875> <00:00.300>world!<00:00.400>\n[00:00.650125]" in exported["combined_lrc"]
+    assert "<00:01.400>\n[00:01.750]A line" in exported["combined_lrc"]
+    assert timing_edits.import_text(
+        root, source, saved, kind="combined", format="lrc", text=exported["combined_lrc"]
+    ) == saved
+
+
+@pytest.mark.parametrize(
+    ("text", "reason"),
+    [
+        ("[00:00.100]<00:00.200>A<00:00.300>\n[00:00.250]", "inside their line"),
+        ("[00:00.100]<00:00.090>A<00:00.200>", "inside their line"),
+        ("[00:00.100]<00:00.200>A<00:00.200>", "must advance"),
+        ("[00:00.500]A\n[00:00.300]B", "Line timestamps must advance"),
+        ("[00:00.100]A\n[00:04.100]", "outside the recording"),
+        ("[00:00.100]A <00:00.200>B", "before the text"),
+        ("[00:00.100]<00:60.000>A", "Malformed lyric text"),
+        ("[offset:250]\n[00:00.100]A", "outside the recording"),
+        ("[offset:0]\n[offset:1]\n[00:00.100]A", "Multiple LRC offsets"),
+    ],
+)
+def test_combined_lrc_rejects_invalid_intervals_without_saving(tmp_path, text, reason):
+    root, source = make_root(tmp_path)
+    doc, _, _, _ = timing_edits.read_or_seed(root, source)
+    with pytest.raises(ValueError, match=reason):
+        timing_edits.import_text(root, source, doc, kind="combined", format="lrc", text=text)
+    assert timing_edits.read_or_seed(root, source)[0] == doc
+
+
+def test_combined_lrc_text_conflict_keeps_separate_exports_available(tmp_path):
+    root, source = make_root(tmp_path)
+    doc, _, _, _ = timing_edits.read_or_seed(root, source)
+    doc["words"].append(
+        dict(id="word-partial", line_id=doc["lines"][0]["id"],
+             start_frame=1600, end_frame=2400, word="Hello")
+    )
+    exported = timing_edits.export_document(root, source, doc)
+    assert exported["combined_lrc"] is None
+    assert "text without timed words" in exported["combined_lrc_error"]
+    assert "Hello world" in exported["line_lrc"]
+    assert exported["word_json"]["words"][0]["word"] == "Hello"
