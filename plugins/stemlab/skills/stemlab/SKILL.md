@@ -11,6 +11,19 @@ edited track drives subtitles independently of viewport and editor visibility.
 Keep static snapshots read-only, source seconds unchanged, and stem loops separate
 from master-only excerpts. [Actual viewer and illustrated guide](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-audition.md).
 
+For a merged lyric token, a short pickup or a disputed release, compare bounded
+letter-level CTC and independent alignment evidence on the verified master
+clock. Keep each edge's origin and retain conflicting evidence. Require
+adequate corroboration and check the complete observed word span before
+trusting separately selected onsets and releases. Use occurrence windows
+when free recognition could attach a later refrain to the wrong line. See the
+[timing comparison and synthetic example](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-boundaries.md).
+
+Use `stemlab lyric-display` for line visibility proposals and optional
+comparison with a same-recording artist LRC. Blank tags are authored display
+clears. Keep the original LRC read-only and use listening-verified word
+annotations for any acoustic accuracy claim.
+
 For the complete public Arcadians example, use the repository's
 `arcadians-core-v3` workflow (`scripts/build_arcadians_timeline.py`). It owns
 six-stem separation, complete core evidence and five pitched-stem Basic Pitch
