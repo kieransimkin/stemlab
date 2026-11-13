@@ -70,6 +70,43 @@ late pickups in context before delivering an artist-approved timing file.
 Follow [line-level export checks](lyric-line-gates.md) and use
 [StemEdit](lyric-audition.md) for listening and any corrections.
 
+## Draft and score line display timing
+
+Run `stemlab lyric-display` on the `word-timings.json` produced by
+`scripts/reconcile_canonical_words.py`. The command writes a new JSON review
+file with `display_start`, `display_clear` and the observed first/last word
+edges. It uses exact canonical word matches and leaves missing edges unknown.
+
+```text
+stemlab lyric-display word-timings.json --output display-review.json
+stemlab lyric-display word-timings.json --output display-comparison.json --reference-lrc artist.lrc --hold-until-next-within 1.5
+```
+
+In the synthetic example below, the long first-word observation runs from
+1.00 to 2.70 s. The display heuristic proposes 1.765 s as the line start. A
+1.5 s hold can keep the line visible from the last word's 2.70 s end through
+the next line at 4.00 s. The default leaves the gap unheld. Use
+`--no-pickup-adjustment` to compare with the first-word onset directly.
+
+| Event | Acoustic observation | Default display | Optional hold |
+| --- | ---: | ---: | ---: |
+| First start | 1.00 s | 1.765 s | 1.765 s |
+| First end | 2.70 s | 2.70 s | 4.00 s |
+| Next start | 4.00 s | 4.00 s | 4.00 s |
+
+For `--reference-lrc`, establish that the file refers to the same recording and
+written occurrences. The command checks word order, source duration and LRC
+offsets and records a digest of the reference. It scores display starts and
+explicit blank-tag clears, flags ambiguous clears and counts missing estimates
+in coverage. A manually held line supplies an editorial clear. Measure word
+accuracy against separate listening annotations. The two input files stay
+read-only. Review the JSON before applying any suggestions in your editor.
+
+When evaluating a new policy, keep whole songs out of fitting, report coverage
+and median/tail error, and retain the unshifted baseline. A rule that helps the
+largest misses can move an already well-timed line. Use the existing audition
+guide for the playback interface. [Actual StemEdit demo](lyric-audition.md)
+
 ## Reproduce the figure
 
 ```text

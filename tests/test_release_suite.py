@@ -164,6 +164,30 @@ def test_dependency_publication_failure_stops_before_stemlab(tmp_path, monkeypat
     assert seen == ['react-timeline-sequence']
 
 
+def test_preparation_keeps_a_verified_existing_release_commit(tmp_path, monkeypatch):
+    suite = rs.ReleaseSuite(options(tmp_path))
+    repo = tmp_path / 'stemlab'
+    repo.mkdir()
+    make_version_fixture(repo)
+    rs.prepare_stemlab_version(repo, '1.4.2')
+    sha = 'a' * 40
+    item = dict(initial_sha=sha, version='1.4.2', phase='planned')
+    suite.state['projects']['stemlab'] = item
+    monkeypatch.setattr(suite, 'sha', lambda name: sha)
+    monkeypatch.setattr(rs, 'dirty_files', lambda repo: set())
+    calls = []
+
+    def command(args, cwd, **kwargs):
+        calls.append(args)
+
+    monkeypatch.setattr(rs, 'command', command)
+    suite.prepare('stemlab')
+    assert any('scripts/check_viewer_build.py' in call and '--latest' in call for call in calls)
+    assert not any(call[0] == 'git' for call in calls)
+    assert item == dict(initial_sha=sha, version='1.4.2', phase='prepared', sha=sha)
+    assert json.loads(suite.state_path.read_text())['projects']['stemlab'] == item
+
+
 def test_completed_resume_creates_nothing(tmp_path, monkeypatch):
     suite = rs.ReleaseSuite(options(tmp_path, resume=True))
     suite.state['complete'] = True

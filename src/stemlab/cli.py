@@ -69,6 +69,28 @@ def repair_spectrograms(
     )
 
 
+@app.command("lyric-display")
+def lyric_display_command(
+    alignment: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="Canonical-word reconciliation JSON")],
+    output: Annotated[Path, typer.Option("--output", "-o", help="New draft JSON file")],
+    reference_lrc: Annotated[Path | None, typer.Option(exists=True, dir_okay=False, help="Same-recording artist LRC to score as a display reference")] = None,
+    pickup_adjustment: Annotated[bool, typer.Option(help="Adjust display starts for unusually long first-word spans")] = True,
+    hold_until_next_within: Annotated[float, typer.Option(min=0, max=10, help="Optional display hold through gaps up to this many seconds")] = 0,
+):
+    """Propose lyric display starts and clears from retained word evidence."""
+    from .lyric_display import DisplayPolicy, write_display_report
+
+    try:
+        policy = DisplayPolicy(
+            pickup_fraction=DisplayPolicy().pickup_fraction if pickup_adjustment else 0,
+            hold_until_next_within=hold_until_next_within,
+        )
+        report = write_display_report(alignment, output, reference_lrc=reference_lrc, policy=policy)
+    except (KeyError, OSError, TypeError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"Lyric display draft: {output} ({len(report['lines'])} lines)")
+
+
 @app.command()
 def analyze(
     input_wav: Annotated[Path, typer.Argument(exists=True, dir_okay=False, readable=True, help="Master WAV to analyse")],

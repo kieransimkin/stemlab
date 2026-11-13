@@ -19,6 +19,11 @@ trusting separately selected onsets and releases. Use occurrence windows
 when free recognition could attach a later refrain to the wrong line. See the
 [timing comparison and synthetic example](https://github.com/kieransimkin/stemlab/blob/main/docs/lyric-boundaries.md).
 
+Use `stemlab lyric-display` for line visibility proposals and optional
+comparison with a same-recording artist LRC. Blank tags are authored display
+clears. Keep the original LRC read-only and use listening-verified word
+annotations for any acoustic accuracy claim.
+
 For the complete public Arcadians example, use the repository's
 `arcadians-core-v3` workflow (`scripts/build_arcadians_timeline.py`). It owns
 six-stem separation, complete core evidence and five pitched-stem Basic Pitch
