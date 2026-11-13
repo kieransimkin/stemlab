@@ -70,10 +70,74 @@ late pickups in context before delivering an artist-approved timing file.
 Follow [line-level export checks](lyric-line-gates.md) and use
 [StemEdit](lyric-audition.md) for listening and any corrections.
 
+## Test whether an edge follows the crop
+
+Repeat a disputed occurrence on the same audio view with extra real context
+before the onset or after the release. Keep the canonical token and occurrence
+fixed. Convert both estimates and both actual decode limits to native source
+frames. `compare_crop_boundaries` checks whether the estimate moves with the
+crop or shifts inside shared audio. A stable result shows reproducibility on
+those crops. Use it alongside the other models and the audio.
+
+```python
+from stemlab.lyric_boundaries import BoundaryObservation, CropBoundary, compare_crop_boundaries
+
+original = CropBoundary(frame=16000, crop_start=16000, crop_end=40000)
+shifted = CropBoundary(frame=8800, crop_start=8800, crop_end=40000)
+check = compare_crop_boundaries(original, shifted, edge="onset", sample_rate=16000)
+candidate = BoundaryObservation("original", "forced-aligner", original.frame, .8, check["review_reasons"])
+```
+
+Both timestamps in this synthetic example sit on the leading crop edge. The
+selector retains the original observation for review and excludes it from
+corroboration and complete-interval support. Two crops of one aligner still
+share one family. Use the corresponding end crop for a release check.
+
+Use vocal energy, pitch or singing activity alongside the candidates for
+audition. A sustained pitch can continue through a backing voice or bleed.
+An unvoiced consonant can start a word before pitch is present. Keep those
+traces on the same source clock as the lyric evidence. [Available evidence models](evidence-models.md)
+
+## Combine saved model observations
+
+`stemlab lyric-ensemble request.json --master master.wav --output ensemble.json`
+uses the selector above. Give it the master hash, native sample rate and frame
+count, canonical text, and one row per canonical word. Use physical lyric line
+numbers, starting at one. Each onset/release list can be empty. Add model
+outputs only after verifying that they describe the same performance, vocal
+part and word occurrence, and mapping them to the native frames. The master
+check confirms the request's recording identity. Source mapping for each input
+is supplied by the caller.
+
+```json
+{
+  "schema": "stemlab.lyric-boundary-request.v1",
+  "source_sha256": "replace with the exact master WAV SHA-256",
+  "sample_rate": 16000,
+  "num_frames": 48000,
+  "canonical_text": "Go",
+  "words": [{
+    "line": 1,
+    "word": "Go",
+    "onset": [
+      {"source": "whisper-vocals", "family": "whisper", "frame": 16000, "strength": 0.7},
+      {"source": "qwen-vocals", "family": "qwen", "frame": 15800, "strength": 0.8,
+       "crop_repeat": {"original_crop_frames": [15800, 36000], "repeat_crop_frames": [8600, 36000], "frame": 8600}}
+    ],
+    "release": [{"source": "whisper-vocals", "family": "whisper", "frame": 24000, "strength": 0.7}]
+  }]
+}
+```
+
+The request preserves one family per model lineage. The draft retains every
+observation, every crop check, the chosen edges, and unsupported words. Run
+`stemlab lyric-display ensemble.json --output display-review.json` to propose
+the line visibility from those word edges.
+
 ## Draft and score line display timing
 
-Run `stemlab lyric-display` on the `word-timings.json` produced by
-`scripts/reconcile_canonical_words.py`. The command writes a new JSON review
+Run `stemlab lyric-display` on an ensemble draft or the `word-timings.json`
+produced by `scripts/reconcile_canonical_words.py`. The command writes a new JSON review
 file with `display_start`, `display_clear` and the observed first/last word
 edges. It uses exact canonical word matches and leaves missing edges unknown.
 

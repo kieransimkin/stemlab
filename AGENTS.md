@@ -7,6 +7,7 @@
 - Keep acoustic known-text alignment, free recognition, canonical spelling, independent vocal parts and artist approval separate. A single chronological fusion or phrase-loop boundary fix does not resolve simultaneous voices.
 - Retain original observations and part assignments. No global match score, forced text coverage or shared duplicate observation overrides a failed section or establishes independent performances.
 - Treat artist LRC starts and clears as display references. Use `stemlab lyric-display` to score a draft against the same recording, keeping the reference read-only and word edges intact. Measure acoustic word error only against listening-verified word annotations.
+- Use `stemlab lyric-ensemble` for source-bound saved observations. Keep crops and repeated views of a model in one family, and compare disputed edges with extra real context before using them as corroboration.
 
 - Read README.md, docs/, plugins/stemlab/skills/ and the CLI help before selecting an analysis route. Check analysis, timing, evidence, MIDI, loop and agent integrations.
 - Use the relevant existing capabilities as fully as the task warrants. Always look for a useful improvement to this tool. Fix a reusable gap here rather than copying its engine or carrying a private workaround; record why no change is justified when that is the result.

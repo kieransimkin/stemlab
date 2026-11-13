@@ -15,6 +15,67 @@ class BoundaryObservation:
     family: str
     frame: int
     strength: float
+    review_reasons: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class CropBoundary:
+    """One mapped word edge and the actual decoded audio crop around it."""
+
+    frame: int
+    crop_start: int
+    crop_end: int
+
+
+def compare_crop_boundaries(
+    first: CropBoundary, second: CropBoundary, *, edge: str, sample_rate: int,
+    tolerance_seconds: float = .08, edge_margin_seconds: float = .12,
+) -> dict:
+    """Check the same model and word on two crops of the same source clock.
+
+    Run on the same audio view, token and occurrence. Stability requires both
+    estimates inside the shared audio. An edge that follows the shifted clip
+    boundary can be flagged even outside that shared audio.
+    """
+    if edge not in {"onset", "release"} or type(sample_rate) is not int or sample_rate <= 0:
+        raise ValueError("An onset or release and a positive integer sample rate are required")
+    if not all(math.isfinite(x) and 0 < x <= 1 for x in (tolerance_seconds, edge_margin_seconds)):
+        raise ValueError("Crop tolerances must be between zero and one second")
+    for obs in (first, second):
+        if (
+            any(type(x) is not int for x in (obs.frame, obs.crop_start, obs.crop_end))
+            or not 0 <= obs.crop_start < obs.crop_end
+            or not obs.crop_start <= obs.frame <= obs.crop_end
+        ):
+            raise ValueError("Each observation must be inside its native-frame crop")
+    movement = second.frame - first.frame
+    crop_field = "crop_start" if edge == "onset" else "crop_end"
+    limit_a, limit_b = getattr(first, crop_field), getattr(second, crop_field)
+    shift = limit_b - limit_a
+    tolerance = round(tolerance_seconds * sample_rate)
+    margin = round(edge_margin_seconds * sample_rate)
+    common_start, common_end = max(first.crop_start, second.crop_start), min(first.crop_end, second.crop_end)
+    comparable = abs(shift) > tolerance and common_start < common_end
+    in_both = all(common_start <= obs.frame <= common_end for obs in (first, second))
+    follows_edge = (
+        comparable and abs(movement) > tolerance and abs(movement - shift) <= tolerance
+        and max(abs(first.frame - limit_a), abs(second.frame - limit_b)) <= margin
+    )
+    if follows_edge:
+        reasons = ("follows_decode_crop_edge",)
+    elif comparable and in_both and abs(movement) > tolerance:
+        reasons = ("moves_between_decode_crops",)
+    else:
+        reasons = ()
+    return {
+        "comparable": comparable and (in_both or follows_edge),
+        "stable": False if reasons else True if comparable and in_both else None,
+        "movement_frames": movement, "crop_edge_shift_frames": shift, "review_reasons": reasons,
+    }
+
+
+def _supports(obs, minimum):
+    return obs.strength >= minimum and not obs.review_reasons
 
 
 def _rank(observations, tolerance, min_strength):
@@ -22,14 +83,15 @@ def _rank(observations, tolerance, min_strength):
     for obs in observations:
         family_best = {}
         for other in observations:
-            if other.family == obs.family or min(obs.strength, other.strength) < min_strength:
+            if other.family == obs.family or not (_supports(obs, min_strength) and _supports(other, min_strength)):
                 continue
             distance = abs(other.frame - obs.frame)
             if distance <= tolerance:
                 weight = other.strength * (1 - .5 * distance / tolerance)
                 family_best[other.family] = max(weight, family_best.get(other.family, 0))
         # Near-duplicate runs of the same detector cannot vote for each other.
-        score = obs.strength + .85 * sum(sorted(family_best.values(), reverse=True)[:2])
+        strength = min(obs.strength, .25) if obs.review_reasons else obs.strength
+        score = strength + .85 * sum(sorted(family_best.values(), reverse=True)[:2])
         ranked.append((obs, score, sorted(family_best)))
     return sorted(ranked, key=lambda o: (-o[1], -o[0].strength, o[0].frame, o[0].source))
 
@@ -39,7 +101,7 @@ def _observed_spans(starts, ends, min_strength, min_frames, max_frames):
     by_source = {}
     for edge, observations in enumerate((starts, ends)):
         for obs in observations:
-            if obs.strength >= min_strength:
+            if _supports(obs, min_strength):
                 by_source.setdefault((obs.source, obs.family), ([], []))[edge].append(obs)
     return [
         (left[0], right[0]) for left, right in by_source.values()
@@ -85,6 +147,8 @@ def select_boundaries(
     Different edges may come from different sources; both retain provenance.
     Only sufficient-strength observations corroborate another model's edge.
     Observed complete intervals favour pairs that preserve the sung span.
+    Edges flagged by a crop diagnostic cannot vote or supply complete-interval
+    support. They remain available as low-weight, explicitly flagged evidence.
     """
     if type(num_frames) is not int or num_frames <= 0 or type(sample_rate) is not int or sample_rate <= 0:
         raise ValueError("A positive integer source sample rate and frame count are required")
@@ -108,6 +172,8 @@ def select_boundaries(
             and type(obs.frame) is int and 0 <= obs.frame <= num_frames
             and (obs.frame < num_frames if start else obs.frame > 0)
             and math.isfinite(obs.strength) and 0 < obs.strength <= 1
+            and isinstance(obs.review_reasons, tuple)
+            and all(isinstance(reason, str) and reason for reason in obs.review_reasons)
         )
 
     def render(row, ranked, tolerance):
@@ -116,7 +182,7 @@ def select_boundaries(
             **asdict(obs), "score": round(score, 6), "corroborating_families": groups,
             "competing_families": sorted({
                 candidate.family for candidate, _, _ in ranked
-                if candidate.family != obs.family and candidate.strength >= .5
+                if candidate.family != obs.family and _supports(candidate, .5)
                 and abs(candidate.frame - obs.frame) > tolerance
             }),
         }
@@ -184,6 +250,7 @@ def select_boundaries(
                 reasons.append(f"{key}_disagreement")
             if edge["strength"] < .4:
                 reasons.append(f"{key}_weak_evidence")
+            reasons.extend(f"{key}_{flag}" for flag in edge["review_reasons"])
         if not support:
             reasons.append("no_strong_matching_complete_interval")
         row.update(onset=onset, release=release, interval_supporting_families=support, review_reasons=reasons)

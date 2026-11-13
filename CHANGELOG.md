@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.14.1
+
+- Add `stemlab lyric-ensemble` to compare saved alignments against the verified
+  master clock and retain each selected edge and its alternatives.
+- Detect when a lyric boundary follows a shifted decode crop. Retain unstable
+  observations for review and exclude them from corroboration and span support.
+
 ## 1.14.0
 
 - Add bounded English CTC lyric evidence with source-frame letter spans, a free

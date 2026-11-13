@@ -1,6 +1,6 @@
 import pytest
 
-from stemlab.lyric_boundaries import BoundaryObservation, select_boundaries
+from stemlab.lyric_boundaries import BoundaryObservation, CropBoundary, compare_crop_boundaries, select_boundaries
 
 
 def obs(source, family, frame, strength=.8):
@@ -75,3 +75,34 @@ def test_observed_duration_prevents_an_unheard_short_mixed_pair():
     assert "no_strong_matching_complete_interval" in old["review_reasons"]
     assert (new["onset"]["frame"], new["release"]["frame"]) == (610, 1140)
     assert new["interval_supporting_families"] == ["ctc"]
+
+
+def test_crop_following_onset_is_retained_but_cannot_vote():
+    result = compare_crop_boundaries(
+        CropBoundary(1000, 1000, 2300), CropBoundary(570, 550, 2300), edge="onset", sample_rate=1000,
+    )
+    assert result["stable"] is False
+    assert result["review_reasons"] == ("follows_decode_crop_edge",)
+    selection = select([(
+        [BoundaryObservation("qwen", "qwen", 1000, .99, result["review_reasons"]), obs("other", "other", 1050, .65)],
+        [obs("qwen", "qwen", 1340), obs("other", "other", 1380)],
+    )])[0]
+    assert selection["onset"]["source"] == "other"
+    assert selection["onset"]["corroborating_families"] == []
+    assert selection["onset_candidates"][1]["frame"] == 1000
+    assert selection["interval_supporting_families"] == ["other"]
+
+
+def test_crop_stability_uses_shared_audio_and_actual_right_crop_for_release():
+    stable = compare_crop_boundaries(
+        CropBoundary(1600, 500, 2200), CropBoundary(1610, 500, 2650), edge="release", sample_rate=1000,
+    )
+    assert stable["comparable"] and stable["stable"] is True
+    unstable = compare_crop_boundaries(
+        CropBoundary(2180, 500, 2200), CropBoundary(2640, 500, 2650), edge="release", sample_rate=1000,
+    )
+    assert unstable["review_reasons"] == ("follows_decode_crop_edge",)
+    unknown = compare_crop_boundaries(
+        CropBoundary(900, 600, 1250), CropBoundary(1450, 1300, 1850), edge="onset", sample_rate=1000,
+    )
+    assert not unknown["comparable"] and unknown["stable"] is None

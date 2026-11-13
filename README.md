@@ -25,6 +25,9 @@ observations and reports disagreement without giving repeated decodes extra vote
 Weak observations do not count as corroboration, and duration checks help keep
 held words intact. When reconciling free recognition, optional occurrence
 windows prevent a later repeat from supplying earlier missing words.
+For a disputed edge, repeat the model with a shifted crop around the same
+occurrence. `stemlab lyric-ensemble` can flag unstable observations in saved
+model evidence and retain them in the review. [Command and request format](docs/lyric-boundaries.md#combine-saved-model-observations)
 Recognition scores and forced text coverage do not prove sung-word accuracy or
 voice identity. All exports remain drafts until artist listening confirmation;
 existing files, canonical lyrics and selected EPK timings are preserved.
