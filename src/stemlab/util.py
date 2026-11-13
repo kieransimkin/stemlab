@@ -8,12 +8,22 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Collection, Iterable
 
 
 def slugify(value: str) -> str:
     value = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip())
     return value.strip("._") or "item"
+
+
+def parse_model_paths(values: list[str] | None, model_names: Collection[str]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for value in values or []:
+        key, sep, path = value.partition("=")
+        if not sep or key not in model_names or not path.strip() or key in result:
+            raise ValueError("Expected unique MODEL=PATH entries (paths may contain '=')")
+        result[key] = str(Path(path).expanduser().resolve())
+    return result
 
 
 def sha256_file(path: Path, block_size: int = 1024 * 1024) -> str:

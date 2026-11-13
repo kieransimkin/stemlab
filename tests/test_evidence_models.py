@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 import soundfile as sf
 from typer.testing import CliRunner
 
@@ -128,6 +129,48 @@ def test_cli_help_and_registry():
         result = runner_cli.invoke(cli.app, command, color=False)
         assert result.exit_code == 0, result.output
     assert "firered_aed" in EVIDENCE_MODELS
+
+
+@pytest.mark.parametrize("command, option_prefix", [("evidence", ""), ("analyze", "evidence-")])
+def test_cli_routes_evidence_overrides_to_evidence_registry(tmp_path, monkeypatch, command, option_prefix):
+    import stemlab.analysis.evidence as evidence
+
+    master = wav(tmp_path / "master.wav")
+    model_dir = tmp_path / "model=local"
+    model_dir.mkdir()
+    backend_python = Path(sys.executable).resolve()
+    captured = {}
+
+    def fake_evidence(source, output, *, config, progress):
+        captured.update(models=config.models, model_paths=config.model_paths,
+                        backend_pythons=config.backend_pythons)
+        return {"status": "completed", "completed_count": 1, "errors": [], "skipped": []}
+
+    def fake_pipeline(config, *, progress):
+        captured.update(models=config.evidence_models, model_paths=config.evidence_model_paths,
+                        backend_pythons=config.evidence_backend_pythons)
+        return {"errors": []}
+
+    monkeypatch.setattr(evidence, "analyze_path", fake_evidence)
+    monkeypatch.setattr(cli, "run_pipeline", fake_pipeline)
+    args = [command, str(master), "--output", str(tmp_path / "out"), "--device", "cpu",
+            f"--{option_prefix}model", "firered_aed"]
+    model_option = f"--{option_prefix}model-path"
+    python_option = f"--{option_prefix}backend-python"
+    runner_cli = CliRunner()
+    result = runner_cli.invoke(cli.app, [
+        *args, model_option, f"firered_aed={model_dir}",
+        python_option, f"firered_aed={backend_python}",
+    ], color=False)
+    assert result.exit_code == 0, result.output
+    assert captured == {
+        "models": ("firered_aed",), "model_paths": {"firered_aed": str(model_dir)},
+        "backend_pythons": {"firered_aed": str(backend_python)},
+    }
+    captured.clear()
+    invalid = runner_cli.invoke(cli.app, [*args, model_option, f"basic_pitch={model_dir}"], color=False)
+    assert invalid.exit_code == 2 and "Expected unique MODEL=PATH" in invalid.output
+    assert not captured
 
 
 def test_codex_capabilities_and_read_only_gate(tmp_path):
