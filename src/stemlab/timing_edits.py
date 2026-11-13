@@ -18,6 +18,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
+from . import combined_lrc
 from .beat_map import _audio_info, read_or_seed as read_beat_map
 from .canonical import load_canonical
 from .cues import parse_lrc
@@ -426,6 +427,14 @@ def export_document(root: Path, source_hash: str, payload: dict) -> dict:
         }
         for row in doc["words"]
     ]
+    # An incomplete or text-divergent word track is still valid for the
+    # existing separate formats. Report a combined-export error on its own.
+    try:
+        combined = combined_lrc.render(doc["lines"], doc["words"], sr)
+        combined_error = None
+    except ValueError as exc:
+        combined = None
+        combined_error = str(exc)
     if doc["clock_mode"] == "variable":
         beat_map = _check_clock(root, source_hash, doc)
         clock = {"mode": "variable", "beat_timeline": beat_map}
@@ -446,6 +455,8 @@ def export_document(root: Path, source_hash: str, payload: dict) -> dict:
         "timings": doc,
         "clock": clock,
         "line_lrc": lines,
+        "combined_lrc": combined,
+        "combined_lrc_error": combined_error,
         "word_tsv": words.getvalue(),
         "word_json": {"schema": "stemlab.word-timings.v1", "words": word_rows},
         "cue_lrc": cues,
@@ -468,14 +479,25 @@ def import_text(
     root: Path, source_hash: str, payload: dict, *, kind: str, text: str, format: str
 ) -> dict:
     """Preview an explicit replacement. Reject any orphaned words and unknown cues."""
-    if kind not in ("lines", "words", "cues") or format not in ("lrc", "tsv", "json"):
+    if (
+        kind not in ("lines", "words", "cues", "combined")
+        or format not in ("lrc", "alrc", "tsv", "json")
+    ):
         raise ValueError("Unsupported timing import kind/format")
+    if format == "alrc" and kind != "combined":
+        raise ValueError("Use the combined import for .alrc files")
     if not isinstance(text, str) or len(text.encode("utf-8")) > 1_048_576 or "\x00" in text:
         raise ValueError("Timing import must be UTF-8 text under 1 MiB")
     doc = preview(root, source_hash, payload)
     sr = doc["sample_rate"]
     updated = {**doc}
-    if kind == "lines":
+    if kind == "combined":
+        if format not in ("lrc", "alrc"):
+            raise ValueError("Combined lyric imports require enhanced LRC")
+        updated["lines"], updated["words"] = combined_lrc.parse(
+            text, sr, doc["num_frames"], cue_ids=(cue["id"] for cue in doc["cues"])
+        )
+    elif kind == "lines":
         if format != "lrc":
             raise ValueError("Line lyric imports require LRC")
         # Blank line-LRC stamps are explicit lyric clear boundaries. Keep their

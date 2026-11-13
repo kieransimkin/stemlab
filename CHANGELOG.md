@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.3
+
+- Import and export combined enhanced LRC in StemEdit. Keep word releases,
+  gaps and independent line clears intact, including source-frame edits that
+  need more precision than milliseconds.
+
 ## 1.14.2
 
 - Validate complementary evidence model paths and worker Python overrides against

@@ -99,8 +99,11 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
   try{
    if(variableSelected&&(beatEditor?.dirty||!canVariable))throw new Error('Save and verify the exact beat map before exporting variable-clock timing');
    const exported=await api(hash,'POST',{document:doc},'/preview');
+   if(exportKind==='combined'&&exported.combined_lrc==null)
+    throw new Error(exported.combined_lrc_error||'Combined LRC is unavailable for these lyrics');
    const items={
      bundle:[JSON.stringify(exported,null,2)+'\n',filename('timing-bundle',hash)+'.json','application/json'],
+     combined:[exported.combined_lrc,filename('line-and-word',hash)+'.lrc','text/plain;charset=utf-8'],
      lines:[exported.line_lrc,filename('lines',hash)+'.lrc','text/plain;charset=utf-8'],
      words:[exported.word_tsv,filename('words',hash)+'.tsv','text/tab-separated-values;charset=utf-8'],
      wordjson:[JSON.stringify(exported.word_json,null,2)+'\n',filename('words',hash)+'.json','application/json'],
@@ -118,7 +121,13 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
   setWorking(true);busy.current=true;
   try{
    const res=await api(hash,'POST',{document:doc,kind:fileKind,format:ext,text:await file.text()},'/import');
-   setDoc(res.document);setDirty(true);setNote(`Imported ${fileKind} for review; not saved until Save corrections`);
+   if(activeHash.current!==hash)return;
+   setDoc(res.document);setDirty(true);
+   if(fileKind==='combined'){
+    setSelected({kind:'line',id:res.document.lines[0]?.id??null});
+    setWordScope('all');setExportKind('combined');
+    setNote(`Imported ${res.document.lines.length} lines and ${res.document.words.length} words. Use Save source-frame corrections to keep this draft.`);
+   }else setNote(`Imported ${fileKind} for review; not saved until Save corrections`);
   }catch(e){setNote(e.message);}finally{setWorking(false);busy.current=false;}
  };
  const inView=row=>{
@@ -218,17 +227,17 @@ export function useTimingEditor(hash,duration,beatEditor,enabled=true){
    <div className="stemlab-timing-actions">
     <button type="button" disabled={working||!dirty} onClick={save}>Save source-frame corrections</button>
     <label>Export format <select value={exportKind} onChange={e=>setExportKind(e.target.value)}>
-     <option value="bundle">Complete JSON bundle</option><option value="lines">Line LRC</option>
+     <option value="bundle">Complete JSON bundle</option><option value="combined">Combined line and word LRC</option><option value="lines">Line LRC</option>
      <option value="words">Word TSV</option><option value="wordjson">Word JSON</option>
      <option value="cues">Named cue LRC</option>
     </select></label>
     <button type="button" disabled={working} onClick={exportAll}>Download selected format</button>
     {lastExport&&<a className="stemlab-download-ready" href={lastExport.url} download={lastExport.name}>Download ready: {lastExport.name}</a>}
     <label>Import track <select value={fileKind} onChange={e=>setFileKind(e.target.value)}>
-     <option value="lines">Per-line LRC</option><option value="words">Per-word LRC/TSV/JSON</option><option value="cues">Section-cue LRC</option>
+     <option value="lines">Per-line LRC</option><option value="combined">Combined line and word LRC</option><option value="words">Per-word LRC/TSV/JSON</option><option value="cues">Section-cue LRC</option>
     </select></label>
     <button type="button" disabled={working} onClick={()=>input.current?.click()}>Choose timing file</button>
-    <input ref={input} type="file" hidden accept={fileKind==='words'?'.lrc,.tsv,.json':'.lrc'} onChange={importFile}/>
+    <input ref={input} type="file" hidden accept={fileKind==='words'?'.lrc,.tsv,.json':fileKind==='combined'?'.lrc,.alrc':'.lrc'} onChange={importFile}/>
     <button type="button" disabled={working} onClick={()=>reload()}>Reload saved</button>
    </div>
    <small>Word positions must stay inside their lyric line. An off-grid word/cue is preserved until you explicitly drag or enable nearby-beat snapping. Pips=64/beat, DanceMoves ticks=16/beat. LRC/TSV exports round timestamps; the JSON retains native frames.</small>

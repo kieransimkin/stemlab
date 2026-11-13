@@ -38,7 +38,7 @@
     }
   },
   "outputs": {
-    "src/stemlab/web/app.js": "9ac491036346abd8a43276b2d2113aeee09d27b92a4d7b74e399672ea5f8634d",
+    "src/stemlab/web/app.js": "9bd8ae7e0a8772f109fae783424dd68ab3db214685248a909402f158feaede71",
     "src/stemlab/web/timeline.css": "3fc81c11c1fa01e91adade0820ebe420360dcebd8c3117185766908fed92b44b"
   },
   "schema": "stemlab.viewer-build.v1",
@@ -55,7 +55,7 @@
     "web-client/src/loops.jsx": "79b5d4f0169231a5c683346eb1854176023fab2595e05f94edd4f074b350591b",
     "web-client/src/lyric-audition.js": "3e87a1865addc616ab7718a4f7e386b660f5f12541f0b108ae8081252105a77c",
     "web-client/src/timing-editor.css": "d68307a9f46ef8e909863c6b471e2de1d9fb1288732a0eb9a45863e43cf9ac4f",
-    "web-client/src/timing-editor.jsx": "c6a5c3e80954c17bfe71eeb5c1af884bc44498b3013ab90d68d505e235314e06",
+    "web-client/src/timing-editor.jsx": "3e3e93a7066169657024d75a165f696032bf472cb8e4f277e3e50b40e23b6e98",
     "web-client/src/timing-workflow.js": "b1f0e04b535606e057a2470000e6887cff955034ce37bf7d9b1ee965781b07c7",
     "web-client/vite.config.js": "69f08644b1761c13d8af6f5b5e2e85ed1ba140e71d5371dc5221ebd14bd6476d"
   }

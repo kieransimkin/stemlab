@@ -32,6 +32,50 @@ state; it is not song-timing or attended-listening evidence.
 Before an editable document exists, saved canonical lyric timings are used.
 Static exports use their saved timing source and remain read-only.
 
+## Round-trip combined line and word LRC
+
+Open the recording in live StemEdit. Choose **Combined line and word LRC**
+under **Import track**, then choose a `.lrc` or `.alrc` file. The editor
+loads both timing tracks into the draft. Drag the right edge of a word to
+adjust its sung end. Resize the lyric line's right edge to set when it clears.
+You can save the draft to the selected recording with **Save source-frame
+corrections**.
+
+![StemEdit showing the combined LRC import, export and ready download controls](screenshots/stemedit-combined-lrc.png)
+
+The screenshot shows an actual round trip with a synthetic recording.
+
+```text
+[offset:0]
+[00:01.000]<00:01.120>Hello,<00:01.300> <00:01.420>world!<00:01.700>
+[00:02.100]
+[00:02.800]<00:02.820>Again.<00:03.200>
+[00:03.500]
+```
+
+In this synthetic example, the first line opens at 1.000 s. “Hello,” ends at
+1.300 s, leaving a pause before “world!” starts at 1.420 s. The final highlight
+ends at 1.700 s and the line remains visible until 2.100 s. Square timestamps
+open or clear lines. Inline angle timestamps mark word boundaries. A blank
+square row clears the previous line. A following lyric line can also end it
+at the moment the new line appears. A final word with no closing angle
+timestamp inherits its line's clear.
+[Enhanced LRC notation](https://amll.dev/en/guides/lyric/formats#lrc-a2)
+
+For export, choose **Combined line and word LRC** and **Download selected
+format**. The file contains the current draft even before you save. It uses
+millisecond timestamps when they recover the same source frame and adds
+digits when needed. Reimport against the same recording. A combined LRC has
+one stream of lyric text, so a line with timed words must match those words
+in order for export. The line-only LRC and separate word formats remain
+available for partly timed lines. The complete JSON bundle also carries the
+source identity, beat clock and section cues.
+
+API clients can POST `kind: "combined"`, `format: "lrc"` (or `"alrc"`),
+`text` and the current `document` to `/api/{sha256}/song-timing/import`.
+The existing preview endpoint returns `combined_lrc`, or a
+`combined_lrc_error` when the draft cannot be represented in one text stream.
+
 ![Actual responsive phone layout, captured in desktop browser emulation](screenshots/lyric-audition-mobile.png)
 
 Responsive layout evidence at 390 CSS pixels; this is browser emulation, not a

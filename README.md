@@ -677,12 +677,20 @@ integer native source frames, and artist review status. **Original audio,
 unchanged.** The web service supports:
 
 - `GET/PUT /api/{sha256}/song-timing` (optimistic revision guard),
-- `POST /api/{sha256}/song-timing/import` (LRC lyric lines, LRC/TSV/JSON words,
-  canonical cue-section LRC; importing lines with existing words is refused),
+- `POST /api/{sha256}/song-timing/import` (combined enhanced LRC, line LRC,
+  word LRC/TSV/JSON, and canonical cue-section LRC),
 - `POST /api/{sha256}/song-timing/preview` (strict validation and export without saving).
 
+Choose **Combined line and word LRC** under **Import track** to load one
+`.lrc` or `.alrc` file against the selected recording. The import replaces the
+draft lines and words together. You can adjust each word's end and keep its
+line visible with a later clear. Select **Combined line and word LRC** under
+**Export format** to download the current edits. The export uses finer
+timestamps when needed to recover the same native frames on reimport.
+[Format, editing and round-trip example](docs/lyric-audition.md#round-trip-combined-line-and-word-lrc)
+
 **Export DanceMoves timing bundle** provides a JSON source identity and fixed
-or full variable BPM map alongside line-LRC, per-word TSV and JSON, and cue-LRC
+or full variable BPM map alongside combined and line LRC, per-word TSV and JSON, and cue LRC
 content. For DanceMoves' separate full beat-map field, use the original Beat
 correction editor's `stemlab.beat-timeline.v1` export (or the bundle's nested
 `clock.beat_timeline`), not the enclosing song-timing bundle JSON. Word timings are kept in original source seconds; LRC/TSV representations
